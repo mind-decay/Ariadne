@@ -61,3 +61,51 @@ All architectural decisions made during Ariadne development.
 - Silent skip — user doesn't know what's missing from the graph
 - Log file — adds complexity, stderr is standard for warnings
 **Reasoning:** Real projects are messy. Best-effort graph with transparent warnings gives the most value. Structured warning codes enable machine consumption. Resource limits prevent pathological inputs from causing OOM. Atomic writes prevent corruption on interruption.
+
+## D-006: Byte-Identical Deterministic Output
+
+**Date:** 2026-03-17
+**Status:** Accepted
+**Context:** Graph output is designed to be committed to git. Non-deterministic output (HashMap iteration order, rayon parallel collection order, timestamps) would produce meaningless diffs on every build.
+**Decision:** Same input → byte-identical output. Use `BTreeMap` instead of `HashMap` for nodes and clusters (sorted keys). Sort edges by (from, to, edge_type) before serialization. Sort all internal lists (exports, symbols, cluster files). Remove `"generated"` timestamp from default output (add via `--timestamp` flag). Rayon processes files in sorted order to maintain deterministic collection.
+**Alternatives rejected:**
+- HashMap + post-hoc sorting — extra allocation, error-prone (easy to forget a sort point)
+- Set comparison instead of byte identity — doesn't help git diffs, still produces noisy commits
+- Keep timestamp, ignore in diffs — requires custom git diff driver, adds complexity
+**Reasoning:** BTreeMap has O(log n) vs O(1) lookup — ~20% overhead on build phase, negligible compared to parsing. Byte-identical output is the strongest guarantee and the simplest to verify. See `design/determinism.md`.
+
+## D-007: Path Normalization — Canonical Relative Format
+
+**Date:** 2026-03-17
+**Status:** Accepted
+**Context:** The same file can be referenced via different path strings (./foo, foo, ./bar/../foo). Without normalization, the graph may have duplicate nodes or missing edges. Case-insensitive filesystems (macOS default) add another dimension.
+**Decision:** All paths in the graph use a canonical format: relative to project root, forward slashes, no `./` prefix, no `..` segments, no trailing slash. Case sensitivity follows the filesystem — on case-insensitive FS, import resolution tries case-insensitive matching but stores the canonical (filesystem-reported) path. Path traversal outside project root is rejected (security). `dunce` crate used on Windows to avoid `\\?\` prefix.
+**Alternatives rejected:**
+- Lowercase all paths — loses information, confusing when viewing graph data
+- Absolute paths — ties graph to machine, breaks portability
+- No normalization — duplicate nodes, broken edge matching
+**Reasoning:** Canonical relative paths are portable, deterministic, and human-readable. Following filesystem case behavior matches developer expectations (code that works on macOS but not Linux is a real bug to surface). See `design/path-resolution.md`.
+
+## D-008: Monorepo — Single Graph with Workspace-Aware Resolution
+
+**Date:** 2026-03-17
+**Status:** Accepted
+**Context:** Many real-world repositories are monorepos with multiple package.json, go.mod, or Cargo.toml files. Without workspace awareness, cross-package imports are classified as "external" and produce no edges — losing critical dependency information.
+**Decision:** Ariadne always produces one graph per invocation (entire repo). Workspace detection scans for root-level indicators (package.json workspaces, go.work, Cargo.toml workspace, nx.json, pnpm-workspace.yaml). Detected workspace members are mapped (package name → path → entry point). Import resolution checks workspace map before classifying an import as external. Phase 1 covers npm/yarn/pnpm workspaces; other workspace types added incrementally. No workspace indicators → simple single-project resolution (fully backward compatible).
+**Alternatives rejected:**
+- Per-package sub-graphs — loses cross-package dependency information, the main value proposition
+- Require explicit configuration — too much friction, most workspaces are auto-detectable
+- Ignore workspaces — silently broken graphs on the most common project structures
+**Reasoning:** Single graph captures the full dependency picture. Workspace detection is heuristic but high-confidence (workspace config files are standard). Additive — doesn't change behavior for non-workspace projects. See `design/path-resolution.md`.
+
+## D-009: MIT/Apache-2.0 Dual License
+
+**Date:** 2026-03-17
+**Status:** Accepted
+**Context:** Ariadne needs a license for open-source release and crates.io publishing. License choice affects adoption and compatibility with downstream projects.
+**Decision:** Dual-licensed under MIT and Apache-2.0, following the Rust ecosystem convention. Users may choose either license. This is the same license model used by Rust itself, serde, tokio, clap, and most Rust ecosystem crates.
+**Alternatives rejected:**
+- MIT only — less protection for contributors (no patent grant)
+- Apache-2.0 only — incompatible with some GPL projects
+- GPL — too restrictive for a CLI tool meant to be widely adopted
+**Reasoning:** MIT/Apache-2.0 dual license maximizes compatibility. MIT is simple and permissive. Apache-2.0 adds patent protection. Dual licensing lets users pick what works for their project. This is the de-facto standard in the Rust ecosystem.

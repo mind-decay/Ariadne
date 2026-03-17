@@ -204,7 +204,8 @@ warn: existing graph.json has schema version 1, current is 2. Rebuilding.
 |------|---------|
 | `install.sh` | Install script for prebuilt binaries |
 | `CHANGELOG.md` | User-facing release notes |
-| `LICENSE` | License file (MIT or Apache-2.0 — TBD) |
+| `LICENSE-MIT` | MIT license text |
+| `LICENSE-APACHE` | Apache 2.0 license text |
 | `.github/workflows/release.yml` | Cross-compilation + release publishing |
 | `.github/workflows/ci.yml` | Test + lint on every push/PR |
 

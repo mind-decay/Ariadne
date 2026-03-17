@@ -12,8 +12,14 @@ Named after Ariadne of Greek mythology, who gave Theseus the thread to navigate 
 
 1. `design/ROADMAP.md` — implementation phases and build order
 2. `design/architecture.md` — full system design (data model, parsers, CLI, formats)
-3. `design/decisions/log.md` — architectural decisions
-4. The specific spec/plan relevant to your current task
+3. `design/decisions/log.md` — architectural decisions (D-001 through D-009)
+4. `design/path-resolution.md` — path normalization, case sensitivity, monorepo support
+5. `design/determinism.md` — byte-identical output strategy
+6. `design/error-handling.md` — error taxonomy (E001-E005, W001-W009), fault tolerance
+7. `design/performance.md` — performance model, parallelism, memory strategy
+8. `design/testing.md` — 4-level test strategy (snapshots, fixtures, invariants, benchmarks)
+9. `design/distribution.md` — versioning, installation, releases
+10. The specific spec/plan relevant to your current task
 
 ## Development Protocol
 

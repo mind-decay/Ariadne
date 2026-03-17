@@ -110,6 +110,7 @@ Implement `ariadne`, a standalone Rust CLI binary that parses a project's source
 - `ignore` — .gitignore-aware file walking (respects .gitignore, skips node_modules, .git, etc.)
 - `rayon` — data parallelism for parallel file parsing
 - `anyhow` — error handling for CLI (idiomatic for Rust CLI tools)
+- `dunce` — Windows path canonicalization without `\\?\` prefix (no-op on Unix)
 
 **Dev dependencies:**
 - `insta` (with `yaml` feature) — snapshot testing for parser output and fixture graphs
@@ -171,10 +172,9 @@ pub enum EdgeType {
 
 pub struct ProjectGraph {
     pub version: u32,           // schema version (1)
-    pub generated: String,      // ISO 8601 timestamp
     pub project_root: String,
-    pub nodes: HashMap<String, Node>,
-    pub edges: Vec<Edge>,
+    pub nodes: BTreeMap<String, Node>,  // BTreeMap for deterministic key order (D-006)
+    pub edges: Vec<Edge>,               // sorted by (from, to, edge_type) before serialization
 }
 
 pub struct Cluster {
@@ -186,7 +186,7 @@ pub struct Cluster {
 }
 
 pub struct ClusterMap {
-    pub clusters: HashMap<String, Cluster>,
+    pub clusters: BTreeMap<String, Cluster>,  // BTreeMap for deterministic key order (D-006)
 }
 ```
 
@@ -513,6 +513,7 @@ ariadne build <project-root> [options]
       --verbose                   Show all warnings including unresolved imports
       --warnings <format>         Warning format: human (default), json
       --strict                    Exit code 1 if any warnings occurred
+      --timestamp                 Include "generated" timestamp in output (default: omitted for determinism, D-006)
 
     Summary to stdout: "Built graph: {N} files, {E} edges, {C} clusters in {T}ms"
     Warnings → stderr (human or JSON format per --warnings flag)
@@ -587,6 +588,7 @@ Build graph on fixture projects, snapshot entire graph.json + clusters.json outp
 - `tests/fixtures/python-package/` (~8 files, package with __init__.py)
 - `tests/fixtures/mixed-project/` (~6 files, multi-language)
 - `tests/fixtures/edge-cases/` (empty file, syntax error, circular imports, deep nesting, unicode path)
+- `tests/fixtures/workspace-project/` (npm workspace with 3 packages, cross-package imports — D-008)
 
 #### D19c: L3 — Graph Invariant Tests (`tests/invariants.rs`)
 
