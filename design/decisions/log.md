@@ -15,7 +15,7 @@ All architectural decisions made during Ariadne development.
 - Regex-based parsing — fragile, doesn't scale across languages
 - Language-specific tools (tsc, go vet, etc.) — requires each tool installed, inconsistent output formats
 - SQLite storage — unnecessary for deterministic data that doesn't need complex queries beyond what JSON provides
-**Reasoning:** Tree-sitter provides accurate AST-based parsing for 100+ languages with zero token cost. Rust gives single-binary distribution with fastest execution (3000 files in 1-3s).
+**Reasoning:** Tree-sitter provides accurate AST-based parsing for 100+ languages with zero token cost. Rust gives single-binary distribution with fastest execution (3000 files in under 10 seconds).
 
 ## D-002: Language Support via Tree-sitter Trait
 
@@ -132,3 +132,66 @@ All architectural decisions made during Ariadne development.
 - Ship everything at once — high risk of spending weeks on features that need redesign after first real usage
 - Skip hardening entirely — too fragile for real projects
 **Reasoning:** Working software validates design faster than documents. Phase 1a provides the feedback loop. Phase 1b builds on proven foundation.
+
+## D-012: Compact Tuple Format for Edges
+
+**Date:** 2026-03-17
+**Status:** Accepted
+**Context:** Graph edges need efficient serialization. Object-based edge representation (`{"from": "...", "to": "...", "type": "...", "symbols": [...]}`) is verbose and dominates file size in large graphs.
+**Decision:** Edges in graph.json are serialized as compact JSON tuples `[from, to, type, [symbols]]` instead of objects. 60%+ space savings. Schema consumers must know the positional format.
+**Alternatives rejected:**
+- Object-based edges — readable but wasteful, 60%+ larger output
+- Binary format — not human-readable, not diffable in git
+**Reasoning:** Edges are the largest part of the graph by count. Compact tuples dramatically reduce output size while remaining valid JSON. The positional format is documented in the schema.
+**Affects:** architecture.md Storage Format.
+
+## D-013: xxHash64 for Content Hashing
+
+**Date:** 2026-03-17
+**Status:** Accepted
+**Context:** Each file node includes a content hash for change detection. The hash algorithm must be fast, collision-resistant, and produce deterministic output across platforms.
+**Decision:** Content hashes use xxHash64 (fast, collision-resistant, deterministic). Output as lowercase hex (16 characters).
+**Alternatives rejected:**
+- SHA-256 — cryptographic strength unnecessary, significantly slower
+- CRC32 — too short, higher collision probability
+- No hashing — no way to detect file changes without re-parsing
+**Reasoning:** xxHash64 is one of the fastest non-cryptographic hash functions with excellent distribution. 64-bit output provides sufficient collision resistance for file-level change detection. Deterministic across platforms. See performance.md.
+**Affects:** architecture.md Graph Data Model, performance.md.
+
+## D-014: Layer Detection Heuristics
+
+**Date:** 2026-03-17
+**Status:** Accepted
+**Context:** Ariadne infers architectural layers to enrich the dependency graph beyond raw file-to-file edges. Layer membership must be determined without configuration.
+**Decision:** Eight architectural layers: api, service, data, util, component, hook, config, unknown. Layer membership inferred from file path patterns and naming conventions. The "component" and "hook" layers reflect React/frontend conventions.
+**Alternatives rejected:**
+- User-defined layers only — too much friction, no zero-config experience
+- Fewer layers — loses useful distinctions (e.g., hook vs component)
+- More layers — diminishing returns, harder to maintain heuristics
+**Reasoning:** Path-based heuristics are surprisingly accurate for common project structures. Eight layers cover the most common architectural patterns across frontend and backend. "unknown" provides a safe fallback. Heuristics can be refined incrementally.
+**Affects:** architecture.md Language Support / Layer Inference.
+
+## D-015: Graph Output Committed to Git
+
+**Date:** 2026-03-17
+**Status:** Accepted
+**Context:** Graph output needs a consumption strategy. Options include generating on-the-fly, caching locally, or committing to version control.
+**Decision:** `.ariadne/graph/` output (graph.json, clusters.json) is designed to be committed to version control. D-006 (byte-identical output) is a prerequisite — deterministic output enables meaningful diffs.
+**Alternatives rejected:**
+- Generate on-the-fly only — requires Ariadne installed everywhere, no historical tracking
+- Local cache (gitignored) — no shared access, no change tracking over time
+**Reasoning:** Committing graph output enables: tracking structural changes over time via git history, CI diffing to detect unintended dependency changes, consumption by tools that don't have Ariadne installed. D-006 ensures commits only appear when the graph actually changes.
+**Affects:** architecture.md Storage Format, determinism.md.
+
+## D-016: Default Output Directory `.ariadne/graph/`
+
+**Date:** 2026-03-17
+**Status:** Accepted
+**Context:** Graph output files need a default location. The directory must be predictable, not conflict with existing conventions, and support future Ariadne outputs beyond the graph.
+**Decision:** Graph output files go to `.ariadne/graph/` by default. The parent `.ariadne/` directory serves as the namespace for all Ariadne outputs (graph, views, stats in later phases).
+**Alternatives rejected:**
+- Project root — clutters the top-level directory
+- `.ariadne/` directly — no room for future output types (views, stats)
+- `ariadne-output/` — visible directory is noisier, dot-prefix follows convention (.git, .github, .vscode)
+**Reasoning:** Dot-prefix follows established tool conventions. Nested `graph/` subdirectory provides namespace for future output types without reorganization. Overridable via `--output` flag.
+**Affects:** architecture.md Storage Format, Phase 1a spec.

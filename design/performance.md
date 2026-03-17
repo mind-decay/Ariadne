@@ -231,6 +231,7 @@ All algorithms run on the in-memory graph (already loaded). No I/O during comput
 | 3000 files build | <10s | >20% slower |
 | Single file parse (TS, 50 imports) | <5ms | >50% slower |
 | Single file parse (Go, 30 imports) | <3ms | >50% slower |
+| Single file parse (Python, 40 imports) | <3ms | >50% slower |
 | xxHash64 1MB file | <1ms | >100% slower |
 | Clustering 3000 nodes | <100ms | >50% slower |
 | JSON serialization 3000 nodes | <500ms | >50% slower |

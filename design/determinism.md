@@ -63,6 +63,7 @@ Sort order: `from` path → `to` path → edge type. This is deterministic and h
 `rayon`'s `par_iter()` on a sorted slice preserves order if you use `par_iter().map().collect::<Vec<_>>()` (rayon maintains index order for indexed iterators).
 
 Strategy:
+
 1. Walk files → collect into `Vec<PathBuf>` → **sort by path**
 2. `sorted_files.par_iter().map(|f| process(f)).collect::<Vec<_>>()` — result is in same order as input
 3. Edges collected per-file are already grouped — flatten and then sort globally
@@ -104,14 +105,17 @@ edge.symbols.sort();
 
 ### Summary of Sort Points
 
-| Data | Sort key | When |
-|------|----------|------|
-| `graph.json` nodes | BTreeMap by path | Construction time |
-| `graph.json` edges | (from, to, edge_type) | Before serialization |
-| `clusters.json` clusters | BTreeMap by name | Construction time |
-| Cluster `files` | Lexicographic | Before serialization |
-| Node `exports` | Lexicographic | Before serialization |
-| Edge `symbols` | Lexicographic | Before serialization |
+| Data                     | Sort key                  | When                 |
+| ------------------------ | ------------------------- | -------------------- |
+| `graph.json` nodes       | BTreeMap by path          | Construction time    |
+| `graph.json` edges       | (from, to, edge_type)     | Before serialization |
+| `clusters.json` clusters | BTreeMap by name          | Construction time    |
+| Cluster `files`          | Lexicographic             | Before serialization |
+| Node `exports`           | Lexicographic             | Before serialization |
+| Edge `symbols`           | Lexicographic             | Before serialization |
+| `stats.json` collections | Phase 2 — sort orders TBD | Phase 2              |
+
+**Note:** `stats.json` contains several collections that will need deterministic sort orders defined in Phase 2: `centrality` map, `sccs` array, `layers` map, `bottleneck_files` array, `orphan_files` array.
 
 ## Verification
 
@@ -122,6 +126,7 @@ Old: "build(project) at T1 = build(project) at T2 IF project files unchanged (ed
 New: **"build(project) at T1 = build(project) at T2 IF project files unchanged (byte-identical output)"**
 
 Test:
+
 ```rust
 #[test]
 fn deterministic_output() {
@@ -133,8 +138,8 @@ fn deterministic_output() {
 
 ## Impact on Spec
 
-- **D2 (Data Model):** `ProjectGraph.nodes` type changes from `HashMap` to `BTreeMap`. `ClusterMap.clusters` same.
-- **D14 (Graph Builder):** Sort edges before returning. Sort cluster files, node exports, edge symbols.
-- **D15 (Serialization):** Remove `"generated"` from default output. Add `--timestamp` flag.
-- **D17 (CLI):** Add `--timestamp` flag.
+- **Graph Data Model (architecture.md, D-006):** `ProjectGraph.nodes` type changes from `HashMap` to `BTreeMap`. `ClusterMap.clusters` same.
+- **Graph Builder (architecture.md):** Sort edges before returning. Sort cluster files, node exports, edge symbols.
+- **Storage Format (architecture.md):** Remove `"generated"` from default output. Add `--timestamp` flag.
+- **CLI Interface (architecture.md):** Add `--timestamp` flag.
 - **Performance:** BTreeMap is O(log n) vs HashMap O(1) for lookups. For 50k nodes, this adds ~20% to build phase. Sorting edges (O(n log n)) is negligible compared to parsing. Acceptable trade-off for deterministic output.

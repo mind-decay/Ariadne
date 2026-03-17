@@ -14,29 +14,29 @@
 
 These prevent any useful work. The binary exits with code 1 and a clear error message.
 
-| Error | Cause | Message |
-|-------|-------|---------|
-| `E001: ProjectNotFound` | Project root path doesn't exist | `error: project root not found: {path}` |
-| `E002: NotADirectory` | Project root is a file, not directory | `error: not a directory: {path}` |
-| `E003: OutputNotWritable` | Can't create or write to output directory | `error: cannot write to output directory: {path}: {reason}` |
-| `E004: NoParseableFiles` | Walk found zero files with recognized extensions | `error: no parseable files found in {path} (supported: .ts, .js, .go, .py, .rs, .cs, .java)` |
-| `E005: WalkFailed` | Directory walk failed completely (permissions on root) | `error: cannot read project directory: {path}: {reason}` |
+| Error                     | Cause                                                  | Message                                                                                      |
+| ------------------------- | ------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| `E001: ProjectNotFound`   | Project root path doesn't exist                        | `error: project root not found: {path}`                                                      |
+| `E002: NotADirectory`     | Project root is a file, not directory                  | `error: not a directory: {path}`                                                             |
+| `E003: OutputNotWritable` | Can't create or write to output directory              | `error: cannot write to output directory: {path}: {reason}`                                  |
+| `E004: NoParseableFiles`  | Walk found zero files with recognized extensions       | `error: no parseable files found in {path} (supported: .ts, .js, .go, .py, .rs, .cs, .java)` |
+| `E005: WalkFailed`        | Directory walk failed completely (permissions on root) | `error: cannot read project directory: {path}: {reason}`                                     |
 
 ### Recoverable Errors (exit code 0, file skipped, warning emitted)
 
 These affect individual files. The file is excluded from the graph. Build continues.
 
-| Warning | Cause | Handling |
-|---------|-------|----------|
-| `W001: ParseFailed` | Tree-sitter can't parse the file at all | Skip file, emit warning |
-| `W002: ReadFailed` | File can't be read (permissions, encoding) | Skip file, emit warning |
-| `W003: FileTooLarge` | File exceeds size limit (default: 1MB) | Skip file, emit warning |
-| `W004: BinaryFile` | File contains null bytes (binary, not source) | Skip file, emit warning |
-| `W005: SymlinkLoop` | Symlink resolves to ancestor directory | Skip path, emit warning |
-| `W006: ImportUnresolved` | Import path can't be resolved to a project file | No edge created, emit warning (only in verbose mode — too noisy otherwise) |
-| `W007: PartialParse` | Tree-sitter parsed with ERROR nodes (>50% of top-level nodes → W001; otherwise extract valid subtrees) | Extract what we can, emit warning |
-| `W008: ConfigParseFailed` | Language config file (go.mod, tsconfig.json) can't be parsed | Fall back to heuristic resolution, emit warning |
-| `W009: EncodingError` | File is not valid UTF-8 | Skip file, emit warning |
+| Warning                   | Cause                                                                                                  | Handling                                                                                                                                                                            |
+| ------------------------- | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `W001: ParseFailed`       | Tree-sitter can't parse the file at all                                                                | Skip file, emit warning                                                                                                                                                             |
+| `W002: ReadFailed`        | File can't be read (permissions, encoding)                                                             | Skip file, emit warning                                                                                                                                                             |
+| `W003: FileTooLarge`      | File exceeds size limit (default: 1MB)                                                                 | Skip file, emit warning                                                                                                                                                             |
+| `W004: BinaryFile`        | File contains null bytes (binary, not source)                                                          | Skip file, emit warning                                                                                                                                                             |
+| `W005: SymlinkLoop`       | Symlink resolves to ancestor directory                                                                 | Skip path, emit warning. _Currently unreachable: symlinks are always skipped during walking (see File System Edge Cases). Reserved for future use if symlink following is enabled._ |
+| `W006: ImportUnresolved`  | Import path can't be resolved to a project file                                                        | No edge created, emit warning (only in verbose mode — too noisy otherwise)                                                                                                          |
+| `W007: PartialParse`      | Tree-sitter parsed with ERROR nodes (>50% of top-level nodes → W001; otherwise extract valid subtrees) | Extract what we can, emit warning                                                                                                                                                   |
+| `W008: ConfigParseFailed` | Language config file (go.mod, tsconfig.json) can't be parsed                                           | Fall back to heuristic resolution, emit warning                                                                                                                                     |
+| `W009: EncodingError`     | File is not valid UTF-8                                                                                | Skip file, emit warning                                                                                                                                                             |
 
 ### Design Decisions
 
@@ -51,6 +51,7 @@ These affect individual files. The file is excluded from the graph. Build contin
 Warnings go to stderr. Two formats:
 
 **Human format (default):**
+
 ```
 warn[W001]: failed to parse src/legacy/old-code.ts: unexpected token at line 42
 warn[W002]: cannot read src/secrets/.env: permission denied
@@ -63,6 +64,7 @@ Built graph: 847 files, 2341 edges, 12 clusters in 1.2s
 ```
 
 **JSON format (`--warnings json`):**
+
 ```json
 {"level":"warn","code":"W001","file":"src/legacy/old-code.ts","message":"parse failed","detail":"unexpected token at line 42"}
 {"level":"warn","code":"W002","file":"src/secrets/.env","message":"read failed","detail":"permission denied"}
@@ -72,14 +74,14 @@ JSON format enables machine consumption — CI tools, editors, integration syste
 
 ## Resource Limits
 
-| Resource | Default Limit | Flag | Rationale |
-|----------|--------------|------|-----------|
-| Max file size | 1MB | `--max-file-size <bytes>` | Generated/bundled files shouldn't be in the graph |
-| Max files | 50,000 | `--max-files <count>` | Memory protection. 50k files × ~500 bytes/node = ~25MB |
-| Max depth | 64 directories | (not configurable) | Prevents symlink loops and pathological nesting |
-| Parse timeout | None (tree-sitter is fast) | — | Tree-sitter parses ~10MB/s. 1MB limit makes timeout unnecessary |
+| Resource      | Default Limit              | Flag                      | Rationale                                                                                          |
+| ------------- | -------------------------- | ------------------------- | -------------------------------------------------------------------------------------------------- |
+| Max file size | 1MB                        | `--max-file-size <bytes>` | Generated/bundled files shouldn't be in the graph                                                  |
+| Max files     | 50,000                     | `--max-files <count>`     | Memory protection. 50k files with edges and overhead ≈ 250MB (see performance.md Memory Estimates) |
+| Max depth     | 64 directories             | (not configurable)        | Prevents symlink loops and pathological nesting                                                    |
+| Parse timeout | None (tree-sitter is fast) | —                         | Tree-sitter parses ~10MB/s. 1MB limit makes timeout unnecessary                                    |
 
-**Memory estimation:** Each Node is ~500 bytes (path + metadata). Each Edge is ~200 bytes. A 50k file project with 150k edges ≈ 55MB. Comfortable for any modern machine.
+**Memory estimation:** A 50k file project with edges, path interning, and all per-file overhead ≈ 250MB (see performance.md Memory Estimates). Comfortable for any modern machine.
 
 **If max-files exceeded:** Emit a single warning and stop file collection. Build graph from files collected so far. This is partial but useful.
 
@@ -90,25 +92,30 @@ warn: file limit reached (50000). Graph is partial. Use --max-files to increase.
 ## File System Edge Cases
 
 ### Symlinks
+
 - `ignore` crate does NOT follow symlinks by default. This is the correct behavior.
 - If `--follow-symlinks` is added in the future, symlink loop detection is required (track visited inodes).
 - For now: symlinks are skipped. Files reachable only through symlinks are not in the graph.
 
 ### Non-UTF-8 Filenames
+
 - Rust's `Path` handles non-UTF-8 via `OsStr`. File walking works fine.
 - For graph.json serialization: non-UTF-8 paths are lossy-converted (`to_string_lossy()`).
 - Warning W009 is for file contents, not filenames.
 
 ### Concurrent Modification
+
 - Files may change during a build (IDE auto-save, git operations).
 - Decision: **no locking, no consistency guarantees.** Ariadne reads each file once. If a file changes between being walked and being parsed, the result may be inconsistent. This is acceptable — rerun `ariadne build` for a consistent snapshot.
 - Content hashes capture the state at read time. Delta updates (Phase 2) handle this correctly.
 
 ### Empty Files
+
 - An empty source file is valid. It produces a Node with 0 lines, empty exports, no outgoing edges.
 - It may still have incoming edges (other files import from it — they'll fail resolution, but the node exists).
 
 ### Empty Directories
+
 - Ignored. Directories don't produce nodes.
 
 ## Error Handling by Pipeline Stage
@@ -178,6 +185,7 @@ resolve(import, file, root, parser):
 ### Stage 4: Config File Parsing
 
 Some parsers need config files for path resolution:
+
 - Go: `go.mod` for module path
 - TypeScript: `tsconfig.json` for paths (deferred to future)
 - Python: `pyproject.toml` for src layout
@@ -197,11 +205,30 @@ parse_config(config_path):
 ```
 
 **Heuristic fallbacks:**
+
 - Go without go.mod: treat all `.go` files as same module, skip external imports
 - Python without pyproject.toml: use directory structure for resolution
 - Java without build config: try `src/main/java/` and `src/` as source roots
 
-### Stage 5: Output Writing
+### Stage 5: Clustering
+
+```
+cluster(graph):
+  IF clustering fails (malformed data, unexpected structure):
+    log warning, output unclustered graph
+    // Clustering failure is non-fatal — the graph is still valid
+```
+
+### Stage 6: Sorting
+
+```
+sort(graph):
+  // Deterministic sorting should not fail under normal conditions.
+  // If it does, treat as E005 (internal error) — indicates a bug.
+  IF sort error → E005
+```
+
+### Stage 7: Output Writing
 
 ```
 write_output(graph, clusters, output_dir):
@@ -228,6 +255,7 @@ Built graph: 847 files, 2341 edges, 12 clusters in 1.2s
 ```
 
 If warnings occurred:
+
 ```
 Built graph: 844 files, 2298 edges, 12 clusters in 1.3s
   3 files skipped (1 parse error, 1 permission denied, 1 too large)
@@ -235,6 +263,7 @@ Built graph: 844 files, 2298 edges, 12 clusters in 1.3s
 ```
 
 If build was partial (max-files reached):
+
 ```
 Built graph: 50000 files (PARTIAL — limit reached), 142301 edges, 87 clusters in 8.4s
   Use --max-files to increase the limit.
@@ -259,22 +288,22 @@ Error control:
 
 Covered in `design/testing.md` via the `edge-cases/` fixture:
 
-| Test case | Errors exercised |
-|-----------|-----------------|
-| `syntax-error.ts` | W001 (parse failed) or W007 (partial parse) |
-| `empty-file.ts` | No error — valid file with 0 imports |
+| Test case                         | Errors exercised                            |
+| --------------------------------- | ------------------------------------------- |
+| `syntax-error.ts`                 | W001 (parse failed) or W007 (partial parse) |
+| `empty-file.ts`                   | No error — valid file with 0 imports        |
 | `circular-a.ts` ↔ `circular-b.ts` | No error — circular imports are valid edges |
-| `deeply-nested/a/b/c/d/e/f.ts` | No error unless depth > 64 |
-| `unicode-path/файл.ts` | No error — UTF-8 filename is valid |
+| `deeply-nested/a/b/c/d/e/f.ts`    | No error unless depth > 64                  |
+| `unicode-path/файл.ts`            | No error — UTF-8 filename is valid          |
 
 **Additional test cases to add:**
 
-| Test case | Errors exercised |
-|-----------|-----------------|
-| `binary-file.png` (with .ts extension) | W004 (binary file detected) |
-| `huge-file.ts` (>1MB) | W003 (file too large) |
-| `no-permission.ts` (chmod 000) | W002 (read failed) — platform-dependent, may skip in CI |
-| `non-utf8.ts` (Latin-1 encoded) | W009 (encoding error) |
-| `partial-error.ts` (valid imports + broken syntax) | W007 (partial parse — imports still extracted) |
+| Test case                                          | Errors exercised                                        |
+| -------------------------------------------------- | ------------------------------------------------------- |
+| `binary-file.png` (with .ts extension)             | W004 (binary file detected)                             |
+| `huge-file.ts` (>1MB)                              | W003 (file too large)                                   |
+| `no-permission.ts` (chmod 000)                     | W002 (read failed) — platform-dependent, may skip in CI |
+| `non-utf8.ts` (Latin-1 encoded)                    | W009 (encoding error)                                   |
+| `partial-error.ts` (valid imports + broken syntax) | W007 (partial parse — imports still extracted)          |
 
 These should be added to the `edge-cases/` fixture in the implementation plan.

@@ -145,6 +145,11 @@ tests/fixtures/
 │   └── scripts/
 │       └── deploy.py
 │
+├── rust-crate/               # Rust project with mod/use imports
+├── csharp-project/           # C# project with using directives
+├── java-project/             # Java project with import statements
+├── workspace-project/        # npm workspace with 3 packages, cross-package imports
+│
 └── edge-cases/               # pathological inputs
     ├── empty-file.ts         # 0 imports, 0 exports
     ├── syntax-error.ts       # unparseable — should be skipped
@@ -161,14 +166,20 @@ tests/fixtures/
 | typescript-app | Full TS pipeline: imports, exports, barrel re-exports, type-only imports, test detection, layer inference, clustering |
 | go-service | Go module resolution, internal/pkg convention, empty exports |
 | python-package | `__init__.py` barrel, relative imports, TYPE_CHECKING, pyproject.toml as config |
+| rust-crate | Rust mod/use resolution, pub exports, crate-internal imports |
+| csharp-project | C# using directives, namespace resolution, public class exports |
+| java-project | Java import statements, package-to-path resolution, public class/enum exports |
 | mixed-project | Multi-language in one graph, correct language selection by extension |
+| workspace-project | npm workspace cross-package imports, path resolution across package boundaries *(Phase 1b)* |
 | edge-cases | Graceful degradation (syntax error), circular imports, empty files, deep nesting, unicode |
 
 **Snapshot format:** Full `graph.json` and `clusters.json` output, snapshot-tested with `insta`. Any change to the graph = explicit review.
 
+**Path normalization tests:** Path normalization, case sensitivity, and directory traversal prevention tests are covered under L2 fixture tests via the `workspace-project/` and `edge-cases/` fixtures *(Phase 1b)*, per `design/path-resolution.md`.
+
 **Important:** Fixture files are committed and NEVER auto-generated. They represent known-good projects with hand-verified expected behavior.
 
-### L3: Graph Invariant Tests
+### L3: Graph Invariant Tests *(Phase 1b)*
 
 **Purpose:** Verify structural properties that must always hold, regardless of input.
 
@@ -224,7 +235,7 @@ INV-10: Content hashes are deterministic
 
 INV-11: Graph build is deterministic
   build(project) at T1 = build(project) at T2 IF project files unchanged
-  (edges may be in different order — compare as sets)
+  (byte-identical output)
 
 INV-12: Type-only imports produce TypeImports edges
   ∀ edge ∈ graph.edges where edge.type = type_imports:
@@ -245,7 +256,7 @@ Generate random valid source files → build graph → verify invariants. This c
 - Generate random directory structures → build → check clustering invariants
 - Generate files with random content → verify hashing determinism (INV-10)
 
-### L4: Performance Tests
+### L4: Performance Tests *(Phase 1b)*
 
 **Purpose:** Detect performance regressions early. Performance is a feature, not an afterthought.
 
@@ -315,7 +326,11 @@ tests/
 │   ├── typescript-app/
 │   ├── go-service/
 │   ├── python-package/
+│   ├── rust-crate/
+│   ├── csharp-project/
+│   ├── java-project/
 │   ├── mixed-project/
+│   ├── workspace-project/
 │   └── edge-cases/
 ├── graph_tests.rs          # L2 fixture graph tests
 ├── invariants.rs           # L3 invariant checker (reusable module)

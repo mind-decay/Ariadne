@@ -15,6 +15,7 @@ During 0.x development, MINOR version bumps may include breaking changes. Graph 
 ### Output Schema Versioning
 
 `graph.json` has a `"version": 1` field. Schema changes:
+
 - **Adding fields** to nodes/edges: compatible (version stays). Consumers must tolerate unknown fields.
 - **Removing/renaming fields**: incompatible → version bump to 2. Old consumers will fail to deserialize.
 - **Adding new edge/node types**: compatible (version stays). Consumers may encounter unknown enum values.
@@ -23,23 +24,24 @@ During 0.x development, MINOR version bumps may include breaking changes. Graph 
 
 ## Installation Methods
 
-### 1. Cargo Install (developers with Rust)
+### 1. Cargo Install _(Phase 1b)_ (developers with Rust)
 
 ```bash
-cargo install ariadne
+cargo install ariadne-graph
 ```
 
 - Builds from source via crates.io
 - Requires Rust toolchain (rustup)
 - Binary installed to `~/.cargo/bin/ariadne`
-- Update: `cargo install ariadne --force`
+- Update: `cargo install ariadne-graph --force`
 
 **Crates.io requirements:**
-- Package name: `ariadne` (check availability — there may be name conflicts on crates.io, see Decision section below)
+
+- Package name: `ariadne-graph` (D-010)
 - Include: src/, Cargo.toml, LICENSE, README.md
 - Exclude: tests/fixtures/ (large), benches/, .github/ (via `Cargo.toml [package] exclude`)
 
-### 2. Prebuilt Binaries (GitHub Releases)
+### 2. Prebuilt Binaries _(Phase 1b)_ (GitHub Releases)
 
 ```bash
 # One-liner install script (recommended)
@@ -65,17 +67,18 @@ curl -Lo ariadne.exe https://github.com/<org>/ariadne/releases/latest/download/a
 
 **Targets (5):**
 
-| Target triple | Binary name | OS |
-|---------------|-------------|-------|
-| `aarch64-apple-darwin` | `ariadne-darwin-arm64` | macOS ARM |
-| `x86_64-apple-darwin` | `ariadne-darwin-x64` | macOS Intel |
-| `x86_64-unknown-linux-gnu` | `ariadne-linux-x64` | Linux x64 |
-| `aarch64-unknown-linux-gnu` | `ariadne-linux-arm64` | Linux ARM64 |
-| `x86_64-pc-windows-msvc` | `ariadne-windows-x64.exe` | Windows x64 |
+| Target triple               | Binary name               | OS          |
+| --------------------------- | ------------------------- | ----------- |
+| `aarch64-apple-darwin`      | `ariadne-darwin-arm64`    | macOS ARM   |
+| `x86_64-apple-darwin`       | `ariadne-darwin-x64`      | macOS Intel |
+| `x86_64-unknown-linux-gnu`  | `ariadne-linux-x64`       | Linux x64   |
+| `aarch64-unknown-linux-gnu` | `ariadne-linux-arm64`     | Linux ARM64 |
+| `x86_64-pc-windows-msvc`    | `ariadne-windows-x64.exe` | Windows x64 |
 
-### 3. Install Script (`install.sh`)
+### 3. Install Script _(Phase 1b)_ (`install.sh`)
 
 A shell script in the repo root that:
+
 1. Detects OS and architecture
 2. Downloads the correct binary from latest GitHub Release
 3. Verifies checksum (SHA-256)
@@ -87,6 +90,7 @@ curl -fsSL https://raw.githubusercontent.com/<org>/ariadne/master/install.sh | s
 ```
 
 **Script behavior:**
+
 - Detects: `uname -s` (Darwin/Linux), `uname -m` (arm64/x86_64)
 - Falls back to manual instructions if detection fails
 - Checks for existing installation and reports version
@@ -97,13 +101,13 @@ curl -fsSL https://raw.githubusercontent.com/<org>/ariadne/master/install.sh | s
 
 Not in Phase 1 scope. Considered for later:
 
-| Manager | Priority | Notes |
-|---------|----------|-------|
-| Homebrew | High | `brew install ariadne` — macOS/Linux, formula in homebrew-core or tap |
-| Nix | Medium | Flake-based package |
-| AUR | Medium | Arch Linux user repository |
-| apt/deb | Low | Requires maintaining a PPA |
-| Chocolatey | Low | Windows package manager |
+| Manager    | Priority | Notes                                                                 |
+| ---------- | -------- | --------------------------------------------------------------------- |
+| Homebrew   | High     | `brew install ariadne` — macOS/Linux, formula in homebrew-core or tap |
+| Nix        | Medium   | Flake-based package                                                   |
+| AUR        | Medium   | Arch Linux user repository                                            |
+| apt/deb    | Low      | Requires maintaining a PPA                                            |
+| Chocolatey | Low      | Windows package manager                                               |
 
 ## Release Process
 
@@ -118,7 +122,7 @@ git push origin v0.1.0
 
 ### CI Pipeline
 
-```
+``` bash
 Tag push v*
   → GitHub Actions release.yml
     → Matrix build (5 targets)
@@ -135,6 +139,7 @@ Tag push v*
 ### Pre-release Checklist
 
 Before tagging:
+
 1. All tests pass (`cargo test`)
 2. Clippy clean (`cargo clippy -- -D warnings`)
 3. Format clean (`cargo fmt --check`)
@@ -146,7 +151,7 @@ Before tagging:
 
 Each release includes SHA-256 checksums:
 
-```
+``` bash
 ariadne-darwin-arm64.sha256
 ariadne-darwin-x64.sha256
 ariadne-linux-x64.sha256
@@ -155,6 +160,7 @@ ariadne-windows-x64.sha256
 ```
 
 Users can verify:
+
 ```bash
 sha256sum -c ariadne-linux-x64.sha256
 ```
@@ -178,12 +184,12 @@ Phase 2 consideration: `ariadne self-update` command that downloads the latest b
 
 ### Update Methods
 
-| Install method | Update command |
-|---------------|----------------|
-| cargo install | `cargo install ariadne --force` |
-| install.sh | Re-run `install.sh` (downloads latest) |
-| Manual download | Re-download from releases page |
-| Homebrew (future) | `brew upgrade ariadne` |
+| Install method    | Update command                         |
+| ----------------- | -------------------------------------- |
+| cargo install     | `cargo install ariadne-graph --force`  |
+| install.sh        | Re-run `install.sh` (downloads latest) |
+| Manual download   | Re-download from releases page         |
+| Homebrew (future) | `brew upgrade ariadne`                 |
 
 ### Output Compatibility on Update
 
@@ -194,36 +200,22 @@ When updating Ariadne, existing `.ariadne/` output may need regeneration:
 3. **Major update (schema version bump):** Old graph.json may not work with new `ariadne query`. Rerun `ariadne build`.
 
 **Detection:** `ariadne build` reads existing graph.json version field. If schema version doesn't match, emits:
-```
+
+``` bash
 warn: existing graph.json has schema version 1, current is 2. Rebuilding.
 ```
 
 ## Files in Repository
 
-| File | Purpose |
-|------|---------|
-| `install.sh` | Install script for prebuilt binaries |
-| `CHANGELOG.md` | User-facing release notes |
-| `LICENSE-MIT` | MIT license text |
-| `LICENSE-APACHE` | Apache 2.0 license text |
-| `.github/workflows/release.yml` | Cross-compilation + release publishing |
-| `.github/workflows/ci.yml` | Test + lint on every push/PR |
+| File                            | Purpose                                             |
+| ------------------------------- | --------------------------------------------------- |
+| `install.sh`                    | Install script for prebuilt binaries                |
+| `CHANGELOG.md`                  | User-facing release notes                           |
+| `LICENSE-MIT`                   | MIT license text                                    |
+| `LICENSE-APACHE`                | Apache 2.0 license text                             |
+| `.github/workflows/release.yml` | Cross-compilation + release publishing _(Phase 1b)_ |
+| `.github/workflows/ci.yml`      | Test + lint on every push/PR _(Phase 1b)_           |
 
 ## Crate Name
 
-**Potential conflict:** The name `ariadne` may already be taken on crates.io (there's a popular error reporting crate called `ariadne`). If so, alternatives:
-- `ariadne-graph`
-- `ariadne-cli`
-- `ariadne-deps`
-
-Check availability before first publish. The binary name can differ from the crate name via `[[bin]]` in Cargo.toml:
-```toml
-[package]
-name = "ariadne-graph"
-
-[[bin]]
-name = "ariadne"
-path = "src/main.rs"
-```
-
-This way `cargo install ariadne-graph` installs a binary called `ariadne`.
+**Decided (D-010):** Crate name is `ariadne-graph`. Binary name is `ariadne`, configured via `[[bin]]` in Cargo.toml. `cargo install ariadne-graph` installs a binary called `ariadne`.
