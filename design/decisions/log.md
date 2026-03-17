@@ -109,3 +109,26 @@ All architectural decisions made during Ariadne development.
 - Apache-2.0 only — incompatible with some GPL projects
 - GPL — too restrictive for a CLI tool meant to be widely adopted
 **Reasoning:** MIT/Apache-2.0 dual license maximizes compatibility. MIT is simple and permissive. Apache-2.0 adds patent protection. Dual licensing lets users pick what works for their project. This is the de-facto standard in the Rust ecosystem.
+
+## D-010: Crate Name `ariadne-graph`
+
+**Date:** 2026-03-17
+**Status:** Accepted
+**Context:** The name `ariadne` is taken on crates.io by a popular error reporting library. Need an alternative crate name that's available while keeping `ariadne` as the CLI binary name.
+**Decision:** Crate name `ariadne-graph` on crates.io. Binary name remains `ariadne` via `[[bin]]` in Cargo.toml. Users install with `cargo install ariadne-graph`, the installed binary is called `ariadne`.
+**Alternatives rejected:**
+- `ariadne-cli` — too generic, doesn't describe the tool
+- `ariadne-deps` — too narrow ("deps" implies only dependencies)
+- Fight for the `ariadne` name — not worth the effort, existing crate is well-established
+**Reasoning:** `ariadne-graph` is descriptive and unambiguous. The `[[bin]]` mechanism is standard Rust practice (used by ripgrep/rg, fd-find/fd, etc.).
+
+## D-011: Phase Split — MVP First, Hardening Second
+
+**Date:** 2026-03-17
+**Status:** Accepted
+**Context:** Phase 1 grew from a simple MVP to a production-hardened tool during design (workspace detection, structured warnings, 7 CLI flags, atomic writes, case sensitivity, install script). Risk of over-engineering before any code exists.
+**Decision:** Split Phase 1 into Phase 1a (MVP) and Phase 1b (Hardening). Phase 1a delivers a working tool: parsers, graph builder, JSON output, basic CLI, basic tests. Phase 1b adds: structured warning system, all CLI flags, workspace detection, path normalization, atomic writes, full test suite, CI/CD. This gets code running faster and validates the design with real usage.
+**Alternatives rejected:**
+- Ship everything at once — high risk of spending weeks on features that need redesign after first real usage
+- Skip hardening entirely — too fragile for real projects
+**Reasoning:** Working software validates design faster than documents. Phase 1a provides the feedback loop. Phase 1b builds on proven foundation.

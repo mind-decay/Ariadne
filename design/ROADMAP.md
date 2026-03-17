@@ -2,40 +2,70 @@
 
 ## Overview
 
-Ariadne is a standalone Rust CLI that builds structural dependency graphs from source code via tree-sitter. Two phases: build the graph engine, then add algorithms and queries.
+Ariadne is a standalone Rust CLI that builds structural dependency graphs from source code via tree-sitter.
+
+**Crate name:** `ariadne-graph` (binary: `ariadne`) — D-010.
 
 ---
 
-## Phase 1: Core CLI — Parse, Build, Output
+## Phase 1a: MVP — Parse and Output
 
-**Goal:** `ariadne build <path>` parses a multi-language project and outputs `graph.json` + `clusters.json`. `ariadne info` reports version and supported languages.
+**Goal:** `ariadne build <path>` works. Parses a multi-language project, outputs `graph.json` + `clusters.json`. Basic error handling (skip broken files, log to stderr). No frills.
 
 **Deliverables:**
-- Rust project structure
-- Tree-sitter integration with grammar crates
-- `LanguageParser` trait definition
-- Tier 1 language parsers:
-  - TypeScript / JavaScript (import, require, export, dynamic import, barrel re-exports)
-  - Go (import)
-  - Python (import, from...import, relative imports)
-  - Rust (use, mod, extern crate)
-  - C# (using, using static)
-  - Java (import, import static)
-- Graph data model: nodes (files + metadata) and edges (imports, tests, re-exports, type-imports)
-- File type detection (source, test, config, style, asset, type-def)
-- Architectural layer inference (api, service, data, util, component, hook, config)
-- Content hashing (xxHash64) for delta detection
-- JSON serialization (graph.json — compact tuple format for edges)
-- Directory-based clustering (Level 1) → clusters.json
-- CLI: `ariadne build <path>` and `ariadne info`
-- Installation via `cargo install` + prebuilt binaries (GitHub Releases CI)
+- Cargo project (`ariadne-graph` crate, `ariadne` binary)
+- Core data model (BTreeMap for determinism — D-006)
+- Tree-sitter integration with partial parse handling
+- 6 Tier 1 language parsers (TS/JS, Go, Python, Rust, C#, Java)
+- File type detection + architectural layer inference
+- xxHash64 content hashing
+- Directory-based clustering
+- Graph builder pipeline (walk → read → parse → resolve → cluster → sort → output)
+- JSON serialization (deterministic, sorted, atomic writes)
+- CLI: `ariadne build <path> [--output <dir>]` and `ariadne info`
+- Basic tests: parser snapshots (insta), fixture graph tests, invariant checks
 
-**Testing:**
-- Unit tests per language parser (known import patterns → expected edges)
-- Integration test: parse a multi-language sample project → verify graph correctness
-- Performance benchmark: 1000+ files under 3 seconds
+**NOT in 1a (deferred to 1b):**
+- Structured warning system (W001-W009 codes, JSON format)
+- CLI flags: --verbose, --warnings, --strict, --timestamp, --max-file-size, --max-files
+- Workspace/monorepo detection
+- Case-insensitive FS handling
+- Per-stage timing output
+- Property-based tests, performance benchmarks
+- CI/CD workflows, install.sh
+- README.md
 
-**Key decisions:** D-001 (architecture), D-002 (language support), D-003 (graceful degradation).
+**Testing:** Parser snapshots (L1), fixture graph snapshots (L2), invariant checks (L3 basic). No benchmarks.
+
+**Success criteria:**
+1. `cargo build --release` compiles
+2. `ariadne info` lists 6 languages
+3. `ariadne build` on each fixture project produces correct graph.json
+4. Output is byte-identical on repeated builds (determinism)
+5. Broken files are skipped with stderr warning (not crash)
+6. All `cargo test` pass
+
+---
+
+## Phase 1b: Hardening
+
+**Goal:** Production-quality error handling, full CLI, workspace support, comprehensive tests, CI/CD.
+
+**Depends on:** Phase 1a.
+
+**Deliverables:**
+- Structured warning system (W001-W009, human + JSON format)
+- All CLI flags (--verbose, --warnings, --strict, --timestamp, --max-file-size, --max-files)
+- npm/yarn/pnpm workspace detection and workspace-aware import resolution (D-008)
+- Path normalization with case-insensitive FS detection (D-007)
+- Per-stage --verbose timing output
+- Property-based tests (proptest)
+- Performance benchmarks (criterion)
+- GitHub Actions CI + release workflows
+- install.sh script
+- README.md
+
+**Testing:** Full L1-L4 suite. Workspace fixture. Path normalization + traversal + case sensitivity tests.
 
 ---
 
@@ -43,49 +73,23 @@ Ariadne is a standalone Rust CLI that builds structural dependency graphs from s
 
 **Goal:** Graph becomes queryable — blast radius, centrality, cycles, clusters, layers, markdown views.
 
-**Depends on:** Phase 1.
+**Depends on:** Phase 1b.
 
 **Deliverables:**
-- Algorithms:
-  - Reverse BFS (blast radius with depth tracking)
-  - Brandes algorithm (betweenness centrality)
-  - Tarjan's SCC (circular dependency detection)
-  - Louvain community detection (Level 2 refinement — enhances Phase 1's directory-based clusters)
-  - Topological sort on DAG (architectural layer assignment, populates `arch_depth`)
-- Delta computation (`ariadne update` — incremental via content hash, 5% threshold for full recompute)
-- Subgraph extraction (BFS in both directions + cluster inclusion)
-- Output files: stats.json, enriched clusters.json (Louvain refinement + cohesion metrics)
-- Markdown view generation:
-  - L0: `views/index.md` — cluster list, critical files, cycles, layer summary
-  - L1: `views/clusters/<name>.md` — per-cluster detail with files, deps, metrics
-  - L2: `views/impact/` — on-demand blast radius / subgraph reports
-- CLI commands:
-  - `ariadne update <path>` (incremental)
-  - `ariadne query blast-radius <file> [--depth N] [--format json|md]`
-  - `ariadne query subgraph <file...> [--depth N] [--format json|md]`
-  - `ariadne query stats [--format json|md]`
-  - `ariadne query cluster <name> [--format json|md]`
-  - `ariadne query file <path> [--format json|md]`
-  - `ariadne query cycles [--format json|md]`
-  - `ariadne query layers [--format json|md]`
-  - `ariadne views generate [--output <dir>]`
-
-**Testing:**
-- Algorithm correctness tests on known graphs (hand-crafted adjacency lists)
-- Delta computation test: modify subset of files → verify only affected edges updated
-- View generation test: verify L0/L1 markdown structure and content accuracy
-- Performance: all algorithms on 3000-node graph under 1 second
+- Algorithms: Reverse BFS, Brandes centrality, Tarjan SCC, Louvain clustering, topological sort
+- Delta computation (`ariadne update` — incremental via content hash)
+- Subgraph extraction
+- Output: stats.json, enriched clusters.json
+- Markdown views (L0/L1/L2)
+- CLI: `ariadne update`, `ariadne query *`, `ariadne views generate`
 
 ---
 
-## Future: Integration with External Tools
+## Future
 
-Ariadne is designed as a standalone tool. Integration with orchestration systems (e.g., Moira) happens on the consumer side — Ariadne provides the data, consumers decide how to use it.
-
-**Integration surface:**
-- `ariadne build` / `ariadne update` — invoked by external tools
-- `graph.json`, `clusters.json`, `stats.json` — consumed by external tools
-- `ariadne query *` — CLI queries invoked by external tools
-- Markdown views — loaded into LLM agent contexts
-
-Ariadne itself has no dependency on any orchestration framework.
+- Tier 2/3 language parsers
+- Config file (.ariadne.toml)
+- Plugin system for external parsers
+- `ariadne self-update`
+- Package manager distribution (brew, nix, AUR)
+- Integration with orchestration frameworks (Moira etc.)

@@ -34,7 +34,7 @@ These affect individual files. The file is excluded from the graph. Build contin
 | `W004: BinaryFile` | File contains null bytes (binary, not source) | Skip file, emit warning |
 | `W005: SymlinkLoop` | Symlink resolves to ancestor directory | Skip path, emit warning |
 | `W006: ImportUnresolved` | Import path can't be resolved to a project file | No edge created, emit warning (only in verbose mode — too noisy otherwise) |
-| `W007: PartialParse` | Tree-sitter parsed with ERROR nodes (>20% of AST) | Extract what we can, emit warning |
+| `W007: PartialParse` | Tree-sitter parsed with ERROR nodes (>50% of top-level nodes → W001; otherwise extract valid subtrees) | Extract what we can, emit warning |
 | `W008: ConfigParseFailed` | Language config file (go.mod, tsconfig.json) can't be parsed | Fall back to heuristic resolution, emit warning |
 | `W009: EncodingError` | File is not valid UTF-8 | Skip file, emit warning |
 
