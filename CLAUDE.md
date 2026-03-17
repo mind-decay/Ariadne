@@ -43,11 +43,13 @@ Named after Ariadne of Greek mythology, who gave Theseus the thread to navigate 
 Every phase follows a strict 3-step process:
 
 ### Step 1: Spec (`design/specs/YYYY-MM-DD-phaseN-<name>.md`)
+- Generate with `/write-spec` → review with `/review-spec`
 - Define goal, deliverables, file list, design sources
 - Get user approval before proceeding
 
 ### Step 2: Implementation Plan (`design/specs/YYYY-MM-DD-phaseN-implementation-plan.md`)
 - Break into chunks with dependencies
+- Review with `/review-plan` before proceeding
 - Plans describe WHAT, not full code
 - Get user approval before proceeding
 
@@ -55,6 +57,26 @@ Every phase follows a strict 3-step process:
 - Follow the plan chunk by chunk
 - `cargo test` after each chunk
 - Final verification against spec success criteria
+
+## Quality Commands
+
+Project-specific commands in `.claude/commands/`. Use them at the appropriate phase.
+
+### Spec & Plan Workflow
+| Command | When to use | What it does |
+|---------|------------|--------------|
+| `/write-spec [phase]` | Starting a new phase | Generates spec from ROADMAP + architecture docs (3 agents: requirements, risk, gaps) |
+| `/review-spec [path]` | After writing/updating a spec | Verifies design source accuracy, completeness, cross-phase impact (3 agents) |
+| `/review-plan [path]` | After writing/updating a plan | Verifies spec coverage, file accuracy, design compliance, dependency order (4 agents) |
+
+### Architecture & Documentation Health
+| Command | When to use | What it does |
+|---------|------------|--------------|
+| `/review-architecture [focus]` | Periodically, or before major phases | Deep architectural critique — design quality, complexity, robustness (4 agents). Dual-mode: pre-impl (docs only) / post-impl (docs + code) |
+| `/audit-docs [mode]` | After design doc changes, or before implementation | Consistency audit across all design docs + code conformance. Modes: `docs`, `code`, or auto-detect (3-4 agents). Can apply fixes after audit |
+
+### Reports
+All commands write reports to `design/reports/{date}-{type}.md`. Previous reports are referenced for context (resolved/unresolved issues).
 
 ## Commit Messages
 
@@ -75,7 +97,8 @@ ariadne/
 │   ├── ROADMAP.md       # Implementation phases
 │   ├── architecture.md  # Full system design
 │   ├── decisions/       # Decision log
-│   └── specs/           # Phase specs and plans
+│   ├── specs/           # Phase specs and plans
+│   └── reports/         # Architecture reviews, audit reports
 ├── src/                 # Rust source
 │   ├── main.rs          # CLI entry point
 │   ├── lib.rs           # Public API
