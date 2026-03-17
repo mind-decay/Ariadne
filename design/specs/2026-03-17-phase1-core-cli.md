@@ -202,7 +202,15 @@ pub struct ClusterMap {
 - Parse file content into `Tree` AST
 - Handle parse errors gracefully (skip unparseable files, log warning, continue)
 
-**Error handling:** A file that fails to parse is logged to stderr and excluded from the graph. This is graceful degradation per D-003 — the graph is still useful with some files missing. The exit code remains 0 (graph built successfully, some files skipped).
+**Error handling:** Per `design/error-handling.md`:
+- Full parse failure (W001) → skip file, emit warning
+- Partial parse with >50% ERROR nodes (W007) → extract from valid subtrees, emit warning
+- Binary file detection (W004) → check for null bytes in first 8KB, skip
+- Non-UTF-8 content (W009) → skip file, emit warning
+- File too large (W003) → skip if >1MB (configurable via `--max-file-size`)
+- Read permission error (W002) → skip, emit warning
+
+Exit code remains 0 for recoverable errors. Exit code 1 only for fatal errors (E001-E005).
 
 ### D4: LanguageParser Trait + Registry (`src/parser/mod.rs`)
 
@@ -492,15 +500,23 @@ pub struct Export {
 **Commands:**
 
 ```
-ariadne build <project-root> [--output <dir>]
+ariadne build <project-root> [options]
     Parse project, build full graph
     Default output: <project-root>/.ariadne/graph/
-    Outputs: graph.json, clusters.json
-    Note: architecture.md's `build` description also lists stats.json,
-    but stats.json requires algorithms (centrality, SCCs, layers) which
-    are future phase scope. Phase 1 `build` produces graph.json + clusters.json only.
-    Prints summary to stdout: "Built graph: {N} files, {E} edges, {C} clusters in {T}ms"
-    Warnings (unparseable files, unresolved imports) → stderr
+    Outputs: graph.json, clusters.json (written atomically via .tmp + rename)
+    Note: stats.json requires algorithms (Phase 2 scope). Phase 1 produces graph.json + clusters.json only.
+
+    Options:
+      --output <dir>              Output directory (default: <project-root>/.ariadne/graph/)
+      --max-file-size <bytes>     Skip files larger than this (default: 1048576 = 1MB)
+      --max-files <count>         Max files to include (default: 50000)
+      --verbose                   Show all warnings including unresolved imports
+      --warnings <format>         Warning format: human (default), json
+      --strict                    Exit code 1 if any warnings occurred
+
+    Summary to stdout: "Built graph: {N} files, {E} edges, {C} clusters in {T}ms"
+    Warnings → stderr (human or JSON format per --warnings flag)
+    See design/error-handling.md for full error taxonomy (E001-E005, W001-W009)
 
 ariadne info
     Print version, supported languages with extensions
