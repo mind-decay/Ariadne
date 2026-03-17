@@ -318,59 +318,69 @@ Chunk 11: GitHub Releases CI (depends on Chunk 9)
 
 ## Chunk 10: Tests
 
-**Goal:** Parser unit tests, integration test, performance benchmark.
+**Goal:** 4-level test suite per `design/testing.md`: parser snapshots, fixture graphs, invariants, benchmarks.
 
-### Task 10.1: Create test fixtures
-- **Files:** `tests/fixtures/typescript/`, `go/`, `python/`, `rust_project/`, `csharp/`, `java/`, `mixed/`
-- **Source:** Spec D19
+### Task 10.1: Create fixture projects
+- **Files:** `tests/fixtures/typescript-app/`, `go-service/`, `python-package/`, `mixed-project/`, `edge-cases/`
+- **Source:** Spec D19b, `design/testing.md` L2 section
 - **Key points:**
-  - Each language directory: 2-4 small files with known import relationships
-  - TypeScript fixtures: files with all 7 import patterns, barrel index.ts, type-only imports
-  - Go fixtures: files with single/grouped imports, internal package reference
-  - Python fixtures: files with import/from-import, relative import, TYPE_CHECKING block
-  - Rust fixtures: files with use crate/super, mod declaration, pub use re-export
-  - C# fixtures: files with using/using static, namespace-based structure
-  - Java fixtures: files with import/static import, package structure
-  - Mixed: one file per language importing from each other where possible (cross-language project)
-- **Commit:** `ariadne(test): add test fixtures for all Tier 1 languages`
+  - `typescript-app/`: ~10 files — barrel index.ts, api/services/utils layers, type-only imports, test file, config files (package.json, tsconfig.json)
+  - `go-service/`: ~8 files — go.mod, main.go, internal/handler, internal/service, pkg/utils
+  - `python-package/`: ~8 files — pyproject.toml, __init__.py barrel, services subpackage, relative imports, TYPE_CHECKING, test file
+  - `mixed-project/`: ~6 files — Go backend, TS frontend, Python scripts
+  - `edge-cases/`: empty file, syntax error file, circular imports (A↔B), deeply nested path, unicode filename
+- **Commit:** `ariadne(test): add fixture projects for all test levels`
 
-### Task 10.2: Implement parser unit tests
-- **File:** `tests/parser_tests.rs`
-- **Source:** Spec D19a
+### Task 10.2: Create test helpers and invariant checker
+- **Files:** `tests/helpers.rs`, `tests/invariants.rs`
+- **Source:** `design/testing.md` L3 section
 - **Key points:**
-  - Per-language test functions using inline source strings
-  - Each test: create source, init tree-sitter parser, parse, call extract_imports/extract_exports, assert
-  - TypeScript: 7 import patterns + 5 export patterns + re-exports
-  - Go: 5 import patterns
-  - Python: 6 import patterns + TYPE_CHECKING + __all__ export
-  - Rust: 5 import patterns + pub exports + pub use
-  - C#: 4 import patterns + public exports
-  - Java: 4 import patterns + public exports
-- **Commit:** `ariadne(test): add parser unit tests for all Tier 1 languages`
+  - `helpers.rs`: `generate_synthetic_project(file_count, dir_count, imports_per_file, language) -> TempDir`
+  - `invariants.rs`: `check_all_invariants(graph: &ProjectGraph, clusters: &ClusterMap) -> Result<()>`
+  - 13 invariant checks (INV-1 through INV-13): edge referential integrity, no self-import, test→source edges, cluster completeness, cohesion correctness, deterministic build, etc.
+  - Reusable — called from L2 fixture tests and L3 property tests
+- **Commit:** `ariadne(test): add test helpers and graph invariant checker`
 
-### Task 10.3: Implement integration test
-- **File:** `tests/integration_test.rs`
-- **Source:** Spec D19b
+### Task 10.3: Implement L1 parser snapshot tests
+- **Files:** `tests/parsers/mod.rs`, `tests/parsers/test_typescript.rs`, `test_go.rs`, `test_python.rs`, `test_rust.rs`, `test_csharp.rs`, `test_java.rs`
+- **Source:** Spec D19a, `design/testing.md` L1 section
 - **Key points:**
-  - Build graph on `tests/fixtures/mixed/`
-  - Assert: correct number of files discovered
-  - Assert: specific expected edges exist between fixture files
-  - Assert: file types correct (test files detected, config files detected)
-  - Assert: layers assigned reasonably
-  - Assert: clusters match directory structure
-  - Assert: graph.json and clusters.json written and valid JSON
-  - Deserialize output files and verify schema
-- **Commit:** `ariadne(test): add integration test for mixed-language project`
+  - `mod.rs`: shared parser test utilities (init parser, parse source, call extract)
+  - Per-language files: one `#[test]` per import/export pattern, each using `insta::assert_yaml_snapshot!()`
+  - TypeScript: 12 tests (7 import + 5 export), Go: 5, Python: 9, Rust: 8, C#: 5, Java: 5 = ~44 snapshot tests
+  - Path resolution tests: ~20 additional snapshot tests (relative, index, external skip, std skip)
+  - Run `cargo insta test` to generate initial snapshots, review with `cargo insta review`
+- **Commit:** `ariadne(test): add L1 parser snapshot tests for all Tier 1 languages`
 
-### Task 10.4: Implement performance benchmark
-- **File:** `tests/bench_test.rs`
-- **Source:** Spec D19c
+### Task 10.4: Implement L2 fixture graph tests
+- **File:** `tests/graph_tests.rs`
+- **Source:** Spec D19b, `design/testing.md` L2 section
 - **Key points:**
-  - `#[test] #[ignore]` attribute — run with `cargo test -- --ignored`
-  - Generate synthetic project: 1000+ TypeScript files in temp directory with simple import chains
-  - Build graph, measure elapsed time, assert under 3 seconds
-  - Cleanup temp directory
-- **Commit:** `ariadne(test): add performance benchmark test`
+  - One test per fixture project: build graph → snapshot graph.json + clusters.json via insta
+  - After each build, call `check_all_invariants()` from invariants.rs
+  - Edge-cases fixture: verify syntax error file skipped (warning), circular imports present, empty file has node but no edges
+  - Mixed-project: verify files from all languages appear in one graph
+- **Commit:** `ariadne(test): add L2 fixture graph snapshot tests`
+
+### Task 10.5: Implement L3 property-based tests
+- **File:** `tests/graph_tests.rs` (additional tests in same file)
+- **Source:** `design/testing.md` L3 section
+- **Key points:**
+  - `proptest!` macro: generate random valid TS files with random imports → build graph → check_all_invariants()
+  - Determinism test: build same project twice → assert graphs equal (as sets)
+  - Hash determinism: hash same file twice → assert equal
+- **Commit:** `ariadne(test): add L3 property-based invariant tests`
+
+### Task 10.6: Implement L4 performance benchmarks
+- **Files:** `benches/build_bench.rs`, `benches/parser_bench.rs`, `benches/helpers.rs`
+- **Source:** Spec D19d, `design/testing.md` L4 section
+- **Key points:**
+  - `benches/helpers.rs`: reuse `generate_synthetic_project()` from test helpers
+  - `build_bench.rs`: bench_build_small (100 files), bench_build_medium (1000 files), bench_build_large (3000 files)
+  - `parser_bench.rs`: per-parser benchmarks (single file with many imports)
+  - All using `criterion` with statistical analysis
+  - Add `[[bench]]` entries to Cargo.toml
+- **Commit:** `ariadne(test): add L4 criterion performance benchmarks`
 
 ---
 

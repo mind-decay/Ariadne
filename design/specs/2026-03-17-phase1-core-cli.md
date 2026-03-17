@@ -111,6 +111,12 @@ Implement `ariadne`, a standalone Rust CLI binary that parses a project's source
 - `rayon` — data parallelism for parallel file parsing
 - `anyhow` — error handling for CLI (idiomatic for Rust CLI tools)
 
+**Dev dependencies:**
+- `insta` (with `yaml` feature) — snapshot testing for parser output and fixture graphs
+- `proptest` — property-based testing for graph invariants
+- `criterion` (with `html_reports` feature) — statistical benchmarks
+- `tempfile` — temp directories for generated synthetic projects
+
 ### D2: Core Data Model (`src/graph/model.rs`)
 
 **What:** Rust types for the graph data model per `architecture.md`.
@@ -537,39 +543,51 @@ ariadne info
 
 ### D19: Tests
 
-**What:** Comprehensive test suite per roadmap requirements.
+**What:** Comprehensive 4-level test suite per `design/testing.md`.
 
-#### D19a: Parser Unit Tests (`tests/parser_tests.rs`)
+#### D19a: L1 — Parser Snapshot Tests (`tests/parsers/`)
 
-Per-language tests covering all documented import/export patterns. Each test:
-1. Create a source string with specific import pattern
-2. Parse with tree-sitter
-3. Call `extract_imports` / `extract_exports`
-4. Assert correct `Import` / `Export` structs returned
+Snapshot testing via `insta` crate. Per-language test files, one test per import/export pattern. Each test provides source code → calls extract_imports/extract_exports → snapshots result.
 
-**Coverage per language:**
-- TypeScript/JavaScript: all 7 import patterns, all 5 export patterns, re-exports
-- Go: single import, grouped import, aliased, dot import, blank import
-- Python: import, from-import, relative import, TYPE_CHECKING guard
-- Rust: crate use, super use, mod declaration, pub use re-export
-- C#: using, using static, global using
-- Java: class import, wildcard import, static import
+**~50 parser snapshot tests + ~20 path resolution tests** covering the full coverage matrix from `testing.md`.
 
-#### D19b: Integration Test (`tests/integration_test.rs`)
+**Per-language test files:**
+- `tests/parsers/test_typescript.rs` — 12 patterns (7 import + 5 export)
+- `tests/parsers/test_go.rs` — 5 import patterns
+- `tests/parsers/test_python.rs` — 9 patterns (7 import + TYPE_CHECKING + __all__)
+- `tests/parsers/test_rust.rs` — 8 patterns (5 import + 3 export)
+- `tests/parsers/test_csharp.rs` — 5 patterns (4 import + 1 export)
+- `tests/parsers/test_java.rs` — 5 patterns (4 import + 1 export)
 
-Parse the `tests/fixtures/mixed/` multi-language project. Verify:
-- All files discovered and parsed
-- Expected edges exist (known imports between fixture files)
-- Correct file types assigned
-- Correct layers assigned
-- Clusters match directory structure
-- graph.json and clusters.json are valid JSON with expected schema
+Snapshots committed in `tests/snapshots/`. CI runs `cargo insta test --check` — fails if snapshots are out of date.
 
-#### D19c: Performance Benchmark (`tests/bench_test.rs`)
+#### D19b: L2 — Fixture Graph Tests (`tests/graph_tests.rs`)
 
-Generate a synthetic project with 1000+ files (programmatically created temp directory with simple import chains). Build graph. Assert completion under 3 seconds.
+Build graph on fixture projects, snapshot entire graph.json + clusters.json output.
 
-**Note:** Use `#[ignore]` attribute — run with `cargo test -- --ignored` to avoid slowing CI. Also usable as a proper benchmark with `criterion` crate in the future.
+**Fixture projects:**
+- `tests/fixtures/typescript-app/` (~10 files, full TS pipeline)
+- `tests/fixtures/go-service/` (~8 files, Go module structure)
+- `tests/fixtures/python-package/` (~8 files, package with __init__.py)
+- `tests/fixtures/mixed-project/` (~6 files, multi-language)
+- `tests/fixtures/edge-cases/` (empty file, syntax error, circular imports, deep nesting, unicode path)
+
+#### D19c: L3 — Graph Invariant Tests (`tests/invariants.rs`)
+
+13 structural invariants verified on every fixture graph build (INV-1 through INV-13 from `testing.md`). Key invariants: edge referential integrity, no self-import, test edges connect test→source, cluster completeness, cohesion correctness, deterministic build.
+
+Property-based tests via `proptest`: generate random valid source → build graph → verify all invariants hold.
+
+#### D19d: L4 — Performance Benchmarks (`benches/`)
+
+`criterion`-based statistical benchmarks:
+- `bench_build_small` (100 files, <200ms)
+- `bench_build_medium` (1000 files, <3s)
+- `bench_build_large` (3000 files, <10s)
+- Per-parser benchmarks
+- Hash, clustering, serialization benchmarks
+
+Synthetic project generation via reusable `generate_synthetic_project()` function. CI tracks regression (>20% = alert).
 
 ## Dependencies on Previous Phases
 
@@ -598,10 +616,21 @@ None — Phase 1 is the first phase.
 | `src/detect/mod.rs` | Source | File type + layer detection |
 | `src/detect/patterns.rs` | Source | Detection patterns |
 | `src/hash.rs` | Source | xxHash64 content hashing |
-| `tests/fixtures/...` | Test fixtures | Multi-language sample files |
-| `tests/parser_tests.rs` | Test | Per-language parser tests |
-| `tests/integration_test.rs` | Test | Full build integration test |
-| `tests/bench_test.rs` | Test | Performance benchmark |
+| `tests/fixtures/...` | Test fixtures | Fixture projects (typescript-app, go-service, python-package, mixed-project, edge-cases) |
+| `tests/parsers/mod.rs` | Test | Shared parser test utilities |
+| `tests/parsers/test_typescript.rs` | Test | L1 TS/JS parser snapshots |
+| `tests/parsers/test_go.rs` | Test | L1 Go parser snapshots |
+| `tests/parsers/test_python.rs` | Test | L1 Python parser snapshots |
+| `tests/parsers/test_rust.rs` | Test | L1 Rust parser snapshots |
+| `tests/parsers/test_csharp.rs` | Test | L1 C# parser snapshots |
+| `tests/parsers/test_java.rs` | Test | L1 Java parser snapshots |
+| `tests/graph_tests.rs` | Test | L2 fixture graph snapshot tests |
+| `tests/invariants.rs` | Test | L3 graph invariant checker |
+| `tests/helpers.rs` | Test | Shared test utilities (synthetic project gen) |
+| `tests/snapshots/*.snap` | Test | Committed snapshot files |
+| `benches/build_bench.rs` | Bench | L4 build performance benchmarks |
+| `benches/parser_bench.rs` | Bench | L4 parser performance benchmarks |
+| `benches/helpers.rs` | Bench | Benchmark utilities |
 | `.github/workflows/release.yml` | CI | Cross-compilation + release |
 | `.github/workflows/ci.yml` | CI | Test, clippy, fmt on push/PR |
 
