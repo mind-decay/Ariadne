@@ -184,7 +184,7 @@ If no workspace indicators found, Ariadne behaves as today — single project ro
 
 ### Scope: Phase 1 vs Later
 
-**Phase 1:** Basic workspace detection for TypeScript/JavaScript (most common case — `package.json` workspaces). Store detected workspace info but don't fail if parsing workspace config fails (W008 fallback).
+**Phase 1b:** Basic workspace detection for TypeScript/JavaScript (most common case — `package.json` workspaces). Store detected workspace info but don't fail if parsing workspace config fails (W008 fallback). Not in Phase 1a scope — Phase 1a uses simple single-project resolution only.
 
 **Later:** Full Go workspace, Cargo workspace, Nx/Turbo support. These can be added incrementally per language — the `WorkspaceInfo` abstraction supports it.
 

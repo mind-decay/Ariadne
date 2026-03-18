@@ -12,7 +12,7 @@
 
 ### L1: Parser Snapshot Tests
 
-**Purpose:** Verify that each language parser extracts the correct `Import` and `Export` structs from known source patterns.
+**Purpose:** Verify that each language parser extracts the correct `RawImport` and `RawExport` structs from known source patterns.
 
 **Technique:** Snapshot testing via `insta` crate. Each test:
 1. Provides a source code string with a specific import/export pattern
@@ -84,11 +84,35 @@ cargo insta review
 
 **Dependency:** `insta` crate (with `yaml` feature for readable snapshots).
 
+### Pipeline Unit Tests (via D-019 Trait Injection)
+
+**Purpose:** Verify pipeline stage logic in isolation, without filesystem access.
+
+**Technique:** Mock implementations of `FileWalker`, `FileReader`, `GraphSerializer` traits:
+
+```rust
+// MockWalker returns predefined file list — no FS needed
+struct MockWalker { files: Vec<FileEntry> }
+impl FileWalker for MockWalker { ... }
+
+// MockReader returns predefined file contents — no FS needed
+struct MockReader { contents: HashMap<PathBuf, Vec<u8>> }
+impl FileReader for MockReader { ... }
+```
+
+**What these test:**
+- Pipeline orchestration logic (stage sequencing, error propagation)
+- DiagnosticCollector warning aggregation and sorting
+- Resolution logic with controlled file sets
+- Clustering logic with known graph topologies
+
+These complement L2 fixture tests. Fixtures test end-to-end correctness; pipeline unit tests test stage logic in isolation with controlled inputs.
+
 ### L2: Fixture Graph Tests
 
 **Purpose:** Verify that the full pipeline (parse → resolve → edge creation → clustering) produces the correct graph for known projects.
 
-**Technique:** Build graph on fixture projects, snapshot the entire output (graph.json, clusters.json).
+**Technique:** Build graph on fixture projects using real `FsWalker`/`FsReader`/`JsonSerializer`, snapshot the entire output (graph.json, clusters.json).
 
 **Fixtures:**
 
@@ -179,11 +203,15 @@ tests/fixtures/
 
 **Important:** Fixture files are committed and NEVER auto-generated. They represent known-good projects with hand-verified expected behavior.
 
-### L3: Graph Invariant Tests *(Phase 1b)*
+### L3: Graph Invariant Tests
 
 **Purpose:** Verify structural properties that must always hold, regardless of input.
 
-**Technique:** Property-based testing via `proptest` crate + deterministic invariant checks on fixture graphs.
+**Phase 1a (basic):** Deterministic invariant checks on fixture graphs — INV-1 (edge referential integrity), INV-2 (no self-imports), INV-8 (counts match), INV-9 (no duplicates), INV-11 (byte-identical determinism).
+
+**Phase 1b (full):** All 13 invariants + property-based testing via `proptest` crate.
+
+**Technique:** Deterministic checks in Phase 1a, `proptest` added in Phase 1b.
 
 **Invariants (must always hold):**
 

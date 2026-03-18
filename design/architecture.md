@@ -72,12 +72,14 @@ Parsers are registered in a `ParserRegistry` — adding a new language = impleme
 | Java                    | `import`, `import static`                                            | Low        |
 
 **TypeScript/JavaScript resolution (Phase 1a):**
+
 - Bare specifier (`react`, `lodash`) → skip (external package)
 - Relative path (`./foo`, `../bar`) → join with source dir, probe extensions [`.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs`], try index files [`index.ts`, `index.tsx`, `index.js`, `index.jsx`] for directory imports
 - Scoped package (`@scope/name`) → skip (external) unless workspace-matched (Phase 1b)
 - **Not in Phase 1a:** tsconfig `paths`/`baseUrl` (Phase 1b), package.json `exports` field (Phase 1b), CJS vs ESM distinction (treat uniformly)
 
 **Phase 1a resolution limitations:**
+
 - **Go:** Stdlib-only resolution. Module-qualified imports require `go.mod` reading (Phase 1b).
 - **C#:** Namespace-to-path heuristic. C# namespaces don't map to filesystem paths; low accuracy.
 - **Java:** Package-to-path heuristic with hardcoded `src/main/java/` prefix.
@@ -107,7 +109,7 @@ Used by the pipeline and algorithms. Optimized for programmatic use with newtype
 
 **Nodes** — files with metadata (keyed by `CanonicalPath` in `BTreeMap`):
 
-``` rust
+```rust
 Node {
     file_type: FileType,       // source | test | config | style | asset | type_def
     layer: ArchLayer,          // api | service | data | util | component | hook | config | unknown
@@ -121,7 +123,7 @@ Node {
 
 **Edges** — directed, typed connections:
 
-``` rust
+```rust
 Edge {
     from: CanonicalPath,       // source file path
     to: CanonicalPath,         // target file path
@@ -230,40 +232,40 @@ BuildOutput {
 
 Detection uses **per-language pattern tables**, not a single generic list. Filename-specific rules take precedence over extension rules.
 
-| Priority | Rule | Example | FileType |
-|----------|------|---------|----------|
-| 1 | Known config filenames | `tsconfig.json`, `package.json`, `go.mod`, `Cargo.toml`, `pom.xml`, `build.gradle` | `config` |
-| 2 | Test file patterns (per-language) | See table below | `test` |
-| 3 | Type definition extensions | `.d.ts`, `.d.mts`, `.pyi` | `type_def` |
-| 4 | Style extensions | `.css`, `.scss`, `.sass`, `.less`, `.styled.*` | `style` |
-| 5 | Asset extensions | `.png`, `.jpg`, `.svg`, `.woff`, `.json` (if not caught by rule 1) | `asset` |
-| 6 | Default | Everything else with a recognized parser extension | `source` |
+| Priority | Rule                              | Example                                                                            | FileType   |
+| -------- | --------------------------------- | ---------------------------------------------------------------------------------- | ---------- |
+| 1        | Known config filenames            | `tsconfig.json`, `package.json`, `go.mod`, `Cargo.toml`, `pom.xml`, `build.gradle` | `config`   |
+| 2        | Test file patterns (per-language) | See table below                                                                    | `test`     |
+| 3        | Type definition extensions        | `.d.ts`, `.d.mts`, `.pyi`                                                          | `type_def` |
+| 4        | Style extensions                  | `.css`, `.scss`, `.sass`, `.less`, `.styled.*`                                     | `style`    |
+| 5        | Asset extensions                  | `.png`, `.jpg`, `.svg`, `.woff`, `.json` (if not caught by rule 1)                 | `asset`    |
+| 6        | Default                           | Everything else with a recognized parser extension                                 | `source`   |
 
 **Per-language test patterns:**
 
-| Language | Test patterns |
-|----------|--------------|
+| Language      | Test patterns                                                                                 |
+| ------------- | --------------------------------------------------------------------------------------------- |
 | TypeScript/JS | `*.test.ts`, `*.spec.ts`, `*.test.js`, `*.spec.js`, `__tests__/*`, `*.test.tsx`, `*.spec.tsx` |
-| Go | `*_test.go` (language rule, not convention) |
-| Python | `test_*.py`, `*_test.py`, `conftest.py`, `tests/*.py` |
-| Rust | `tests/*.rs` (integration tests); unit tests are inline (not separate FileType) |
-| C# | `*Tests.cs`, `*Test.cs`, `*.Tests/*.cs` |
-| Java | `*Test.java`, `*Tests.java`, `*IT.java`, `src/test/**` |
+| Go            | `*_test.go` (language rule, not convention)                                                   |
+| Python        | `test_*.py`, `*_test.py`, `conftest.py`, `tests/*.py`                                         |
+| Rust          | `tests/*.rs` (integration tests); unit tests are inline (not separate FileType)               |
+| C#            | `*Tests.cs`, `*Test.cs`, `*.Tests/*.cs`                                                       |
+| Java          | `*Test.java`, `*Tests.java`, `*IT.java`, `src/test/**`                                        |
 
 ### Architectural Layer Heuristics (`detect/layer.rs`)
 
 Layer inference uses directory name pattern matching. First matching pattern wins. Both frontend and backend conventions are covered.
 
-| Layer | Directory patterns (case-insensitive match) |
-|-------|---------------------------------------------|
-| `api` | `api/`, `routes/`, `endpoints/`, `controllers/`, `handlers/`, `rest/`, `graphql/` |
-| `service` | `services/`, `service/`, `domain/`, `business/`, `usecases/`, `use-cases/`, `interactors/`, `middleware/` |
-| `data` | `data/`, `db/`, `database/`, `repository/`, `repositories/`, `models/`, `dao/`, `store/`, `stores/`, `schema/`, `migration/`, `migrations/` |
-| `util` | `utils/`, `util/`, `helpers/`, `lib/`, `shared/`, `common/`, `pkg/` |
-| `component` | `components/`, `component/`, `ui/`, `views/`, `pages/`, `layouts/`, `widgets/` |
-| `hook` | `hooks/`, `composables/` |
-| `config` | `config/`, `configuration/`, `settings/`, `env/` |
-| `unknown` | No matching pattern (default) |
+| Layer       | Directory patterns (case-insensitive match)                                                                                                 |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `api`       | `api/`, `routes/`, `endpoints/`, `controllers/`, `handlers/`, `rest/`, `graphql/`                                                           |
+| `service`   | `services/`, `service/`, `domain/`, `business/`, `usecases/`, `use-cases/`, `interactors/`, `middleware/`                                   |
+| `data`      | `data/`, `db/`, `database/`, `repository/`, `repositories/`, `models/`, `dao/`, `store/`, `stores/`, `schema/`, `migration/`, `migrations/` |
+| `util`      | `utils/`, `util/`, `helpers/`, `lib/`, `shared/`, `common/`, `pkg/`                                                                         |
+| `component` | `components/`, `component/`, `ui/`, `views/`, `pages/`, `layouts/`, `widgets/`                                                              |
+| `hook`      | `hooks/`, `composables/`                                                                                                                    |
+| `config`    | `config/`, `configuration/`, `settings/`, `env/`                                                                                            |
+| `unknown`   | No matching pattern (default)                                                                                                               |
 
 **Note:** `component` and `hook` are frontend-specific. Backend-only projects (Go, Java, C#) will typically produce `api`, `service`, `data`, `util`, and `unknown` layers. `unknown` is expected to be common for backend projects and is acceptable — the layer heuristic provides best-effort classification, not exhaustive coverage.
 
@@ -279,11 +281,13 @@ Layer inference uses directory name pattern matching. First matching pattern win
 **`re_exports` edges** — inferred from `RawExport.is_re_export`:
 
 A `re_exports` edge is created when:
+
 1. The parser sets `RawExport.is_re_export = true` on an export (e.g., `export { foo } from './foo'` in TypeScript)
 2. The `source` field of `RawExport` resolves to a known file
 3. Edge created: `from` = re-exporting file, `to` = source file, `edge_type = re_exports`
 
 Example graph shape for barrel re-export:
+
 ```
 src/index.ts  --[re_exports]--> src/auth/login.ts     (export { login } from './auth/login')
 src/index.ts  --[re_exports]--> src/auth/logout.ts    (export { logout } from './auth/logout')
@@ -413,17 +417,17 @@ src/
 
 **Dependency rules:**
 
-| Module | Depends on | Never depends on |
-|--------|-----------|-----------------|
-| `model/` | nothing (leaf) | everything else |
-| `parser/` | `model/` | `pipeline/`, `serial/`, `detect/`, `cluster/` |
-| `pipeline/` | traits from `parser/`, `serial/`; types from `model/`, `detect/`; `diagnostic.rs` | concrete parser/serializer implementations |
-| `detect/` | `model/` | `parser/`, `pipeline/`, `serial/` |
-| `cluster/` | `model/` | `parser/`, `pipeline/`, `serial/` |
-| `serial/` | `model/`, `diagnostic.rs` (for `FatalError`) | `parser/`, `pipeline/`, `detect/`, `cluster/` |
-| `diagnostic.rs` | `model/` (for `CanonicalPath` in warnings) | everything else |
-| `hash.rs` | `model/` (returns `ContentHash`) | everything else |
-| `main.rs` | everything (Composition Root) | — |
+| Module          | Depends on                                                                        | Never depends on                              |
+| --------------- | --------------------------------------------------------------------------------- | --------------------------------------------- |
+| `model/`        | nothing (leaf)                                                                    | everything else                               |
+| `parser/`       | `model/`                                                                          | `pipeline/`, `serial/`, `detect/`, `cluster/` |
+| `pipeline/`     | traits from `parser/`, `serial/`; types from `model/`, `detect/`; `diagnostic.rs` | concrete parser/serializer implementations    |
+| `detect/`       | `model/`                                                                          | `parser/`, `pipeline/`, `serial/`             |
+| `cluster/`      | `model/`                                                                          | `parser/`, `pipeline/`, `serial/`             |
+| `serial/`       | `model/`, `diagnostic.rs` (for `FatalError`)                                      | `parser/`, `pipeline/`, `detect/`, `cluster/` |
+| `diagnostic.rs` | `model/` (for `CanonicalPath` in warnings)                                        | everything else                               |
+| `hash.rs`       | `model/` (returns `ContentHash`)                                                  | everything else                               |
+| `main.rs`       | everything (Composition Root)                                                     | —                                             |
 
 Concrete parser implementations (e.g., `TypeScriptParser`) are **not** `pub` — accessed only through `ParserRegistry`.
 
@@ -457,6 +461,7 @@ Cluster {
 ### Language-Specific Resolution Notes
 
 **Rust module paths:** Rust `use` statements reference module paths (`crate::auth::login`), not filesystem paths. The Rust `ImportResolver` handles this by:
+
 1. `extract_imports` converts `use crate::auth::login` to `RawImport { path: "src/auth/login", ... }` — the parser pre-maps module paths to filesystem paths using Rust's module conventions (`crate::` → `src/`, `mod.rs` / `<name>.rs` lookup)
 2. The resolver then uses standard `FileSet` existence checks on the pre-mapped path
 3. `mod` declarations are treated as imports: `mod auth;` → `RawImport { path: "src/auth/mod" or "src/auth", ... }` with extension probing
@@ -473,7 +478,7 @@ This keeps the `ImportResolver` trait interface uniform — all resolvers work w
 
 Output goes under `.ariadne/` in the project root. The graph output directory is `.ariadne/graph/` (configurable via `--output`). The `.ariadne/` parent directory may contain other subdirectories in future phases.
 
-``` rust
+```rust
 .ariadne/
 ├── graph/
 │   ├── graph.json      # full graph — source of truth
@@ -565,7 +570,7 @@ Edges use compact tuple format — 60%+ space savings vs objects. `--timestamp` 
 
 Answers: "If I change file X, what else might break?"
 
-``` rust
+```rust
 blast_radius(X, max_depth=inf) -> {file: distance}:
     visited = {}
     queue = [(X, 0)]
@@ -591,7 +596,7 @@ blast_radius(X, max_depth=inf) -> {file: distance}:
 
 Identifies bottleneck files (files that many dependency paths pass through).
 
-``` rust
+```rust
 BC(v) = sum_{s!=v!=t} (sigma_st(v) / sigma_st)
 ```
 
@@ -620,7 +625,7 @@ SCCs are reported in stats.json and surfaced in views.
 
 **Level 2: Louvain community detection (refinement).**
 
-``` rust
+```rust
 Modularity Q = (1/2m) sum_{ij} [A_ij - k_i*k_j / 2m] * delta(c_i, c_j)
 ```
 
@@ -632,7 +637,7 @@ Louvain maximizes Q greedily in O(n\*log n). Detects real module boundaries that
 
 On DAG (after contracting SCCs into supernodes), topological sort produces dependency layers:
 
-``` rust
+```rust
 Layer 0: files with no outgoing dependencies (utils, constants, types)
 Layer 1: files depending only on Layer 0
 Layer 2: files depending on Layer 0-1
@@ -645,7 +650,7 @@ Automatic architecture discovery. Layer information can be used to order impleme
 
 Full rebuild on every refresh is wasteful at scale. Delta approach:
 
-``` rust
+```rust
 update(old_graph, current_fs):
     // Phase 1: detect changes via content hash
     changed = {f : hash(f) != old_graph.nodes[f].hash}
@@ -677,7 +682,7 @@ update(old_graph, current_fs):
 
 Extract relevant neighborhood around specified files:
 
-``` rust
+```rust
 extract_subgraph(files, depth=2):
     result_nodes = {}
     for f in files:
@@ -770,7 +775,7 @@ Generated on-demand via `ariadne query subgraph` or `ariadne query blast-radius`
 
 ## CLI Interface
 
-``` rust
+```rust
 ariadne build <project-root> [--output <dir>]              (Phase 1a)
     Parse project, build full graph -> graph.json, clusters.json
 

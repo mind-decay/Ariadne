@@ -13,6 +13,7 @@ Ariadne is a standalone Rust CLI that builds structural dependency graphs from s
 **Goal:** `ariadne build <path>` works. Parses a multi-language project, outputs `graph.json` + `clusters.json`. Basic error handling (skip broken files, log to stderr). No frills.
 
 **Deliverables:**
+
 - Cargo project (`ariadne-graph` crate, `ariadne` binary)
 - Core data model (BTreeMap for determinism — D-006)
 - Tree-sitter integration with partial parse handling
@@ -26,6 +27,7 @@ Ariadne is a standalone Rust CLI that builds structural dependency graphs from s
 - Basic tests: parser snapshots (insta), fixture graph tests, invariant checks
 
 **NOT in 1a (deferred to 1b):**
+
 - Structured warning system (W001-W009 codes, JSON format)
 - CLI flags: --verbose, --warnings, --strict, --timestamp, --max-file-size, --max-files
 - Workspace/monorepo detection
@@ -38,6 +40,7 @@ Ariadne is a standalone Rust CLI that builds structural dependency graphs from s
 **Testing:** Parser snapshots (L1), fixture graph snapshots (L2), invariant checks (L3 basic). No benchmarks.
 
 **Success criteria:**
+
 1. `cargo build --release` compiles
 2. `ariadne info` lists 6 languages
 3. `ariadne build` on each fixture project produces correct graph.json
@@ -54,6 +57,7 @@ Ariadne is a standalone Rust CLI that builds structural dependency graphs from s
 **Depends on:** Phase 1a.
 
 **Deliverables:**
+
 - Structured warning system (W001-W009, human + JSON format)
 - All CLI flags (--verbose, --warnings, --strict, --timestamp, --max-file-size, --max-files)
 - npm/yarn/pnpm workspace detection and workspace-aware import resolution (D-008)
@@ -76,6 +80,7 @@ Ariadne is a standalone Rust CLI that builds structural dependency graphs from s
 **Depends on:** Phase 1b.
 
 **Deliverables:**
+
 - Algorithms: Reverse BFS, Brandes centrality, Tarjan SCC, Louvain clustering, topological sort
 - Delta computation (`ariadne update` — incremental via content hash)
 - Subgraph extraction

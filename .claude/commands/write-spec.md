@@ -15,6 +15,7 @@ If no argument provided, determine the next unimplemented phase from `design/ROA
 ### Phase 1: Load Context
 
 Read these files yourself before dispatching agents:
+
 1. `design/ROADMAP.md` — phases and deliverables
 2. `design/architecture.md` — full system design
 3. `design/decisions/log.md` — all architectural decisions
@@ -35,6 +36,7 @@ Identify the target phase and extract its section from ROADMAP.md.
 You are extracting detailed requirements for a phase spec from Ariadne's design documents.
 
 Read ALL of:
+
 - `design/ROADMAP.md`
 - `design/architecture.md`
 - `design/performance.md`
@@ -63,6 +65,7 @@ Output: structured list of deliverables with full detail from design docs.
 You are analyzing dependencies and risks for a phase spec.
 
 Read ALL of:
+
 - `design/ROADMAP.md`
 - `design/architecture.md`
 - `design/error-handling.md`
@@ -89,6 +92,7 @@ Output: dependency graph + risk matrix with justification for each classificatio
 You are looking for gaps in design documentation that would block implementation of a phase.
 
 Read ALL of:
+
 - `design/ROADMAP.md`
 - `design/architecture.md`
 - `design/decisions/log.md`
@@ -114,7 +118,7 @@ Output: list of gaps, each with: what's missing, which design doc should address
 
 Assemble the spec following the existing pattern from `design/specs/2026-03-17-phase1-core-cli.md`:
 
-```
+``` markdown
 # Phase N: {Name} — Specification
 
 ## Goal
@@ -153,6 +157,7 @@ Assemble the spec following the existing pattern from `design/specs/2026-03-17-p
 Write the spec to: `design/specs/{date}-phase{N}-{name}.md` where date is today's date in YYYY-MM-DD format.
 
 Display a summary to the user:
+
 - Phase name and overall risk
 - Number of deliverables
 - Key discussion points that need resolution before implementation planning

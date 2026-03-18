@@ -12,7 +12,7 @@ Named after Ariadne of Greek mythology, who gave Theseus the thread to navigate 
 
 1. `design/ROADMAP.md` — implementation phases and build order
 2. `design/architecture.md` — full system design (data model, parsers, CLI, formats)
-3. `design/decisions/log.md` — architectural decisions (D-001 through D-009)
+3. `design/decisions/log.md` — architectural decisions (D-001 through D-025)
 4. `design/path-resolution.md` — path normalization, case sensitivity, monorepo support
 5. `design/determinism.md` — byte-identical output strategy
 6. `design/error-handling.md` — error taxonomy (E001-E005, W001-W009), fault tolerance
@@ -82,7 +82,7 @@ All commands write reports to `design/reports/{date}-{type}.md`. Previous report
 
 Format: `ariadne(<scope>): <description>`
 
-Scopes: core, parser, graph, detect, cli, ci, test, design
+Scopes: core, parser, pipeline, graph, detect, serial, cli, ci, test, design
 
 Examples:
 - `ariadne(core): implement data model types`
@@ -93,20 +93,25 @@ Examples:
 
 ```
 ariadne/
-├── design/              # Design documents
+├── design/              # Design documents (source of truth)
 │   ├── ROADMAP.md       # Implementation phases
 │   ├── architecture.md  # Full system design
-│   ├── decisions/       # Decision log
+│   ├── decisions/       # Decision log (D-001 through D-023)
 │   ├── specs/           # Phase specs and plans
 │   └── reports/         # Architecture reviews, audit reports
 ├── src/                 # Rust source
-│   ├── main.rs          # CLI entry point
-│   ├── lib.rs           # Public API
-│   ├── graph/           # Graph model, builder, serialization, clustering
-│   ├── parser/          # LanguageParser trait + per-language implementations
-│   ├── detect/          # File type detection + layer inference
-│   └── hash.rs          # Content hashing
-├── tests/               # Integration tests, benchmarks, fixtures
+│   ├── main.rs          # Composition Root: CLI (clap) + wires concrete types (D-020)
+│   ├── lib.rs           # Public API re-exports
+│   ├── model/           # Data types, newtypes, enums (leaf module, no deps) (D-017, D-023)
+│   ├── parser/          # LanguageParser + ImportResolver traits, registry, per-language impls (D-018)
+│   ├── pipeline/        # BuildPipeline, stage traits (FileWalker, FileReader), orchestration (D-019)
+│   ├── detect/          # File type detection + architectural layer inference
+│   ├── cluster/         # Directory-based clustering
+│   ├── serial/          # GraphSerializer trait, output types, JSON impl (D-022)
+│   ├── diagnostic.rs    # FatalError, Warning, DiagnosticCollector (D-021)
+│   └── hash.rs          # xxHash64 → ContentHash
+├── tests/               # Integration tests, fixtures, snapshots
+├── benches/             # Performance benchmarks (Phase 1b)
 ├── Cargo.toml
-└── .github/workflows/   # CI + release
+└── .github/workflows/   # CI + release (Phase 1b)
 ```

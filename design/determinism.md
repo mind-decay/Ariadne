@@ -18,31 +18,33 @@ If no source files have changed, `ariadne build` must produce identical `graph.j
 
 ### Data Structures
 
-**Nodes: `BTreeMap` instead of `HashMap`.**
+**Internal model uses `BTreeMap` with newtype keys (D-017):**
 
 ```rust
 pub struct ProjectGraph {
-    pub nodes: BTreeMap<String, Node>,  // NOT HashMap — sorted by path
-    pub edges: Vec<Edge>,               // sorted before serialization
+    pub nodes: BTreeMap<CanonicalPath, Node>,  // sorted by canonical path
+    pub edges: Vec<Edge>,                       // sorted before conversion
 }
 
 pub struct ClusterMap {
-    pub clusters: BTreeMap<String, Cluster>,  // NOT HashMap — sorted by name
+    pub clusters: BTreeMap<ClusterId, Cluster>,  // sorted by cluster name
 }
 ```
 
-`BTreeMap` iterates in key order (lexicographic by path/name). Serde serializes JSON objects in iteration order. Result: stable key order in JSON output.
+`CanonicalPath` and `ClusterId` implement `Ord`, so `BTreeMap` sorts by their natural ordering. This eliminates the need for post-hoc sorting of node keys.
 
-**During construction** we can use `HashMap` internally for O(1) lookups. Convert to `BTreeMap` at the serialization boundary:
+**Output model converts newtypes to strings (D-022):**
 
 ```rust
-// Build phase: HashMap for performance
-let mut nodes: HashMap<String, Node> = HashMap::new();
-// ... populate ...
-
-// Serialization: convert to BTreeMap for deterministic output
-let sorted_nodes: BTreeMap<String, Node> = nodes.into_iter().collect();
+pub struct GraphOutput {
+    pub nodes: BTreeMap<String, NodeOutput>,     // sorted string keys
+    pub edges: Vec<(String, String, String, Vec<String>)>,  // compact tuples, sorted
+}
 ```
+
+Conversion via `impl From<ProjectGraph> for GraphOutput` — single place where sort-point enforcement happens. Internal pipeline code doesn't need to worry about serialization ordering.
+
+**BTreeMap everywhere (KISS decision):** We use `BTreeMap` in both internal and output models rather than `HashMap` internally + conversion. The ~20% lookup overhead is negligible compared to parsing. This avoids a category of "forgot to sort" bugs.
 
 ### Edge Sorting
 
@@ -103,6 +105,10 @@ node.exports.sort();
 edge.symbols.sort();
 ```
 
+### Floating-Point Determinism
+
+Cluster cohesion is `f64`. To ensure byte-identical JSON output across platforms, cohesion values are rounded to 4 decimal places before serialization (e.g., `0.6500` not `0.6499999999999999`). This prevents platform-dependent float-to-string conversion from producing spurious git diffs.
+
 ### Summary of Sort Points
 
 | Data                     | Sort key                  | When                 |
@@ -138,8 +144,9 @@ fn deterministic_output() {
 
 ## Impact on Spec
 
-- **Graph Data Model (architecture.md, D-006):** `ProjectGraph.nodes` type changes from `HashMap` to `BTreeMap`. `ClusterMap.clusters` same.
-- **Graph Builder (architecture.md):** Sort edges before returning. Sort cluster files, node exports, edge symbols.
+- **Graph Data Model (architecture.md, D-006, D-017):** `ProjectGraph.nodes` uses `BTreeMap<CanonicalPath, Node>`. `ClusterMap.clusters` uses `BTreeMap<ClusterId, Cluster>`. Newtypes implement `Ord`.
+- **Output Model (architecture.md, D-022):** `GraphOutput` uses `BTreeMap<String, NodeOutput>`. Conversion from internal model enforces all sort points in one place.
+- **Graph Builder (architecture.md):** Sort edges before conversion. Sort cluster files, node exports, edge symbols.
 - **Storage Format (architecture.md):** Remove `"generated"` from default output. Add `--timestamp` flag.
 - **CLI Interface (architecture.md):** Add `--timestamp` flag.
 - **Performance:** BTreeMap is O(log n) vs HashMap O(1) for lookups. For 50k nodes, this adds ~20% to build phase. Sorting edges (O(n log n)) is negligible compared to parsing. Acceptable trade-off for deterministic output.
