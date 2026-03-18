@@ -150,6 +150,22 @@ fn walk_excludes_all_configured_dirs() {
     assert!(!entries.is_empty(), "walk should find at least one file");
 }
 
+#[test]
+fn binary_file_detected_by_null_bytes() {
+    use ariadne_graph::pipeline::{FsReader, FileReader, FileEntry};
+    let temp_dir = tempfile::tempdir().expect("create tempdir");
+    let file_path = temp_dir.path().join("binary.ts");
+    std::fs::write(&file_path, b"import foo\x00\x00 from 'bar';\n").unwrap();
+    let reader = FsReader::new();
+    let entry = FileEntry { path: file_path, extension: "ts".to_string() };
+    let result = reader.read(&entry, temp_dir.path(), 1_048_576);
+    assert!(result.is_err());
+    match result.unwrap_err() {
+        ariadne_graph::pipeline::FileSkipReason::BinaryFile { .. } => {},
+        other => panic!("expected BinaryFile, got {:?}", other),
+    }
+}
+
 /// A valid fixture should produce output files on disk.
 #[test]
 fn pipeline_produces_output_files() {

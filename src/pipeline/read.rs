@@ -58,6 +58,14 @@ impl FileReader for FsReader {
             reason: e.to_string(),
         })?;
 
+        // Check for binary content (null bytes in first 8KB)
+        let check_len = bytes.len().min(8192);
+        if bytes[..check_len].contains(&0) {
+            return Err(FileSkipReason::BinaryFile {
+                path: entry.path.clone(),
+            });
+        }
+
         // Check UTF-8
         if std::str::from_utf8(&bytes).is_err() {
             return Err(FileSkipReason::EncodingError {
