@@ -115,12 +115,36 @@ pub fn format_summary(
     );
 
     if report.counts.files_skipped > 0 {
-        result.push_str(&format!("\n  {} files skipped", report.counts.files_skipped));
+        let mut reasons = Vec::new();
+        if report.counts.parse_errors > 0 {
+            reasons.push(format!("{} parse error", report.counts.parse_errors));
+        }
+        if report.counts.read_errors > 0 {
+            reasons.push(format!("{} read error", report.counts.read_errors));
+        }
+        if report.counts.too_large > 0 {
+            reasons.push(format!("{} too large", report.counts.too_large));
+        }
+        if report.counts.binary_files > 0 {
+            reasons.push(format!("{} binary", report.counts.binary_files));
+        }
+        if report.counts.encoding_errors > 0 {
+            reasons.push(format!("{} encoding error", report.counts.encoding_errors));
+        }
+        if reasons.is_empty() {
+            result.push_str(&format!("\n  {} files skipped", report.counts.files_skipped));
+        } else {
+            result.push_str(&format!(
+                "\n  {} files skipped ({})",
+                report.counts.files_skipped,
+                reasons.join(", ")
+            ));
+        }
     }
 
     if report.counts.imports_unresolved > 0 {
         result.push_str(&format!(
-            "\n  {} imports unresolved",
+            "\n  {} imports unresolved (external packages)",
             report.counts.imports_unresolved
         ));
     }
@@ -160,6 +184,11 @@ pub struct Warning {
 #[derive(Clone, Debug, Default)]
 pub struct DiagnosticCounts {
     pub files_skipped: u32,
+    pub parse_errors: u32,
+    pub read_errors: u32,
+    pub too_large: u32,
+    pub binary_files: u32,
+    pub encoding_errors: u32,
     pub imports_unresolved: u32,
     pub partial_parses: u32,
 }
@@ -186,12 +215,25 @@ impl DiagnosticCollector {
     pub fn warn(&self, warning: Warning) {
         let mut guard = self.inner.lock().unwrap();
         match warning.code {
-            WarningCode::W001ParseFailed
-            | WarningCode::W002ReadFailed
-            | WarningCode::W003FileTooLarge
-            | WarningCode::W004BinaryFile
-            | WarningCode::W009EncodingError => {
+            WarningCode::W001ParseFailed => {
                 guard.1.files_skipped += 1;
+                guard.1.parse_errors += 1;
+            }
+            WarningCode::W002ReadFailed => {
+                guard.1.files_skipped += 1;
+                guard.1.read_errors += 1;
+            }
+            WarningCode::W003FileTooLarge => {
+                guard.1.files_skipped += 1;
+                guard.1.too_large += 1;
+            }
+            WarningCode::W004BinaryFile => {
+                guard.1.files_skipped += 1;
+                guard.1.binary_files += 1;
+            }
+            WarningCode::W009EncodingError => {
+                guard.1.files_skipped += 1;
+                guard.1.encoding_errors += 1;
             }
             WarningCode::W006ImportUnresolved => {
                 guard.1.imports_unresolved += 1;
@@ -321,14 +363,17 @@ mod tests {
             vec![],
             DiagnosticCounts {
                 files_skipped: 3,
+                parse_errors: 1,
+                read_errors: 1,
+                too_large: 1,
                 imports_unresolved: 42,
-                partial_parses: 0,
+                ..DiagnosticCounts::default()
             },
         );
         let output = format_summary(&report, 847, 2341, 12, std::time::Duration::from_secs_f64(1.23));
         assert!(output.starts_with("Built graph: 847 files, 2341 edges, 12 clusters in 1.2s"));
-        assert!(output.contains("3 files skipped"));
-        assert!(output.contains("42 imports unresolved"));
+        assert!(output.contains("3 files skipped (1 parse error, 1 read error, 1 too large)"));
+        assert!(output.contains("42 imports unresolved (external packages)"));
     }
 
     #[test]

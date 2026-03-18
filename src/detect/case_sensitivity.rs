@@ -8,8 +8,11 @@ use crate::model::types::{CanonicalPath, FileSet};
 pub fn is_case_insensitive(root: &Path) -> bool {
     use std::fs;
 
-    let probe = root.join(".ariadne_case_test");
-    let swapped = root.join(".ARIADNE_CASE_TEST");
+    // Use .ariadne/ subdir to avoid leaving stale probe files in project root
+    let ariadne_dir = root.join(".ariadne");
+    let _ = std::fs::create_dir_all(&ariadne_dir);
+    let probe = ariadne_dir.join("case_test");
+    let swapped = ariadne_dir.join("CASE_TEST");
 
     // Create the probe file
     if fs::write(&probe, "").is_err() {

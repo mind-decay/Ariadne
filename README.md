@@ -14,12 +14,12 @@ cargo install ariadne-graph
 
 ### Binary download
 
-Download the latest release for your platform from [GitHub Releases](https://github.com/your-org/ariadne/releases).
+Download the latest release for your platform from [GitHub Releases](https://github.com/anthropics/ariadne/releases).
 
 ### Install script
 
 ```sh
-curl -sSL https://raw.githubusercontent.com/your-org/ariadne/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/anthropics/ariadne/main/install.sh | bash
 ```
 
 ## Usage

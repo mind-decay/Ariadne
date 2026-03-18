@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Ariadne installer — downloads the correct binary from GitHub Releases
-REPO="your-org/ariadne"  # Update with actual repo
+REPO="anthropics/ariadne"
 INSTALL_DIR="${INSTALL_PATH:-/usr/local/bin}"
 
 # Detect platform
@@ -29,8 +29,8 @@ case "$OS" in
         ;;
 esac
 
-# Get latest release tag
-LATEST=$(curl -sI "https://github.com/$REPO/releases/latest" | grep -i location | sed 's/.*tag\///' | tr -d '\r\n')
+# Get latest release tag via GitHub API
+LATEST=$(curl -s "https://api.github.com/repos/$REPO/releases/latest" | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')
 if [ -z "$LATEST" ]; then
     echo "Failed to determine latest release"
     exit 1
@@ -39,7 +39,15 @@ fi
 URL="https://github.com/$REPO/releases/download/$LATEST/$BINARY"
 
 echo "Downloading $BINARY ($LATEST)..."
-curl -sL "$URL" -o "$INSTALL_DIR/ariadne"
+TMPFILE=$(mktemp)
+HTTP_CODE=$(curl -sL -o "$TMPFILE" -w "%{http_code}" "$URL")
+if [ "$HTTP_CODE" != "200" ]; then
+    rm -f "$TMPFILE"
+    echo "Download failed (HTTP $HTTP_CODE). URL: $URL"
+    exit 1
+fi
+
+mv "$TMPFILE" "$INSTALL_DIR/ariadne"
 chmod +x "$INSTALL_DIR/ariadne"
 echo "Installed ariadne to $INSTALL_DIR/ariadne"
 echo "Run 'ariadne --help' to get started"

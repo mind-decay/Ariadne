@@ -55,5 +55,28 @@ fn bench_build_1000(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, bench_build_100, bench_build_1000);
+fn bench_build_3000(c: &mut Criterion) {
+    let project = helpers::generate_synthetic_project(3000, 100, 10, "typescript");
+    let pipeline = make_pipeline();
+
+    let mut group = c.benchmark_group("build_3000");
+    group.sample_size(10);
+    group.bench_function("build_3000_files", |b| {
+        b.iter(|| {
+            let output_dir = tempfile::tempdir().unwrap();
+            pipeline
+                .run_with_output(
+                    project.path(),
+                    WalkConfig::default(),
+                    Some(output_dir.path()),
+                    false,
+                    false,
+                )
+                .unwrap();
+        });
+    });
+    group.finish();
+}
+
+criterion_group!(benches, bench_build_100, bench_build_1000, bench_build_3000);
 criterion_main!(benches);
