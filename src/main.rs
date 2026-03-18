@@ -113,7 +113,7 @@ fn run_build(
         ..WalkConfig::default()
     };
 
-    match pipeline.run_with_output(path, config, output, timestamp) {
+    match pipeline.run_with_output(path, config, output, timestamp, verbose) {
         Ok(build_output) => {
             let elapsed = start.elapsed();
             let report = DiagnosticReport {
