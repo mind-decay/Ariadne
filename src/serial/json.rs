@@ -39,14 +39,20 @@ fn atomic_write<T: serde::Serialize>(dir: &Path, filename: &str, value: &T) -> R
     })?;
 
     let writer = BufWriter::new(file);
-    serde_json::to_writer_pretty(writer, value).map_err(|e| FatalError::OutputNotWritable {
-        path: final_path.clone(),
-        reason: e.to_string(),
+    serde_json::to_writer_pretty(writer, value).map_err(|e| {
+        let _ = fs::remove_file(&tmp_path);
+        FatalError::OutputNotWritable {
+            path: final_path.clone(),
+            reason: e.to_string(),
+        }
     })?;
 
-    fs::rename(&tmp_path, &final_path).map_err(|e| FatalError::OutputNotWritable {
-        path: final_path,
-        reason: e.to_string(),
+    fs::rename(&tmp_path, &final_path).map_err(|e| {
+        let _ = fs::remove_file(&tmp_path);
+        FatalError::OutputNotWritable {
+            path: final_path,
+            reason: e.to_string(),
+        }
     })?;
 
     Ok(())
