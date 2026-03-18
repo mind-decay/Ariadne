@@ -1,5 +1,5 @@
 use crate::model::{CanonicalPath, FileSet};
-use crate::parser::traits::{ImportResolver, LanguageParser, RawExport, RawImport};
+use crate::parser::traits::{ImportKind, ImportResolver, LanguageParser, RawExport, RawImport};
 
 /// Go language parser.
 struct GoParser;
@@ -95,6 +95,7 @@ fn extract_go_import_spec(node: &tree_sitter::Node, source: &[u8]) -> Option<Raw
         path,
         symbols,
         is_type_only: false,
+        kind: ImportKind::Regular,
     })
 }
 

@@ -1,5 +1,5 @@
 use crate::model::{CanonicalPath, FileSet};
-use crate::parser::traits::{ImportResolver, LanguageParser, RawExport, RawImport};
+use crate::parser::traits::{ImportKind, ImportResolver, LanguageParser, RawExport, RawImport};
 
 /// Java language parser.
 struct JavaParser;
@@ -63,6 +63,7 @@ impl LanguageParser for JavaParser {
                 path: text.to_string(),
                 symbols,
                 is_type_only: false,
+                kind: ImportKind::Regular,
             });
         }
 

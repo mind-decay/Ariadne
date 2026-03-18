@@ -1,5 +1,5 @@
 use crate::model::{CanonicalPath, FileSet};
-use crate::parser::traits::{ImportResolver, LanguageParser, RawExport, RawImport};
+use crate::parser::traits::{ImportKind, ImportResolver, LanguageParser, RawExport, RawImport};
 
 /// Parser and resolver for Rust source files (.rs).
 pub(crate) struct RustParser;
@@ -281,6 +281,7 @@ impl LanguageParser for RustParser {
                             path,
                             symbols,
                             is_type_only: false,
+                            kind: ImportKind::Regular,
                         });
                     }
                 }
@@ -298,9 +299,10 @@ impl LanguageParser for RustParser {
                         if let Ok(name) = name_node.utf8_text(source) {
                             // mod declarations are imports to the module file
                             imports.push(RawImport {
-                                path: format!("mod::{}", name),
+                                path: name.to_string(),
                                 symbols: vec![name.to_string()],
                                 is_type_only: false,
+                                kind: ImportKind::ModDeclaration,
                             });
                         }
                     }
@@ -464,10 +466,10 @@ impl ImportResolver for RustResolver {
     ) -> Option<CanonicalPath> {
         let path = &import.path;
 
-        if path.starts_with("mod::") {
+        if import.kind == ImportKind::ModDeclaration {
             // mod declaration: `mod auth;`
             // Resolve relative to current file
-            return self.resolve_mod_declaration(&path[5..], from_file, known_files);
+            return self.resolve_mod_declaration(path, from_file, known_files);
         }
 
         // Parse the module path segments

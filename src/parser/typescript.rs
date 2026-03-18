@@ -1,5 +1,5 @@
 use crate::model::{CanonicalPath, FileSet};
-use crate::parser::traits::{ImportResolver, LanguageParser, RawExport, RawImport};
+use crate::parser::traits::{ImportKind, ImportResolver, LanguageParser, RawExport, RawImport};
 
 /// Parser and resolver for TypeScript and JavaScript files.
 /// Uses tree-sitter-typescript grammar for all extensions (.ts, .tsx, .js, .jsx, .mjs, .cjs).
@@ -156,6 +156,7 @@ impl LanguageParser for TypeScriptParser {
                                 path: path.to_string(),
                                 symbols,
                                 is_type_only,
+                                kind: ImportKind::Regular,
                             });
                         }
                     }
@@ -341,6 +342,7 @@ impl TypeScriptParser {
                                                 path: path.to_string(),
                                                 symbols: Vec::new(),
                                                 is_type_only: false,
+                                                kind: ImportKind::Regular,
                                             });
                                         }
                                     }
@@ -360,6 +362,7 @@ impl TypeScriptParser {
                                             path: path.to_string(),
                                             symbols: Vec::new(),
                                             is_type_only: false,
+                                            kind: ImportKind::Regular,
                                         });
                                     }
                                 }

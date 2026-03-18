@@ -1,11 +1,21 @@
 use crate::model::{CanonicalPath, FileSet};
 
+/// Discriminant for import origin.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ImportKind {
+    /// Standard import statement
+    Regular,
+    /// Rust `mod` declaration — path is the module name, not a filesystem path
+    ModDeclaration,
+}
+
 /// Raw import extracted from AST (unresolved).
 #[derive(Clone, Debug)]
 pub struct RawImport {
     pub path: String,
     pub symbols: Vec<String>,
     pub is_type_only: bool,
+    pub kind: ImportKind,
 }
 
 /// Raw export extracted from AST.

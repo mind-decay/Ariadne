@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use crate::detect::{detect_file_type, infer_arch_layer};
 use crate::diagnostic::DiagnosticCollector;
 use crate::model::*;
-use crate::parser::ParserRegistry;
+use crate::parser::{ImportKind, ParserRegistry};
 
 use super::read::FileContent;
 use super::resolve::resolve_import;
@@ -106,6 +106,7 @@ pub fn resolve_and_build(
                         path: source_path.clone(),
                         symbols: vec![export.name.clone()],
                         is_type_only: false,
+                        kind: ImportKind::Regular,
                     };
 
                     if let Some(resolved) = resolve_import(

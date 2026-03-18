@@ -1,5 +1,5 @@
 use crate::model::{CanonicalPath, FileSet};
-use crate::parser::traits::{ImportResolver, LanguageParser, RawExport, RawImport};
+use crate::parser::traits::{ImportKind, ImportResolver, LanguageParser, RawExport, RawImport};
 
 /// C# language parser.
 struct CSharpParser;
@@ -122,6 +122,7 @@ fn extract_using_directive(node: &tree_sitter::Node, source: &[u8]) -> Option<Ra
         path,
         symbols,
         is_type_only: false,
+        kind: ImportKind::Regular,
     })
 }
 

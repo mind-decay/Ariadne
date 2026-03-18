@@ -1,5 +1,5 @@
 use crate::model::{CanonicalPath, FileSet};
-use crate::parser::traits::{ImportResolver, LanguageParser, RawExport, RawImport};
+use crate::parser::traits::{ImportKind, ImportResolver, LanguageParser, RawExport, RawImport};
 
 /// Parser and resolver for Python files (.py, .pyi).
 pub(crate) struct PythonParser;
@@ -156,6 +156,7 @@ impl LanguageParser for PythonParser {
                                             path: name.to_string(),
                                             symbols: Vec::new(),
                                             is_type_only: false,
+                                            kind: ImportKind::Regular,
                                         });
                                     }
                                 }
@@ -170,6 +171,7 @@ impl LanguageParser for PythonParser {
                                                 path: name.to_string(),
                                                 symbols: Vec::new(),
                                                 is_type_only: false,
+                                                kind: ImportKind::Regular,
                                             });
                                         }
                                     }
@@ -210,6 +212,7 @@ impl LanguageParser for PythonParser {
                         path,
                         symbols,
                         is_type_only: false,
+                        kind: ImportKind::Regular,
                     });
                 }
 
@@ -361,6 +364,7 @@ impl PythonParser {
                                         path: name.to_string(),
                                         symbols: Vec::new(),
                                         is_type_only: true,
+                                        kind: ImportKind::Regular,
                                     });
                                 }
                             }
@@ -373,6 +377,7 @@ impl PythonParser {
                                             path: name.to_string(),
                                             symbols: Vec::new(),
                                             is_type_only: true,
+                                            kind: ImportKind::Regular,
                                         });
                                     }
                                 }
@@ -401,6 +406,7 @@ impl PythonParser {
                             path,
                             symbols,
                             is_type_only: true,
+                            kind: ImportKind::Regular,
                         });
                     }
                     _ => {}
