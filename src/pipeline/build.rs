@@ -174,8 +174,8 @@ fn infer_test_edges_by_naming(
     file_set: &FileSet,
     edges: &mut Vec<Edge>,
 ) {
-    // Collect test patterns
-    let test_patterns = [
+    // Suffix patterns: foo.test.ts → foo.ts, foo_test.go → foo.go
+    let test_patterns: &[(&str, &str)] = &[
         (".test.ts", ".ts"),
         (".spec.ts", ".ts"),
         (".test.tsx", ".tsx"),
@@ -188,39 +188,91 @@ fn infer_test_edges_by_naming(
         ("_test.py", ".py"),
     ];
 
+    // Prefix patterns: test_auth.py → auth.py (same directory)
+    let prefix_patterns: &[(&str, &str)] = &[
+        ("test_", ".py"), // test_auth.py → auth.py
+    ];
+
+    // Build HashSet from existing edges for O(1) dedup lookup
+    let existing_edges: std::collections::HashSet<(&CanonicalPath, CanonicalPath, EdgeType)> =
+        edges
+            .iter()
+            .map(|e| (&e.from, e.to.clone(), e.edge_type))
+            .collect();
+
+    let mut new_edges: Vec<Edge> = Vec::new();
+
     for (path, node) in nodes {
         if node.file_type != FileType::Test {
             continue;
         }
 
         let path_str = path.as_str();
+        let mut found = false;
 
-        for (test_suffix, source_suffix) in &test_patterns {
+        // Try suffix patterns (e.g., foo.test.ts → foo.ts)
+        for (test_suffix, source_suffix) in test_patterns {
             if path_str.ends_with(test_suffix) {
-                let source_path_str =
-                    format!("{}{}", &path_str[..path_str.len() - test_suffix.len()], source_suffix);
+                let source_path_str = format!(
+                    "{}{}",
+                    &path_str[..path_str.len() - test_suffix.len()],
+                    source_suffix
+                );
                 let source_path = CanonicalPath::new(&source_path_str);
 
                 if file_set.contains(&source_path) {
-                    // Check we don't already have this edge
-                    let already_exists = edges.iter().any(|e| {
-                        e.from == *path
-                            && e.to == source_path
-                            && e.edge_type == EdgeType::Tests
-                    });
-                    if !already_exists {
-                        edges.push(Edge {
+                    let key = (path, source_path.clone(), EdgeType::Tests);
+                    let in_new = new_edges
+                        .iter()
+                        .any(|e| e.from == *path && e.to == key.1 && e.edge_type == key.2);
+                    if !existing_edges.contains(&key) && !in_new {
+                        new_edges.push(Edge {
                             from: path.clone(),
                             to: source_path,
                             edge_type: EdgeType::Tests,
                             symbols: vec![],
                         });
                     }
+                    found = true;
                     break; // Found a match, don't try other patterns
                 }
             }
         }
+
+        if found {
+            continue;
+        }
+
+        // Try prefix patterns (e.g., test_auth.py → auth.py in same dir)
+        let file_name = path.file_name();
+        for (test_prefix, source_ext) in prefix_patterns {
+            if file_name.starts_with(test_prefix) && file_name.ends_with(source_ext) {
+                let source_name = &file_name[test_prefix.len()..];
+                let source_path = match path.parent() {
+                    Some(parent) => CanonicalPath::new(format!("{}/{}", parent, source_name)),
+                    None => CanonicalPath::new(source_name),
+                };
+
+                if file_set.contains(&source_path) {
+                    let key = (path, source_path.clone(), EdgeType::Tests);
+                    let in_new = new_edges
+                        .iter()
+                        .any(|e| e.from == *path && e.to == key.1 && e.edge_type == key.2);
+                    if !existing_edges.contains(&key) && !in_new {
+                        new_edges.push(Edge {
+                            from: path.clone(),
+                            to: source_path,
+                            edge_type: EdgeType::Tests,
+                            symbols: vec![],
+                        });
+                    }
+                    break;
+                }
+            }
+        }
     }
+
+    edges.extend(new_edges);
 }
 
 /// Deduplicate edges: same (from, to, edge_type) → merge symbols (union, sorted).
