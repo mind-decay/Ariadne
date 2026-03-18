@@ -334,3 +334,75 @@ Dependency rules: `model/` depends on nothing. `parser/` depends on `model/` onl
 **Decision:** Walking and reading are separate stages with separate traits and error handling.
 **Reasoning:** Enables independent testing, independent error handling (walk-level vs read-level), and independent resource control.
 **Affects:** error-handling.md Stage 1, architecture.md Pipeline Architecture.
+
+## D-027: Workspace Entry Point Preference Order
+
+**Date:** 2026-03-18
+**Status:** Accepted
+**Context:** Phase 1b adds npm/yarn/pnpm workspace detection. When resolving a workspace member import (`@myapp/auth`), the resolver needs to find the member's entry point. A member's `package.json` may contain `main`, `module`, and/or `exports` fields, each pointing to a different file. The `exports` field can contain conditional exports (`{ "import": "...", "require": "..." }`), adding significant complexity.
+**Decision:** Phase 1b uses a simple preference order: `main` → `module` → default probe (`src/index.ts`, `index.ts`). The `exports` field is NOT parsed in Phase 1b. If neither `main` nor `module` exists, fall back to probing standard entry point locations.
+**Alternatives rejected:**
+- Full `exports` field parsing — significant complexity (conditional exports, subpath exports, pattern matching). Deferred to future phase if needed.
+- `module` first — `main` is the canonical Node.js entry point and more universally supported.
+- Require explicit entry point — too much friction for a zero-config tool.
+**Reasoning:** `main` is the most reliable field — present in virtually all `package.json` files. `module` is a de-facto convention for ESM entry points. The full `exports` spec (Node.js conditional exports) is complex and rarely needed for monorepo cross-package resolution where entry points are straightforward. Pragmatic MVP choice.
+**Affects:** Phase 1b spec D4, path-resolution.md §Per-Language Workspace Resolution.
+
+## D-028: WorkspaceInfo Design — npm-Family Only in Phase 1b
+
+**Date:** 2026-03-18
+**Status:** Accepted
+**Context:** Phase 1b introduces `WorkspaceInfo` and `WorkspaceMember` types for workspace detection. The current design uses `WorkspaceMember { name, path, entry_point }` which maps well to npm/yarn/pnpm packages but not to Go modules (no "entry points") or Cargo workspaces (crate names resolved differently). Future phases will add Go (`go.work`), Cargo (`[workspace]`), Nx, and Turborepo support.
+**Decision:** Phase 1b's `WorkspaceInfo` is intentionally npm-family-specific. `WorkspaceKind` enum has variants `Npm`, `Yarn`, `Pnpm`. Future workspace types will require extending the model — either by adding language-specific variants to `WorkspaceMember` or converting `WorkspaceInfo` to a trait with per-type implementations. This is acceptable design debt for a pre-1.0 codebase.
+**Alternatives rejected:**
+- Trait-based `WorkspaceInfo` from the start — over-engineering for Phase 1b when only npm-family is implemented
+- Generic `Box<dyn Any>` for type-specific data — loses type safety
+- No workspace support until all types can be supported — delays the most common use case (npm workspaces)
+**Reasoning:** npm/yarn/pnpm workspaces are the most common monorepo pattern. Shipping npm-family support early provides value. The `WorkspaceMember` struct is simple and correct for its scope. When Go/Cargo support is added, the required model changes will be informed by real implementation experience with npm workspaces.
+**Affects:** Phase 1b spec D3, architecture.md §WorkspaceInfo, path-resolution.md §Monorepo Support.
+
+## D-029: Workspace Member Name Collision Handling
+
+**Date:** 2026-03-18
+**Status:** Accepted
+**Context:** In an npm workspace, two member directories could have the same `name` field in their `package.json`. This creates ambiguity in the workspace member map used for import resolution. Example: `packages/auth` and `legacy/auth` both declaring `"name": "@myapp/auth"`.
+**Decision:** Use first-found member (deterministic by filesystem walk order, which is sorted) and emit W008 warning if a collision is detected. The first member in sorted directory order wins. This is a best-effort approach consistent with Ariadne's philosophy of graceful degradation (D-003).
+**Alternatives rejected:**
+- Fatal error — too harsh for what may be a transitional state in a monorepo
+- Last-found — less predictable, harder to reason about
+- Silent first-found — violates transparency principle (D-005)
+**Reasoning:** Name collisions in real workspaces are rare and usually indicate a configuration issue. Warning the user while continuing with deterministic behavior is consistent with the best-effort philosophy. Sorted order ensures determinism (D-006).
+**Affects:** Phase 1b spec D3, path-resolution.md §Workspace Detection.
+
+## D-030: CLI Flag Interaction Rules
+
+**Date:** 2026-03-18
+**Status:** Accepted
+**Context:** Phase 1b adds 6 CLI flags. Some flag combinations need explicit behavior definitions: `--strict` with `--warnings json`, `--verbose` with `--warnings json`, and `--max-files` counting semantics.
+**Decision:** Three rules:
+1. `--strict` and `--warnings` are orthogonal. `--strict` controls exit code (1 if any warnings), `--warnings` controls output format. Both can be set simultaneously: `--strict --warnings json` outputs JSON warnings AND exits with code 1.
+2. `--verbose` and `--warnings json` are orthogonal. `--verbose` adds per-stage timing (always stderr, always human-readable) and enables W006 warnings. `--warnings json` controls warning format only. Both can be set: timing is human-format, warnings are JSON.
+3. `--max-files` counts files at the walk stage (all files encountered by the walker, regardless of extension). This prevents unbounded filesystem traversal. Files with unrecognized extensions are counted but not parsed.
+**Alternatives rejected:**
+- `--warnings json` implies non-strict — confusing; flags should be orthogonal
+- `--max-files` counts only parseable files — allows unbounded walk on repos with many non-source files
+- Mutually exclusive flags — unnecessary restriction
+**Reasoning:** Orthogonal flags are easier to reason about. Each flag controls one dimension: `--strict` = exit behavior, `--warnings` = format, `--verbose` = verbosity, `--max-files` = walk limit. Walk-stage counting for `--max-files` is the safer default — it bounds total I/O regardless of file types.
+**Affects:** Phase 1b spec D2, error-handling.md §CLI Flags.
+
+## D-031: Feature-Sliced Design (FSD) Architecture Support
+
+**Date:** 2026-03-18
+**Status:** Deferred (post-Phase 2)
+**Context:** FSD is a frontend architectural methodology with layer hierarchy: app → processes → pages → widgets → features → entities → shared. Each slice has internal segments (ui/, model/, api/, lib/). Current `infer_arch_layer()` uses first-matching-segment strategy, which fails for FSD: `features/auth/ui/Button.tsx` maps to Unknown (stops at `features/`) instead of Component (from `ui/`).
+**Decision:** Defer FSD-specific support to post-Phase 2. Current layer detection handles ~3 of 7 FSD layers (shared→Util, pages→Component, widgets→Component) and most inner segments (ui/, api/, lib/, config/). Graphs, edges, and clusters work correctly — only `layer` field is affected.
+**What FSD support requires:**
+1. New ArchLayer variants or a secondary classification system for FSD layers (features, entities, processes, app)
+2. Context-aware matching strategy — FSD needs innermost-segment matching (ui/, model/, api/) rather than first-match, or a two-level scheme: FSD-layer (from outer segment) + functional-layer (from inner segment)
+3. Optional FSD detection heuristic (presence of `features/` + `entities/` + `shared/` at root level)
+4. Addition of `"model"` (singular) to Data layer matching (currently only `"models"`)
+**Alternatives rejected:**
+- Adding FSD segments to existing ArchLayer now — would pollute the generic layer model with framework-specific semantics without proper Phase 2 algorithms to use them
+- Changing first-match to last-match globally — breaks non-FSD projects where outermost segment is the correct layer
+**Reasoning:** FSD support is best done alongside Phase 2's architectural algorithms (depth computation, layer violation detection) which will provide the infrastructure to properly model layered architectures. The graph itself is architecture-agnostic — only the classification metadata needs extension.
+**Affects:** detect/layer.rs, model/node.rs (ArchLayer enum), future architecture.md update.
