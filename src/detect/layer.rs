@@ -37,12 +37,12 @@ fn match_layer(segment: &str) -> Option<ArchLayer> {
         }
         // Service
         "services" | "service" | "domain" | "business" | "usecases" | "use-cases"
-        | "interactors" => Some(ArchLayer::Service),
+        | "interactors" | "middleware" => Some(ArchLayer::Service),
         // Data
         "data" | "db" | "database" | "repository" | "repositories" | "models" | "dao"
-        | "store" | "stores" => Some(ArchLayer::Data),
+        | "store" | "stores" | "schema" | "migration" | "migrations" => Some(ArchLayer::Data),
         // Util
-        "utils" | "util" | "helpers" | "lib" | "shared" | "common" | "pkg" | "internal" => {
+        "utils" | "util" | "helpers" | "lib" | "shared" | "common" | "pkg" => {
             Some(ArchLayer::Util)
         }
         // Component
@@ -78,6 +78,7 @@ mod tests {
         assert_eq!(layer("src/services/auth.ts"), ArchLayer::Service);
         assert_eq!(layer("src/domain/user.ts"), ArchLayer::Service);
         assert_eq!(layer("src/usecases/login.ts"), ArchLayer::Service);
+        assert_eq!(layer("src/middleware/cors.ts"), ArchLayer::Service);
     }
 
     #[test]
@@ -86,6 +87,8 @@ mod tests {
         assert_eq!(layer("src/repository/auth.ts"), ArchLayer::Data);
         assert_eq!(layer("src/models/user.py"), ArchLayer::Data);
         assert_eq!(layer("src/db/connection.ts"), ArchLayer::Data);
+        assert_eq!(layer("src/schema/user.graphql"), ArchLayer::Data);
+        assert_eq!(layer("src/migrations/001_init.sql"), ArchLayer::Data);
     }
 
     #[test]
@@ -94,6 +97,15 @@ mod tests {
         assert_eq!(layer("src/helpers/string.ts"), ArchLayer::Util);
         assert_eq!(layer("src/lib/auth.ts"), ArchLayer::Util);
         assert_eq!(layer("pkg/util/hash.go"), ArchLayer::Util);
+    }
+
+    #[test]
+    fn internal_is_not_util() {
+        // Go's internal/ is an access modifier, not an architectural layer.
+        // Sub-directories within internal/ should be matched by their own names.
+        assert_eq!(layer("internal/handlers/auth.go"), ArchLayer::Api);
+        assert_eq!(layer("internal/service/auth.go"), ArchLayer::Service);
+        assert_eq!(layer("internal/repo/user.go"), ArchLayer::Unknown);
     }
 
     #[test]

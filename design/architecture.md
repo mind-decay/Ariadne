@@ -257,9 +257,9 @@ Layer inference uses directory name pattern matching. First matching pattern win
 | Layer | Directory patterns (case-insensitive match) |
 |-------|---------------------------------------------|
 | `api` | `api/`, `routes/`, `endpoints/`, `controllers/`, `handlers/`, `rest/`, `graphql/` |
-| `service` | `services/`, `service/`, `domain/`, `business/`, `usecases/`, `use-cases/`, `interactors/` |
-| `data` | `data/`, `db/`, `database/`, `repository/`, `repositories/`, `models/`, `dao/`, `store/`, `stores/` |
-| `util` | `utils/`, `util/`, `helpers/`, `lib/`, `shared/`, `common/`, `pkg/`, `internal/` |
+| `service` | `services/`, `service/`, `domain/`, `business/`, `usecases/`, `use-cases/`, `interactors/`, `middleware/` |
+| `data` | `data/`, `db/`, `database/`, `repository/`, `repositories/`, `models/`, `dao/`, `store/`, `stores/`, `schema/`, `migration/`, `migrations/` |
+| `util` | `utils/`, `util/`, `helpers/`, `lib/`, `shared/`, `common/`, `pkg/` |
 | `component` | `components/`, `component/`, `ui/`, `views/`, `pages/`, `layouts/`, `widgets/` |
 | `hook` | `hooks/`, `composables/` |
 | `config` | `config/`, `configuration/`, `settings/`, `env/` |
