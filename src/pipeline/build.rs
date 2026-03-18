@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 
 use crate::detect::{detect_file_type, infer_arch_layer};
 use crate::diagnostic::DiagnosticCollector;
+use crate::model::workspace::WorkspaceInfo;
 use crate::model::*;
 use crate::parser::{ImportKind, ParserRegistry};
 
@@ -16,6 +17,7 @@ pub fn resolve_and_build(
     file_contents: &[FileContent],
     registry: &ParserRegistry,
     diagnostics: &DiagnosticCollector,
+    workspace: Option<&WorkspaceInfo>,
 ) -> ProjectGraph {
     // 1. Build FileSet from successfully-read files
     let file_set = FileSet::from_iter(file_contents.iter().map(|fc| fc.path.clone()));
@@ -75,6 +77,7 @@ pub fn resolve_and_build(
                 &file_set,
                 resolver,
                 diagnostics,
+                workspace,
             ) {
                 Some(r) => r,
                 None => continue,
@@ -115,6 +118,7 @@ pub fn resolve_and_build(
                         &file_set,
                         resolver,
                         diagnostics,
+                        workspace,
                     ) {
                         edges.push(Edge {
                             from: pf.path.clone(),

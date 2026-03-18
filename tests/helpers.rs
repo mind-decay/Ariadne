@@ -25,7 +25,7 @@ pub fn build_fixture(name: &str) -> BuildOutput {
         Box::new(JsonSerializer),
     );
     pipeline
-        .run_with_output(&path, WalkConfig::default(), Some(&output_path))
+        .run_with_output(&path, WalkConfig::default(), Some(&output_path), false, false)
         .unwrap_or_else(|e| panic!("build failed for fixture '{}': {}", name, e))
 }
 

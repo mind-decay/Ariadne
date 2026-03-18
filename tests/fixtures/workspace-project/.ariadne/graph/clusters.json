@@ -1,0 +1,18 @@
+{
+  "clusters": {
+    "packages": {
+      "files": [
+        "packages/api/src/index.ts",
+        "packages/api/src/router.ts",
+        "packages/auth/src/index.ts",
+        "packages/auth/src/login.ts",
+        "packages/shared/src/format.ts",
+        "packages/shared/src/index.ts"
+      ],
+      "file_count": 6,
+      "internal_edges": 4,
+      "external_edges": 0,
+      "cohesion": 1.0
+    }
+  }
+}

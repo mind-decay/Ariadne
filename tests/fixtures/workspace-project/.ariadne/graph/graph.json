@@ -1,0 +1,106 @@
+{
+  "version": 1,
+  "project_root": "/Users/minddecay/Documents/Projects/ariadne/.claude/worktrees/agent-ac65cd4d/tests/fixtures/workspace-project",
+  "node_count": 6,
+  "edge_count": 4,
+  "nodes": {
+    "packages/api/src/index.ts": {
+      "type": "source",
+      "layer": "api",
+      "arch_depth": 0,
+      "lines": 1,
+      "hash": "62439b5da33b845c",
+      "exports": [
+        "router"
+      ],
+      "cluster": "packages"
+    },
+    "packages/api/src/router.ts": {
+      "type": "source",
+      "layer": "api",
+      "arch_depth": 0,
+      "lines": 1,
+      "hash": "533892416cd8892a",
+      "exports": [],
+      "cluster": "packages"
+    },
+    "packages/auth/src/index.ts": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 1,
+      "hash": "7f15187abdfb70bc",
+      "exports": [
+        "login"
+      ],
+      "cluster": "packages"
+    },
+    "packages/auth/src/login.ts": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 1,
+      "hash": "a5595dfb090f0463",
+      "exports": [
+        "login"
+      ],
+      "cluster": "packages"
+    },
+    "packages/shared/src/format.ts": {
+      "type": "source",
+      "layer": "util",
+      "arch_depth": 0,
+      "lines": 1,
+      "hash": "2a8461dde412b756",
+      "exports": [
+        "format"
+      ],
+      "cluster": "packages"
+    },
+    "packages/shared/src/index.ts": {
+      "type": "source",
+      "layer": "util",
+      "arch_depth": 0,
+      "lines": 1,
+      "hash": "6461b7259963015b",
+      "exports": [
+        "format"
+      ],
+      "cluster": "packages"
+    }
+  },
+  "edges": [
+    [
+      "packages/api/src/index.ts",
+      "packages/api/src/router.ts",
+      "re_exports",
+      [
+        "router"
+      ]
+    ],
+    [
+      "packages/api/src/router.ts",
+      "packages/auth/src/index.ts",
+      "imports",
+      [
+        "login"
+      ]
+    ],
+    [
+      "packages/auth/src/index.ts",
+      "packages/auth/src/login.ts",
+      "re_exports",
+      [
+        "login"
+      ]
+    ],
+    [
+      "packages/shared/src/index.ts",
+      "packages/shared/src/format.ts",
+      "re_exports",
+      [
+        "format"
+      ]
+    ]
+  ]
+}

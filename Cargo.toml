@@ -25,7 +25,21 @@ xxhash-rust = { version = "0.8", features = ["xxh64"] }
 ignore = "0.4"
 rayon = "1"
 thiserror = "2"
+dunce = "1"
+time = { version = "0.3", features = ["formatting"] }
+glob = "0.3"
 
 [dev-dependencies]
 insta = { version = "1", features = ["yaml"] }
 tempfile = "3"
+proptest = "1"
+criterion = { version = "0.5", features = ["html_reports"] }
+serde_json = "1"
+
+[[bench]]
+name = "build_bench"
+harness = false
+
+[[bench]]
+name = "parser_bench"
+harness = false

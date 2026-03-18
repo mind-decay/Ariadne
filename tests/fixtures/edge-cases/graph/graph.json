@@ -1,0 +1,107 @@
+{
+  "version": 1,
+  "project_root": "/Users/minddecay/Documents/Projects/ariadne/.claude/worktrees/agent-ac65cd4d/tests/fixtures/edge-cases",
+  "node_count": 7,
+  "edge_count": 3,
+  "nodes": {
+    "circular-a.ts": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 2,
+      "hash": "07038ee78ce50e31",
+      "exports": [
+        "a"
+      ],
+      "cluster": "root"
+    },
+    "circular-b.ts": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 2,
+      "hash": "f4ba34296ef0d2dd",
+      "exports": [
+        "b"
+      ],
+      "cluster": "root"
+    },
+    "deeply/nested/a/b/c/d/file.ts": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 1,
+      "hash": "b11cd6be8d4e0790",
+      "exports": [
+        "deep"
+      ],
+      "cluster": "deeply"
+    },
+    "empty.ts": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 0,
+      "hash": "ef46db3751d8e999",
+      "exports": [],
+      "cluster": "root"
+    },
+    "helper.ts": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 3,
+      "hash": "fec44a50fc9a73bd",
+      "exports": [
+        "helper"
+      ],
+      "cluster": "root"
+    },
+    "syntax-error.ts": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 2,
+      "hash": "97ac7c0b02a4254e",
+      "exports": [],
+      "cluster": "root"
+    },
+    "valid.ts": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 1,
+      "hash": "77155de97e474b67",
+      "exports": [
+        "foo"
+      ],
+      "cluster": "root"
+    }
+  },
+  "edges": [
+    [
+      "circular-a.ts",
+      "circular-b.ts",
+      "imports",
+      [
+        "b"
+      ]
+    ],
+    [
+      "circular-b.ts",
+      "circular-a.ts",
+      "imports",
+      [
+        "a"
+      ]
+    ],
+    [
+      "syntax-error.ts",
+      "valid.ts",
+      "imports",
+      [
+        "foo"
+      ]
+    ]
+  ]
+}

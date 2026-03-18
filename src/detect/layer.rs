@@ -31,22 +31,29 @@ fn directory_segments(path: &str) -> impl Iterator<Item = &str> {
 /// Match a lowercased directory segment to an architectural layer.
 fn match_layer(segment: &str) -> Option<ArchLayer> {
     match segment {
-        // Api
-        "api" | "routes" | "endpoints" | "controllers" | "handlers" | "rest" | "graphql" => {
+        // Api (REST, GraphQL, MVC, Clean, Hexagonal, SvelteKit)
+        "api" | "routes" | "endpoints" | "controllers" | "handlers" | "rest" | "graphql"
+        | "presentation" | "adapters" | "interfaces" | "presenters" | "ports" | "params" => {
             Some(ArchLayer::Api)
         }
-        // Service
+        // Service (DDD, Clean, CQRS, Event-Driven, Angular/NestJS)
         "services" | "service" | "domain" | "business" | "usecases" | "use-cases"
-        | "interactors" | "middleware" => Some(ArchLayer::Service),
-        // Data
-        "data" | "db" | "database" | "repository" | "repositories" | "models" | "dao"
-        | "store" | "stores" | "schema" | "migration" | "migrations" => Some(ArchLayer::Data),
-        // Util
-        "utils" | "util" | "helpers" | "lib" | "shared" | "common" | "pkg" => {
+        | "interactors" | "middleware" | "application" | "commands" | "events" | "listeners"
+        | "subscribers" | "guards" | "interceptors" | "filters" | "providers" => {
+            Some(ArchLayer::Service)
+        }
+        // Data (DDD, Clean, Layered, CQRS, Rails/Django)
+        "data" | "db" | "database" | "repository" | "repositories" | "models" | "model"
+        | "dao" | "store" | "stores" | "schema" | "migration" | "migrations"
+        | "entities" | "aggregates" | "value-objects" | "infrastructure" | "persistence"
+        | "gateways" | "queries" | "serializers" => Some(ArchLayer::Data),
+        // Util (Angular)
+        "utils" | "util" | "helpers" | "lib" | "shared" | "common" | "pkg" | "pipes" => {
             Some(ArchLayer::Util)
         }
-        // Component
-        "components" | "component" | "ui" | "views" | "pages" | "layouts" | "widgets" => {
+        // Component (MVVM, Django, Angular)
+        "components" | "component" | "ui" | "views" | "pages" | "layouts" | "widgets"
+        | "viewmodels" | "view-models" | "templates" | "forms" | "directives" => {
             Some(ArchLayer::Component)
         }
         // Hook
@@ -71,6 +78,11 @@ mod tests {
         assert_eq!(layer("src/controllers/user.ts"), ArchLayer::Api);
         assert_eq!(layer("src/routes/index.ts"), ArchLayer::Api);
         assert_eq!(layer("src/handlers/login.go"), ArchLayer::Api);
+        // Clean / Layered architecture
+        assert_eq!(layer("src/presentation/views.ts"), ArchLayer::Api);
+        assert_eq!(layer("src/adapters/http.ts"), ArchLayer::Api);
+        assert_eq!(layer("src/interfaces/rest.ts"), ArchLayer::Api);
+        assert_eq!(layer("src/presenters/user.ts"), ArchLayer::Api);
     }
 
     #[test]
@@ -79,6 +91,8 @@ mod tests {
         assert_eq!(layer("src/domain/user.ts"), ArchLayer::Service);
         assert_eq!(layer("src/usecases/login.ts"), ArchLayer::Service);
         assert_eq!(layer("src/middleware/cors.ts"), ArchLayer::Service);
+        // Clean / DDD
+        assert_eq!(layer("src/application/commands.ts"), ArchLayer::Service);
     }
 
     #[test]
@@ -86,9 +100,17 @@ mod tests {
         assert_eq!(layer("src/data/user.ts"), ArchLayer::Data);
         assert_eq!(layer("src/repository/auth.ts"), ArchLayer::Data);
         assert_eq!(layer("src/models/user.py"), ArchLayer::Data);
+        assert_eq!(layer("src/model/user.ts"), ArchLayer::Data);
         assert_eq!(layer("src/db/connection.ts"), ArchLayer::Data);
         assert_eq!(layer("src/schema/user.graphql"), ArchLayer::Data);
         assert_eq!(layer("src/migrations/001_init.sql"), ArchLayer::Data);
+        // DDD / Clean / Layered architecture
+        assert_eq!(layer("src/entities/user.ts"), ArchLayer::Data);
+        assert_eq!(layer("src/aggregates/order.ts"), ArchLayer::Data);
+        assert_eq!(layer("src/value-objects/money.ts"), ArchLayer::Data);
+        assert_eq!(layer("src/infrastructure/database.ts"), ArchLayer::Data);
+        assert_eq!(layer("src/persistence/user_repo.ts"), ArchLayer::Data);
+        assert_eq!(layer("src/gateways/payment.ts"), ArchLayer::Data);
     }
 
     #[test]
@@ -125,6 +147,55 @@ mod tests {
     fn config_layer() {
         assert_eq!(layer("src/config/database.ts"), ArchLayer::Config);
         assert_eq!(layer("src/settings/app.py"), ArchLayer::Config);
+    }
+
+    #[test]
+    fn sveltekit() {
+        assert_eq!(layer("src/params/slug.ts"), ArchLayer::Api);
+        assert_eq!(layer("src/routes/api/users.ts"), ArchLayer::Api);
+        assert_eq!(layer("src/lib/utils/format.ts"), ArchLayer::Util);
+    }
+
+    #[test]
+    fn hexagonal_architecture() {
+        assert_eq!(layer("src/ports/input.ts"), ArchLayer::Api);
+        assert_eq!(layer("src/adapters/http.ts"), ArchLayer::Api);
+    }
+
+    #[test]
+    fn cqrs() {
+        assert_eq!(layer("src/commands/create_order.ts"), ArchLayer::Service);
+        assert_eq!(layer("src/queries/get_orders.ts"), ArchLayer::Data);
+    }
+
+    #[test]
+    fn event_driven() {
+        assert_eq!(layer("src/events/order_created.ts"), ArchLayer::Service);
+        assert_eq!(layer("src/listeners/email_sender.ts"), ArchLayer::Service);
+        assert_eq!(layer("src/subscribers/audit_log.ts"), ArchLayer::Service);
+    }
+
+    #[test]
+    fn mvvm() {
+        assert_eq!(layer("src/viewmodels/user.ts"), ArchLayer::Component);
+        assert_eq!(layer("src/view-models/user.ts"), ArchLayer::Component);
+    }
+
+    #[test]
+    fn rails_django() {
+        assert_eq!(layer("app/templates/index.html"), ArchLayer::Component);
+        assert_eq!(layer("app/serializers/user.py"), ArchLayer::Data);
+        assert_eq!(layer("app/forms/login.py"), ArchLayer::Component);
+    }
+
+    #[test]
+    fn angular_nestjs() {
+        assert_eq!(layer("src/guards/auth.guard.ts"), ArchLayer::Service);
+        assert_eq!(layer("src/interceptors/logging.ts"), ArchLayer::Service);
+        assert_eq!(layer("src/pipes/validation.pipe.ts"), ArchLayer::Util);
+        assert_eq!(layer("src/directives/highlight.ts"), ArchLayer::Component);
+        assert_eq!(layer("src/filters/exception.filter.ts"), ArchLayer::Service);
+        assert_eq!(layer("src/providers/database.ts"), ArchLayer::Service);
     }
 
     #[test]

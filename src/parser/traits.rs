@@ -1,3 +1,4 @@
+use crate::model::workspace::WorkspaceInfo;
 use crate::model::{CanonicalPath, FileSet};
 
 /// Discriminant for import origin.
@@ -42,5 +43,6 @@ pub trait ImportResolver: Send + Sync {
         import: &RawImport,
         from_file: &CanonicalPath,
         known_files: &FileSet,
+        workspace: Option<&WorkspaceInfo>,
     ) -> Option<CanonicalPath>;
 }

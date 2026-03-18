@@ -95,6 +95,7 @@ Ariadne is a standalone Rust CLI that builds structural dependency graphs from s
 - Tier 2/3 language parsers
 - Config file (.ariadne.toml)
 - Plugin system for external parsers
+- Feature-Sliced Design (FSD) architecture support (D-031)
 - `ariadne self-update`
 - Package manager distribution (brew, nix, AUR)
 - Integration with orchestration frameworks (Moira etc.)

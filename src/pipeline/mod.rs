@@ -4,11 +4,13 @@ pub mod resolve;
 pub mod walk;
 
 use std::path::{Path, PathBuf};
+use std::time::Instant;
 
 use rayon::prelude::*;
 
 use crate::cluster::assign_clusters;
-use crate::diagnostic::{DiagnosticCollector, FatalError, Warning, WarningCode};
+use crate::detect::detect_workspace;
+use crate::diagnostic::{DiagnosticCollector, DiagnosticCounts, FatalError, Warning, WarningCode};
 use crate::model::*;
 use crate::parser::{ParserRegistry, RawExport, RawImport};
 use crate::serial::{ClusterEntryOutput, ClusterOutput, GraphOutput, GraphSerializer, NodeOutput};
@@ -33,6 +35,7 @@ pub struct BuildOutput {
     pub edge_count: usize,
     pub cluster_count: usize,
     pub warnings: Vec<Warning>,
+    pub counts: DiagnosticCounts,
 }
 
 /// The build pipeline — orchestrates walk → read → parse → resolve → cluster → serialize.
@@ -59,20 +62,28 @@ impl BuildPipeline {
     }
 
     pub fn run(&self, root: &Path, config: WalkConfig) -> Result<BuildOutput, FatalError> {
-        self.run_with_output(root, config, None)
+        self.run_with_output(root, config, None, false, false)
     }
 
-    pub fn run_with_output(&self, root: &Path, config: WalkConfig, output_dir: Option<&Path>) -> Result<BuildOutput, FatalError> {
+    pub fn run_with_output(&self, root: &Path, config: WalkConfig, output_dir: Option<&Path>, timestamp: bool, verbose: bool) -> Result<BuildOutput, FatalError> {
         let diagnostics = DiagnosticCollector::new();
         let abs_root = std::fs::canonicalize(root).map_err(|_| FatalError::ProjectNotFound {
             path: root.to_path_buf(),
         })?;
 
+        let total_start = Instant::now();
+
         // Stage 1: Walk
+        let walk_start = Instant::now();
         let entries = self.walker.walk(&abs_root, &config)?;
+        if verbose {
+            eprintln!("[walk]      {:>6}ms  {} files found", walk_start.elapsed().as_millis(), entries.len());
+        }
 
         // Stage 2: Read (with diagnostics)
+        let read_start = Instant::now();
         let mut file_contents: Vec<FileContent> = Vec::new();
+        let mut read_skipped: usize = 0;
         for entry in &entries {
             // Only read files with recognized parser extensions
             if self.registry.parser_for(&entry.extension).is_none() {
@@ -82,11 +93,15 @@ impl BuildPipeline {
             match self.reader.read(entry, &abs_root, config.max_file_size) {
                 Ok(content) => file_contents.push(content),
                 Err(skip) => {
+                    read_skipped += 1;
                     // Convert FileSkipReason to warning
                     let warning = skip_reason_to_warning(&skip);
                     diagnostics.warn(warning);
                 }
             }
+        }
+        if verbose {
+            eprintln!("[read+hash] {:>6}ms  {} files read ({} skipped)", read_start.elapsed().as_millis(), file_contents.len(), read_skipped);
         }
 
         // E004: no parseable files
@@ -100,6 +115,8 @@ impl BuildPipeline {
         file_contents.sort_by(|a, b| a.path.cmp(&b.path));
 
         // Stage 3: Parse (parallel via rayon on sorted list)
+        let parse_start = Instant::now();
+        let file_count_before_parse = file_contents.len();
         let parsed_files: Vec<ParsedFile> = file_contents
             .par_iter()
             .filter_map(|fc| {
@@ -134,12 +151,29 @@ impl BuildPipeline {
                 }
             })
             .collect();
+        if verbose {
+            let parse_warnings = file_count_before_parse - parsed_files.len();
+            eprintln!("[parse]     {:>6}ms  {} files parsed ({} warnings)", parse_start.elapsed().as_millis(), parsed_files.len(), parse_warnings);
+        }
 
         // Stage 4: Resolve + Build graph
-        let mut graph =
-            build::resolve_and_build(&parsed_files, &file_contents, &self.registry, &diagnostics);
+        let resolve_start = Instant::now();
+        // Detect workspace for workspace-aware import resolution
+        let workspace_info = detect_workspace(&abs_root, &diagnostics);
+        let workspace_relative = workspace_info.as_ref().map(|ws| ws.relativize(&abs_root));
+        let mut graph = build::resolve_and_build(
+            &parsed_files,
+            &file_contents,
+            &self.registry,
+            &diagnostics,
+            workspace_relative.as_ref(),
+        );
+        if verbose {
+            eprintln!("[resolve]   {:>6}ms  {} edges created", resolve_start.elapsed().as_millis(), graph.edges.len());
+        }
 
         // Stage 5: Cluster
+        let cluster_start = Instant::now();
         let cluster_map = assign_clusters(&graph);
 
         // Apply cluster assignments to nodes
@@ -150,12 +184,19 @@ impl BuildPipeline {
                 }
             }
         }
+        if verbose {
+            eprintln!("[cluster]   {:>6}ms  {} clusters", cluster_start.elapsed().as_millis(), cluster_map.clusters.len());
+        }
 
         // Stage 6: Convert to output model
-        let graph_output = project_graph_to_output(&graph, &abs_root);
+        let mut graph_output = project_graph_to_output(&graph, &abs_root);
+        if timestamp {
+            graph_output.generated = Some(format_utc_timestamp());
+        }
         let cluster_output = cluster_map_to_output(&cluster_map);
 
         // Stage 7: Serialize
+        let ser_start = Instant::now();
         let output_dir = match output_dir {
             Some(dir) => dir.to_path_buf(),
             None => root.join(".ariadne").join("graph"),
@@ -163,6 +204,15 @@ impl BuildPipeline {
         self.serializer.write_graph(&graph_output, &output_dir)?;
         self.serializer
             .write_clusters(&cluster_output, &output_dir)?;
+        if verbose {
+            let graph_size = std::fs::metadata(output_dir.join("graph.json")).map(|m| m.len()).unwrap_or(0);
+            let cluster_size = std::fs::metadata(output_dir.join("clusters.json")).map(|m| m.len()).unwrap_or(0);
+            eprintln!("[serialize] {:>6}ms  graph.json ({}) + clusters.json ({})", ser_start.elapsed().as_millis(), format_size(graph_size), format_size(cluster_size));
+        }
+
+        if verbose {
+            eprintln!("[total]     {:>6}ms", total_start.elapsed().as_millis());
+        }
 
         // Drain diagnostics
         let report = diagnostics.drain();
@@ -174,6 +224,7 @@ impl BuildPipeline {
             edge_count: graph.edges.len(),
             cluster_count: cluster_map.clusters.len(),
             warnings: report.warnings,
+            counts: report.counts,
         })
     }
 }
@@ -236,6 +287,31 @@ fn cluster_map_to_output(cluster_map: &ClusterMap) -> ClusterOutput {
         );
     }
     ClusterOutput { clusters }
+}
+
+/// Format current UTC time as ISO 8601 with seconds precision.
+fn format_utc_timestamp() -> String {
+    let now = time::OffsetDateTime::now_utc();
+    format!(
+        "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z",
+        now.year(),
+        now.month() as u8,
+        now.day(),
+        now.hour(),
+        now.minute(),
+        now.second(),
+    )
+}
+
+/// Format byte size in human-readable form (e.g., "2.1MB", "24KB", "512B").
+fn format_size(bytes: u64) -> String {
+    if bytes >= 1_048_576 {
+        format!("{:.1}MB", bytes as f64 / 1_048_576.0)
+    } else if bytes >= 1024 {
+        format!("{}KB", bytes / 1024)
+    } else {
+        format!("{}B", bytes)
+    }
 }
 
 /// Convert a FileSkipReason into a Warning.
