@@ -20,21 +20,18 @@ impl GraphSerializer for JsonSerializer {
     }
 }
 
-/// Create output directory if it doesn't exist.
+/// Create output directory (idempotent).
 fn ensure_dir(dir: &Path) -> Result<(), FatalError> {
-    if !dir.exists() {
-        fs::create_dir_all(dir).map_err(|e| FatalError::OutputNotWritable {
-            path: dir.to_path_buf(),
-            reason: e.to_string(),
-        })?;
-    }
-    Ok(())
+    fs::create_dir_all(dir).map_err(|e| FatalError::OutputNotWritable {
+        path: dir.to_path_buf(),
+        reason: e.to_string(),
+    })
 }
 
-/// Write JSON atomically: write to .tmp, then rename.
+/// Write JSON atomically: write to a unique temp file, then rename.
 fn atomic_write<T: serde::Serialize>(dir: &Path, filename: &str, value: &T) -> Result<(), FatalError> {
     let final_path = dir.join(filename);
-    let tmp_path = dir.join(format!("{}.tmp", filename));
+    let tmp_path = dir.join(format!("{}.{}.tmp", filename, std::process::id()));
 
     let file = fs::File::create(&tmp_path).map_err(|e| FatalError::OutputNotWritable {
         path: final_path.clone(),

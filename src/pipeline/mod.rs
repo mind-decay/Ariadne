@@ -25,6 +25,7 @@ pub struct ParsedFile {
 }
 
 /// Result of a successful pipeline run.
+#[derive(Debug)]
 pub struct BuildOutput {
     pub graph_path: PathBuf,
     pub clusters_path: PathBuf,
@@ -58,6 +59,10 @@ impl BuildPipeline {
     }
 
     pub fn run(&self, root: &Path, config: WalkConfig) -> Result<BuildOutput, FatalError> {
+        self.run_with_output(root, config, None)
+    }
+
+    pub fn run_with_output(&self, root: &Path, config: WalkConfig, output_dir: Option<&Path>) -> Result<BuildOutput, FatalError> {
         let diagnostics = DiagnosticCollector::new();
         let abs_root = std::fs::canonicalize(root).map_err(|_| FatalError::ProjectNotFound {
             path: root.to_path_buf(),
@@ -142,7 +147,10 @@ impl BuildPipeline {
         let cluster_output = cluster_map_to_output(&cluster_map);
 
         // Stage 7: Serialize
-        let output_dir = root.join(".ariadne").join("graph");
+        let output_dir = match output_dir {
+            Some(dir) => dir.to_path_buf(),
+            None => root.join(".ariadne").join("graph"),
+        };
         self.serializer.write_graph(&graph_output, &output_dir)?;
         self.serializer
             .write_clusters(&cluster_output, &output_dir)?;
