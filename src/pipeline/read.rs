@@ -1,6 +1,9 @@
 use std::path::PathBuf;
 
+use crate::hash::hash_content;
 use crate::model::{CanonicalPath, ContentHash};
+
+use super::walk::FileEntry;
 
 /// Output of the read stage.
 #[derive(Clone, Debug)]
@@ -22,8 +25,64 @@ pub enum FileSkipReason {
 
 /// File reading + filtering abstraction.
 pub trait FileReader: Send + Sync {
-    fn read(
-        &self,
-        entry: &super::walk::FileEntry,
-    ) -> Result<FileContent, FileSkipReason>;
+    fn read(&self, entry: &FileEntry, project_root: &std::path::Path, max_file_size: u64) -> Result<FileContent, FileSkipReason>;
+}
+
+/// Filesystem-based file reader.
+pub struct FsReader;
+
+impl FsReader {
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+impl FileReader for FsReader {
+    fn read(&self, entry: &FileEntry, project_root: &std::path::Path, max_file_size: u64) -> Result<FileContent, FileSkipReason> {
+        // Check file size first
+        let metadata = std::fs::metadata(&entry.path).map_err(|e| FileSkipReason::ReadError {
+            path: entry.path.clone(),
+            reason: e.to_string(),
+        })?;
+
+        if metadata.len() > max_file_size {
+            return Err(FileSkipReason::TooLarge {
+                path: entry.path.clone(),
+                size: metadata.len(),
+            });
+        }
+
+        // Read bytes
+        let bytes = std::fs::read(&entry.path).map_err(|e| FileSkipReason::ReadError {
+            path: entry.path.clone(),
+            reason: e.to_string(),
+        })?;
+
+        // Check UTF-8
+        if std::str::from_utf8(&bytes).is_err() {
+            return Err(FileSkipReason::EncodingError {
+                path: entry.path.clone(),
+            });
+        }
+
+        // Compute hash
+        let hash = hash_content(&bytes);
+
+        // Count lines
+        let lines = bytes.iter().filter(|&&b| b == b'\n').count() as u32;
+
+        // Canonicalize path relative to project root
+        let relative = entry
+            .path
+            .strip_prefix(project_root)
+            .unwrap_or(&entry.path);
+        let canonical = CanonicalPath::new(relative.to_string_lossy().to_string());
+
+        Ok(FileContent {
+            path: canonical,
+            bytes,
+            hash,
+            lines,
+        })
+    }
 }
