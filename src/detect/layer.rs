@@ -32,15 +32,16 @@ fn directory_segments(path: &str) -> impl Iterator<Item = &str> {
 fn match_layer(segment: &str) -> Option<ArchLayer> {
     match segment {
         // Api
-        "api" | "routes" | "endpoints" | "controllers" | "handlers" | "rest" | "graphql" => {
-            Some(ArchLayer::Api)
-        }
+        "api" | "routes" | "endpoints" | "controllers" | "handlers" | "rest" | "graphql"
+        | "presentation" | "adapters" | "interfaces" | "presenters" => Some(ArchLayer::Api),
         // Service
         "services" | "service" | "domain" | "business" | "usecases" | "use-cases"
-        | "interactors" | "middleware" => Some(ArchLayer::Service),
+        | "interactors" | "middleware" | "application" => Some(ArchLayer::Service),
         // Data
-        "data" | "db" | "database" | "repository" | "repositories" | "models" | "dao"
-        | "store" | "stores" | "schema" | "migration" | "migrations" => Some(ArchLayer::Data),
+        "data" | "db" | "database" | "repository" | "repositories" | "models" | "model"
+        | "dao" | "store" | "stores" | "schema" | "migration" | "migrations"
+        | "entities" | "aggregates" | "value-objects" | "infrastructure" | "persistence"
+        | "gateways" => Some(ArchLayer::Data),
         // Util
         "utils" | "util" | "helpers" | "lib" | "shared" | "common" | "pkg" => {
             Some(ArchLayer::Util)
@@ -71,6 +72,11 @@ mod tests {
         assert_eq!(layer("src/controllers/user.ts"), ArchLayer::Api);
         assert_eq!(layer("src/routes/index.ts"), ArchLayer::Api);
         assert_eq!(layer("src/handlers/login.go"), ArchLayer::Api);
+        // Clean / Layered architecture
+        assert_eq!(layer("src/presentation/views.ts"), ArchLayer::Api);
+        assert_eq!(layer("src/adapters/http.ts"), ArchLayer::Api);
+        assert_eq!(layer("src/interfaces/rest.ts"), ArchLayer::Api);
+        assert_eq!(layer("src/presenters/user.ts"), ArchLayer::Api);
     }
 
     #[test]
@@ -79,6 +85,8 @@ mod tests {
         assert_eq!(layer("src/domain/user.ts"), ArchLayer::Service);
         assert_eq!(layer("src/usecases/login.ts"), ArchLayer::Service);
         assert_eq!(layer("src/middleware/cors.ts"), ArchLayer::Service);
+        // Clean / DDD
+        assert_eq!(layer("src/application/commands.ts"), ArchLayer::Service);
     }
 
     #[test]
@@ -86,9 +94,17 @@ mod tests {
         assert_eq!(layer("src/data/user.ts"), ArchLayer::Data);
         assert_eq!(layer("src/repository/auth.ts"), ArchLayer::Data);
         assert_eq!(layer("src/models/user.py"), ArchLayer::Data);
+        assert_eq!(layer("src/model/user.ts"), ArchLayer::Data);
         assert_eq!(layer("src/db/connection.ts"), ArchLayer::Data);
         assert_eq!(layer("src/schema/user.graphql"), ArchLayer::Data);
         assert_eq!(layer("src/migrations/001_init.sql"), ArchLayer::Data);
+        // DDD / Clean / Layered architecture
+        assert_eq!(layer("src/entities/user.ts"), ArchLayer::Data);
+        assert_eq!(layer("src/aggregates/order.ts"), ArchLayer::Data);
+        assert_eq!(layer("src/value-objects/money.ts"), ArchLayer::Data);
+        assert_eq!(layer("src/infrastructure/database.ts"), ArchLayer::Data);
+        assert_eq!(layer("src/persistence/user_repo.ts"), ArchLayer::Data);
+        assert_eq!(layer("src/gateways/payment.ts"), ArchLayer::Data);
     }
 
     #[test]
