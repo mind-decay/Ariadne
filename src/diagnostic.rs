@@ -1,3 +1,4 @@
+use std::fmt;
 use std::path::PathBuf;
 use std::sync::Mutex;
 
@@ -44,6 +45,106 @@ impl WarningCode {
             Self::W009EncodingError => "W009",
         }
     }
+}
+
+impl fmt::Display for WarningCode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.code())
+    }
+}
+
+/// Warning output format.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum WarningFormat {
+    Human,
+    Json,
+}
+
+/// Format warnings from a diagnostic report.
+///
+/// Filters W006 (ImportUnresolved) unless `verbose` is true.
+pub fn format_warnings(report: &DiagnosticReport, format: WarningFormat, verbose: bool) -> String {
+    let mut lines: Vec<String> = Vec::new();
+
+    for w in &report.warnings {
+        if w.code == WarningCode::W006ImportUnresolved && !verbose {
+            continue;
+        }
+
+        match format {
+            WarningFormat::Human => {
+                let detail_part = match &w.detail {
+                    Some(d) => format!(": {}", d),
+                    None => String::new(),
+                };
+                lines.push(format!("warn[{}]: {}: {}{}", w.code, w.path, w.message, detail_part));
+            }
+            WarningFormat::Json => {
+                let detail_json = match &w.detail {
+                    Some(d) => format!(",\"detail\":\"{}\"", json_escape(d)),
+                    None => String::new(),
+                };
+                lines.push(format!(
+                    "{{\"level\":\"warn\",\"code\":\"{}\",\"file\":\"{}\",\"message\":\"{}\"{}}}",
+                    w.code,
+                    json_escape(w.path.as_str()),
+                    json_escape(&w.message),
+                    detail_json,
+                ));
+            }
+        }
+    }
+
+    lines.join("\n")
+}
+
+/// Format the build summary line.
+pub fn format_summary(
+    report: &DiagnosticReport,
+    file_count: usize,
+    edge_count: usize,
+    cluster_count: usize,
+    elapsed: std::time::Duration,
+) -> String {
+    let mut result = format!(
+        "Built graph: {} files, {} edges, {} clusters in {:.1}s",
+        file_count,
+        edge_count,
+        cluster_count,
+        elapsed.as_secs_f64(),
+    );
+
+    if report.counts.files_skipped > 0 {
+        result.push_str(&format!("\n  {} files skipped", report.counts.files_skipped));
+    }
+
+    if report.counts.imports_unresolved > 0 {
+        result.push_str(&format!(
+            "\n  {} imports unresolved",
+            report.counts.imports_unresolved
+        ));
+    }
+
+    result
+}
+
+/// Minimal JSON string escaping for JSONL output.
+fn json_escape(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for c in s.chars() {
+        match c {
+            '"' => out.push_str("\\\""),
+            '\\' => out.push_str("\\\\"),
+            '\n' => out.push_str("\\n"),
+            '\r' => out.push_str("\\r"),
+            '\t' => out.push_str("\\t"),
+            c if c < '\x20' => {
+                out.push_str(&format!("\\u{:04x}", c as u32));
+            }
+            c => out.push(c),
+        }
+    }
+    out
 }
 
 /// A recoverable warning about a specific file.
@@ -122,5 +223,155 @@ impl DiagnosticCollector {
 impl Default for DiagnosticCollector {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_warning(code: WarningCode, path: &str, message: &str, detail: Option<&str>) -> Warning {
+        Warning {
+            code,
+            path: CanonicalPath::new(path.to_string()),
+            message: message.to_string(),
+            detail: detail.map(|s| s.to_string()),
+        }
+    }
+
+    fn make_report(warnings: Vec<Warning>, counts: DiagnosticCounts) -> DiagnosticReport {
+        DiagnosticReport { warnings, counts }
+    }
+
+    #[test]
+    fn human_format_with_detail() {
+        let report = make_report(
+            vec![make_warning(
+                WarningCode::W001ParseFailed,
+                "src/foo.ts",
+                "failed to parse",
+                Some("unexpected token at line 42"),
+            )],
+            DiagnosticCounts::default(),
+        );
+        let output = format_warnings(&report, WarningFormat::Human, false);
+        assert_eq!(
+            output,
+            "warn[W001]: src/foo.ts: failed to parse: unexpected token at line 42"
+        );
+    }
+
+    #[test]
+    fn human_format_without_detail() {
+        let report = make_report(
+            vec![make_warning(
+                WarningCode::W002ReadFailed,
+                "src/bar.ts",
+                "cannot read file",
+                None,
+            )],
+            DiagnosticCounts::default(),
+        );
+        let output = format_warnings(&report, WarningFormat::Human, false);
+        assert_eq!(output, "warn[W002]: src/bar.ts: cannot read file");
+    }
+
+    #[test]
+    fn json_format_valid() {
+        let report = make_report(
+            vec![make_warning(
+                WarningCode::W001ParseFailed,
+                "src/foo.ts",
+                "parse failed",
+                Some("unexpected token at line 42"),
+            )],
+            DiagnosticCounts::default(),
+        );
+        let output = format_warnings(&report, WarningFormat::Json, false);
+        // Verify it's valid JSON
+        let parsed: serde_json::Value = serde_json::from_str(&output).expect("should be valid JSON");
+        assert_eq!(parsed["level"], "warn");
+        assert_eq!(parsed["code"], "W001");
+        assert_eq!(parsed["file"], "src/foo.ts");
+        assert_eq!(parsed["message"], "parse failed");
+        assert_eq!(parsed["detail"], "unexpected token at line 42");
+    }
+
+    #[test]
+    fn json_format_without_detail() {
+        let report = make_report(
+            vec![make_warning(
+                WarningCode::W003FileTooLarge,
+                "src/big.ts",
+                "file too large",
+                None,
+            )],
+            DiagnosticCounts::default(),
+        );
+        let output = format_warnings(&report, WarningFormat::Json, false);
+        let parsed: serde_json::Value = serde_json::from_str(&output).expect("should be valid JSON");
+        assert_eq!(parsed["level"], "warn");
+        assert_eq!(parsed["code"], "W003");
+        assert!(parsed.get("detail").is_none());
+    }
+
+    #[test]
+    fn summary_with_skipped_and_unresolved() {
+        let report = make_report(
+            vec![],
+            DiagnosticCounts {
+                files_skipped: 3,
+                imports_unresolved: 42,
+                partial_parses: 0,
+            },
+        );
+        let output = format_summary(&report, 847, 2341, 12, std::time::Duration::from_secs_f64(1.23));
+        assert!(output.starts_with("Built graph: 847 files, 2341 edges, 12 clusters in 1.2s"));
+        assert!(output.contains("3 files skipped"));
+        assert!(output.contains("42 imports unresolved"));
+    }
+
+    #[test]
+    fn summary_no_skipped() {
+        let report = make_report(vec![], DiagnosticCounts::default());
+        let output = format_summary(&report, 10, 5, 2, std::time::Duration::from_secs_f64(0.5));
+        assert_eq!(output, "Built graph: 10 files, 5 edges, 2 clusters in 0.5s");
+        assert!(!output.contains("skipped"));
+        assert!(!output.contains("unresolved"));
+    }
+
+    #[test]
+    fn w006_filtered_without_verbose() {
+        let report = make_report(
+            vec![
+                make_warning(WarningCode::W001ParseFailed, "a.ts", "parse failed", None),
+                make_warning(WarningCode::W006ImportUnresolved, "b.ts", "unresolved import", None),
+            ],
+            DiagnosticCounts::default(),
+        );
+        let output = format_warnings(&report, WarningFormat::Human, false);
+        assert!(output.contains("W001"));
+        assert!(!output.contains("W006"));
+    }
+
+    #[test]
+    fn w006_shown_with_verbose() {
+        let report = make_report(
+            vec![
+                make_warning(WarningCode::W001ParseFailed, "a.ts", "parse failed", None),
+                make_warning(WarningCode::W006ImportUnresolved, "b.ts", "unresolved import", None),
+            ],
+            DiagnosticCounts::default(),
+        );
+        let output = format_warnings(&report, WarningFormat::Human, true);
+        assert!(output.contains("W001"));
+        assert!(output.contains("W006"));
+    }
+
+    #[test]
+    fn warning_code_display() {
+        assert_eq!(format!("{}", WarningCode::W001ParseFailed), "W001");
+        assert_eq!(format!("{}", WarningCode::W006ImportUnresolved), "W006");
+        assert_eq!(format!("{}", WarningCode::W009EncodingError), "W009");
     }
 }

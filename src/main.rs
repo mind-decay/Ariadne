@@ -4,6 +4,9 @@ use std::time::Instant;
 
 use clap::{Parser, Subcommand};
 
+use ariadne_graph::diagnostic::{
+    format_summary, format_warnings, DiagnosticReport, WarningFormat,
+};
 use ariadne_graph::pipeline::{BuildPipeline, FsReader, FsWalker, WalkConfig};
 use ariadne_graph::parser::ParserRegistry;
 use ariadne_graph::serial::json::JsonSerializer;
@@ -58,36 +61,27 @@ fn run_build(path: &PathBuf, output: Option<&std::path::Path>) {
     match pipeline.run_with_output(path, config, output) {
         Ok(output) => {
             let elapsed = start.elapsed();
+            let report = DiagnosticReport {
+                warnings: output.warnings,
+                counts: output.counts,
+            };
+
+            // Print summary to stdout
             println!(
-                "Built graph: {} files, {} edges, {} clusters in {:.1}s",
-                output.file_count,
-                output.edge_count,
-                output.cluster_count,
-                elapsed.as_secs_f64()
+                "{}",
+                format_summary(
+                    &report,
+                    output.file_count,
+                    output.edge_count,
+                    output.cluster_count,
+                    elapsed,
+                )
             );
 
-            let skipped = output
-                .warnings
-                .iter()
-                .filter(|w| {
-                    matches!(
-                        w.code,
-                        ariadne_graph::diagnostic::WarningCode::W001ParseFailed
-                            | ariadne_graph::diagnostic::WarningCode::W002ReadFailed
-                            | ariadne_graph::diagnostic::WarningCode::W003FileTooLarge
-                            | ariadne_graph::diagnostic::WarningCode::W004BinaryFile
-                            | ariadne_graph::diagnostic::WarningCode::W009EncodingError
-                    )
-                })
-                .count();
-
-            if skipped > 0 {
-                eprintln!("  {} files skipped", skipped);
-            }
-
-            // Print warnings to stderr
-            for w in &output.warnings {
-                eprintln!("warn[{}]: {} {}", w.code.code(), w.path, w.message);
+            // Print warnings to stderr (Human format, non-verbose for now)
+            let warning_output = format_warnings(&report, WarningFormat::Human, false);
+            if !warning_output.is_empty() {
+                eprintln!("{}", warning_output);
             }
         }
         Err(e) => {

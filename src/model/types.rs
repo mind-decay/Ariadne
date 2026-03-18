@@ -184,3 +184,151 @@ impl Default for FileSet {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // --- CanonicalPath normalization ---
+
+    #[test]
+    fn normalize_basic_path_unchanged() {
+        let p = CanonicalPath::new("src/auth/login.ts");
+        assert_eq!(p.as_str(), "src/auth/login.ts");
+    }
+
+    #[test]
+    fn normalize_backslashes() {
+        let p = CanonicalPath::new("src\\auth\\login.ts");
+        assert_eq!(p.as_str(), "src/auth/login.ts");
+    }
+
+    #[test]
+    fn normalize_leading_dot_slash() {
+        let p = CanonicalPath::new("./src/auth/login.ts");
+        assert_eq!(p.as_str(), "src/auth/login.ts");
+    }
+
+    #[test]
+    fn normalize_double_slashes() {
+        let p = CanonicalPath::new("src//auth//login.ts");
+        assert_eq!(p.as_str(), "src/auth/login.ts");
+    }
+
+    #[test]
+    fn normalize_triple_slashes() {
+        let p = CanonicalPath::new("src///auth///login.ts");
+        assert_eq!(p.as_str(), "src/auth/login.ts");
+    }
+
+    #[test]
+    fn normalize_trailing_slash() {
+        let p = CanonicalPath::new("src/auth/");
+        assert_eq!(p.as_str(), "src/auth");
+    }
+
+    #[test]
+    fn normalize_trailing_double_slash() {
+        let p = CanonicalPath::new("src/auth//");
+        assert_eq!(p.as_str(), "src/auth");
+    }
+
+    #[test]
+    fn normalize_dot_dot_resolves() {
+        let p = CanonicalPath::new("src/auth/../utils/helper.ts");
+        assert_eq!(p.as_str(), "src/utils/helper.ts");
+    }
+
+    #[test]
+    fn normalize_dot_dot_escaping_root_clamped() {
+        // More .. than segments: should clamp at root (empty)
+        let p = CanonicalPath::new("src/../../escape.ts");
+        assert_eq!(p.as_str(), "escape.ts");
+    }
+
+    #[test]
+    fn normalize_dot_dot_deep_escape() {
+        let p = CanonicalPath::new("../../../etc/passwd");
+        assert_eq!(p.as_str(), "etc/passwd");
+    }
+
+    #[test]
+    fn normalize_only_dot_dot() {
+        let p = CanonicalPath::new("../../..");
+        assert_eq!(p.as_str(), "");
+    }
+
+    #[test]
+    fn normalize_empty_path() {
+        let p = CanonicalPath::new("");
+        assert_eq!(p.as_str(), "");
+    }
+
+    #[test]
+    fn normalize_single_dot() {
+        let p = CanonicalPath::new(".");
+        assert_eq!(p.as_str(), "");
+    }
+
+    #[test]
+    fn normalize_dot_slash_only() {
+        let p = CanonicalPath::new("./");
+        assert_eq!(p.as_str(), "");
+    }
+
+    #[test]
+    fn normalize_mixed_separators_and_traversal() {
+        let p = CanonicalPath::new(".\\src\\..\\lib//utils\\.\\helper.ts");
+        assert_eq!(p.as_str(), "lib/utils/helper.ts");
+    }
+
+    // --- CanonicalPath helper methods ---
+
+    #[test]
+    fn parent_returns_directory() {
+        let p = CanonicalPath::new("src/auth/login.ts");
+        assert_eq!(p.parent(), Some("src/auth"));
+    }
+
+    #[test]
+    fn parent_returns_none_for_root_file() {
+        let p = CanonicalPath::new("login.ts");
+        assert_eq!(p.parent(), None);
+    }
+
+    #[test]
+    fn extension_returns_ext() {
+        let p = CanonicalPath::new("src/auth/login.ts");
+        assert_eq!(p.extension(), Some("ts"));
+    }
+
+    #[test]
+    fn file_name_returns_last_segment() {
+        let p = CanonicalPath::new("src/auth/login.ts");
+        assert_eq!(p.file_name(), "login.ts");
+    }
+
+    // --- FileSet ---
+
+    #[test]
+    fn fileset_contains_and_len() {
+        let fs = FileSet::from_iter(vec![
+            CanonicalPath::new("a.ts"),
+            CanonicalPath::new("b.ts"),
+        ]);
+        assert_eq!(fs.len(), 2);
+        assert!(fs.contains(&CanonicalPath::new("a.ts")));
+        assert!(!fs.contains(&CanonicalPath::new("c.ts")));
+    }
+
+    #[test]
+    fn fileset_deterministic_order() {
+        let fs = FileSet::from_iter(vec![
+            CanonicalPath::new("z.ts"),
+            CanonicalPath::new("a.ts"),
+            CanonicalPath::new("m.ts"),
+        ]);
+        let paths: Vec<&str> = fs.iter().map(|p| p.as_str()).collect();
+        assert_eq!(paths, vec!["a.ts", "m.ts", "z.ts"]);
+    }
+}

@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use rayon::prelude::*;
 
 use crate::cluster::assign_clusters;
-use crate::diagnostic::{DiagnosticCollector, FatalError, Warning, WarningCode};
+use crate::diagnostic::{DiagnosticCollector, DiagnosticCounts, FatalError, Warning, WarningCode};
 use crate::model::*;
 use crate::parser::{ParserRegistry, RawExport, RawImport};
 use crate::serial::{ClusterEntryOutput, ClusterOutput, GraphOutput, GraphSerializer, NodeOutput};
@@ -33,6 +33,7 @@ pub struct BuildOutput {
     pub edge_count: usize,
     pub cluster_count: usize,
     pub warnings: Vec<Warning>,
+    pub counts: DiagnosticCounts,
 }
 
 /// The build pipeline — orchestrates walk → read → parse → resolve → cluster → serialize.
@@ -174,6 +175,7 @@ impl BuildPipeline {
             edge_count: graph.edges.len(),
             cluster_count: cluster_map.clusters.len(),
             warnings: report.warnings,
+            counts: report.counts,
         })
     }
 }
