@@ -10,7 +10,7 @@ impl LanguageParser for JavaParser {
     }
 
     fn extensions(&self) -> &[&str] {
-        &[".java"]
+        &["java"]
     }
 
     fn tree_sitter_language(&self) -> tree_sitter::Language {

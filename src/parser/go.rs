@@ -10,7 +10,7 @@ impl LanguageParser for GoParser {
     }
 
     fn extensions(&self) -> &[&str] {
-        &[".go"]
+        &["go"]
     }
 
     fn tree_sitter_language(&self) -> tree_sitter::Language {

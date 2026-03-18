@@ -14,6 +14,19 @@ pub enum FileType {
     TypeDef,
 }
 
+impl FileType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Source => "source",
+            Self::Test => "test",
+            Self::Config => "config",
+            Self::Style => "style",
+            Self::Asset => "asset",
+            Self::TypeDef => "type_def",
+        }
+    }
+}
+
 /// Architectural layer classification.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -26,6 +39,21 @@ pub enum ArchLayer {
     Hook,
     Config,
     Unknown,
+}
+
+impl ArchLayer {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Api => "api",
+            Self::Service => "service",
+            Self::Data => "data",
+            Self::Util => "util",
+            Self::Component => "component",
+            Self::Hook => "hook",
+            Self::Config => "config",
+            Self::Unknown => "unknown",
+        }
+    }
 }
 
 /// A file node in the dependency graph.

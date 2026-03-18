@@ -1,0 +1,623 @@
+{
+  "version": 1,
+  "project_root": "/Users/minddecay/Documents/Projects/ariadne",
+  "node_count": 29,
+  "edge_count": 27,
+  "nodes": {
+    "src/cluster/mod.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 263,
+      "hash": "cfa7e30691eb334b",
+      "exports": [
+        "assign_clusters"
+      ],
+      "cluster": "cluster"
+    },
+    "src/detect/filetype.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 315,
+      "hash": "3da832f5b71104f7",
+      "exports": [
+        "detect_file_type"
+      ],
+      "cluster": "detect"
+    },
+    "src/detect/layer.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 136,
+      "hash": "0b8cc8e6e6be9202",
+      "exports": [
+        "infer_arch_layer"
+      ],
+      "cluster": "detect"
+    },
+    "src/detect/mod.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 5,
+      "hash": "8fe3c1cec592f3ef",
+      "exports": [
+        "detect_file_type",
+        "filetype",
+        "infer_arch_layer",
+        "layer"
+      ],
+      "cluster": "detect"
+    },
+    "src/diagnostic.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 131,
+      "hash": "342b1336fc58793d",
+      "exports": [
+        "DiagnosticCollector",
+        "DiagnosticCounts",
+        "DiagnosticReport",
+        "FatalError",
+        "Warning",
+        "WarningCode"
+      ],
+      "cluster": "root"
+    },
+    "src/hash.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 7,
+      "hash": "669bae155608bc2d",
+      "exports": [
+        "hash_content"
+      ],
+      "cluster": "root"
+    },
+    "src/lib.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 8,
+      "hash": "de603c6e7e653651",
+      "exports": [
+        "cluster",
+        "detect",
+        "diagnostic",
+        "hash",
+        "model",
+        "parser",
+        "pipeline",
+        "serial"
+      ],
+      "cluster": "root"
+    },
+    "src/main.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 113,
+      "hash": "366675c73a8e9fd4",
+      "exports": [],
+      "cluster": "root"
+    },
+    "src/model/edge.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 22,
+      "hash": "6d73a25f210e77da",
+      "exports": [
+        "Edge",
+        "EdgeType"
+      ],
+      "cluster": "model"
+    },
+    "src/model/graph.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 26,
+      "hash": "803ba4fe4e911b0e",
+      "exports": [
+        "Cluster",
+        "ClusterMap",
+        "ProjectGraph"
+      ],
+      "cluster": "model"
+    },
+    "src/model/mod.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 9,
+      "hash": "273fde0f0d8929da",
+      "exports": [
+        "ArchLayer",
+        "CanonicalPath",
+        "Cluster",
+        "ClusterId",
+        "ClusterMap",
+        "ContentHash",
+        "Edge",
+        "EdgeType",
+        "FileSet",
+        "FileType",
+        "Node",
+        "ProjectGraph",
+        "Symbol",
+        "edge",
+        "graph",
+        "node",
+        "types"
+      ],
+      "cluster": "model"
+    },
+    "src/model/node.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 41,
+      "hash": "5e01cbf8019bdac8",
+      "exports": [
+        "ArchLayer",
+        "FileType",
+        "Node"
+      ],
+      "cluster": "model"
+    },
+    "src/model/types.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 186,
+      "hash": "80993087e731fecc",
+      "exports": [
+        "CanonicalPath",
+        "ClusterId",
+        "ContentHash",
+        "FileSet",
+        "Symbol"
+      ],
+      "cluster": "model"
+    },
+    "src/parser/csharp.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 242,
+      "hash": "2ac7f53f5fb09f20",
+      "exports": [
+        "parser",
+        "resolver"
+      ],
+      "cluster": "parser"
+    },
+    "src/parser/go.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 218,
+      "hash": "6d5018311a28cad6",
+      "exports": [
+        "parser",
+        "resolver"
+      ],
+      "cluster": "parser"
+    },
+    "src/parser/java.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 231,
+      "hash": "f14fbcfafa5fb8b2",
+      "exports": [
+        "parser",
+        "resolver"
+      ],
+      "cluster": "parser"
+    },
+    "src/parser/mod.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 11,
+      "hash": "15d7798cc6395cc7",
+      "exports": [
+        "ImportResolver",
+        "LanguageParser",
+        "ParserRegistry",
+        "RawExport",
+        "RawImport",
+        "registry",
+        "traits"
+      ],
+      "cluster": "parser"
+    },
+    "src/parser/python.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 504,
+      "hash": "e7b6e3c3d9dfdd3e",
+      "exports": [
+        "PythonParser",
+        "PythonResolver"
+      ],
+      "cluster": "parser"
+    },
+    "src/parser/registry.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 130,
+      "hash": "a451764c67dced1c",
+      "exports": [
+        "ParserRegistry"
+      ],
+      "cluster": "parser"
+    },
+    "src/parser/rust_lang.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 601,
+      "hash": "3647ade433ddbd06",
+      "exports": [
+        "RustParser",
+        "RustResolver"
+      ],
+      "cluster": "parser"
+    },
+    "src/parser/traits.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 36,
+      "hash": "23ef2c75fe5f0d08",
+      "exports": [
+        "ImportResolver",
+        "LanguageParser",
+        "RawExport",
+        "RawImport"
+      ],
+      "cluster": "parser"
+    },
+    "src/parser/typescript.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 457,
+      "hash": "b4bfcccbf12d7ce8",
+      "exports": [
+        "TypeScriptParser",
+        "TypeScriptResolver"
+      ],
+      "cluster": "parser"
+    },
+    "src/pipeline/build.rs": {
+      "type": "config",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 258,
+      "hash": "011e0721a2a41483",
+      "exports": [
+        "resolve_and_build"
+      ],
+      "cluster": "pipeline"
+    },
+    "src/pipeline/mod.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 252,
+      "hash": "2e60e4e4b76a40d1",
+      "exports": [
+        "BuildOutput",
+        "BuildPipeline",
+        "FileContent",
+        "FileEntry",
+        "FileReader",
+        "FileSkipReason",
+        "FileWalker",
+        "FsReader",
+        "FsWalker",
+        "ParsedFile",
+        "WalkConfig",
+        "build",
+        "read",
+        "resolve",
+        "walk"
+      ],
+      "cluster": "pipeline"
+    },
+    "src/pipeline/read.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 88,
+      "hash": "71b4cb198ae88895",
+      "exports": [
+        "FileContent",
+        "FileReader",
+        "FileSkipReason",
+        "FsReader"
+      ],
+      "cluster": "pipeline"
+    },
+    "src/pipeline/resolve.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 23,
+      "hash": "2fb4f8cc39939909",
+      "exports": [
+        "resolve_import"
+      ],
+      "cluster": "pipeline"
+    },
+    "src/pipeline/walk.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 126,
+      "hash": "ea50e20f82c10d50",
+      "exports": [
+        "FileEntry",
+        "FileWalker",
+        "FsWalker",
+        "WalkConfig"
+      ],
+      "cluster": "pipeline"
+    },
+    "src/serial/json.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 56,
+      "hash": "c5bf716d5f0e3d24",
+      "exports": [
+        "JsonSerializer"
+      ],
+      "cluster": "serial"
+    },
+    "src/serial/mod.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 56,
+      "hash": "cb59d1c54015451c",
+      "exports": [
+        "ClusterEntryOutput",
+        "ClusterOutput",
+        "GraphOutput",
+        "GraphSerializer",
+        "NodeOutput",
+        "json"
+      ],
+      "cluster": "serial"
+    }
+  },
+  "edges": [
+    [
+      "src/detect/mod.rs",
+      "src/detect/filetype.rs",
+      "imports",
+      [
+        "filetype"
+      ]
+    ],
+    [
+      "src/detect/mod.rs",
+      "src/detect/layer.rs",
+      "imports",
+      [
+        "layer"
+      ]
+    ],
+    [
+      "src/lib.rs",
+      "src/cluster/mod.rs",
+      "imports",
+      [
+        "cluster"
+      ]
+    ],
+    [
+      "src/lib.rs",
+      "src/detect/mod.rs",
+      "imports",
+      [
+        "detect"
+      ]
+    ],
+    [
+      "src/lib.rs",
+      "src/diagnostic.rs",
+      "imports",
+      [
+        "diagnostic"
+      ]
+    ],
+    [
+      "src/lib.rs",
+      "src/hash.rs",
+      "imports",
+      [
+        "hash"
+      ]
+    ],
+    [
+      "src/lib.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "model"
+      ]
+    ],
+    [
+      "src/lib.rs",
+      "src/parser/mod.rs",
+      "imports",
+      [
+        "parser"
+      ]
+    ],
+    [
+      "src/lib.rs",
+      "src/pipeline/mod.rs",
+      "imports",
+      [
+        "pipeline"
+      ]
+    ],
+    [
+      "src/lib.rs",
+      "src/serial/mod.rs",
+      "imports",
+      [
+        "serial"
+      ]
+    ],
+    [
+      "src/model/mod.rs",
+      "src/model/edge.rs",
+      "imports",
+      [
+        "edge"
+      ]
+    ],
+    [
+      "src/model/mod.rs",
+      "src/model/graph.rs",
+      "imports",
+      [
+        "graph"
+      ]
+    ],
+    [
+      "src/model/mod.rs",
+      "src/model/node.rs",
+      "imports",
+      [
+        "node"
+      ]
+    ],
+    [
+      "src/model/mod.rs",
+      "src/model/types.rs",
+      "imports",
+      [
+        "types"
+      ]
+    ],
+    [
+      "src/parser/mod.rs",
+      "src/parser/csharp.rs",
+      "imports",
+      [
+        "csharp"
+      ]
+    ],
+    [
+      "src/parser/mod.rs",
+      "src/parser/go.rs",
+      "imports",
+      [
+        "go"
+      ]
+    ],
+    [
+      "src/parser/mod.rs",
+      "src/parser/java.rs",
+      "imports",
+      [
+        "java"
+      ]
+    ],
+    [
+      "src/parser/mod.rs",
+      "src/parser/python.rs",
+      "imports",
+      [
+        "python"
+      ]
+    ],
+    [
+      "src/parser/mod.rs",
+      "src/parser/registry.rs",
+      "imports",
+      [
+        "registry"
+      ]
+    ],
+    [
+      "src/parser/mod.rs",
+      "src/parser/rust_lang.rs",
+      "imports",
+      [
+        "rust_lang"
+      ]
+    ],
+    [
+      "src/parser/mod.rs",
+      "src/parser/traits.rs",
+      "imports",
+      [
+        "traits"
+      ]
+    ],
+    [
+      "src/parser/mod.rs",
+      "src/parser/typescript.rs",
+      "imports",
+      [
+        "typescript"
+      ]
+    ],
+    [
+      "src/pipeline/mod.rs",
+      "src/pipeline/build.rs",
+      "imports",
+      [
+        "build"
+      ]
+    ],
+    [
+      "src/pipeline/mod.rs",
+      "src/pipeline/read.rs",
+      "imports",
+      [
+        "read"
+      ]
+    ],
+    [
+      "src/pipeline/mod.rs",
+      "src/pipeline/resolve.rs",
+      "imports",
+      [
+        "resolve"
+      ]
+    ],
+    [
+      "src/pipeline/mod.rs",
+      "src/pipeline/walk.rs",
+      "imports",
+      [
+        "walk"
+      ]
+    ],
+    [
+      "src/serial/mod.rs",
+      "src/serial/json.rs",
+      "imports",
+      [
+        "json"
+      ]
+    ]
+  ]
+}

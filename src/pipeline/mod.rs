@@ -168,8 +168,8 @@ fn project_graph_to_output(graph: &ProjectGraph, project_root: &Path) -> GraphOu
         nodes.insert(
             path.as_str().to_string(),
             NodeOutput {
-                file_type: format!("{:?}", node.file_type).to_lowercase(),
-                layer: format!("{:?}", node.layer).to_lowercase(),
+                file_type: node.file_type.as_str().to_string(),
+                layer: node.layer.as_str().to_string(),
                 arch_depth: node.arch_depth,
                 lines: node.lines,
                 hash: node.hash.as_str().to_string(),
@@ -186,7 +186,7 @@ fn project_graph_to_output(graph: &ProjectGraph, project_root: &Path) -> GraphOu
             (
                 e.from.as_str().to_string(),
                 e.to.as_str().to_string(),
-                format!("{:?}", e.edge_type).to_lowercase(),
+                e.edge_type.as_str().to_string(),
                 e.symbols.iter().map(|s| s.as_str().to_string()).collect(),
             )
         })

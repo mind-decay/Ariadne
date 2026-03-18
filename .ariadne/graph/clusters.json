@@ -1,0 +1,89 @@
+{
+  "clusters": {
+    "cluster": {
+      "files": [
+        "src/cluster/mod.rs"
+      ],
+      "file_count": 1,
+      "internal_edges": 0,
+      "external_edges": 1,
+      "cohesion": 0.0
+    },
+    "detect": {
+      "files": [
+        "src/detect/filetype.rs",
+        "src/detect/layer.rs",
+        "src/detect/mod.rs"
+      ],
+      "file_count": 3,
+      "internal_edges": 2,
+      "external_edges": 1,
+      "cohesion": 0.6667
+    },
+    "model": {
+      "files": [
+        "src/model/edge.rs",
+        "src/model/graph.rs",
+        "src/model/mod.rs",
+        "src/model/node.rs",
+        "src/model/types.rs"
+      ],
+      "file_count": 5,
+      "internal_edges": 4,
+      "external_edges": 1,
+      "cohesion": 0.8
+    },
+    "parser": {
+      "files": [
+        "src/parser/csharp.rs",
+        "src/parser/go.rs",
+        "src/parser/java.rs",
+        "src/parser/mod.rs",
+        "src/parser/python.rs",
+        "src/parser/registry.rs",
+        "src/parser/rust_lang.rs",
+        "src/parser/traits.rs",
+        "src/parser/typescript.rs"
+      ],
+      "file_count": 9,
+      "internal_edges": 8,
+      "external_edges": 1,
+      "cohesion": 0.8889
+    },
+    "pipeline": {
+      "files": [
+        "src/pipeline/build.rs",
+        "src/pipeline/mod.rs",
+        "src/pipeline/read.rs",
+        "src/pipeline/resolve.rs",
+        "src/pipeline/walk.rs"
+      ],
+      "file_count": 5,
+      "internal_edges": 4,
+      "external_edges": 1,
+      "cohesion": 0.8
+    },
+    "root": {
+      "files": [
+        "src/diagnostic.rs",
+        "src/hash.rs",
+        "src/lib.rs",
+        "src/main.rs"
+      ],
+      "file_count": 4,
+      "internal_edges": 2,
+      "external_edges": 6,
+      "cohesion": 0.25
+    },
+    "serial": {
+      "files": [
+        "src/serial/json.rs",
+        "src/serial/mod.rs"
+      ],
+      "file_count": 2,
+      "internal_edges": 1,
+      "external_edges": 1,
+      "cohesion": 0.5
+    }
+  }
+}

@@ -12,6 +12,17 @@ pub enum EdgeType {
     TypeImports,
 }
 
+impl EdgeType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Imports => "imports",
+            Self::Tests => "tests",
+            Self::ReExports => "re_exports",
+            Self::TypeImports => "type_imports",
+        }
+    }
+}
+
 /// A directed edge in the dependency graph.
 #[derive(Clone, Debug)]
 pub struct Edge {

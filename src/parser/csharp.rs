@@ -10,7 +10,7 @@ impl LanguageParser for CSharpParser {
     }
 
     fn extensions(&self) -> &[&str] {
-        &[".cs"]
+        &["cs"]
     }
 
     fn tree_sitter_language(&self) -> tree_sitter::Language {
