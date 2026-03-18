@@ -64,12 +64,18 @@ impl FileWalker for FsWalker {
         walker.git_global(false);
         walker.git_exclude(false);
 
-        // Add exclude patterns for .ariadne and any configured dirs
+        // Add exclude patterns for .ariadne and any configured dirs.
+        // Build ONE OverrideBuilder with ALL patterns, then apply once.
+        let mut override_builder = ignore::overrides::OverrideBuilder::new(root);
         for dir in &config.exclude_dirs {
-            let mut override_builder = ignore::overrides::OverrideBuilder::new(root);
             let _ = override_builder.add(&format!("!{}/**", dir));
-            if let Ok(overrides) = override_builder.build() {
+        }
+        match override_builder.build() {
+            Ok(overrides) => {
                 walker.overrides(overrides);
+            }
+            Err(err) => {
+                eprintln!("walk: failed to build override rules, falling back to manual exclusion: {}", err);
             }
         }
 
@@ -78,7 +84,10 @@ impl FileWalker for FsWalker {
         for result in walker.build() {
             let entry = match result {
                 Ok(e) => e,
-                Err(_) => continue, // Skip walk errors on individual entries
+                Err(err) => {
+                    eprintln!("walk: skipping entry: {}", err);
+                    continue;
+                }
             };
 
             // Skip directories
@@ -87,17 +96,6 @@ impl FileWalker for FsWalker {
             }
 
             let path = entry.into_path();
-
-            // Skip files in excluded directories
-            let path_str = path.strip_prefix(root).unwrap_or(&path);
-            let should_skip = config.exclude_dirs.iter().any(|dir| {
-                path_str
-                    .components()
-                    .any(|c| c.as_os_str().to_str() == Some(dir.as_str()))
-            });
-            if should_skip {
-                continue;
-            }
 
             // Extract extension
             let extension = path

@@ -2,7 +2,7 @@ mod helpers;
 
 use ariadne_graph::diagnostic::{DiagnosticCollector, Warning, WarningCode};
 use ariadne_graph::model::CanonicalPath;
-use ariadne_graph::pipeline::{BuildPipeline, FsReader, FsWalker, WalkConfig};
+use ariadne_graph::pipeline::{BuildPipeline, FileWalker, FsReader, FsWalker, WalkConfig};
 use ariadne_graph::parser::ParserRegistry;
 use ariadne_graph::serial::json::JsonSerializer;
 
@@ -114,6 +114,40 @@ fn pipeline_empty_dir_returns_e004() {
         "error should be E004 (NoParseableFiles), got: {}",
         msg
     );
+}
+
+/// Multiple exclude_dirs should all be respected, not just the last one.
+#[test]
+fn walk_excludes_all_configured_dirs() {
+    let root = helpers::fixture_path("typescript-app");
+    let walker = FsWalker::new();
+    let config = WalkConfig {
+        exclude_dirs: vec![".ariadne".to_string(), "node_modules".to_string()],
+        ..WalkConfig::default()
+    };
+
+    let entries = walker.walk(&root, &config).expect("walk should succeed");
+
+    for entry in &entries {
+        let rel = entry.path.strip_prefix(&root).unwrap_or(&entry.path);
+        let components: Vec<&str> = rel
+            .components()
+            .filter_map(|c| c.as_os_str().to_str())
+            .collect();
+        assert!(
+            !components.contains(&".ariadne"),
+            "entry should not be under .ariadne: {:?}",
+            entry.path
+        );
+        assert!(
+            !components.contains(&"node_modules"),
+            "entry should not be under node_modules: {:?}",
+            entry.path
+        );
+    }
+
+    // Sanity: we should still get some files (the fixture has .ts files)
+    assert!(!entries.is_empty(), "walk should find at least one file");
 }
 
 /// A valid fixture should produce output files on disk.
