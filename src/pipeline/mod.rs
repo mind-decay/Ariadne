@@ -8,6 +8,7 @@ use std::time::Instant;
 
 use rayon::prelude::*;
 
+use crate::algo;
 use crate::cluster::assign_clusters;
 use crate::detect::{detect_workspace, is_case_insensitive};
 use crate::diagnostic::{DiagnosticCollector, DiagnosticCounts, FatalError, Warning, WarningCode};
@@ -31,6 +32,7 @@ pub struct ParsedFile {
 pub struct BuildOutput {
     pub graph_path: PathBuf,
     pub clusters_path: PathBuf,
+    pub stats_path: PathBuf,
     pub file_count: usize,
     pub edge_count: usize,
     pub cluster_count: usize,
@@ -210,7 +212,30 @@ impl BuildPipeline {
             eprintln!("[cluster]   {:>6}ms  {} clusters", cluster_start.elapsed().as_millis(), cluster_map.clusters.len());
         }
 
-        // Stage 6: Convert to output model
+        // Stage 6: Run algorithms (before serialization so arch_depth is correct in graph.json)
+        let algo_start = Instant::now();
+        let sccs = algo::scc::find_sccs(&graph);
+        let layers = algo::topo_sort::topological_layers(&graph, &sccs);
+
+        // Apply arch_depth from topological layers to graph nodes
+        for (path, &layer) in &layers {
+            if let Some(node) = graph.nodes.get_mut(path) {
+                node.arch_depth = layer;
+            }
+        }
+
+        let centrality = algo::centrality::betweenness_centrality(&graph);
+        let stats = algo::stats::compute_stats(&graph, &centrality, &sccs, &layers);
+        if verbose {
+            eprintln!("[algorithms]{:>6}ms  {} SCCs, {} layers, {} centrality scores",
+                algo_start.elapsed().as_millis(),
+                sccs.len(),
+                layers.values().copied().max().unwrap_or(0) + 1,
+                centrality.len(),
+            );
+        }
+
+        // Stage 7: Convert to output model
         // Use the original CLI path (not abs_root) for portability — D-006, D-015
         let mut graph_output = project_graph_to_output(&graph, root);
         if timestamp {
@@ -218,7 +243,7 @@ impl BuildPipeline {
         }
         let cluster_output = cluster_map_to_output(&cluster_map);
 
-        // Stage 7: Serialize
+        // Stage 8: Serialize
         let ser_start = Instant::now();
         let output_dir = match output_dir {
             Some(dir) => dir.to_path_buf(),
@@ -227,10 +252,12 @@ impl BuildPipeline {
         self.serializer.write_graph(&graph_output, &output_dir)?;
         self.serializer
             .write_clusters(&cluster_output, &output_dir)?;
+        self.serializer.write_stats(&stats, &output_dir)?;
         if verbose {
             let graph_size = std::fs::metadata(output_dir.join("graph.json")).map(|m| m.len()).unwrap_or(0);
             let cluster_size = std::fs::metadata(output_dir.join("clusters.json")).map(|m| m.len()).unwrap_or(0);
-            eprintln!("[serialize] {:>6}ms  graph.json ({}) + clusters.json ({})", ser_start.elapsed().as_millis(), format_size(graph_size), format_size(cluster_size));
+            let stats_size = std::fs::metadata(output_dir.join("stats.json")).map(|m| m.len()).unwrap_or(0);
+            eprintln!("[serialize] {:>6}ms  graph.json ({}) + clusters.json ({}) + stats.json ({})", ser_start.elapsed().as_millis(), format_size(graph_size), format_size(cluster_size), format_size(stats_size));
         }
 
         if verbose {
@@ -243,6 +270,7 @@ impl BuildPipeline {
         Ok(BuildOutput {
             graph_path: output_dir.join("graph.json"),
             clusters_path: output_dir.join("clusters.json"),
+            stats_path: output_dir.join("stats.json"),
             file_count: graph.nodes.len(),
             edge_count: graph.edges.len(),
             cluster_count: cluster_map.clusters.len(),

@@ -5,6 +5,7 @@ use std::sync::Mutex;
 use crate::model::CanonicalPath;
 
 /// Fatal errors that stop the pipeline (exit code 1).
+#[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum FatalError {
     #[error("E001: project root not found: {path}")]
@@ -17,9 +18,14 @@ pub enum FatalError {
     NoParseableFiles { path: PathBuf },
     #[error("E005: cannot read project directory: {path}: {reason}")]
     WalkFailed { path: PathBuf, reason: String },
+    #[error("E006: graph not found in {path}. Run 'ariadne build' first.")]
+    GraphNotFound { path: PathBuf },
+    #[error("E007: stats not found in {path}. Run 'ariadne build' first.")]
+    StatsNotFound { path: PathBuf },
 }
 
 /// Warning codes for recoverable errors.
+#[non_exhaustive]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum WarningCode {
     W001ParseFailed,
@@ -30,6 +36,10 @@ pub enum WarningCode {
     W007PartialParse,
     W008ConfigParseFailed,
     W009EncodingError,
+    W010GraphVersionMismatch,
+    W011GraphCorrupted,
+    W012AlgorithmFailed,
+    W013StaleStats,
 }
 
 impl WarningCode {
@@ -43,6 +53,10 @@ impl WarningCode {
             Self::W007PartialParse => "W007",
             Self::W008ConfigParseFailed => "W008",
             Self::W009EncodingError => "W009",
+            Self::W010GraphVersionMismatch => "W010",
+            Self::W011GraphCorrupted => "W011",
+            Self::W012AlgorithmFailed => "W012",
+            Self::W013StaleStats => "W013",
         }
     }
 }
@@ -191,6 +205,9 @@ pub struct DiagnosticCounts {
     pub encoding_errors: u32,
     pub imports_unresolved: u32,
     pub partial_parses: u32,
+    pub graph_load_warnings: u32,
+    pub algorithm_failures: u32,
+    pub stale_stats: u32,
 }
 
 /// Final diagnostic report after pipeline completion.
@@ -242,6 +259,18 @@ impl DiagnosticCollector {
                 guard.1.partial_parses += 1;
             }
             WarningCode::W008ConfigParseFailed => {}
+            WarningCode::W010GraphVersionMismatch => {
+                guard.1.graph_load_warnings += 1;
+            }
+            WarningCode::W011GraphCorrupted => {
+                guard.1.graph_load_warnings += 1;
+            }
+            WarningCode::W012AlgorithmFailed => {
+                guard.1.algorithm_failures += 1;
+            }
+            WarningCode::W013StaleStats => {
+                guard.1.stale_stats += 1;
+            }
         }
         guard.0.push(warning);
     }

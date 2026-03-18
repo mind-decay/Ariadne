@@ -5,6 +5,7 @@ use super::node::Node;
 use super::types::{CanonicalPath, ClusterId};
 
 /// The internal project dependency graph.
+#[derive(Debug)]
 pub struct ProjectGraph {
     pub nodes: BTreeMap<CanonicalPath, Node>,
     pub edges: Vec<Edge>,
@@ -21,6 +22,7 @@ pub struct Cluster {
 }
 
 /// Map of all clusters in the project.
+#[derive(Debug)]
 pub struct ClusterMap {
     pub clusters: BTreeMap<ClusterId, Cluster>,
 }

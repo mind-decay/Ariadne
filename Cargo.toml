@@ -43,3 +43,7 @@ harness = false
 [[bench]]
 name = "parser_bench"
 harness = false
+
+[[bench]]
+name = "algo_bench"
+harness = false
