@@ -1,1 +1,36 @@
-// Parser and resolver traits — implemented in Chunk 2
+use crate::model::{CanonicalPath, FileSet};
+
+/// Raw import extracted from AST (unresolved).
+#[derive(Clone, Debug)]
+pub struct RawImport {
+    pub path: String,
+    pub symbols: Vec<String>,
+    pub is_type_only: bool,
+}
+
+/// Raw export extracted from AST.
+#[derive(Clone, Debug)]
+pub struct RawExport {
+    pub name: String,
+    pub is_re_export: bool,
+    pub source: Option<String>,
+}
+
+/// Extracts imports/exports from AST (language syntax knowledge).
+pub trait LanguageParser: Send + Sync {
+    fn language(&self) -> &str;
+    fn extensions(&self) -> &[&str];
+    fn tree_sitter_language(&self) -> tree_sitter::Language;
+    fn extract_imports(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Vec<RawImport>;
+    fn extract_exports(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Vec<RawExport>;
+}
+
+/// Resolves raw import paths to canonical file paths (filesystem knowledge).
+pub trait ImportResolver: Send + Sync {
+    fn resolve(
+        &self,
+        import: &RawImport,
+        from_file: &CanonicalPath,
+        known_files: &FileSet,
+    ) -> Option<CanonicalPath>;
+}
