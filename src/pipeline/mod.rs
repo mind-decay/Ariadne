@@ -8,6 +8,7 @@ use std::path::{Path, PathBuf};
 use rayon::prelude::*;
 
 use crate::cluster::assign_clusters;
+use crate::detect::detect_workspace;
 use crate::diagnostic::{DiagnosticCollector, DiagnosticCounts, FatalError, Warning, WarningCode};
 use crate::model::*;
 use crate::parser::{ParserRegistry, RawExport, RawImport};
@@ -60,10 +61,10 @@ impl BuildPipeline {
     }
 
     pub fn run(&self, root: &Path, config: WalkConfig) -> Result<BuildOutput, FatalError> {
-        self.run_with_output(root, config, None)
+        self.run_with_output(root, config, None, false)
     }
 
-    pub fn run_with_output(&self, root: &Path, config: WalkConfig, output_dir: Option<&Path>) -> Result<BuildOutput, FatalError> {
+    pub fn run_with_output(&self, root: &Path, config: WalkConfig, output_dir: Option<&Path>, timestamp: bool) -> Result<BuildOutput, FatalError> {
         let diagnostics = DiagnosticCollector::new();
         let abs_root = std::fs::canonicalize(root).map_err(|_| FatalError::ProjectNotFound {
             path: root.to_path_buf(),
@@ -137,8 +138,16 @@ impl BuildPipeline {
             .collect();
 
         // Stage 4: Resolve + Build graph
-        let mut graph =
-            build::resolve_and_build(&parsed_files, &file_contents, &self.registry, &diagnostics);
+        // Detect workspace for workspace-aware import resolution
+        let workspace_info = detect_workspace(&abs_root, &diagnostics);
+        let workspace_relative = workspace_info.as_ref().map(|ws| ws.relativize(&abs_root));
+        let mut graph = build::resolve_and_build(
+            &parsed_files,
+            &file_contents,
+            &self.registry,
+            &diagnostics,
+            workspace_relative.as_ref(),
+        );
 
         // Stage 5: Cluster
         let cluster_map = assign_clusters(&graph);
@@ -153,7 +162,10 @@ impl BuildPipeline {
         }
 
         // Stage 6: Convert to output model
-        let graph_output = project_graph_to_output(&graph, &abs_root);
+        let mut graph_output = project_graph_to_output(&graph, &abs_root);
+        if timestamp {
+            graph_output.generated = Some(format_utc_timestamp());
+        }
         let cluster_output = cluster_map_to_output(&cluster_map);
 
         // Stage 7: Serialize
@@ -238,6 +250,20 @@ fn cluster_map_to_output(cluster_map: &ClusterMap) -> ClusterOutput {
         );
     }
     ClusterOutput { clusters }
+}
+
+/// Format current UTC time as ISO 8601 with seconds precision.
+fn format_utc_timestamp() -> String {
+    let now = time::OffsetDateTime::now_utc();
+    format!(
+        "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z",
+        now.year(),
+        now.month() as u8,
+        now.day(),
+        now.hour(),
+        now.minute(),
+        now.second(),
+    )
 }
 
 /// Convert a FileSkipReason into a Warning.

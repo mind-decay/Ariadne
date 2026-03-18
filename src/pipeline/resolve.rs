@@ -1,4 +1,5 @@
 use crate::diagnostic::DiagnosticCollector;
+use crate::model::workspace::WorkspaceInfo;
 use crate::model::{CanonicalPath, FileSet};
 use crate::parser::{ImportResolver, RawImport};
 
@@ -10,8 +11,9 @@ pub fn resolve_import(
     known_files: &FileSet,
     resolver: &dyn ImportResolver,
     diagnostics: &DiagnosticCollector,
+    workspace: Option<&WorkspaceInfo>,
 ) -> Option<CanonicalPath> {
-    match resolver.resolve(import, from_file, known_files) {
+    match resolver.resolve(import, from_file, known_files, workspace) {
         Some(resolved) if resolved == *from_file => None, // INV-2: filter self-imports
         Some(resolved) => Some(resolved),
         None => {

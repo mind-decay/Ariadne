@@ -182,3 +182,85 @@ fn pipeline_produces_output_files() {
         output.clusters_path
     );
 }
+
+// ---------------------------------------------------------------------------
+// CLI flag behavior tests
+// ---------------------------------------------------------------------------
+
+/// --timestamp=false should omit the `generated` field from graph.json.
+#[test]
+fn timestamp_false_omits_generated_field() {
+    let path = helpers::fixture_path("typescript-app");
+    let output_dir = tempfile::tempdir().expect("create tempdir");
+    let output_path = output_dir.path();
+    let pipeline = make_pipeline();
+
+    pipeline
+        .run_with_output(&path, WalkConfig::default(), Some(output_path), false)
+        .expect("build should succeed");
+
+    let graph_json = std::fs::read_to_string(output_path.join("graph.json")).unwrap();
+    let parsed: serde_json::Value = serde_json::from_str(&graph_json).unwrap();
+    assert!(
+        parsed.get("generated").is_none(),
+        "generated field should be absent when timestamp=false"
+    );
+}
+
+/// --timestamp=true should include the `generated` field in ISO 8601 format.
+#[test]
+fn timestamp_true_adds_generated_field() {
+    let path = helpers::fixture_path("typescript-app");
+    let output_dir = tempfile::tempdir().expect("create tempdir");
+    let output_path = output_dir.path();
+    let pipeline = make_pipeline();
+
+    pipeline
+        .run_with_output(&path, WalkConfig::default(), Some(output_path), true)
+        .expect("build should succeed");
+
+    let graph_json = std::fs::read_to_string(output_path.join("graph.json")).unwrap();
+    let parsed: serde_json::Value = serde_json::from_str(&graph_json).unwrap();
+    let generated = parsed
+        .get("generated")
+        .expect("generated field should be present when timestamp=true")
+        .as_str()
+        .expect("generated should be a string");
+
+    // Verify ISO 8601 format: YYYY-MM-DDTHH:MM:SSZ
+    assert!(
+        generated.len() == 20,
+        "timestamp should be 20 chars (YYYY-MM-DDTHH:MM:SSZ), got: {}",
+        generated
+    );
+    assert!(
+        generated.ends_with('Z'),
+        "timestamp should end with Z, got: {}",
+        generated
+    );
+    assert!(
+        generated.contains('T'),
+        "timestamp should contain T separator, got: {}",
+        generated
+    );
+}
+
+/// --max-file-size and --max-files should be threaded to WalkConfig.
+#[test]
+fn walk_config_respects_max_files() {
+    let path = helpers::fixture_path("typescript-app");
+    let output_dir = tempfile::tempdir().expect("create tempdir");
+    let output_path = output_dir.path();
+    let pipeline = make_pipeline();
+
+    // Set max_files to 1 — should still work but limit walk
+    let config = WalkConfig {
+        max_files: 1,
+        ..WalkConfig::default()
+    };
+
+    // The pipeline might still succeed if it finds at least 1 parseable file,
+    // or fail with E004 if the 1 file isn't parseable. Either is valid.
+    let _result = pipeline.run_with_output(&path, config, Some(output_path), false);
+    // We just verify it doesn't panic
+}

@@ -1,3 +1,4 @@
+use crate::model::workspace::WorkspaceInfo;
 use crate::model::{CanonicalPath, FileSet};
 use crate::parser::traits::{ImportKind, ImportResolver, LanguageParser, RawExport, RawImport};
 
@@ -404,14 +405,104 @@ impl TypeScriptResolver {
     }
 }
 
+impl TypeScriptResolver {
+    /// Try to resolve an import as a workspace package reference.
+    /// Handles both direct package imports (`@myapp/auth`) and
+    /// subpath imports (`@myapp/auth/utils`).
+    fn resolve_workspace_import(
+        &self,
+        import_path: &str,
+        _from_file: &CanonicalPath,
+        known_files: &FileSet,
+        workspace: &WorkspaceInfo,
+    ) -> Option<CanonicalPath> {
+        for member in &workspace.members {
+            if import_path == member.name {
+                // Direct package import -> resolve to entry point
+                let entry = member.entry_point.to_string_lossy();
+                // Convert to forward slashes, strip leading ./
+                let entry_canonical = entry.replace('\\', "/");
+                let entry_canonical = entry_canonical.strip_prefix("./").unwrap_or(&entry_canonical);
+                let candidate = CanonicalPath::new(entry_canonical);
+                if known_files.contains(&candidate) {
+                    return Some(candidate);
+                }
+                // Also probe with extensions if entry point has no extension
+                let base_str = candidate.as_str();
+                let extensions = &["ts", "tsx", "js", "jsx", "mjs", "cjs"];
+                for ext in extensions {
+                    let with_ext = CanonicalPath::new(format!("{}.{}", base_str, ext));
+                    if known_files.contains(&with_ext) {
+                        return Some(with_ext);
+                    }
+                }
+                // Try index file in entry point directory
+                let index_extensions = &["ts", "tsx", "js", "jsx"];
+                for ext in index_extensions {
+                    let index = CanonicalPath::new(format!("{}/index.{}", base_str, ext));
+                    if known_files.contains(&index) {
+                        return Some(index);
+                    }
+                }
+            } else if import_path.starts_with(&format!("{}/", member.name)) {
+                // Subpath import: @myapp/auth/utils -> strip package name, resolve within member dir
+                let subpath = &import_path[member.name.len() + 1..];
+                let member_dir = member.path.to_string_lossy();
+                let member_dir = member_dir.replace('\\', "/");
+                let member_dir = member_dir.strip_prefix("./").unwrap_or(&member_dir);
+                let base = format!("{}/{}", member_dir, subpath);
+                let base_canonical = CanonicalPath::new(&base);
+                let base_str = base_canonical.as_str();
+
+                // Exact match
+                if known_files.contains(&base_canonical) {
+                    return Some(base_canonical);
+                }
+
+                // Extension probing
+                let extensions = &["ts", "tsx", "js", "jsx", "mjs", "cjs"];
+                for ext in extensions {
+                    let candidate = CanonicalPath::new(format!("{}.{}", base_str, ext));
+                    if known_files.contains(&candidate) {
+                        return Some(candidate);
+                    }
+                }
+
+                // Index file probing
+                let index_extensions = &["ts", "tsx", "js", "jsx"];
+                for ext in index_extensions {
+                    let candidate = CanonicalPath::new(format!("{}/index.{}", base_str, ext));
+                    if known_files.contains(&candidate) {
+                        return Some(candidate);
+                    }
+                }
+            }
+        }
+        None
+    }
+}
+
 impl ImportResolver for TypeScriptResolver {
     fn resolve(
         &self,
         import: &RawImport,
         from_file: &CanonicalPath,
         known_files: &FileSet,
+        workspace: Option<&WorkspaceInfo>,
     ) -> Option<CanonicalPath> {
         let specifier = &import.path;
+
+        // Skip empty imports
+        if specifier.is_empty() {
+            return None;
+        }
+
+        // Check workspace packages first (before relative/external classification)
+        if let Some(ws) = workspace {
+            if let Some(resolved) = self.resolve_workspace_import(specifier, from_file, known_files, ws) {
+                return Some(resolved);
+            }
+        }
 
         // Skip bare specifiers (npm packages) and scoped packages
         if Self::is_bare_specifier(specifier) {
@@ -456,5 +547,172 @@ impl ImportResolver for TypeScriptResolver {
         }
 
         None
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::workspace::{WorkspaceKind, WorkspaceMember};
+    use crate::parser::traits::ImportKind;
+    use std::path::PathBuf;
+
+    fn make_import(path: &str) -> RawImport {
+        RawImport {
+            path: path.to_string(),
+            symbols: Vec::new(),
+            is_type_only: false,
+            kind: ImportKind::Regular,
+        }
+    }
+
+    fn make_workspace() -> WorkspaceInfo {
+        WorkspaceInfo {
+            kind: WorkspaceKind::Npm,
+            members: vec![
+                WorkspaceMember {
+                    name: "@myapp/auth".to_string(),
+                    path: PathBuf::from("packages/auth"),
+                    entry_point: PathBuf::from("packages/auth/src/index.ts"),
+                },
+                WorkspaceMember {
+                    name: "@myapp/utils".to_string(),
+                    path: PathBuf::from("packages/utils"),
+                    entry_point: PathBuf::from("packages/utils/src/index.ts"),
+                },
+            ],
+        }
+    }
+
+    fn make_files(paths: &[&str]) -> FileSet {
+        FileSet::from_iter(paths.iter().map(|p| CanonicalPath::new(*p)))
+    }
+
+    #[test]
+    fn workspace_direct_package_import() {
+        let resolver = TypeScriptResolver::new();
+        let ws = make_workspace();
+        let files = make_files(&[
+            "packages/auth/src/index.ts",
+            "packages/utils/src/index.ts",
+            "apps/web/src/app.ts",
+        ]);
+        let from = CanonicalPath::new("apps/web/src/app.ts");
+        let import = make_import("@myapp/auth");
+
+        let result = resolver.resolve(&import, &from, &files, Some(&ws));
+        assert_eq!(result.unwrap().as_str(), "packages/auth/src/index.ts");
+    }
+
+    #[test]
+    fn workspace_subpath_import() {
+        let resolver = TypeScriptResolver::new();
+        let ws = make_workspace();
+        let files = make_files(&[
+            "packages/auth/src/index.ts",
+            "packages/auth/utils.ts",
+            "apps/web/src/app.ts",
+        ]);
+        let from = CanonicalPath::new("apps/web/src/app.ts");
+        let import = make_import("@myapp/auth/utils");
+
+        let result = resolver.resolve(&import, &from, &files, Some(&ws));
+        assert_eq!(result.unwrap().as_str(), "packages/auth/utils.ts");
+    }
+
+    #[test]
+    fn workspace_subpath_import_with_extension_probing() {
+        let resolver = TypeScriptResolver::new();
+        let ws = make_workspace();
+        let files = make_files(&[
+            "packages/auth/src/index.ts",
+            "packages/auth/helpers/validate.ts",
+            "apps/web/src/app.ts",
+        ]);
+        let from = CanonicalPath::new("apps/web/src/app.ts");
+        let import = make_import("@myapp/auth/helpers/validate");
+
+        let result = resolver.resolve(&import, &from, &files, Some(&ws));
+        assert_eq!(result.unwrap().as_str(), "packages/auth/helpers/validate.ts");
+    }
+
+    #[test]
+    fn non_workspace_scoped_package_returns_none() {
+        let resolver = TypeScriptResolver::new();
+        let ws = make_workspace();
+        let files = make_files(&["apps/web/src/app.ts"]);
+        let from = CanonicalPath::new("apps/web/src/app.ts");
+        let import = make_import("@types/react");
+
+        let result = resolver.resolve(&import, &from, &files, Some(&ws));
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn bare_specifier_returns_none_with_workspace() {
+        let resolver = TypeScriptResolver::new();
+        let ws = make_workspace();
+        let files = make_files(&["apps/web/src/app.ts"]);
+        let from = CanonicalPath::new("apps/web/src/app.ts");
+        let import = make_import("lodash");
+
+        let result = resolver.resolve(&import, &from, &files, Some(&ws));
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn relative_import_unchanged_with_workspace() {
+        let resolver = TypeScriptResolver::new();
+        let ws = make_workspace();
+        let files = make_files(&[
+            "apps/web/src/app.ts",
+            "apps/web/src/utils.ts",
+        ]);
+        let from = CanonicalPath::new("apps/web/src/app.ts");
+        let import = make_import("./utils");
+
+        let result = resolver.resolve(&import, &from, &files, Some(&ws));
+        assert_eq!(result.unwrap().as_str(), "apps/web/src/utils.ts");
+    }
+
+    #[test]
+    fn workspace_none_keeps_existing_behavior() {
+        let resolver = TypeScriptResolver::new();
+        let files = make_files(&[
+            "src/app.ts",
+            "src/utils.ts",
+        ]);
+        let from = CanonicalPath::new("src/app.ts");
+        let import = make_import("./utils");
+
+        let result = resolver.resolve(&import, &from, &files, None);
+        assert_eq!(result.unwrap().as_str(), "src/utils.ts");
+    }
+
+    #[test]
+    fn workspace_none_bare_specifier_returns_none() {
+        let resolver = TypeScriptResolver::new();
+        let files = make_files(&["src/app.ts"]);
+        let from = CanonicalPath::new("src/app.ts");
+        let import = make_import("lodash");
+
+        let result = resolver.resolve(&import, &from, &files, None);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn workspace_subpath_index_file() {
+        let resolver = TypeScriptResolver::new();
+        let ws = make_workspace();
+        let files = make_files(&[
+            "packages/auth/src/index.ts",
+            "packages/auth/helpers/index.ts",
+            "apps/web/src/app.ts",
+        ]);
+        let from = CanonicalPath::new("apps/web/src/app.ts");
+        let import = make_import("@myapp/auth/helpers");
+
+        let result = resolver.resolve(&import, &from, &files, Some(&ws));
+        assert_eq!(result.unwrap().as_str(), "packages/auth/helpers/index.ts");
     }
 }

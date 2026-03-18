@@ -1,3 +1,4 @@
+use crate::model::workspace::WorkspaceInfo;
 use crate::model::{CanonicalPath, FileSet};
 use crate::parser::traits::{ImportKind, ImportResolver, LanguageParser, RawExport, RawImport};
 
@@ -463,6 +464,7 @@ impl ImportResolver for RustResolver {
         import: &RawImport,
         from_file: &CanonicalPath,
         known_files: &FileSet,
+        _workspace: Option<&WorkspaceInfo>,
     ) -> Option<CanonicalPath> {
         let path = &import.path;
 
