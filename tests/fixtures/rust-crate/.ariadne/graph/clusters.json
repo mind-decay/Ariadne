@@ -1,0 +1,42 @@
+{
+  "clusters": {
+    "auth": {
+      "files": [
+        "src/auth/login.rs",
+        "src/auth/mod.rs"
+      ],
+      "file_count": 2,
+      "internal_edges": 1,
+      "external_edges": 1,
+      "cohesion": 0.5
+    },
+    "root": {
+      "files": [
+        "src/lib.rs"
+      ],
+      "file_count": 1,
+      "internal_edges": 0,
+      "external_edges": 2,
+      "cohesion": 0.0
+    },
+    "tests": {
+      "files": [
+        "tests/integration.rs"
+      ],
+      "file_count": 1,
+      "internal_edges": 0,
+      "external_edges": 0,
+      "cohesion": 1.0
+    },
+    "utils": {
+      "files": [
+        "src/utils/format.rs",
+        "src/utils/mod.rs"
+      ],
+      "file_count": 2,
+      "internal_edges": 1,
+      "external_edges": 1,
+      "cohesion": 0.5
+    }
+  }
+}

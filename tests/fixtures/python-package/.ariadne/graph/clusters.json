@@ -1,0 +1,44 @@
+{
+  "clusters": {
+    "auth": {
+      "files": [
+        "src/auth/__init__.py",
+        "src/auth/login.py"
+      ],
+      "file_count": 2,
+      "internal_edges": 0,
+      "external_edges": 3,
+      "cohesion": 0.0
+    },
+    "root": {
+      "files": [
+        "src/__init__.py",
+        "src/main.py"
+      ],
+      "file_count": 2,
+      "internal_edges": 0,
+      "external_edges": 2,
+      "cohesion": 0.0
+    },
+    "tests": {
+      "files": [
+        "tests/conftest.py",
+        "tests/test_auth.py"
+      ],
+      "file_count": 2,
+      "internal_edges": 0,
+      "external_edges": 1,
+      "cohesion": 0.0
+    },
+    "utils": {
+      "files": [
+        "src/utils/__init__.py",
+        "src/utils/helpers.py"
+      ],
+      "file_count": 2,
+      "internal_edges": 0,
+      "external_edges": 2,
+      "cohesion": 0.0
+    }
+  }
+}

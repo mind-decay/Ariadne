@@ -1,0 +1,32 @@
+{
+  "clusters": {
+    "backend": {
+      "files": [
+        "backend/main.go"
+      ],
+      "file_count": 1,
+      "internal_edges": 0,
+      "external_edges": 0,
+      "cohesion": 1.0
+    },
+    "frontend": {
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/components/Button.tsx"
+      ],
+      "file_count": 2,
+      "internal_edges": 1,
+      "external_edges": 0,
+      "cohesion": 1.0
+    },
+    "scripts": {
+      "files": [
+        "scripts/deploy.py"
+      ],
+      "file_count": 1,
+      "internal_edges": 0,
+      "external_edges": 0,
+      "cohesion": 1.0
+    }
+  }
+}

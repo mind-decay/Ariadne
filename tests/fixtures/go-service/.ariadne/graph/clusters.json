@@ -1,0 +1,24 @@
+{
+  "clusters": {
+    "cmd": {
+      "files": [
+        "cmd/server/main.go"
+      ],
+      "file_count": 1,
+      "internal_edges": 0,
+      "external_edges": 0,
+      "cohesion": 1.0
+    },
+    "internal": {
+      "files": [
+        "internal/handler/handler.go",
+        "internal/repository/repo.go",
+        "internal/service/service.go"
+      ],
+      "file_count": 3,
+      "internal_edges": 0,
+      "external_edges": 0,
+      "cohesion": 1.0
+    }
+  }
+}

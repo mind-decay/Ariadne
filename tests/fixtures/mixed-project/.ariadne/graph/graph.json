@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "project_root": "/Users/minddecay/Documents/Projects/ariadne/tests/fixtures/mixed-project",
+  "node_count": 4,
+  "edge_count": 1,
+  "nodes": {
+    "backend/main.go": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 14,
+      "hash": "2dd7e3f4841b3ef8",
+      "exports": [],
+      "cluster": "backend"
+    },
+    "frontend/src/App.tsx": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 17,
+      "hash": "b0975bcc8301ceee",
+      "exports": [],
+      "cluster": "frontend"
+    },
+    "frontend/src/components/Button.tsx": {
+      "type": "source",
+      "layer": "component",
+      "arch_depth": 0,
+      "lines": 10,
+      "hash": "a9bff872912f68be",
+      "exports": [
+        "Button"
+      ],
+      "cluster": "frontend"
+    },
+    "scripts/deploy.py": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 13,
+      "hash": "eb3a3e6d1dc28f35",
+      "exports": [
+        "deploy"
+      ],
+      "cluster": "scripts"
+    }
+  },
+  "edges": [
+    [
+      "frontend/src/App.tsx",
+      "frontend/src/components/Button.tsx",
+      "imports",
+      [
+        "Button"
+      ]
+    ]
+  ]
+}

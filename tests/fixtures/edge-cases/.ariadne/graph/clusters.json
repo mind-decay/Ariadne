@@ -1,0 +1,27 @@
+{
+  "clusters": {
+    "deeply": {
+      "files": [
+        "deeply/nested/a/b/c/d/file.ts"
+      ],
+      "file_count": 1,
+      "internal_edges": 0,
+      "external_edges": 0,
+      "cohesion": 1.0
+    },
+    "root": {
+      "files": [
+        "circular-a.ts",
+        "circular-b.ts",
+        "empty.ts",
+        "helper.ts",
+        "syntax-error.ts",
+        "valid.ts"
+      ],
+      "file_count": 6,
+      "internal_edges": 3,
+      "external_edges": 0,
+      "cohesion": 1.0
+    }
+  }
+}

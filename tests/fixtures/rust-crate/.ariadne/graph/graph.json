@@ -1,0 +1,110 @@
+{
+  "version": 1,
+  "project_root": "/Users/minddecay/Documents/Projects/ariadne/tests/fixtures/rust-crate",
+  "node_count": 6,
+  "edge_count": 4,
+  "nodes": {
+    "src/auth/login.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 12,
+      "hash": "ad821ea8a6721c14",
+      "exports": [
+        "LoginParams",
+        "login"
+      ],
+      "cluster": "auth"
+    },
+    "src/auth/mod.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 8,
+      "hash": "1d17da7224cdcf8e",
+      "exports": [
+        "auth_version",
+        "login"
+      ],
+      "cluster": "auth"
+    },
+    "src/lib.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 2,
+      "hash": "62918898bf0467d1",
+      "exports": [
+        "auth",
+        "utils"
+      ],
+      "cluster": "root"
+    },
+    "src/utils/format.rs": {
+      "type": "source",
+      "layer": "util",
+      "arch_depth": 0,
+      "lines": 7,
+      "hash": "4551ba2978df1624",
+      "exports": [
+        "format_date",
+        "format_name"
+      ],
+      "cluster": "utils"
+    },
+    "src/utils/mod.rs": {
+      "type": "source",
+      "layer": "util",
+      "arch_depth": 0,
+      "lines": 1,
+      "hash": "cf529bcca47209ed",
+      "exports": [
+        "format"
+      ],
+      "cluster": "utils"
+    },
+    "tests/integration.rs": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 10,
+      "hash": "9c17c7c58c2d245f",
+      "exports": [],
+      "cluster": "tests"
+    }
+  },
+  "edges": [
+    [
+      "src/auth/mod.rs",
+      "src/auth/login.rs",
+      "imports",
+      [
+        "login"
+      ]
+    ],
+    [
+      "src/lib.rs",
+      "src/auth/mod.rs",
+      "imports",
+      [
+        "auth"
+      ]
+    ],
+    [
+      "src/lib.rs",
+      "src/utils/mod.rs",
+      "imports",
+      [
+        "utils"
+      ]
+    ],
+    [
+      "src/utils/mod.rs",
+      "src/utils/format.rs",
+      "imports",
+      [
+        "format"
+      ]
+    ]
+  ]
+}

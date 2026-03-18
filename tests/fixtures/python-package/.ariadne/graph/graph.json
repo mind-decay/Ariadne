@@ -1,0 +1,124 @@
+{
+  "version": 1,
+  "project_root": "/Users/minddecay/Documents/Projects/ariadne/tests/fixtures/python-package",
+  "node_count": 8,
+  "edge_count": 4,
+  "nodes": {
+    "src/__init__.py": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 0,
+      "hash": "ef46db3751d8e999",
+      "exports": [],
+      "cluster": "root"
+    },
+    "src/auth/__init__.py": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 0,
+      "hash": "ef46db3751d8e999",
+      "exports": [],
+      "cluster": "auth"
+    },
+    "src/auth/login.py": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 8,
+      "hash": "215548e6407a26a0",
+      "exports": [
+        "login"
+      ],
+      "cluster": "auth"
+    },
+    "src/main.py": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 12,
+      "hash": "3db5cbc56e52cb06",
+      "exports": [
+        "main"
+      ],
+      "cluster": "root"
+    },
+    "src/utils/__init__.py": {
+      "type": "source",
+      "layer": "util",
+      "arch_depth": 0,
+      "lines": 0,
+      "hash": "ef46db3751d8e999",
+      "exports": [],
+      "cluster": "utils"
+    },
+    "src/utils/helpers.py": {
+      "type": "source",
+      "layer": "util",
+      "arch_depth": 0,
+      "lines": 13,
+      "hash": "d1366efd3a86f597",
+      "exports": [
+        "format_date",
+        "format_name"
+      ],
+      "cluster": "utils"
+    },
+    "tests/conftest.py": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 0,
+      "hash": "ef46db3751d8e999",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/test_auth.py": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 9,
+      "hash": "5908ec8d52090138",
+      "exports": [
+        "test_login_failure",
+        "test_login_success"
+      ],
+      "cluster": "tests"
+    }
+  },
+  "edges": [
+    [
+      "src/auth/login.py",
+      "src/utils/helpers.py",
+      "imports",
+      [
+        "format_date"
+      ]
+    ],
+    [
+      "src/main.py",
+      "src/auth/__init__.py",
+      "imports",
+      [
+        "login"
+      ]
+    ],
+    [
+      "src/main.py",
+      "src/utils/helpers.py",
+      "imports",
+      [
+        "format_date"
+      ]
+    ],
+    [
+      "tests/test_auth.py",
+      "src/auth/login.py",
+      "tests",
+      [
+        "login"
+      ]
+    ]
+  ]
+}

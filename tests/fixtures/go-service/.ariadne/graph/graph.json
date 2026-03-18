@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "project_root": "/Users/minddecay/Documents/Projects/ariadne/tests/fixtures/go-service",
+  "node_count": 4,
+  "edge_count": 0,
+  "nodes": {
+    "cmd/server/main.go": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 14,
+      "hash": "43eea1dc4de0b899",
+      "exports": [],
+      "cluster": "cmd"
+    },
+    "internal/handler/handler.go": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 17,
+      "hash": "1bbdac335472167f",
+      "exports": [],
+      "cluster": "internal"
+    },
+    "internal/repository/repo.go": {
+      "type": "source",
+      "layer": "data",
+      "arch_depth": 0,
+      "lines": 28,
+      "hash": "301dc4a182f8533c",
+      "exports": [],
+      "cluster": "internal"
+    },
+    "internal/service/service.go": {
+      "type": "source",
+      "layer": "service",
+      "arch_depth": 0,
+      "lines": 18,
+      "hash": "7cd70670ca8f2313",
+      "exports": [],
+      "cluster": "internal"
+    }
+  },
+  "edges": []
+}

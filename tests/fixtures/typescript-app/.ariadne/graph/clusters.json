@@ -1,0 +1,50 @@
+{
+  "clusters": {
+    "__tests__": {
+      "files": [
+        "src/__tests__/login.test.ts"
+      ],
+      "file_count": 1,
+      "internal_edges": 0,
+      "external_edges": 1,
+      "cohesion": 0.0
+    },
+    "auth": {
+      "files": [
+        "src/auth/login.ts",
+        "src/auth/register.ts"
+      ],
+      "file_count": 2,
+      "internal_edges": 1,
+      "external_edges": 3,
+      "cohesion": 0.25
+    },
+    "root": {
+      "files": [
+        "src/index.ts"
+      ],
+      "file_count": 1,
+      "internal_edges": 0,
+      "external_edges": 2,
+      "cohesion": 0.0
+    },
+    "types": {
+      "files": [
+        "src/types/index.d.ts"
+      ],
+      "file_count": 1,
+      "internal_edges": 0,
+      "external_edges": 0,
+      "cohesion": 1.0
+    },
+    "utils": {
+      "files": [
+        "src/utils/format.ts"
+      ],
+      "file_count": 1,
+      "internal_edges": 0,
+      "external_edges": 2,
+      "cohesion": 0.0
+    }
+  }
+}

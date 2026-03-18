@@ -1,0 +1,116 @@
+{
+  "version": 1,
+  "project_root": "/Users/minddecay/Documents/Projects/ariadne/tests/fixtures/typescript-app",
+  "node_count": 6,
+  "edge_count": 5,
+  "nodes": {
+    "src/__tests__/login.test.ts": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 13,
+      "hash": "1ae1bfe2579832f3",
+      "exports": [],
+      "cluster": "__tests__"
+    },
+    "src/auth/login.ts": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 12,
+      "hash": "5b3f09004953e37a",
+      "exports": [
+        "LoginParams",
+        "login"
+      ],
+      "cluster": "auth"
+    },
+    "src/auth/register.ts": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 10,
+      "hash": "f7dd39564646435b",
+      "exports": [
+        "RegisterParams",
+        "register"
+      ],
+      "cluster": "auth"
+    },
+    "src/index.ts": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 6,
+      "hash": "a05840a21b0a9426",
+      "exports": [],
+      "cluster": "root"
+    },
+    "src/types/index.d.ts": {
+      "type": "type_def",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 10,
+      "hash": "9d6ba345be9e269b",
+      "exports": [],
+      "cluster": "types"
+    },
+    "src/utils/format.ts": {
+      "type": "source",
+      "layer": "util",
+      "arch_depth": 0,
+      "lines": 7,
+      "hash": "c61d4a8596817c73",
+      "exports": [
+        "formatDate",
+        "formatName"
+      ],
+      "cluster": "utils"
+    }
+  },
+  "edges": [
+    [
+      "src/__tests__/login.test.ts",
+      "src/auth/login.ts",
+      "tests",
+      [
+        "login",
+        "LoginParams"
+      ]
+    ],
+    [
+      "src/auth/login.ts",
+      "src/utils/format.ts",
+      "imports",
+      [
+        "formatName"
+      ]
+    ],
+    [
+      "src/auth/register.ts",
+      "src/auth/login.ts",
+      "imports",
+      [
+        "login",
+        "LoginParams"
+      ]
+    ],
+    [
+      "src/index.ts",
+      "src/auth/login.ts",
+      "imports",
+      [
+        "login"
+      ]
+    ],
+    [
+      "src/index.ts",
+      "src/utils/format.ts",
+      "imports",
+      [
+        "formatDate",
+        "formatName"
+      ]
+    ]
+  ]
+}
