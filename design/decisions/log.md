@@ -289,7 +289,7 @@ All architectural decisions made during Ariadne development.
 - `src/diagnostic.rs` — `FatalError`, `Warning`, `DiagnosticCollector`
 - `src/hash.rs` — xxHash64 wrapper
 
-Dependency rules: `model/` depends on nothing. `parser/` depends on `model/` only. `pipeline/` depends on traits from `parser/` and `serial/`, never concrete implementations. `serial/` depends on `model/` only. `main.rs` depends on everything (Composition Root, D-020).
+Dependency rules: `model/` depends on nothing. `parser/` depends on `model/` only. `pipeline/` depends on traits from `parser/` and `serial/`, never concrete implementations. `detect/` depends on `model/` (and may also depend on `diagnostic.rs` for W008 warnings during workspace detection). `serial/` depends on `model/` only. `main.rs` depends on everything (Composition Root, D-020).
 **Alternatives rejected:**
 - Keep everything under `graph/` — growing module with mixed responsibilities
 - Feature-based modules (e.g., `build/`, `query/`) — doesn't match the data-flow architecture

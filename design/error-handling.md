@@ -81,18 +81,26 @@ pub struct Warning {
 }
 
 pub struct DiagnosticCollector {
-    warnings: Mutex<Vec<Warning>>,
-    counts: Mutex<DiagnosticCounts>,
+    inner: Mutex<(Vec<Warning>, DiagnosticCounts)>,
 }
+```
 
+A single `Mutex` wrapping both the warning list and counts reduces lock acquisitions — one lock per `warn()` call instead of two. The `warn()` method updates the appropriate `DiagnosticCounts` fields (incrementing `files_skipped` plus the specific reason counter) and pushes the `Warning` in a single critical section.
+
+```rust
 pub struct DiagnosticCounts {
     pub files_skipped: u32,
+    pub parse_errors: u32,
+    pub read_errors: u32,
+    pub too_large: u32,
+    pub binary_files: u32,
+    pub encoding_errors: u32,
     pub imports_unresolved: u32,
     pub partial_parses: u32,
 }
 ```
 
-**Thread safety:** `Mutex<Vec<Warning>>` is shared across rayon workers via `&DiagnosticCollector`. Lock contention is minimal — warnings are rare (most files parse successfully), and lock hold time is short (one `push`).
+**Thread safety:** `Mutex<(Vec<Warning>, DiagnosticCounts)>` is shared across rayon workers via `&DiagnosticCollector`. Lock contention is minimal — warnings are rare (most files parse successfully), and lock hold time is short (one `push` + counter increment).
 
 **Deterministic output:** `drain()` sorts warnings by `(path, code)` before reporting. This guarantees identical warning order across runs regardless of rayon scheduling (D-006).
 
@@ -115,7 +123,7 @@ warn[W003]: skipping src/generated/huge-bundle.js: file too large (4.2MB, limit 
 warn[W009]: skipping data/binary.dat: not valid UTF-8
 
 Built graph: 847 files, 2341 edges, 12 clusters in 1.2s
-  3 files skipped (1 parse error, 1 permission denied, 1 too large)
+  3 files skipped (1 parse error, 1 read error, 1 too large)
   42 imports unresolved (external packages)
 ```
 
@@ -314,7 +322,7 @@ If warnings occurred:
 
 ```
 Built graph: 844 files, 2298 edges, 12 clusters in 1.3s
-  3 files skipped (1 parse error, 1 permission denied, 1 too large)
+  3 files skipped (1 parse error, 1 read error, 1 too large)
   42 imports unresolved (external packages)
 ```
 

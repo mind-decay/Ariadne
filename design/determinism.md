@@ -46,6 +46,8 @@ Conversion via `impl From<ProjectGraph> for GraphOutput` — single place where 
 
 **BTreeMap everywhere (KISS decision):** We use `BTreeMap` in both internal and output models rather than `HashMap` internally + conversion. The ~20% lookup overhead is negligible compared to parsing. This avoids a category of "forgot to sort" bugs.
 
+**Exception:** `ParserRegistry.extension_index` uses `HashMap` because it is lookup-only (never iterated for output). Its public accessors sort results before returning: `supported_extensions()` sorts the extension list lexicographically.
+
 ### Edge Sorting
 
 Edges are serialized as a JSON array. Arrays are order-dependent. Sort before serialization:

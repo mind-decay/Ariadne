@@ -52,11 +52,12 @@ trait ImportResolver: Send + Sync {
         import: &RawImport,
         from_file: &CanonicalPath,
         known_files: &FileSet,
+        workspace: Option<&WorkspaceInfo>,
     ) -> Option<CanonicalPath>;
 }
 ```
 
-A single struct can implement both traits. `LanguageParser` returns raw, unresolved import strings. `ImportResolver` maps those to canonical paths using filesystem knowledge. This separation enables swapping resolution strategies (e.g., workspace-aware resolution in Phase 1b) without touching parsers.
+A single struct can implement both traits. `LanguageParser` returns raw, unresolved import strings. `ImportResolver` maps those to canonical paths using filesystem knowledge. This separation enables swapping resolution strategies (e.g., workspace-aware resolution in Phase 1b) without touching parsers. Phase 1a resolvers receive `None` for the `workspace` parameter. The TS/JS resolver uses `WorkspaceInfo` for workspace-aware resolution of bare specifiers that match workspace member names.
 
 Parsers are registered in a `ParserRegistry` — adding a new language = implementing both traits + one `register()` call. Grammars are crate dependencies.
 
@@ -256,16 +257,16 @@ Detection uses **per-language pattern tables**, not a single generic list. Filen
 
 Layer inference uses directory name pattern matching. First matching pattern wins. Both frontend and backend conventions are covered.
 
-| Layer       | Directory patterns (case-insensitive match)                                                                                                 |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `api`       | `api/`, `routes/`, `endpoints/`, `controllers/`, `handlers/`, `rest/`, `graphql/`                                                           |
-| `service`   | `services/`, `service/`, `domain/`, `business/`, `usecases/`, `use-cases/`, `interactors/`, `middleware/`                                   |
-| `data`      | `data/`, `db/`, `database/`, `repository/`, `repositories/`, `models/`, `dao/`, `store/`, `stores/`, `schema/`, `migration/`, `migrations/` |
-| `util`      | `utils/`, `util/`, `helpers/`, `lib/`, `shared/`, `common/`, `pkg/`                                                                         |
-| `component` | `components/`, `component/`, `ui/`, `views/`, `pages/`, `layouts/`, `widgets/`                                                              |
-| `hook`      | `hooks/`, `composables/`                                                                                                                    |
-| `config`    | `config/`, `configuration/`, `settings/`, `env/`                                                                                            |
-| `unknown`   | No matching pattern (default)                                                                                                               |
+| Layer       | Directory patterns (case-insensitive match)                                                                                                                                                                                |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `api`       | `api/`, `routes/`, `endpoints/`, `controllers/`, `handlers/`, `rest/`, `graphql/`, `presentation/`, `adapters/`, `interfaces/`, `presenters/`, `ports/`, `params/` (Clean, Hexagonal, SvelteKit)                            |
+| `service`   | `services/`, `service/`, `domain/`, `business/`, `usecases/`, `use-cases/`, `interactors/`, `middleware/`, `application/`, `commands/`, `events/`, `listeners/`, `subscribers/`, `guards/`, `interceptors/`, `filters/`, `providers/` (DDD, Clean, CQRS, Event-Driven, Angular/NestJS) |
+| `data`      | `data/`, `db/`, `database/`, `repository/`, `repositories/`, `models/`, `model/`, `dao/`, `store/`, `stores/`, `schema/`, `migration/`, `migrations/`, `entities/`, `aggregates/`, `value-objects/`, `infrastructure/`, `persistence/`, `gateways/`, `queries/`, `serializers/` (DDD, Clean, CQRS, Rails/Django) |
+| `util`      | `utils/`, `util/`, `helpers/`, `lib/`, `shared/`, `common/`, `pkg/`, `pipes/` (Angular)                                                                                                                                    |
+| `component` | `components/`, `component/`, `ui/`, `views/`, `pages/`, `layouts/`, `widgets/`, `viewmodels/`, `view-models/`, `templates/`, `forms/`, `directives/` (MVVM, Django, Angular)                                               |
+| `hook`      | `hooks/`, `composables/`                                                                                                                                                                                                    |
+| `config`    | `config/`, `configuration/`, `settings/`, `env/`                                                                                                                                                                            |
+| `unknown`   | No matching pattern (default)                                                                                                                                                                                               |
 
 **Note:** `component` and `hook` are frontend-specific. Backend-only projects (Go, Java, C#) will typically produce `api`, `service`, `data`, `util`, and `unknown` layers. `unknown` is expected to be common for backend projects and is acceptable — the layer heuristic provides best-effort classification, not exhaustive coverage.
 
@@ -422,7 +423,7 @@ src/
 | `model/`        | nothing (leaf)                                                                    | everything else                               |
 | `parser/`       | `model/`                                                                          | `pipeline/`, `serial/`, `detect/`, `cluster/` |
 | `pipeline/`     | traits from `parser/`, `serial/`; types from `model/`, `detect/`; `diagnostic.rs` | concrete parser/serializer implementations    |
-| `detect/`       | `model/`                                                                          | `parser/`, `pipeline/`, `serial/`             |
+| `detect/`       | `model/`, `diagnostic.rs` (for W008 workspace detection warnings)                 | `parser/`, `pipeline/`, `serial/`             |
 | `cluster/`      | `model/`                                                                          | `parser/`, `pipeline/`, `serial/`             |
 | `serial/`       | `model/`, `diagnostic.rs` (for `FatalError`)                                      | `parser/`, `pipeline/`, `detect/`, `cluster/` |
 | `diagnostic.rs` | `model/` (for `CanonicalPath` in warnings)                                        | everything else                               |
