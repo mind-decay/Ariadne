@@ -31,9 +31,9 @@ fn directory_segments(path: &str) -> impl Iterator<Item = &str> {
 /// Match a lowercased directory segment to an architectural layer.
 fn match_layer(segment: &str) -> Option<ArchLayer> {
     match segment {
-        // Api (REST, GraphQL, MVC, Clean, Hexagonal)
+        // Api (REST, GraphQL, MVC, Clean, Hexagonal, SvelteKit)
         "api" | "routes" | "endpoints" | "controllers" | "handlers" | "rest" | "graphql"
-        | "presentation" | "adapters" | "interfaces" | "presenters" | "ports" => {
+        | "presentation" | "adapters" | "interfaces" | "presenters" | "ports" | "params" => {
             Some(ArchLayer::Api)
         }
         // Service (DDD, Clean, CQRS, Event-Driven, Angular/NestJS)
@@ -147,6 +147,13 @@ mod tests {
     fn config_layer() {
         assert_eq!(layer("src/config/database.ts"), ArchLayer::Config);
         assert_eq!(layer("src/settings/app.py"), ArchLayer::Config);
+    }
+
+    #[test]
+    fn sveltekit() {
+        assert_eq!(layer("src/params/slug.ts"), ArchLayer::Api);
+        assert_eq!(layer("src/routes/api/users.ts"), ArchLayer::Api);
+        assert_eq!(layer("src/lib/utils/format.ts"), ArchLayer::Util);
     }
 
     #[test]
