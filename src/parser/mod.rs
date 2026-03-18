@@ -7,5 +7,5 @@ mod rust_lang;
 pub mod traits;
 mod typescript;
 
-pub use registry::ParserRegistry;
+pub use registry::{ParseOutcome, ParserRegistry};
 pub use traits::{ImportKind, ImportResolver, LanguageParser, RawExport, RawImport};

@@ -9,14 +9,14 @@ use std::time::Instant;
 use rayon::prelude::*;
 
 use crate::cluster::assign_clusters;
-use crate::detect::detect_workspace;
+use crate::detect::{detect_workspace, is_case_insensitive};
 use crate::diagnostic::{DiagnosticCollector, DiagnosticCounts, FatalError, Warning, WarningCode};
 use crate::model::*;
-use crate::parser::{ParserRegistry, RawExport, RawImport};
+use crate::parser::{ParseOutcome, ParserRegistry, RawExport, RawImport};
 use crate::serial::{ClusterEntryOutput, ClusterOutput, GraphOutput, GraphSerializer, NodeOutput};
 
 pub use read::{FileContent, FileReader, FileSkipReason, FsReader};
-pub use walk::{FileEntry, FileWalker, FsWalker, WalkConfig};
+pub use walk::{FileEntry, FileWalker, FsWalker, WalkConfig, WalkResult};
 
 /// Output of the parse stage.
 #[derive(Clone, Debug)]
@@ -75,7 +75,12 @@ impl BuildPipeline {
 
         // Stage 1: Walk
         let walk_start = Instant::now();
-        let entries = self.walker.walk(&abs_root, &config)?;
+        let walk_result = self.walker.walk(&abs_root, &config)?;
+        let entries = walk_result.entries;
+        // Forward walk-level warnings to DiagnosticCollector (S1/S2 fix)
+        for w in walk_result.warnings {
+            diagnostics.warn(w);
+        }
         if verbose {
             eprintln!("[walk]      {:>6}ms  {} files found", walk_start.elapsed().as_millis(), entries.len());
         }
@@ -124,12 +129,26 @@ impl BuildPipeline {
                 let parser = self.registry.parser_for(extension)?;
 
                 match self.registry.parse_source(&fc.bytes, parser) {
-                    Ok(Some((_tree, imports, exports))) => Some(ParsedFile {
+                    Ok(ParseOutcome::Ok(imports, exports)) => Some(ParsedFile {
                         path: fc.path.clone(),
                         imports,
                         exports,
                     }),
-                    Ok(None) => {
+                    Ok(ParseOutcome::Partial(imports, exports)) => {
+                        // Partial parse — extract what we can, emit W007
+                        diagnostics.warn(Warning {
+                            code: WarningCode::W007PartialParse,
+                            path: fc.path.clone(),
+                            message: "partial parse: some syntax errors".to_string(),
+                            detail: None,
+                        });
+                        Some(ParsedFile {
+                            path: fc.path.clone(),
+                            imports,
+                            exports,
+                        })
+                    }
+                    Ok(ParseOutcome::Failed) => {
                         // Parse failed (>50% ERROR nodes)
                         diagnostics.warn(Warning {
                             code: WarningCode::W001ParseFailed,
@@ -161,12 +180,15 @@ impl BuildPipeline {
         // Detect workspace for workspace-aware import resolution
         let workspace_info = detect_workspace(&abs_root, &diagnostics);
         let workspace_relative = workspace_info.as_ref().map(|ws| ws.relativize(&abs_root));
+        // Detect case sensitivity once per build (F3 fix)
+        let case_insensitive = is_case_insensitive(&abs_root);
         let mut graph = build::resolve_and_build(
             &parsed_files,
             &file_contents,
             &self.registry,
             &diagnostics,
             workspace_relative.as_ref(),
+            case_insensitive,
         );
         if verbose {
             eprintln!("[resolve]   {:>6}ms  {} edges created", resolve_start.elapsed().as_millis(), graph.edges.len());
@@ -189,7 +211,8 @@ impl BuildPipeline {
         }
 
         // Stage 6: Convert to output model
-        let mut graph_output = project_graph_to_output(&graph, &abs_root);
+        // Use the original CLI path (not abs_root) for portability — D-006, D-015
+        let mut graph_output = project_graph_to_output(&graph, root);
         if timestamp {
             graph_output.generated = Some(format_utc_timestamp());
         }

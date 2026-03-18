@@ -126,9 +126,9 @@ fn walk_excludes_all_configured_dirs() {
         ..WalkConfig::default()
     };
 
-    let entries = walker.walk(&root, &config).expect("walk should succeed");
+    let walk_result = walker.walk(&root, &config).expect("walk should succeed");
 
-    for entry in &entries {
+    for entry in &walk_result.entries {
         let rel = entry.path.strip_prefix(&root).unwrap_or(&entry.path);
         let components: Vec<&str> = rel
             .components()
@@ -147,7 +147,7 @@ fn walk_excludes_all_configured_dirs() {
     }
 
     // Sanity: we should still get some files (the fixture has .ts files)
-    assert!(!entries.is_empty(), "walk should find at least one file");
+    assert!(!walk_result.entries.is_empty(), "walk should find at least one file");
 }
 
 #[test]

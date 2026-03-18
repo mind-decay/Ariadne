@@ -8,6 +8,16 @@ use super::rust_lang::{RustParser, RustResolver};
 use super::traits::{ImportResolver, LanguageParser, RawExport, RawImport};
 use super::typescript::{TypeScriptParser, TypeScriptResolver};
 
+/// Result of parsing a source file.
+pub enum ParseOutcome {
+    /// Parsed successfully with no errors.
+    Ok(Vec<RawImport>, Vec<RawExport>),
+    /// Parsed with partial errors (>0% but ≤50% ERROR nodes) — W007.
+    Partial(Vec<RawImport>, Vec<RawExport>),
+    /// Parse failed (>50% ERROR nodes or no tree produced) — W001.
+    Failed,
+}
+
 /// Registry of language parsers and resolvers, indexed by file extension.
 pub struct ParserRegistry {
     parsers: Vec<Box<dyn LanguageParser>>,
@@ -75,13 +85,14 @@ impl ParserRegistry {
     }
 
     /// Parse source code with the appropriate parser.
-    /// Returns None if >50% of top-level nodes are ERROR (W001).
-    /// Otherwise extracts imports/exports from valid subtrees.
+    /// Returns `ParseOutcome::Failed` if >50% of top-level nodes are ERROR (W001).
+    /// Returns `ParseOutcome::Partial` if >0% but ≤50% ERROR nodes (W007).
+    /// Returns `ParseOutcome::Ok` otherwise.
     pub fn parse_source(
         &self,
         source: &[u8],
         parser: &dyn LanguageParser,
-    ) -> Result<Option<(tree_sitter::Tree, Vec<RawImport>, Vec<RawExport>)>, String> {
+    ) -> Result<ParseOutcome, String> {
         let mut ts_parser = tree_sitter::Parser::new();
         ts_parser
             .set_language(&parser.tree_sitter_language())
@@ -89,11 +100,12 @@ impl ParserRegistry {
 
         let tree = match ts_parser.parse(source, None) {
             Some(t) => t,
-            None => return Ok(None),
+            None => return Ok(ParseOutcome::Failed),
         };
 
         // Check error rate
         let root = tree.root_node();
+        let mut is_partial = false;
         if root.has_error() {
             let total = root.child_count();
             if total > 0 {
@@ -102,7 +114,10 @@ impl ParserRegistry {
                     .count();
                 if error_count * 2 > total {
                     // >50% ERROR nodes → skip file entirely
-                    return Ok(None);
+                    return Ok(ParseOutcome::Failed);
+                }
+                if error_count > 0 {
+                    is_partial = true;
                 }
             }
         }
@@ -110,7 +125,11 @@ impl ParserRegistry {
         let imports = parser.extract_imports(&tree, source);
         let exports = parser.extract_exports(&tree, source);
 
-        Ok(Some((tree, imports, exports)))
+        if is_partial {
+            Ok(ParseOutcome::Partial(imports, exports))
+        } else {
+            Ok(ParseOutcome::Ok(imports, exports))
+        }
     }
 
     /// List all supported extensions.

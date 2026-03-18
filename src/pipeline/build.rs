@@ -18,6 +18,7 @@ pub fn resolve_and_build(
     registry: &ParserRegistry,
     diagnostics: &DiagnosticCollector,
     workspace: Option<&WorkspaceInfo>,
+    case_insensitive: bool,
 ) -> ProjectGraph {
     // 1. Build FileSet from successfully-read files
     let file_set = FileSet::from_iter(file_contents.iter().map(|fc| fc.path.clone()));
@@ -78,6 +79,7 @@ pub fn resolve_and_build(
                 resolver,
                 diagnostics,
                 workspace,
+                case_insensitive,
             ) {
                 Some(r) => r,
                 None => continue,
@@ -119,6 +121,7 @@ pub fn resolve_and_build(
                         resolver,
                         diagnostics,
                         workspace,
+                        case_insensitive,
                     ) {
                         edges.push(Edge {
                             from: pf.path.clone(),
