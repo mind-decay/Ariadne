@@ -17,8 +17,7 @@ pub fn fixture_path(name: &str) -> PathBuf {
 pub fn build_fixture(name: &str) -> BuildOutput {
     let path = fixture_path(name);
     let output_dir = tempfile::tempdir().expect("create tempdir");
-    #[allow(deprecated)]
-    let output_path = output_dir.into_path();
+    let output_path = output_dir.keep();
     let pipeline = BuildPipeline::new(
         Box::new(FsWalker::new()),
         Box::new(FsReader::new()),
@@ -31,6 +30,7 @@ pub fn build_fixture(name: &str) -> BuildOutput {
 }
 
 /// Builds a fixture and returns the raw graph.json content as a string.
+/// (allow dead_code: helpers.rs is compiled per test binary — not all binaries use this)
 #[allow(dead_code)]
 pub fn build_and_read_graph_json(name: &str) -> String {
     let output = build_fixture(name);
