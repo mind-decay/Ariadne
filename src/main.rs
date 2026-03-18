@@ -33,8 +33,8 @@ fn main() {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Build { path, output: _ } => {
-            run_build(&path);
+        Commands::Build { path, output } => {
+            run_build(&path, output.as_deref());
         }
         Commands::Info => {
             run_info();
@@ -42,7 +42,7 @@ fn main() {
     }
 }
 
-fn run_build(path: &PathBuf) {
+fn run_build(path: &PathBuf, output: Option<&std::path::Path>) {
     let start = Instant::now();
 
     // Composition Root (D-020)
@@ -55,7 +55,7 @@ fn run_build(path: &PathBuf) {
 
     let config = WalkConfig::default();
 
-    match pipeline.run(path, config) {
+    match pipeline.run_with_output(path, config, output) {
         Ok(output) => {
             let elapsed = start.elapsed();
             println!(
