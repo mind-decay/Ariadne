@@ -193,14 +193,17 @@ fn infer_test_edges_by_naming(
         ("test_", ".py"), // test_auth.py → auth.py
     ];
 
-    // Build HashSet from existing edges for O(1) dedup lookup
-    let existing_edges: std::collections::HashSet<(&CanonicalPath, CanonicalPath, EdgeType)> =
+    // Build HashSet from existing edges for O(1) dedup lookup (fully borrowed)
+    let existing_edges: std::collections::HashSet<(&CanonicalPath, &CanonicalPath, EdgeType)> =
         edges
             .iter()
-            .map(|e| (&e.from, e.to.clone(), e.edge_type))
+            .map(|e| (&e.from, &e.to, e.edge_type))
             .collect();
 
     let mut new_edges: Vec<Edge> = Vec::new();
+    // Track new edges in a HashSet too, avoiding O(n²) scan on new_edges
+    let mut new_edge_keys: std::collections::HashSet<(CanonicalPath, CanonicalPath, EdgeType)> =
+        std::collections::HashSet::new();
 
     for (path, node) in nodes {
         if node.file_type != FileType::Test {
@@ -221,11 +224,10 @@ fn infer_test_edges_by_naming(
                 let source_path = CanonicalPath::new(&source_path_str);
 
                 if file_set.contains(&source_path) {
-                    let key = (path, source_path.clone(), EdgeType::Tests);
-                    let in_new = new_edges
-                        .iter()
-                        .any(|e| e.from == *path && e.to == key.1 && e.edge_type == key.2);
-                    if !existing_edges.contains(&key) && !in_new {
+                    if !existing_edges.contains(&(path, &source_path, EdgeType::Tests))
+                        && !new_edge_keys.contains(&(path.clone(), source_path.clone(), EdgeType::Tests))
+                    {
+                        new_edge_keys.insert((path.clone(), source_path.clone(), EdgeType::Tests));
                         new_edges.push(Edge {
                             from: path.clone(),
                             to: source_path,
@@ -234,7 +236,7 @@ fn infer_test_edges_by_naming(
                         });
                     }
                     found = true;
-                    break; // Found a match, don't try other patterns
+                    break;
                 }
             }
         }
@@ -254,11 +256,10 @@ fn infer_test_edges_by_naming(
                 };
 
                 if file_set.contains(&source_path) {
-                    let key = (path, source_path.clone(), EdgeType::Tests);
-                    let in_new = new_edges
-                        .iter()
-                        .any(|e| e.from == *path && e.to == key.1 && e.edge_type == key.2);
-                    if !existing_edges.contains(&key) && !in_new {
+                    if !existing_edges.contains(&(path, &source_path, EdgeType::Tests))
+                        && !new_edge_keys.contains(&(path.clone(), source_path.clone(), EdgeType::Tests))
+                    {
+                        new_edge_keys.insert((path.clone(), source_path.clone(), EdgeType::Tests));
                         new_edges.push(Edge {
                             from: path.clone(),
                             to: source_path,
