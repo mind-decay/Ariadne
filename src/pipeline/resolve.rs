@@ -12,6 +12,7 @@ pub fn resolve_import(
     diagnostics: &DiagnosticCollector,
 ) -> Option<CanonicalPath> {
     match resolver.resolve(import, from_file, known_files) {
+        Some(resolved) if resolved == *from_file => None, // INV-2: filter self-imports
         Some(resolved) => Some(resolved),
         None => {
             // Unresolved — likely external package
