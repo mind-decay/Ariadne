@@ -71,53 +71,48 @@ pub struct DiagnosticReport {
 
 /// Thread-safe warning collector for use during parallel pipeline stages.
 pub struct DiagnosticCollector {
-    warnings: Mutex<Vec<Warning>>,
-    counts: Mutex<DiagnosticCounts>,
+    inner: Mutex<(Vec<Warning>, DiagnosticCounts)>,
 }
 
 impl DiagnosticCollector {
     pub fn new() -> Self {
         Self {
-            warnings: Mutex::new(Vec::new()),
-            counts: Mutex::new(DiagnosticCounts::default()),
+            inner: Mutex::new((Vec::new(), DiagnosticCounts::default())),
         }
     }
 
     /// Record a warning.
     pub fn warn(&self, warning: Warning) {
-        let mut warnings = self.warnings.lock().unwrap();
-        // Update counts based on warning type
-        let mut counts = self.counts.lock().unwrap();
+        let mut guard = self.inner.lock().unwrap();
         match warning.code {
             WarningCode::W001ParseFailed
             | WarningCode::W002ReadFailed
             | WarningCode::W003FileTooLarge
             | WarningCode::W004BinaryFile
             | WarningCode::W009EncodingError => {
-                counts.files_skipped += 1;
+                guard.1.files_skipped += 1;
             }
             WarningCode::W006ImportUnresolved => {
-                counts.imports_unresolved += 1;
+                guard.1.imports_unresolved += 1;
             }
             WarningCode::W007PartialParse => {
-                counts.partial_parses += 1;
+                guard.1.partial_parses += 1;
             }
             WarningCode::W008ConfigParseFailed => {}
         }
-        warnings.push(warning);
+        guard.0.push(warning);
     }
 
     /// Increment unresolved import count without recording a warning
     /// (used when not in verbose mode).
     pub fn increment_unresolved(&self) {
-        let mut counts = self.counts.lock().unwrap();
-        counts.imports_unresolved += 1;
+        let mut guard = self.inner.lock().unwrap();
+        guard.1.imports_unresolved += 1;
     }
 
     /// Consume the collector and return a sorted diagnostic report.
     pub fn drain(self) -> DiagnosticReport {
-        let mut warnings = self.warnings.into_inner().unwrap();
-        let counts = self.counts.into_inner().unwrap();
+        let (mut warnings, counts) = self.inner.into_inner().unwrap();
         // Sort by (path, code) for deterministic output (D-006)
         warnings.sort_by(|a, b| a.path.cmp(&b.path).then(a.code.cmp(&b.code)));
         DiagnosticReport { warnings, counts }
