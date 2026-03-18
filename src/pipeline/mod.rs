@@ -107,17 +107,26 @@ impl BuildPipeline {
                 let parser = self.registry.parser_for(extension)?;
 
                 match self.registry.parse_source(&fc.bytes, parser) {
-                    Some((_tree, imports, exports)) => Some(ParsedFile {
+                    Ok(Some((_tree, imports, exports))) => Some(ParsedFile {
                         path: fc.path.clone(),
                         imports,
                         exports,
                     }),
-                    None => {
+                    Ok(None) => {
                         // Parse failed (>50% ERROR nodes)
                         diagnostics.warn(Warning {
                             code: WarningCode::W001ParseFailed,
                             path: fc.path.clone(),
                             message: "parse failed: too many errors".to_string(),
+                            detail: None,
+                        });
+                        None
+                    }
+                    Err(msg) => {
+                        diagnostics.warn(Warning {
+                            code: WarningCode::W001ParseFailed,
+                            path: fc.path.clone(),
+                            message: msg,
                             detail: None,
                         });
                         None

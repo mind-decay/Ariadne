@@ -81,13 +81,16 @@ impl ParserRegistry {
         &self,
         source: &[u8],
         parser: &dyn LanguageParser,
-    ) -> Option<(tree_sitter::Tree, Vec<RawImport>, Vec<RawExport>)> {
+    ) -> Result<Option<(tree_sitter::Tree, Vec<RawImport>, Vec<RawExport>)>, String> {
         let mut ts_parser = tree_sitter::Parser::new();
         ts_parser
             .set_language(&parser.tree_sitter_language())
-            .expect("language version mismatch");
+            .map_err(|e| format!("grammar version mismatch for {}: {}", parser.language(), e))?;
 
-        let tree = ts_parser.parse(source, None)?;
+        let tree = match ts_parser.parse(source, None) {
+            Some(t) => t,
+            None => return Ok(None),
+        };
 
         // Check error rate
         let root = tree.root_node();
@@ -99,7 +102,7 @@ impl ParserRegistry {
                     .count();
                 if error_count * 2 > total {
                     // >50% ERROR nodes → skip file entirely
-                    return None;
+                    return Ok(None);
                 }
             }
         }
@@ -107,7 +110,7 @@ impl ParserRegistry {
         let imports = parser.extract_imports(&tree, source);
         let exports = parser.extract_exports(&tree, source);
 
-        Some((tree, imports, exports))
+        Ok(Some((tree, imports, exports)))
     }
 
     /// List all supported extensions.
