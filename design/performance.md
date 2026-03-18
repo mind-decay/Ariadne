@@ -38,21 +38,24 @@ Scaling is approximately linear in file count. Parsing dominates, and rayon para
 
 ### What Parallelizes
 
-**File parsing (rayon):** Tree-sitter parsing + import/export extraction is per-file with no shared state. This is embarrassingly parallel.
+**File parsing (rayon):** Tree-sitter parsing + import/export extraction is per-file with no shared mutable state. This is embarrassingly parallel.
 
 ```rust
-// Conceptual structure
+// Conceptual structure — diagnostics is the only shared state
 files.par_iter()                    // rayon parallel iterator
-    .map(|file| {
+    .filter_map(|file| {
         let content = read(file);   // I/O — not parallelized within file
         let tree = parse(content);  // CPU — main benefit of parallelism
         let imports = extract(tree); // CPU
         let exports = extract(tree); // CPU
         let hash = xxhash(content);  // CPU
-        (file, imports, exports, hash)
+        // On failure: diagnostics.warn(...) — Mutex<Vec>, minimal contention
+        Some((file, imports, exports, hash))
     })
     .collect()
 ```
+
+**DiagnosticCollector thread safety (D-021):** `Mutex<Vec<Warning>>` is shared across rayon workers. Lock contention is minimal: warnings are rare (most files parse successfully), lock hold time is short (one `push`), and there is no read contention during collection.
 
 **Expected speedup:**
 - 1 core: baseline
@@ -63,7 +66,7 @@ files.par_iter()                    // rayon parallel iterator
 ### What Does NOT Parallelize
 
 - **Directory walking:** Sequential by nature (filesystem tree traversal). Fast enough (~30ms for 3000 files).
-- **Path resolution:** Depends on the full file list being known (need to check if resolved path exists in the graph). Runs after parsing. Could parallelize per-file but lookups are fast (HashMap).
+- **Path resolution:** Depends on the full file list being known (need to check if resolved path exists in the FileSet). Runs after parsing. Could parallelize per-file but lookups are fast (BTreeSet, O(log n)).
 - **Edge deduplication:** Sequential pass over all edges. Fast (linear).
 - **Clustering:** Sequential assignment + metric computation. Fast (linear).
 - **JSON serialization:** serde_json is single-threaded. Could parallelize graph.json and clusters.json writes, but not worth the complexity (~500ms total).
@@ -84,7 +87,7 @@ All data lives in memory during build. No streaming, no disk-backed storage. Thi
 
 ```
 Memory layout:
-  Nodes:  HashMap<String, Node>     ~500 bytes/node (path + enums + hash + exports vec)
+  Nodes:  BTreeMap<CanonicalPath, Node>  ~600 bytes/node (path + enums + hash + exports vec + tree overhead)
   Edges:  Vec<Edge>                 ~200 bytes/edge (two paths + type + symbols vec)
   Source: Not retained              read once, parsed, discarded
   ASTs:   Not retained              tree-sitter Tree is per-file, dropped after extraction
@@ -103,6 +106,8 @@ Memory layout:
 | 50,000 | 3 | 25MB | 30MB | ~250MB |
 
 These are conservative estimates. Real-world average edges/file varies (2-5 depending on language/project).
+
+**Clarification:** The ~250MB figure covers graph data structures (nodes + edges) at 50k files. Peak memory is ~400MB when including file bytes retained during the parse-and-build phase (file content is read, parsed, then dropped — but all files may be in memory concurrently during parallel reading).
 
 ### Memory Protection
 

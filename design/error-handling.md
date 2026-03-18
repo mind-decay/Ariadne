@@ -32,7 +32,7 @@ These affect individual files. The file is excluded from the graph. Build contin
 | `W002: ReadFailed`        | File can't be read (permissions, encoding)                                                             | Skip file, emit warning                                                                                                                                                             |
 | `W003: FileTooLarge`      | File exceeds size limit (default: 1MB)                                                                 | Skip file, emit warning                                                                                                                                                             |
 | `W004: BinaryFile`        | File contains null bytes (binary, not source)                                                          | Skip file, emit warning                                                                                                                                                             |
-| `W005: SymlinkLoop`       | Symlink resolves to ancestor directory                                                                 | Skip path, emit warning. _Currently unreachable: symlinks are always skipped during walking (see File System Edge Cases). Reserved for future use if symlink following is enabled._ |
+| | **W005 is reserved (unassigned).** | |
 | `W006: ImportUnresolved`  | Import path can't be resolved to a project file                                                        | No edge created, emit warning (only in verbose mode — too noisy otherwise)                                                                                                          |
 | `W007: PartialParse`      | Tree-sitter parsed with ERROR nodes (>50% of top-level nodes → W001; otherwise extract valid subtrees) | Extract what we can, emit warning                                                                                                                                                   |
 | `W008: ConfigParseFailed` | Language config file (go.mod, tsconfig.json) can't be parsed                                           | Fall back to heuristic resolution, emit warning                                                                                                                                     |
@@ -45,6 +45,62 @@ These affect individual files. The file is excluded from the graph. Build contin
 **Unresolved imports (W006):** Most unresolved imports are external packages (npm, pip, go modules). These are expected and not errors. Decision: **only warn in verbose mode (`--verbose` flag).** In normal mode, unresolved imports are silently skipped — they're the common case. Summary line at the end: `"N imports unresolved (external packages)"`.
 
 **Binary files (W004):** The `ignore` crate skips most binary files via .gitignore, but some may slip through. Decision: **check for null bytes in the first 8KB.** If found, skip as binary.
+
+## Implementation Architecture (D-021)
+
+### Fatal Errors — `FatalError` enum via `thiserror`
+
+Fatal errors stop the pipeline and return via `Result`. Defined as a `thiserror` enum for ergonomic `?` operator use and pattern matching in tests:
+
+```rust
+#[derive(Debug, thiserror::Error)]
+pub enum FatalError {
+    #[error("E001: project root not found: {path}")]
+    ProjectNotFound { path: PathBuf },
+    #[error("E002: not a directory: {path}")]
+    NotADirectory { path: PathBuf },
+    #[error("E003: cannot write to output directory: {path}: {reason}")]
+    OutputNotWritable { path: PathBuf, reason: String },
+    #[error("E004: no parseable files found in {path}")]
+    NoParseableFiles { path: PathBuf },
+    #[error("E005: cannot read project directory: {path}: {reason}")]
+    WalkFailed { path: PathBuf, reason: String },
+}
+```
+
+### Recoverable Warnings — `DiagnosticCollector`
+
+Warnings are collected during parallel processing (rayon) and reported after all stages complete. Direct stderr writes from parallel workers would produce non-deterministic, interleaved output.
+
+```rust
+pub struct Warning {
+    pub code: WarningCode,         // W001-W004, W006-W009 enum
+    pub path: CanonicalPath,       // affected file
+    pub message: String,           // human-readable description
+    pub detail: Option<String>,    // additional context
+}
+
+pub struct DiagnosticCollector {
+    warnings: Mutex<Vec<Warning>>,
+    counts: Mutex<DiagnosticCounts>,
+}
+
+pub struct DiagnosticCounts {
+    pub files_skipped: u32,
+    pub imports_unresolved: u32,
+    pub partial_parses: u32,
+}
+```
+
+**Thread safety:** `Mutex<Vec<Warning>>` is shared across rayon workers via `&DiagnosticCollector`. Lock contention is minimal — warnings are rare (most files parse successfully), and lock hold time is short (one `push`).
+
+**Deterministic output:** `drain()` sorts warnings by `(path, code)` before reporting. This guarantees identical warning order across runs regardless of rayon scheduling (D-006).
+
+**Reporting is separate from collection:** `DiagnosticCollector` only collects. Formatting (human/JSON) is handled by a separate module that consumes the sorted `DiagnosticReport`.
+
+### Dependency Choice
+
+`thiserror` for `FatalError` — derive macro for `Display` and `Error`, compile-time checked, works with `?`. No `anyhow` — concrete error types throughout enable pattern matching in tests and explicit error handling.
 
 ## Warning Output Format
 
@@ -120,29 +176,34 @@ warn: file limit reached (50000). Graph is partial. Use --max-files to increase.
 
 ## Error Handling by Pipeline Stage
 
-### Stage 1: File Walking
+### Stage 1: File Walking and Reading
+
+**Note:** Walking and reading are separate pipeline stages (D-026). Walking produces `Vec<FileEntry>` (paths only), reading produces `Vec<FileContent>` (with bytes). This separation enables independent error handling: walk-level errors (E001, E002, E005) are fatal, while read-level errors (W002, W003, W004, W009) are per-file and recoverable.
 
 ```
-walk(project_root):
+walk(project_root) → Vec<FileEntry>:
   IF !exists(project_root) → E001
   IF !is_dir(project_root) → E002
 
   for each entry from ignore::Walk:
     IF entry.is_error:
       IF is_permission_error → W002, skip
-      IF is_loop → W005, skip
       ELSE → W002, skip
     IF entry.is_dir → continue
     IF entry.is_symlink AND !follow_symlinks → skip
     IF file_count >= max_files → warn, stop walk
 
+    yield FileEntry(path, extension)
+
+read(entries) → Vec<FileContent>:
+  for each FileEntry:
     read file bytes:
       IF read error → W002, skip
       IF size > max_file_size → W003, skip
       IF contains null bytes in first 8KB → W004, skip
       IF not valid UTF-8 → W009, skip
 
-    yield (path, content)
+    yield FileContent(path, bytes, hash, lines)
 ```
 
 ### Stage 2: Parsing
@@ -165,18 +226,13 @@ parse(path, content, parser):
 ### Stage 3: Path Resolution
 
 ```
-resolve(import, file, root, parser):
-  resolved = parser.resolve_import_path(import, file, root)
+resolve(import, from_file, known_files, resolver, diagnostics):
+  resolved = resolver.resolve(import, from_file, known_files)
 
   IF resolved.is_none():
     // Unresolved — likely external package
-    increment unresolved_count
-    IF verbose → W006
-    return None
-
-  IF !resolved.exists_in_graph():
-    // Resolves to a path that wasn't walked (outside project, gitignored)
-    increment unresolved_count
+    diagnostics.increment_unresolved()
+    IF verbose → diagnostics.warn(W006)
     return None
 
   return Some(resolved)
