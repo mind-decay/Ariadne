@@ -23,6 +23,14 @@ impl EdgeType {
     }
 }
 
+impl EdgeType {
+    /// Whether this edge type represents an architectural dependency.
+    /// Excludes test edges per D-034.
+    pub fn is_architectural(self) -> bool {
+        matches!(self, Self::Imports | Self::ReExports | Self::TypeImports)
+    }
+}
+
 /// A directed edge in the dependency graph.
 #[derive(Clone, Debug)]
 pub struct Edge {

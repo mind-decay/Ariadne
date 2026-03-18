@@ -21,6 +21,8 @@ These prevent any useful work. The binary exits with code 1 and a clear error me
 | `E003: OutputNotWritable` | Can't create or write to output directory              | `error: cannot write to output directory: {path}: {reason}`                                  |
 | `E004: NoParseableFiles`  | Walk found zero files with recognized extensions       | `error: no parseable files found in {path} (supported: .ts, .js, .go, .py, .rs, .cs, .java)` |
 | `E005: WalkFailed`        | Directory walk failed completely (permissions on root) | `error: cannot read project directory: {path}: {reason}`                                     |
+| `E006: GraphNotFound`     | `ariadne query` or `ariadne update` when graph.json doesn't exist (Phase 2) | `error: graph not found in {path}. Run 'ariadne build' first.`                              |
+| `E007: StatsNotFound`     | `ariadne query stats/layers/cycles` when stats.json doesn't exist (Phase 2) | `error: stats not found in {path}. Run 'ariadne build' first.`                              |
 
 ### Recoverable Errors (exit code 0, file skipped, warning emitted)
 
@@ -37,6 +39,10 @@ These affect individual files. The file is excluded from the graph. Build contin
 | `W007: PartialParse`      | Tree-sitter parsed with ERROR nodes (>50% of top-level nodes → W001; otherwise extract valid subtrees) | Extract what we can, emit warning                                                                                                                                                   |
 | `W008: ConfigParseFailed` | Language config file (go.mod, tsconfig.json) can't be parsed                                           | Fall back to heuristic resolution, emit warning                                                                                                                                     |
 | `W009: EncodingError`     | File is not valid UTF-8                                                                                | Skip file, emit warning                                                                                                                                                             |
+| `W010: GraphVersionMismatch` | graph.json `version` field doesn't match current code (Phase 2)                                     | Fall back to full rebuild, emit warning                                                                                                                                             |
+| `W011: GraphCorrupted`    | graph.json exists but can't be parsed (Phase 2)                                                        | Fall back to full rebuild, emit warning                                                                                                                                             |
+| `W012: AlgorithmFailed`   | Algorithm failed (e.g., Louvain didn't converge) (Phase 2)                                             | Skip that output, continue. Fall back to directory clusters if Louvain fails                                                                                                        |
+| `W013: StaleStats`        | stats.json modification time older than graph.json (Phase 2)                                           | Recompute stats, emit warning                                                                                                                                                       |
 
 ### Design Decisions
 

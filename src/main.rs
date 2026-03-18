@@ -285,8 +285,9 @@ fn run_info() {
 
 fn load_graph(reader: &dyn GraphReader, dir: &std::path::Path) -> Result<ProjectGraph, FatalError> {
     let output = reader.read_graph(dir)?;
-    let graph: ProjectGraph = output.try_into().map_err(|_: String| FatalError::GraphNotFound {
-        path: dir.to_path_buf(),
+    let graph: ProjectGraph = output.try_into().map_err(|e: String| FatalError::GraphCorrupted {
+        path: dir.join("graph.json"),
+        reason: e,
     })?;
     Ok(graph)
 }
@@ -299,8 +300,9 @@ fn load_stats(reader: &dyn GraphReader, dir: &std::path::Path) -> Result<StatsOu
 
 fn load_clusters(reader: &dyn GraphReader, dir: &std::path::Path) -> Result<ClusterMap, FatalError> {
     let output = reader.read_clusters(dir)?;
-    let clusters: ClusterMap = output.try_into().map_err(|_: String| FatalError::GraphNotFound {
-        path: dir.to_path_buf(),
+    let clusters: ClusterMap = output.try_into().map_err(|e: String| FatalError::GraphCorrupted {
+        path: dir.join("clusters.json"),
+        reason: e,
     })?;
     Ok(clusters)
 }
@@ -425,10 +427,9 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
             let stats = load_stats(&reader, &graph_dir)?;
             let cp = CanonicalPath::new(&path);
 
-            let node = graph.nodes.get(&cp).ok_or_else(|| {
-                eprintln!("File '{}' not found in graph", path);
-                process::exit(1);
-            }).unwrap();
+            let node = graph.nodes.get(&cp).ok_or_else(|| FatalError::GraphNotFound {
+                path: graph_dir.clone(),
+            })?;
 
             if format == "json" {
                 let file_output = ariadne_graph::serial::FileQueryOutput {

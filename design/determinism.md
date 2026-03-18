@@ -121,9 +121,13 @@ Cluster cohesion is `f64`. To ensure byte-identical JSON output across platforms
 | Cluster `files`          | Lexicographic             | Before serialization |
 | Node `exports`           | Lexicographic             | Before serialization |
 | Edge `symbols`           | Lexicographic             | Before serialization |
-| `stats.json` collections | Phase 2 — sort orders TBD | Phase 2              |
+| `stats.json` centrality  | BTreeMap by path          | Construction time    |
+| `stats.json` sccs        | Inner: lexicographic. Outer: by first element | Before serialization |
+| `stats.json` layers      | BTreeMap by layer number (string). Files: lexicographic | Construction time |
+| `stats.json` bottleneck_files | Centrality descending, then path ascending | Before serialization |
+| `stats.json` orphan_files | Lexicographic by path    | Before serialization |
 
-**Note:** `stats.json` contains several collections that will need deterministic sort orders defined in Phase 2: `centrality` map, `sccs` array, `layers` map, `bottleneck_files` array, `orphan_files` array.
+**Note:** All `stats.json` float values (`centrality`, `avg_in_degree`, `avg_out_degree`) are rounded to 4 decimal places before serialization, following the same pattern as cluster cohesion. See D-034, D-049.
 
 ## Verification
 

@@ -22,6 +22,8 @@ pub enum FatalError {
     GraphNotFound { path: PathBuf },
     #[error("E007: stats not found in {path}. Run 'ariadne build' first.")]
     StatsNotFound { path: PathBuf },
+    #[error("E008: corrupted file {path}: {reason}")]
+    GraphCorrupted { path: PathBuf, reason: String },
 }
 
 /// Warning codes for recoverable errors.

@@ -1,7 +1,6 @@
 use std::collections::BTreeMap;
 use std::fmt::Write;
 
-use crate::algo::is_architectural;
 use crate::model::{ClusterMap, ProjectGraph};
 use crate::serial::StatsOutput;
 
@@ -18,7 +17,7 @@ pub fn generate_index(
     // Build reverse adjacency for dependent counts
     let mut dependents_count: BTreeMap<&str, u32> = BTreeMap::new();
     for edge in &graph.edges {
-        if is_architectural(edge) {
+        if edge.edge_type.is_architectural() {
             *dependents_count.entry(edge.to.as_str()).or_default() += 1;
         }
     }

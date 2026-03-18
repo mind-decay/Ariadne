@@ -410,21 +410,37 @@ src/
 ├── cluster/             # Depends on model/ only
 │   └── mod.rs           # Directory-based clustering: assign_clusters() + compute_cohesion()
 ├── serial/              # Depends on model/ only
-│   ├── mod.rs           # GraphSerializer trait, output types (GraphOutput, ClusterOutput)
+│   ├── mod.rs           # GraphSerializer + GraphReader traits (D-032), output types (GraphOutput, ClusterOutput, StatsOutput)
 │   └── json.rs          # JsonSerializer impl (atomic writes, BufWriter)
+├── algo/                # Depends on model/ only (D-033) [Phase 2a]
+│   ├── mod.rs           # Re-exports, shared helpers (architectural_edges, build_adjacency)
+│   ├── scc.rs           # Tarjan SCC (cycle detection)
+│   ├── blast_radius.rs  # Reverse BFS (blast radius)
+│   ├── centrality.rs    # Brandes betweenness centrality
+│   ├── topo_sort.rs     # Topological sort (arch_depth computation)
+│   ├── subgraph.rs      # Subgraph extraction
+│   ├── louvain.rs       # Louvain community detection [Phase 2b]
+│   └── delta.rs         # Delta diff logic (no I/O) [Phase 2b]
+├── views/               # Depends on model/, serial/ output types only (D-033) [Phase 2a]
+│   ├── mod.rs           # Re-exports
+│   ├── index.rs         # L0 index generation
+│   ├── cluster.rs       # L1 per-cluster detail
+│   └── impact.rs        # L2 on-demand impact reports
 ├── diagnostic.rs        # FatalError (thiserror), Warning, DiagnosticCollector (D-021)
 └── hash.rs              # xxHash64 wrapper → ContentHash
 ```
 
-**Dependency rules:**
+**Dependency rules (D-023, extended by D-033):**
 
 | Module          | Depends on                                                                        | Never depends on                              |
 | --------------- | --------------------------------------------------------------------------------- | --------------------------------------------- |
 | `model/`        | nothing (leaf)                                                                    | everything else                               |
 | `parser/`       | `model/`                                                                          | `pipeline/`, `serial/`, `detect/`, `cluster/` |
-| `pipeline/`     | traits from `parser/`, `serial/`; types from `model/`, `detect/`; `diagnostic.rs` | concrete parser/serializer implementations    |
+| `pipeline/`     | traits from `parser/`, `serial/`; types from `model/`, `detect/`; `algo/`; `diagnostic.rs` | concrete parser/serializer implementations    |
 | `detect/`       | `model/`, `diagnostic.rs` (for W008 workspace detection warnings)                 | `parser/`, `pipeline/`, `serial/`             |
 | `cluster/`      | `model/`                                                                          | `parser/`, `pipeline/`, `serial/`             |
+| `algo/`         | `model/`                                                                          | `serial/`, `pipeline/`, `parser/`, `views/`   |
+| `views/`        | `model/`, `serial/` (output types only)                                           | `parser/`, `pipeline/`, `algo/`               |
 | `serial/`       | `model/`, `diagnostic.rs` (for `FatalError`)                                      | `parser/`, `pipeline/`, `detect/`, `cluster/` |
 | `diagnostic.rs` | `model/` (for `CanonicalPath` in warnings)                                        | everything else                               |
 | `hash.rs`       | `model/` (returns `ContentHash`)                                                  | everything else                               |
@@ -545,6 +561,7 @@ Edges use compact tuple format — 60%+ space savings vs objects. `--timestamp` 
 
 ```json
 {
+  "version": 1,
   "centrality": {
     "src/utils/format.ts": 0.89,
     "src/auth/middleware.ts": 0.72

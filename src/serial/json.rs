@@ -32,9 +32,9 @@ impl GraphReader for JsonSerializer {
             path: dir.to_path_buf(),
         })?;
         let reader = BufReader::new(file);
-        serde_json::from_reader(reader).map_err(|e| FatalError::OutputNotWritable {
+        serde_json::from_reader(reader).map_err(|e| FatalError::GraphCorrupted {
             path,
-            reason: format!("corrupted graph.json: {}", e),
+            reason: e.to_string(),
         })
     }
 
@@ -44,9 +44,9 @@ impl GraphReader for JsonSerializer {
             path: dir.to_path_buf(),
         })?;
         let reader = BufReader::new(file);
-        serde_json::from_reader(reader).map_err(|e| FatalError::OutputNotWritable {
+        serde_json::from_reader(reader).map_err(|e| FatalError::GraphCorrupted {
             path,
-            reason: format!("corrupted clusters.json: {}", e),
+            reason: e.to_string(),
         })
     }
 
@@ -56,9 +56,9 @@ impl GraphReader for JsonSerializer {
             Ok(file) => {
                 let reader = BufReader::new(file);
                 let stats: StatsOutput = serde_json::from_reader(reader).map_err(|e| {
-                    FatalError::OutputNotWritable {
+                    FatalError::GraphCorrupted {
                         path,
-                        reason: format!("corrupted stats.json: {}", e),
+                        reason: e.to_string(),
                     }
                 })?;
                 Ok(Some(stats))

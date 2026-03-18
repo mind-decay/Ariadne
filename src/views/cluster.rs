@@ -1,7 +1,6 @@
 use std::collections::BTreeMap;
 use std::fmt::Write;
 
-use crate::algo::is_architectural;
 use crate::model::{EdgeType, ProjectGraph};
 use crate::serial::StatsOutput;
 
@@ -32,7 +31,7 @@ pub fn generate_cluster_view(
     let mut in_degree: BTreeMap<&str, u32> = BTreeMap::new();
     let mut out_degree: BTreeMap<&str, u32> = BTreeMap::new();
     for edge in &graph.edges {
-        if is_architectural(edge) {
+        if edge.edge_type.is_architectural() {
             *out_degree.entry(edge.from.as_str()).or_default() += 1;
             *in_degree.entry(edge.to.as_str()).or_default() += 1;
         }
@@ -77,7 +76,7 @@ pub fn generate_cluster_view(
         .edges
         .iter()
         .filter(|e| {
-            is_architectural(e)
+            e.edge_type.is_architectural()
                 && cluster_files.contains(&e.from.as_str())
                 && cluster_files.contains(&e.to.as_str())
         })
@@ -104,7 +103,7 @@ pub fn generate_cluster_view(
         .edges
         .iter()
         .filter(|e| {
-            is_architectural(e)
+            e.edge_type.is_architectural()
                 && cluster_files.contains(&e.from.as_str())
                 && !cluster_files.contains(&e.to.as_str())
         })
@@ -131,7 +130,7 @@ pub fn generate_cluster_view(
         .edges
         .iter()
         .filter(|e| {
-            is_architectural(e)
+            e.edge_type.is_architectural()
                 && !cluster_files.contains(&e.from.as_str())
                 && cluster_files.contains(&e.to.as_str())
         })
