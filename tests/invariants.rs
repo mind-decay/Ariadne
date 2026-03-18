@@ -100,9 +100,9 @@ invariant_test!(inv3_test_edges_connect_test_to_source, |graph: &serde_json::Val
             let to_type = nodes[to]["type"].as_str().unwrap_or("");
 
             assert!(
-                from_type == "test" || to_type == "source" || to_type == "type_def",
+                from_type == "test" && (to_type == "source" || to_type == "type_def"),
                 "INV-3 violated in '{}': test edge {} (from='{}' type={}, to='{}' type={}) \
-                 — expected from to be 'test' or to to be 'source'/'type_def'",
+                 — expected from to be 'test' AND to to be 'source'/'type_def'",
                 fixture, i, from, from_type, to, to_type
             );
         }

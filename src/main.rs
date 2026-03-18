@@ -31,7 +31,7 @@ enum Commands {
         #[arg(long)]
         verbose: bool,
         /// Warning output format: "human" or "json"
-        #[arg(long, default_value = "human")]
+        #[arg(long, default_value = "human", value_parser = ["human", "json"])]
         warnings: String,
         /// Exit with code 1 if any warnings occurred
         #[arg(long)]
