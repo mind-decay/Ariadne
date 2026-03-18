@@ -1,6 +1,12 @@
 use std::collections::HashMap;
 
+use super::csharp;
+use super::go;
+use super::java;
+use super::python::{PythonParser, PythonResolver};
+use super::rust_lang::{RustParser, RustResolver};
 use super::traits::{ImportResolver, LanguageParser, RawExport, RawImport};
+use super::typescript::{TypeScriptParser, TypeScriptResolver};
 
 /// Registry of language parsers and resolvers, indexed by file extension.
 pub struct ParserRegistry {
@@ -48,9 +54,23 @@ impl ParserRegistry {
 
     /// Create a registry with all Tier 1 language parsers registered.
     pub fn with_tier1() -> Self {
-        #[allow(unused_mut)]
         let mut registry = Self::new();
-        // Parsers registered in Chunks 3 and 4
+        // Chunk 4: TypeScript/JavaScript, Python, Rust
+        registry.register(
+            Box::new(TypeScriptParser::new()),
+            Box::new(TypeScriptResolver::new()),
+        );
+        registry.register(
+            Box::new(PythonParser::new()),
+            Box::new(PythonResolver::new()),
+        );
+        registry.register(
+            Box::new(RustParser::new()),
+            Box::new(RustResolver::new()),
+        );
+        registry.register(go::parser(), go::resolver());
+        registry.register(csharp::parser(), csharp::resolver());
+        registry.register(java::parser(), java::resolver());
         registry
     }
 
