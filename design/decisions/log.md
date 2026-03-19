@@ -683,3 +683,15 @@ Applies to: Brandes centrality (Phase 2), Louvain modularity (Phase 2b), PageRan
 - No intermediate determinism (round only at output) — insufficient; accumulation order matters for f64
 **Reasoning:** Deterministic iteration order + final rounding is the minimum sufficient strategy. BTreeMap guarantees lexicographic order. Hardcoded parameters prevent user-introduced non-determinism. This approach has zero performance cost (BTreeMap already used everywhere per D-006).
 **Affects:** All f64 algorithms in algo/ and analysis/. Utility function in algo/mod.rs or a shared location.
+
+## D-050: `ariadne update` Full-Rebuild-Always Behavior
+
+**Date:** 2026-03-19
+**Status:** Accepted
+**Context:** Phase 2b delivers `ariadne update` with delta computation. The original design (architecture.md §Algorithms §6) described selective re-parsing of only changed files. During implementation, a simpler approach was chosen: detect changes → if zero changes, return immediately (no-op fast path); if any changes, full rebuild. The algorithms are fast enough (<1s for 3k files) that incremental re-parsing provides negligible benefit without Phase 3's in-memory graph.
+**Decision:** `ariadne update` performs a full rebuild when any changes are detected. The no-op fast path (zero changes) is the primary optimization. The delta module (`algo/delta.rs`) correctly computes changed/added/removed sets and the 5% threshold — this scaffolding is preserved for Phase 3's auto-update mechanism, which will benefit from incremental re-parsing due to its in-memory `GraphState`.
+**Alternatives rejected:**
+- Implement true incremental re-parse now — premature optimization; algorithms are fast, and the in-memory graph (Phase 3) is the correct place for incremental updates
+- Remove `ariadne update` and use `ariadne build` — loses the no-op fast path, which is valuable for CI idempotency checks
+**Reasoning:** Correctness over optimization. Full rebuild guarantees correct results. The no-op fast path provides the most common performance win (checking if anything changed). True incrementality is Phase 3 scope where the MCP server's in-memory graph makes partial updates worthwhile.
+**Affects:** `pipeline/mod.rs` update(), `algo/delta.rs`, architecture.md §Algorithms §6.

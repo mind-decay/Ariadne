@@ -23,6 +23,8 @@ These prevent any useful work. The binary exits with code 1 and a clear error me
 | `E005: WalkFailed`        | Directory walk failed completely (permissions on root) | `error: cannot read project directory: {path}: {reason}`                                     |
 | `E006: GraphNotFound`     | `ariadne query` or `ariadne update` when graph.json doesn't exist (Phase 2) | `error: graph not found in {path}. Run 'ariadne build' first.`                              |
 | `E007: StatsNotFound`     | `ariadne query stats/layers/cycles` when stats.json doesn't exist (Phase 2) | `error: stats not found in {path}. Run 'ariadne build' first.`                              |
+| `E008: GraphCorrupted`    | graph.json or stats.json exists but can't be parsed during query commands (Phase 2) | `error: corrupted file {path}: {reason}`                                                    |
+| `E009: FileNotInGraph`    | `ariadne query file` when the specified file is not in the graph (Phase 2) | `error: file not found in graph: {path}`                                                     |
 
 ### Recoverable Errors (exit code 0, file skipped, warning emitted)
 
@@ -34,7 +36,7 @@ These affect individual files. The file is excluded from the graph. Build contin
 | `W002: ReadFailed`        | File can't be read (permissions, encoding)                                                             | Skip file, emit warning                                                                                                                                                             |
 | `W003: FileTooLarge`      | File exceeds size limit (default: 1MB)                                                                 | Skip file, emit warning                                                                                                                                                             |
 | `W004: BinaryFile`        | File contains null bytes (binary, not source)                                                          | Skip file, emit warning                                                                                                                                                             |
-| | **W005 is reserved (unassigned).** | |
+| `W005: MaxFilesReached`   | Walk hit the `--max-files` limit; graph is partial                                                     | Emit warning, stop walk, build graph from files collected so far                                                                                                                     |
 | `W006: ImportUnresolved`  | Import path can't be resolved to a project file                                                        | No edge created, emit warning (only in verbose mode — too noisy otherwise)                                                                                                          |
 | `W007: PartialParse`      | Tree-sitter parsed with ERROR nodes (>50% of top-level nodes → W001; otherwise extract valid subtrees) | Extract what we can, emit warning                                                                                                                                                   |
 | `W008: ConfigParseFailed` | Language config file (go.mod, tsconfig.json) can't be parsed                                           | Fall back to heuristic resolution, emit warning                                                                                                                                     |
@@ -71,6 +73,14 @@ pub enum FatalError {
     NoParseableFiles { path: PathBuf },
     #[error("E005: cannot read project directory: {path}: {reason}")]
     WalkFailed { path: PathBuf, reason: String },
+    #[error("E006: graph not found in {path}. Run 'ariadne build' first.")]
+    GraphNotFound { path: PathBuf },
+    #[error("E007: stats not found in {path}. Run 'ariadne build' first.")]
+    StatsNotFound { path: PathBuf },
+    #[error("E008: corrupted file {path}: {reason}")]
+    GraphCorrupted { path: PathBuf, reason: String },
+    #[error("E009: file not found in graph: {path}")]
+    FileNotInGraph { path: String },
 }
 ```
 
@@ -80,7 +90,7 @@ Warnings are collected during parallel processing (rayon) and reported after all
 
 ```rust
 pub struct Warning {
-    pub code: WarningCode,         // W001-W004, W006-W009 enum
+    pub code: WarningCode,         // W001-W013 enum
     pub path: CanonicalPath,       // affected file
     pub message: String,           // human-readable description
     pub detail: Option<String>,    // additional context
@@ -103,6 +113,9 @@ pub struct DiagnosticCounts {
     pub encoding_errors: u32,
     pub imports_unresolved: u32,
     pub partial_parses: u32,
+    pub graph_load_warnings: u32,   // W010, W011 (Phase 2)
+    pub algorithm_failures: u32,    // W012 (Phase 2)
+    pub stale_stats: u32,           // W013 (Phase 2)
 }
 ```
 

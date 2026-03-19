@@ -102,7 +102,7 @@ Ariadne is a standalone Rust CLI that builds structural dependency graphs from s
 **Deliverables:**
 
 - Louvain community detection (overrides directory-based clusters, on by default, `--no-louvain` to disable)
-- Delta computation (`ariadne update` — incremental via content hash, 5% threshold for full recompute)
+- Delta computation (`ariadne update` — detects changes via content hash; no-op fast path when nothing changed, full rebuild otherwise. True incremental re-parsing deferred to Phase 3 — see D-050)
 
 **Testing:** Louvain correctness tests, delta round-trip tests, performance benchmarks (Louvain <200ms, delta <1s).
 

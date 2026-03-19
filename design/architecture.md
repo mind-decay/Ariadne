@@ -144,7 +144,7 @@ ProjectGraph {
 
 ### Output Model (D-022)
 
-Separate types optimized for JSON serialization. Internal newtypes convert to strings, edges become compact tuples (D-012). Conversion via `impl From<ProjectGraph> for GraphOutput`. All sort-point enforcement (D-006) happens during conversion.
+Separate types optimized for JSON serialization. Internal newtypes convert to strings, edges become compact tuples (D-012). Conversion via `project_graph_to_output(graph, project_root)` in `pipeline/mod.rs`. This is a free function rather than a `From` impl because it requires the `project_root` parameter for the output. All sort-point enforcement (D-006) happens during conversion.
 
 ```rust
 GraphOutput {
@@ -386,7 +386,10 @@ src/
 │   ├── types.rs         # Newtypes: CanonicalPath, ContentHash, ClusterId, Symbol, FileSet
 │   ├── node.rs          # Node, FileType, ArchLayer
 │   ├── edge.rs          # Edge, EdgeType
-│   └── graph.rs         # ProjectGraph (BTreeMap<CanonicalPath, Node> + Vec<Edge>)
+│   ├── graph.rs         # ProjectGraph (BTreeMap<CanonicalPath, Node> + Vec<Edge>)
+│   ├── query.rs         # SubgraphResult
+│   ├── stats.rs         # StatsOutput, StatsSummary (serialization-ready stats types)
+│   └── workspace.rs     # WorkspaceInfo, WorkspaceMember
 ├── parser/              # Depends on model/ only
 │   ├── mod.rs           # Re-exports
 │   ├── traits.rs        # LanguageParser, ImportResolver, RawImport, RawExport
@@ -413,15 +416,16 @@ src/
 │   ├── mod.rs           # GraphSerializer + GraphReader traits (D-032), output types (GraphOutput, ClusterOutput, StatsOutput)
 │   └── json.rs          # JsonSerializer impl (atomic writes, BufWriter)
 ├── algo/                # Depends on model/ only (D-033) [Phase 2a]
-│   ├── mod.rs           # Re-exports, shared helpers (architectural_edges, build_adjacency)
+│   ├── mod.rs           # Re-exports, shared helpers (is_architectural, build_adjacency, round4)
 │   ├── scc.rs           # Tarjan SCC (cycle detection)
 │   ├── blast_radius.rs  # Reverse BFS (blast radius)
 │   ├── centrality.rs    # Brandes betweenness centrality
 │   ├── topo_sort.rs     # Topological sort (arch_depth computation)
 │   ├── subgraph.rs      # Subgraph extraction
+│   ├── stats.rs         # StatsOutput assembly from algorithm results
 │   ├── louvain.rs       # Louvain community detection [Phase 2b]
 │   └── delta.rs         # Delta diff logic (no I/O) [Phase 2b]
-├── views/               # Depends on model/, serial/ output types only (D-033) [Phase 2a]
+├── views/               # Depends on model/, diagnostic.rs (for FatalError) [Phase 2a]
 │   ├── mod.rs           # Re-exports
 │   ├── index.rs         # L0 index generation
 │   ├── cluster.rs       # L1 per-cluster detail
@@ -432,19 +436,19 @@ src/
 
 **Dependency rules (D-023, extended by D-033):**
 
-| Module          | Depends on                                                                        | Never depends on                              |
-| --------------- | --------------------------------------------------------------------------------- | --------------------------------------------- |
-| `model/`        | nothing (leaf)                                                                    | everything else                               |
-| `parser/`       | `model/`                                                                          | `pipeline/`, `serial/`, `detect/`, `cluster/` |
-| `pipeline/`     | traits from `parser/`, `serial/`; types from `model/`, `detect/`; `algo/`; `diagnostic.rs` | concrete parser/serializer implementations    |
-| `detect/`       | `model/`, `diagnostic.rs` (for W008 workspace detection warnings)                 | `parser/`, `pipeline/`, `serial/`             |
-| `cluster/`      | `model/`                                                                          | `parser/`, `pipeline/`, `serial/`             |
-| `algo/`         | `model/`                                                                          | `serial/`, `pipeline/`, `parser/`, `views/`   |
-| `views/`        | `model/`, `serial/` (output types only)                                           | `parser/`, `pipeline/`, `algo/`               |
-| `serial/`       | `model/`, `diagnostic.rs` (for `FatalError`)                                      | `parser/`, `pipeline/`, `detect/`, `cluster/` |
-| `diagnostic.rs` | `model/` (for `CanonicalPath` in warnings)                                        | everything else                               |
-| `hash.rs`       | `model/` (returns `ContentHash`)                                                  | everything else                               |
-| `main.rs`       | everything (Composition Root)                                                     | —                                             |
+| Module | Depends on | Never depends on |
+| --- | --- | --- |
+| `model/` | nothing (leaf) | everything else |
+| `parser/` | `model/` | `pipeline/`, `serial/`, `detect/`, `cluster/` |
+| `pipeline/` | traits from `parser/`, `serial/`; types from `model/`, `detect/`; `algo/`; `diagnostic.rs` | concrete parser/serializer implementations |
+| `detect/` | `model/`, `diagnostic.rs` (for W008 workspace detection warnings) | `parser/`, `pipeline/`, `serial/` |
+| `cluster/` | `model/` | `parser/`, `pipeline/`, `serial/` |
+| `algo/` | `model/` | `serial/`, `pipeline/`, `parser/`, `views/` |
+| `views/` | `model/`, `diagnostic.rs` (for `FatalError`) | `parser/`, `pipeline/`, `algo/`, `serial/` |
+| `serial/` | `model/`, `diagnostic.rs` (for `FatalError`) | `parser/`, `pipeline/`, `detect/`, `cluster/` |
+| `diagnostic.rs` | `model/` (for `CanonicalPath` in warnings) | everything else |
+| `hash.rs` | `model/` (returns `ContentHash`) | everything else |
+| `main.rs` | everything (Composition Root) | — |
 
 Concrete parser implementations (e.g., `TypeScriptParser`) are **not** `pub` — accessed only through `ParserRegistry`.
 
@@ -662,11 +666,13 @@ Layer 2: files depending on Layer 0-1
 ...
 ```
 
+**Layer numbering convention:** Layer 0 = leaf files with no outgoing architectural dependencies (foundations). Higher layers import from lower layers. Entry-point files that depend on many modules have the highest layer numbers. This is a bottom-up numbering scheme.
+
 Automatic architecture discovery. Layer information can be used to order implementation steps (bottom-up) and detect layer violations (e.g., service importing from API layer).
 
 ### 6. Incremental Updates — Delta Computation
 
-Full rebuild on every refresh is wasteful at scale. Delta approach:
+Delta computation detects file changes via content hash comparison:
 
 ```rust
 update(old_graph, current_fs):
@@ -675,26 +681,18 @@ update(old_graph, current_fs):
     added = current_fs - old_graph.nodes
     removed = old_graph.nodes - current_fs
 
-    // Phase 2: re-parse only affected files
-    for f in (changed | added):
-        parse imports/exports
-        update edges from f
+    // Short-circuit: if no changes, return immediately (no rebuild)
+    if changed.is_empty() && added.is_empty() && removed.is_empty():
+        return old_graph  // no-op fast path
 
-    // Phase 3: remove stale data
-    remove all edges from/to removed files
-    remove nodes for removed files
-
-    // Phase 4: recompute derived data
-    if |changed | added | removed| > 0.05 * |nodes|:
-        full recompute (clusters, centrality, layers)
-    else:
-        incremental cluster update
-        skip centrality recompute (use previous)
+    // Any changes detected: full rebuild for correctness.
+    // Algorithms are fast (<1s for 3k files); correctness over optimization.
+    full_rebuild(current_fs)
 ```
 
 **Content hash:** xxHash64 — fast, collision-resistant, deterministic. O(1) per file check.
 
-**Threshold:** If >5% of files changed, full recompute (derived data may have shifted significantly). Otherwise, incremental.
+**Current behavior (D-050):** `ariadne update` performs a full rebuild when any changes are detected. The delta detection provides a no-op fast path when nothing changed (useful for CI idempotency). True incremental re-parsing of only changed files is deferred to Phase 3 (MCP server), where the in-memory graph makes partial updates worthwhile. The `algo/delta.rs` module correctly computes changed/added/removed sets and the 5% threshold for full recompute — this scaffolding will be used by Phase 3's auto-update mechanism.
 
 ### 7. Subgraph Extraction
 
@@ -723,32 +721,38 @@ This is what gets rendered into L2 markdown views.
 ~200-500 tokens. Overview for quick orientation.
 
 ```markdown
-# Project Graph — Index
+# Project Index
 
-## Clusters (12)
+## Architecture Summary
 
-| Cluster | Files | Key file (highest centrality) |
-| ------- | ----- | ----------------------------- |
-| auth    | 12    | src/auth/middleware.ts (0.72) |
-| api     | 23    | src/api/router.ts (0.65)      |
+- **Files:** 847
+- **Edges:** 2341
+- **Clusters:** 12
+- **Max depth:** 7
+- **Avg in-degree:** 2.8000
+- **Avg out-degree:** 2.8000
 
-| ...
+## Clusters
 
-## Critical Files (centrality > 0.7)
+| Cluster | Files | Key File | Cohesion |
+|---------|------:|----------|--------:|
+| auth    |    12 | `src/auth/middleware.ts` | 0.6500 |
+| api     |    23 | `src/api/router.ts` | 0.4200 |
 
-- src/utils/format.ts (0.89) — 47 dependents
-- src/auth/middleware.ts (0.72) — 28 dependents
+## Critical Files
 
-## Circular Dependencies (2)
+| File | Centrality | Dependents |
+|------|----------:|----------:|
+| `src/utils/format.ts` | 0.8900 | 47 |
+| `src/auth/middleware.ts` | 0.7200 | 28 |
 
-- auth <-> billing (via permissions.ts <-> invoice.ts)
-- ...
+## Circular Dependencies
 
-## Architecture (7 layers, max depth: 7)
+1. 2 files: src/billing/invoice.ts → src/auth/permissions.ts
 
-Layer 0 (foundations): 34 files
-Layer 1-2 (services): 89 files
-Layer 3+ (api/ui): 45 files
+## Orphan Files
+
+- `src/legacy/old-helper.ts`
 ```
 
 ### L1: Cluster Detail (`views/clusters/<name>.md`)
