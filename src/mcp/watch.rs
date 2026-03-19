@@ -12,7 +12,6 @@ use crate::diagnostic::FatalError;
 use crate::mcp::state::{GraphState, load_graph_state};
 use crate::pipeline::{BuildPipeline, WalkConfig};
 use crate::serial::json::JsonSerializer;
-use crate::serial::GraphReader;
 
 /// File watcher configuration and state.
 pub struct FileWatcher {

@@ -160,7 +160,6 @@ mod freshness_tests {
 mod state_tests {
     use ariadne_graph::mcp::state::GraphState;
     use ariadne_graph::model::*;
-    use ariadne_graph::serial::RawImportOutput;
     use std::collections::BTreeMap;
 
     fn make_test_graph() -> (ProjectGraph, StatsOutput, ClusterMap) {

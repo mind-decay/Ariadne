@@ -8,7 +8,7 @@ use rmcp::ServiceExt;
 
 use crate::diagnostic::FatalError;
 use crate::mcp::lock::{acquire_lock, release_lock};
-use crate::mcp::state::{load_graph_state, GraphState};
+use crate::mcp::state::load_graph_state;
 use crate::mcp::tools::AriadneTools;
 use crate::mcp::watch::FileWatcher;
 use crate::parser::ParserRegistry;
