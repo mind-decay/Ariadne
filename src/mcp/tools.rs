@@ -8,7 +8,7 @@ use rmcp::handler::server::tool::ToolRouter;
 use rmcp::handler::server::wrapper::Parameters;
 use rmcp::model::*;
 use schemars::JsonSchema;
-use rmcp::{tool, tool_router, ServerHandler};
+use rmcp::{tool, tool_handler, tool_router, ServerHandler};
 use serde::Deserialize;
 
 use crate::algo;
@@ -39,6 +39,7 @@ impl AriadneTools {
     }
 }
 
+#[tool_handler]
 impl ServerHandler for AriadneTools {
     fn get_info(&self) -> ServerInfo {
         ServerInfo::new(ServerCapabilities::builder().enable_tools().build())

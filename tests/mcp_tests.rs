@@ -1,3 +1,5 @@
+mod helpers;
+
 #[cfg(feature = "serve")]
 mod lock_tests {
     use ariadne_graph::mcp::lock::{acquire_lock, check_lock, release_lock};
@@ -267,5 +269,117 @@ mod state_tests {
             state.file_hashes.get(&CanonicalPath::new("src/a.ts")),
             Some(&ContentHash::new("abc123".to_string()))
         );
+    }
+}
+
+#[cfg(feature = "serve")]
+mod integration_tests {
+    use std::io::{BufRead, BufReader, Write};
+    use std::process::{Command, Stdio};
+
+    /// Build the fixture first, then spawn ariadne serve as subprocess.
+    /// Send JSON-RPC initialize, verify response.
+    #[test]
+    fn test_mcp_server_initialize_and_tool_list() {
+        let fixture = crate::helpers::fixture_path("typescript-app");
+
+        // Build the fixture first
+        let build_output = crate::helpers::build_fixture("typescript-app");
+        assert!(build_output.graph_path.exists());
+
+        let output_dir = build_output.graph_path.parent().unwrap();
+
+        // Find the ariadne binary
+        let binary = env!("CARGO_BIN_EXE_ariadne");
+
+        // Spawn ariadne serve
+        let mut child = Command::new(binary)
+            .args([
+                "serve",
+                "--project",
+                fixture.to_str().unwrap(),
+                "--output",
+                output_dir.to_str().unwrap(),
+                "--no-watch",
+            ])
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("failed to spawn ariadne serve");
+
+        let stdin = child.stdin.as_mut().unwrap();
+        let stdout = child.stdout.take().unwrap();
+        let mut reader = BufReader::new(stdout);
+
+        // Send initialize request
+        let init_request = serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "initialize",
+            "params": {
+                "protocolVersion": "2024-11-05",
+                "capabilities": {},
+                "clientInfo": {
+                    "name": "test-client",
+                    "version": "0.1.0"
+                }
+            }
+        });
+        let request_str = serde_json::to_string(&init_request).unwrap();
+        writeln!(stdin, "{}", request_str).unwrap();
+        stdin.flush().unwrap();
+
+        // Read response
+        let mut response_line = String::new();
+        reader.read_line(&mut response_line).unwrap();
+
+        let response: serde_json::Value = serde_json::from_str(response_line.trim()).unwrap();
+        assert_eq!(response["jsonrpc"], "2.0");
+        assert_eq!(response["id"], 1);
+        assert!(response["result"].is_object(), "Should have result field");
+        assert!(
+            response["result"]["capabilities"]["tools"].is_object(),
+            "Should advertise tools capability"
+        );
+
+        // Send initialized notification
+        let initialized = serde_json::json!({
+            "jsonrpc": "2.0",
+            "method": "notifications/initialized"
+        });
+        writeln!(stdin, "{}", serde_json::to_string(&initialized).unwrap()).unwrap();
+        stdin.flush().unwrap();
+
+        // Send tools/list request
+        let list_tools = serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "tools/list"
+        });
+        writeln!(stdin, "{}", serde_json::to_string(&list_tools).unwrap()).unwrap();
+        stdin.flush().unwrap();
+
+        let mut tools_response = String::new();
+        reader.read_line(&mut tools_response).unwrap();
+
+        let tools_resp: serde_json::Value =
+            serde_json::from_str(tools_response.trim()).unwrap();
+        assert_eq!(tools_resp["id"], 2);
+        let tools = tools_resp["result"]["tools"].as_array().unwrap();
+        assert!(tools.len() >= 11, "Should have at least 11 tools, got {}", tools.len());
+
+        // Verify tool names
+        let tool_names: Vec<&str> = tools
+            .iter()
+            .map(|t| t["name"].as_str().unwrap())
+            .collect();
+        assert!(tool_names.contains(&"ariadne_overview"));
+        assert!(tool_names.contains(&"ariadne_file"));
+        assert!(tool_names.contains(&"ariadne_blast_radius"));
+        assert!(tool_names.contains(&"ariadne_freshness"));
+
+        // Kill the server
+        child.kill().ok();
     }
 }
