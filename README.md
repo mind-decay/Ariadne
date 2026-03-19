@@ -1,123 +1,310 @@
-# Ariadne
+<p align="center">
+  <strong>A R I A D N E</strong><br>
+  <em>Structural dependency graph engine for source code</em>
+</p>
 
-Structural dependency graph engine for source code. Parses projects and produces a navigable dependency graph — files, imports, architectural layers, and module clusters.
+<p align="center">
+  Parse any project. Map every dependency. See the architecture.
+</p>
 
-Named after Ariadne of Greek mythology, who gave Theseus the thread to navigate the labyrinth.
+<p align="center">
+  <code>curl -fsSL https://raw.githubusercontent.com/mind-decay/Ariadne/master/remote-install.sh | bash</code>
+</p>
+
+---
+
+## What is Ariadne
+
+In Greek mythology, Ariadne gave Theseus a thread to navigate the labyrinth and find his way back. This project does the same for codebases.
+
+Ariadne parses source code via [tree-sitter](https://tree-sitter.github.io/tree-sitter/), extracts every import and dependency relationship, and produces a navigable structural graph — files, imports, architectural layers, module clusters, and cross-cutting metrics. The result is a complete map of how your project is wired together.
+
+It works as a CLI tool for one-off analysis and as a long-running **MCP server** that gives AI agents, IDEs, and CI tools instant access to architectural intelligence — no re-parsing, no context overflow, no guesswork.
+
+```
+your-project/
+├── src/
+│   ├── api/            ← layer: interface
+│   ├── services/       ← layer: logic
+│   ├── models/         ← layer: data
+│   └── utils/          ← layer: utility
+└── ...
+
+        ariadne build .
+              │
+              ▼
+
+.ariadne/graph/
+├── graph.json          ← nodes (files) + edges (imports)
+├── clusters.json       ← module clusters with cohesion metrics
+├── stats.json          ← centrality, cycles, layers, PageRank
+└── views/              ← markdown architecture views
+```
+
+---
+
+## Why this exists
+
+Understanding a codebase by reading files is slow, incomplete, and doesn't scale. You miss cyclic dependencies, don't see which files are structural bottlenecks, and can't answer "what breaks if I change this?" without grepping through everything.
+
+AI coding agents face the same problem at a larger scale — they spend tens of thousands of tokens re-reading source files every session, building a shallow and inconsistent understanding that evaporates when context resets.
+
+Ariadne makes architecture **queryable**. Build the graph once, ask questions instantly:
+
+- What is the blast radius of changing `auth/middleware.ts`?
+- Which files are the most central to the project?
+- Are there circular dependencies? Where?
+- How coupled are these clusters to each other?
+- What does the dependency structure look like at a high level?
+
+---
+
+## Quick start
+
+**Install:**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/mind-decay/Ariadne/master/remote-install.sh | bash
+```
+
+**Build a dependency graph:**
+
+```bash
+cd your-project
+ariadne build .
+```
+
+**Query it:**
+
+```bash
+ariadne query stats                          # project overview
+ariadne query blast-radius src/auth.ts       # what breaks if this changes?
+ariadne query cycles                         # circular dependencies
+ariadne query centrality --top 10            # structural bottlenecks
+ariadne query smells                         # architectural code smells
+ariadne query importance --top 10            # PageRank + centrality ranking
+ariadne query spectral                       # monolith score, algebraic connectivity
+```
+
+**Generate architecture views:**
+
+```bash
+ariadne views generate                       # markdown views per cluster
+```
+
+**Start the MCP server:**
+
+```bash
+ariadne serve                                # instant queries for AI agents & IDEs
+```
+
+---
 
 ## Installation
 
-### From source (cargo)
+### Install script (recommended)
 
-```sh
+Clones the repo, builds from source with `cargo build --release`, and installs the binary to `/usr/local/bin` (or `~/.local/bin` as fallback). The temp clone is cleaned up automatically.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/mind-decay/Ariadne/master/remote-install.sh | bash
+```
+
+**Requirements:** git, [Rust toolchain](https://rustup.rs) (cargo).
+
+### From crates.io
+
+```bash
 cargo install ariadne-graph
 ```
 
 ### Binary download
 
-Download the latest release for your platform from [GitHub Releases](https://github.com/anthropics/ariadne/releases).
+When release binaries are available, grab the latest for your platform from [GitHub Releases](https://github.com/mind-decay/Ariadne/releases).
 
-### Install script
+| Platform | Binary |
+|---|---|
+| macOS (Apple Silicon) | `ariadne-darwin-arm64` |
+| macOS (Intel) | `ariadne-darwin-x64` |
+| Linux (x86_64) | `ariadne-linux-x64` |
+| Linux (ARM64) | `ariadne-linux-arm64` |
 
-```sh
-curl -sSL https://raw.githubusercontent.com/anthropics/ariadne/main/install.sh | bash
+---
+
+## Supported languages
+
+| Language | Extensions | Parser |
+|---|---|---|
+| TypeScript / JavaScript | `.ts` `.tsx` `.js` `.jsx` `.mjs` `.cjs` | tree-sitter-typescript, tree-sitter-javascript |
+| Go | `.go` | tree-sitter-go |
+| Python | `.py` | tree-sitter-python |
+| Rust | `.rs` | tree-sitter-rust |
+| C# | `.cs` | tree-sitter-c-sharp |
+| Java | `.java` | tree-sitter-java |
+
+Each parser extracts imports, exports, re-exports, and type-only imports where the language supports them. Broken files are skipped with a warning — never a crash.
+
+---
+
+## Commands
+
+### `ariadne build`
+
+Parse a project and produce the full dependency graph.
+
+```bash
+ariadne build <path> [options]
 ```
 
-## Usage
+| Flag | Effect |
+|---|---|
+| `--output <dir>` | Output directory (default: `<path>/.ariadne/graph/`) |
+| `--verbose` | Per-stage timing output |
+| `--warnings json` | Machine-readable warning format |
+| `--strict` | Exit code 1 on any warnings |
+| `--timestamp` | Include generation timestamp in output |
 
-### Build a dependency graph
+Output: `graph.json`, `clusters.json`, `stats.json`.
 
-```sh
-ariadne build .
+### `ariadne query`
+
+Query the built graph without rebuilding.
+
+| Subcommand | What it shows |
+|---|---|
+| `stats` | Project-wide statistics — file count, edge count, SCC count, layer distribution |
+| `blast-radius <file>` | All files transitively affected by a change |
+| `subgraph <files...>` | Extract the local neighborhood around specific files |
+| `centrality [--top N]` | Betweenness centrality — which files are structural bridges |
+| `importance [--top N]` | Combined centrality + PageRank ranking |
+| `cycles` | Circular dependency detection (Tarjan SCC) |
+| `layers` | Topological layers — build order of the dependency graph |
+| `cluster <name>` | Details for a specific cluster |
+| `file <path>` | Full details for a specific file node |
+| `metrics` | Martin stability/abstractness metrics per cluster |
+| `smells` | Architectural smell detection (God files, circular deps, high coupling) |
+| `spectral` | Algebraic connectivity, monolith score, Fiedler bisection |
+| `compressed [--level]` | Compressed graph view at project / cluster / file level |
+
+### `ariadne views generate`
+
+Generate markdown architecture documentation — L0 project index and L1 per-cluster views.
+
+### `ariadne update`
+
+Incremental update via delta computation. Detects changed files by content hash, rebuilds only what's needed.
+
+### `ariadne serve`
+
+Start a long-running MCP server over stdio. Loads the graph into memory, answers queries instantly, and auto-rebuilds on file changes.
+
+```bash
+ariadne serve [options]
 ```
 
-Output is written to `.ariadne/graph/graph.json` and `.ariadne/graph/clusters.json`.
+| Flag | Effect |
+|---|---|
+| `--project <path>` | Project root to serve (default: `.`) |
+| `--output <dir>` | Output directory |
+| `--debounce <ms>` | File watcher debounce (default: 2000ms) |
+| `--no-watch` | Disable automatic rebuild on file changes |
 
-### Specify output directory
+### `ariadne info`
 
-```sh
-ariadne build . --output ./output
-```
+Show version and list of supported languages.
 
-### Verbose mode (per-stage timing)
+---
 
-```sh
-ariadne build . --verbose
-```
-
-### JSON warning output
-
-```sh
-ariadne build . --warnings json
-```
-
-### Strict mode (exit code 1 on warnings)
-
-```sh
-ariadne build . --strict
-```
-
-### Include generation timestamp
-
-```sh
-ariadne build . --timestamp
-```
-
-### Show supported languages
-
-```sh
-ariadne info
-```
-
-## Supported Languages
-
-| Language | Extensions |
-|----------|-----------|
-| TypeScript/JavaScript | .ts, .tsx, .js, .jsx, .mjs, .cjs |
-| Go | .go |
-| Python | .py |
-| Rust | .rs |
-| C# | .cs |
-| Java | .java |
-
-## Output Format
+## Output format
 
 ### graph.json
 
-Contains the dependency graph with nodes (files) and edges (imports):
+The core dependency graph.
 
-- **nodes**: file type, architectural layer, line count, content hash, exports, cluster assignment
-- **edges**: from file, to file, edge type (imports/tests/re_exports/type_imports), symbols
+**Nodes** (one per source file):
+- File type and detected language
+- Architectural layer (`interface`, `logic`, `data`, `utility`, `config`, `test`, `unknown`)
+- Line count, content hash (xxHash64)
+- Exported symbols
+- Cluster assignment
+
+**Edges** (one per dependency):
+- Source → target file
+- Edge type: `imports`, `re_exports`, `type_imports`, `tests`
+- Imported symbols
 
 ### clusters.json
 
-Directory-based module clusters with:
-
-- File lists per cluster
-- Internal/external edge counts
+Directory-based module clusters:
+- Files per cluster
+- Internal / external edge counts
 - Cohesion metric
 
-## Limitations
+### stats.json
 
-- Tier 1 languages only (6 languages listed above)
-- No `exports` field resolution in package.json (uses main/module/default probing)
-- npm/yarn/pnpm workspaces only (no Go modules, Cargo workspaces, Nx, Turbo)
-- No architectural depth computation (placeholder value)
+Project-wide structural analysis:
+- Strongly connected components (cycles)
+- Betweenness centrality scores
+- Topological layer assignment
+- PageRank scores
+- Martin stability / abstractness metrics
+- Summary statistics
+
+---
+
+## MCP server
+
+Ariadne's MCP server makes the dependency graph available to any MCP-compatible consumer — AI coding agents, IDE extensions, CI pipelines.
+
+```json
+{
+  "mcpServers": {
+    "ariadne": {
+      "command": "ariadne",
+      "args": ["serve", "--project", "/path/to/your/project"]
+    }
+  }
+}
+```
+
+The server keeps the graph in memory, watches for file changes, and automatically rebuilds when the codebase changes. Queries that would take seconds via CLI return in milliseconds.
+
+This is how [Moira](https://github.com/mind-decay/Moira) integrates Ariadne — agents get architectural intelligence (blast radius, coupling, cycles, bottlenecks) without reading a single source file.
+
+---
 
 ## Performance
 
 | Scenario | Target |
-|----------|--------|
-| 100 files | <200ms |
-| 1,000 files | <3s |
-| 3,000 files | <10s |
+|---|---|
+| 100 files | < 200ms |
+| 1,000 files | < 3s |
+| 3,000 files | < 10s |
+| SCC detection | < 10ms |
+| Blast radius (BFS) | < 10ms |
+| Centrality (Brandes) | < 500ms |
+| Topological sort | < 10ms |
+
+Output is **deterministic** — byte-identical across repeated builds on the same input (BTreeMap ordering, sorted serialization, no timestamps by default).
+
+---
 
 ## Design
 
-See `design/` for comprehensive documentation:
+Ariadne is designed before it is built. All implementation conforms to design documents.
 
-- `design/architecture.md` — full system design
-- `design/ROADMAP.md` — implementation phases
-- `design/decisions/log.md` — architectural decision log
+| Document | Contents |
+|---|---|
+| [Architecture](design/architecture.md) | Full system design — data model, parsers, pipeline, CLI, output formats |
+| [Roadmap](design/ROADMAP.md) | Implementation phases and build order |
+| [Decision Log](design/decisions/log.md) | Architectural decisions (D-001 through D-050+) |
+| [Path Resolution](design/path-resolution.md) | Normalization, case sensitivity, monorepo support |
+| [Determinism](design/determinism.md) | Byte-identical output strategy |
+| [Error Handling](design/error-handling.md) | Error taxonomy (E001–E005, W001–W009), fault tolerance |
+| [Performance](design/performance.md) | Performance model, parallelism, memory strategy |
+| [Testing](design/testing.md) | 4-level test strategy — snapshots, fixtures, invariants, benchmarks |
+
+---
 
 ## License
 
