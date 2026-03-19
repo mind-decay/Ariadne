@@ -14,7 +14,7 @@ use crate::detect::{detect_workspace, is_case_insensitive};
 use crate::diagnostic::{DiagnosticCollector, DiagnosticCounts, FatalError, Warning, WarningCode};
 use crate::model::*;
 use crate::parser::{ParseOutcome, ParserRegistry, RawExport, RawImport};
-use crate::serial::{ClusterEntryOutput, ClusterOutput, GraphOutput, GraphReader, GraphSerializer, NodeOutput};
+use crate::serial::{ClusterEntryOutput, ClusterOutput, GraphOutput, GraphReader, GraphSerializer, NodeOutput, RawImportOutput};
 
 pub use read::{FileContent, FileReader, FileSkipReason, FsReader};
 pub use walk::{FileEntry, FileWalker, FsWalker, WalkConfig, WalkResult};
@@ -286,6 +286,20 @@ impl BuildPipeline {
         self.serializer
             .write_clusters(&cluster_output, &output_dir)?;
         self.serializer.write_stats(&stats, &output_dir)?;
+        // Serialize raw imports for freshness engine (D-054)
+        let raw_imports_output: std::collections::BTreeMap<String, Vec<RawImportOutput>> = parsed_files
+            .iter()
+            .map(|pf| {
+                let key = pf.path.as_str().to_string();
+                let imports = pf.imports.iter().map(|ri| RawImportOutput {
+                    path: ri.path.clone(),
+                    symbols: ri.symbols.clone(),
+                    is_type_only: ri.is_type_only,
+                }).collect();
+                (key, imports)
+            })
+            .collect();
+        self.serializer.write_raw_imports(&raw_imports_output, &output_dir)?;
         if verbose {
             let graph_size = std::fs::metadata(output_dir.join("graph.json")).map(|m| m.len()).unwrap_or(0);
             let cluster_size = std::fs::metadata(output_dir.join("clusters.json")).map(|m| m.len()).unwrap_or(0);

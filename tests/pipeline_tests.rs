@@ -5,6 +5,7 @@ use ariadne_graph::model::CanonicalPath;
 use ariadne_graph::pipeline::{BuildPipeline, FileWalker, FsReader, FsWalker, WalkConfig};
 use ariadne_graph::parser::ParserRegistry;
 use ariadne_graph::serial::json::JsonSerializer;
+use ariadne_graph::serial::{GraphReader, RawImportOutput};
 
 // ---------------------------------------------------------------------------
 // DiagnosticCollector tests
@@ -263,4 +264,62 @@ fn walk_config_respects_max_files() {
     // or fail with E004 if the 1 file isn't parseable. Either is valid.
     let _result = pipeline.run_with_output(&path, config, Some(output_path), false, false, false);
     // We just verify it doesn't panic
+}
+
+// ---------------------------------------------------------------------------
+// Raw imports serialization tests
+// ---------------------------------------------------------------------------
+
+#[test]
+fn raw_imports_round_trip() {
+    use ariadne_graph::serial::GraphSerializer;
+    use std::collections::BTreeMap;
+
+    let dir = tempfile::tempdir().unwrap();
+    let serializer = JsonSerializer;
+
+    let mut imports = BTreeMap::new();
+    imports.insert(
+        "src/auth/login.ts".to_string(),
+        vec![RawImportOutput {
+            path: "./session".to_string(),
+            symbols: vec!["getSession".to_string()],
+            is_type_only: false,
+        }],
+    );
+
+    serializer.write_raw_imports(&imports, dir.path()).unwrap();
+
+    let reader = JsonSerializer;
+    let loaded = reader.read_raw_imports(dir.path()).unwrap();
+    assert_eq!(loaded, Some(imports));
+}
+
+#[test]
+fn raw_imports_missing_file_returns_none() {
+    let dir = tempfile::tempdir().unwrap();
+    let reader = JsonSerializer;
+    let loaded = reader.read_raw_imports(dir.path()).unwrap();
+    assert_eq!(loaded, None);
+}
+
+#[test]
+fn pipeline_produces_raw_imports_json() {
+    let path = helpers::fixture_path("typescript-app");
+    let output_dir = tempfile::tempdir().unwrap();
+    let pipeline = make_pipeline();
+
+    pipeline
+        .run_with_output(&path, WalkConfig::default(), Some(output_dir.path()), false, false, false)
+        .expect("build should succeed");
+
+    assert!(
+        output_dir.path().join("raw_imports.json").exists(),
+        "raw_imports.json should be produced by build"
+    );
+
+    let reader = JsonSerializer;
+    let imports = reader.read_raw_imports(output_dir.path()).unwrap();
+    assert!(imports.is_some(), "raw_imports.json should be readable");
+    assert!(!imports.unwrap().is_empty(), "raw_imports should not be empty for typescript-app");
 }

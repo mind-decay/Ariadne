@@ -64,11 +64,24 @@ pub struct FileQueryOutput {
     pub cluster: String,
 }
 
+/// Serializable raw import for freshness engine (D-054).
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct RawImportOutput {
+    pub path: String,
+    pub symbols: Vec<String>,
+    pub is_type_only: bool,
+}
+
 /// Output writing abstraction.
 pub trait GraphSerializer: Send + Sync {
     fn write_graph(&self, output: &GraphOutput, dir: &Path) -> Result<(), FatalError>;
     fn write_clusters(&self, clusters: &ClusterOutput, dir: &Path) -> Result<(), FatalError>;
     fn write_stats(&self, stats: &StatsOutput, dir: &Path) -> Result<(), FatalError>;
+    fn write_raw_imports(
+        &self,
+        imports: &BTreeMap<String, Vec<RawImportOutput>>,
+        dir: &Path,
+    ) -> Result<(), FatalError>;
 }
 
 /// Read-side counterpart to GraphSerializer. Separate trait because
@@ -77,4 +90,8 @@ pub trait GraphReader: Send + Sync {
     fn read_graph(&self, dir: &Path) -> Result<GraphOutput, FatalError>;
     fn read_clusters(&self, dir: &Path) -> Result<ClusterOutput, FatalError>;
     fn read_stats(&self, dir: &Path) -> Result<Option<StatsOutput>, FatalError>;
+    fn read_raw_imports(
+        &self,
+        dir: &Path,
+    ) -> Result<Option<BTreeMap<String, Vec<RawImportOutput>>>, FatalError>;
 }
