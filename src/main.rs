@@ -223,6 +223,45 @@ enum QueryCommands {
         #[arg(long, default_value = ".ariadne/graph/")]
         graph_dir: PathBuf,
     },
+    /// Show file importance ranking (centrality + PageRank)
+    Importance {
+        /// Number of top files to show
+        #[arg(long, default_value_t = 20)]
+        top: usize,
+        /// Output format
+        #[arg(long, default_value = "md", value_parser = ["md", "json"])]
+        format: String,
+        /// Graph directory
+        #[arg(long, default_value = ".ariadne/graph/")]
+        graph_dir: PathBuf,
+    },
+    /// Spectral analysis: algebraic connectivity, monolith score, Fiedler bisection
+    Spectral {
+        /// Output format
+        #[arg(long, default_value = "md", value_parser = ["md", "json"])]
+        format: String,
+        /// Graph directory
+        #[arg(long, default_value = ".ariadne/graph/")]
+        graph_dir: PathBuf,
+    },
+    /// Show compressed graph at project/cluster/file level
+    Compressed {
+        /// Compression level: 0 (project), 1 (cluster), 2 (file)
+        #[arg(long)]
+        level: u32,
+        /// Focus: cluster name (level 1) or file path (level 2)
+        #[arg(long)]
+        focus: Option<String>,
+        /// BFS depth for level 2 (default: 2)
+        #[arg(long, default_value_t = 2)]
+        depth: u32,
+        /// Output format
+        #[arg(long, default_value = "md", value_parser = ["md", "json"])]
+        format: String,
+        /// Graph directory
+        #[arg(long, default_value = ".ariadne/graph/")]
+        graph_dir: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]
@@ -772,6 +811,133 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
                         m.distance,
                         m.zone
                     );
+                }
+            }
+        }
+        QueryCommands::Importance {
+            top,
+            format,
+            graph_dir,
+        } => {
+            let graph = load_graph(&reader, &graph_dir)?;
+            let stats = load_stats(&reader, &graph_dir)?;
+
+            let pr = algo::pagerank::pagerank(&graph, 0.85, 100, 1e-6);
+            let combined = algo::pagerank::combined_importance(&stats.centrality, &pr);
+
+            let mut ranked: Vec<_> = combined.iter().collect();
+            ranked.sort_by(|a, b| {
+                b.1.partial_cmp(a.1)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+                    .then_with(|| a.0.cmp(b.0))
+            });
+            ranked.truncate(top);
+
+            if format == "json" {
+                let result: Vec<serde_json::Value> = ranked
+                    .iter()
+                    .map(|(path, &score)| {
+                        serde_json::json!({
+                            "path": path.as_str(),
+                            "combined_score": score,
+                            "centrality": stats.centrality.get(path.as_str()).copied().unwrap_or(0.0),
+                            "pagerank": pr.get(*path).copied().unwrap_or(0.0),
+                        })
+                    })
+                    .collect();
+                println!("{}", json_pretty(&result)?);
+            } else {
+                println!("# File Importance (top {})\n", top);
+                println!("| File | Combined | Centrality | PageRank |");
+                println!("|------|---------|-----------|---------|");
+                for (path, &score) in &ranked {
+                    let c = stats.centrality.get(path.as_str()).copied().unwrap_or(0.0);
+                    let p = pr.get(*path).copied().unwrap_or(0.0);
+                    println!("| `{}` | {:.4} | {:.4} | {:.4} |", path.as_str(), score, c, p);
+                }
+            }
+        }
+        QueryCommands::Spectral { format, graph_dir } => {
+            let graph = load_graph(&reader, &graph_dir)?;
+            let result = algo::spectral::spectral_analysis(&graph, 200, 1e-6);
+
+            if format == "json" {
+                println!("{}", json_pretty(&result)?);
+            } else {
+                println!("# Spectral Analysis\n");
+                println!("- **Algebraic connectivity (λ₂):** {:.4}", result.algebraic_connectivity);
+                println!("- **Monolith score:** {:.4}\n", result.monolith_score);
+                for part in &result.natural_partitions {
+                    println!("## Partition {}\n", part.partition_id);
+                    for file in &part.files {
+                        println!("- `{}`", file.as_str());
+                    }
+                    println!();
+                }
+            }
+        }
+        QueryCommands::Compressed {
+            level,
+            focus,
+            depth,
+            format,
+            graph_dir,
+        } => {
+            let graph = load_graph(&reader, &graph_dir)?;
+            let stats = load_stats(&reader, &graph_dir)?;
+            let clusters = load_clusters(&reader, &graph_dir)?;
+
+            let result = match level {
+                0 => Ok(algo::compress::compress_l0(&graph, &clusters, &stats)),
+                1 => {
+                    let focus_name = focus.as_deref().ok_or_else(|| FatalError::InvalidArgument {
+                        reason: "Level 1 requires --focus <cluster_name>".to_string(),
+                    })?;
+                    let cluster_id = ariadne_graph::model::ClusterId::new(focus_name);
+                    algo::compress::compress_l1(&graph, &clusters, &stats, &cluster_id)
+                        .map_err(|e| FatalError::InvalidArgument {
+                            reason: e,
+                        })
+                }
+                2 => {
+                    let focus_path = focus.as_deref().ok_or_else(|| FatalError::InvalidArgument {
+                        reason: "Level 2 requires --focus <file_path>".to_string(),
+                    })?;
+                    let cp = CanonicalPath::new(focus_path);
+                    algo::compress::compress_l2(&graph, &clusters, &stats, &cp, depth)
+                        .map_err(|e| FatalError::InvalidArgument {
+                            reason: e,
+                        })
+                }
+                _ => Err(FatalError::InvalidArgument {
+                    reason: "Level must be 0, 1, or 2".to_string(),
+                }),
+            }?;
+
+            if format == "json" {
+                println!("{}", json_pretty(&result)?);
+            } else {
+                println!("# Compressed Graph (Level {})\n", level);
+                if let Some(ref f) = result.focus {
+                    println!("Focus: `{}`\n", f);
+                }
+                println!("Nodes: {}, Edges: {}, Tokens: ~{}\n", result.nodes.len(), result.edges.len(), result.token_estimate);
+                println!("## Nodes\n");
+                for node in &result.nodes {
+                    match node.node_type {
+                        ariadne_graph::model::CompressedNodeType::Cluster => {
+                            println!("- **{}** ({} files, cohesion: {:.2})", node.name,
+                                node.file_count.unwrap_or(0), node.cohesion.unwrap_or(0.0));
+                            if !node.key_files.is_empty() {
+                                println!("  Key files: {}", node.key_files.join(", "));
+                            }
+                        }
+                        ariadne_graph::model::CompressedNodeType::File => {
+                            println!("- `{}` ({}, {})", node.name,
+                                node.file_type.as_deref().unwrap_or("?"),
+                                node.layer.as_deref().unwrap_or("?"));
+                        }
+                    }
                 }
             }
         }

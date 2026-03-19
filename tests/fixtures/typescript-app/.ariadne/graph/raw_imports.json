@@ -1,0 +1,50 @@
+{
+  "src/__tests__/login.test.ts": [
+    {
+      "path": "../auth/login",
+      "symbols": [
+        "login",
+        "LoginParams"
+      ],
+      "is_type_only": false
+    }
+  ],
+  "src/auth/login.ts": [
+    {
+      "path": "../utils/format",
+      "symbols": [
+        "formatName"
+      ],
+      "is_type_only": false
+    }
+  ],
+  "src/auth/register.ts": [
+    {
+      "path": "./login",
+      "symbols": [
+        "login",
+        "LoginParams"
+      ],
+      "is_type_only": false
+    }
+  ],
+  "src/index.ts": [
+    {
+      "path": "./auth/login",
+      "symbols": [
+        "login"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "./utils/format",
+      "symbols": [
+        "formatDate",
+        "formatName"
+      ],
+      "is_type_only": false
+    }
+  ],
+  "src/types/index.d.ts": [],
+  "src/utils/format.ts": []
+}

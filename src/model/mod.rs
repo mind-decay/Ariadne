@@ -1,3 +1,4 @@
+pub mod compress;
 pub mod diff;
 pub mod edge;
 pub mod graph;
@@ -8,6 +9,9 @@ pub mod stats;
 pub mod types;
 pub mod workspace;
 
+pub use compress::{
+    CompressedEdge, CompressedGraph, CompressedNode, CompressedNodeType, CompressionLevel,
+};
 pub use diff::{ChangeClassification, ClusterChange, DiffSummary, LayerChange, StructuralDiff};
 pub use edge::{Edge, EdgeType};
 pub use graph::{Cluster, ClusterMap, ProjectGraph};

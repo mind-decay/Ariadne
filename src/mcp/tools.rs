@@ -112,6 +112,22 @@ pub struct SmellsParam {
     pub min_severity: Option<String>,
 }
 
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct ImportanceParam {
+    /// Number of top files to return (default: 20)
+    pub top: Option<u32>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct CompressedParam {
+    /// Compression level: 0 (project), 1 (cluster), 2 (file)
+    pub level: u32,
+    /// Focus: cluster name (level 1) or file path (level 2)
+    pub focus: Option<String>,
+    /// BFS depth for level 2 (default: 2)
+    pub depth: Option<u32>,
+}
+
 #[tool_router]
 impl AriadneTools {
     // --- T1: Overview ---
@@ -506,6 +522,133 @@ impl AriadneTools {
             Some(diff) => serde_json::to_string_pretty(diff).unwrap(),
             None => "null".to_string(),
         }
+    }
+
+    // --- T15: Importance ---
+
+    #[tool(
+        name = "ariadne_importance",
+        description = "Files ranked by combined importance score (betweenness centrality + PageRank). Returns top N files."
+    )]
+    fn importance(&self, Parameters(params): Parameters<ImportanceParam>) -> String {
+        let state = self.state.load();
+        let top = params.top.unwrap_or(20) as usize;
+
+        let mut ranked: Vec<_> = state.combined_importance.iter().collect();
+        ranked.sort_by(|a, b| {
+            b.1.partial_cmp(a.1)
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then_with(|| a.0.cmp(b.0))
+        });
+        ranked.truncate(top);
+
+        let result: Vec<serde_json::Value> = ranked
+            .iter()
+            .map(|(path, &score)| {
+                serde_json::json!({
+                    "path": path.as_str(),
+                    "combined_score": score,
+                    "centrality": state.stats.centrality.get(path.as_str()).copied().unwrap_or(0.0),
+                    "pagerank": state.pagerank.get(*path).copied().unwrap_or(0.0),
+                })
+            })
+            .collect();
+
+        serde_json::to_string_pretty(&result).unwrap()
+    }
+
+    // --- T16: Compressed ---
+
+    #[tool(
+        name = "ariadne_compressed",
+        description = "Hierarchical graph compression. Level 0: project overview (clusters). Level 1: cluster detail (files). Level 2: file neighborhood."
+    )]
+    fn compressed(&self, Parameters(params): Parameters<CompressedParam>) -> String {
+        let state = self.state.load();
+
+        match params.level {
+            0 => serde_json::to_string_pretty(&state.compressed_l0).unwrap(),
+            1 => {
+                let focus = match &params.focus {
+                    Some(f) => f,
+                    None => {
+                        let result = serde_json::json!({
+                            "error": "missing_focus",
+                            "message": "Level 1 requires a 'focus' parameter (cluster name)",
+                            "available_clusters": state.clusters.clusters.keys()
+                                .map(|k| k.as_str()).collect::<Vec<_>>(),
+                        });
+                        return serde_json::to_string_pretty(&result).unwrap();
+                    }
+                };
+                let cluster_id = crate::model::ClusterId::new(focus);
+                match algo::compress::compress_l1(
+                    &state.graph,
+                    &state.clusters,
+                    &state.stats,
+                    &cluster_id,
+                ) {
+                    Ok(cg) => serde_json::to_string_pretty(&cg).unwrap(),
+                    Err(e) => {
+                        let result = serde_json::json!({
+                            "error": "not_found",
+                            "message": e,
+                            "available_clusters": state.clusters.clusters.keys()
+                                .map(|k| k.as_str()).collect::<Vec<_>>(),
+                        });
+                        serde_json::to_string_pretty(&result).unwrap()
+                    }
+                }
+            }
+            2 => {
+                let focus = match &params.focus {
+                    Some(f) => f,
+                    None => {
+                        let result = serde_json::json!({
+                            "error": "missing_focus",
+                            "message": "Level 2 requires a 'focus' parameter (file path)",
+                        });
+                        return serde_json::to_string_pretty(&result).unwrap();
+                    }
+                };
+                let cp = CanonicalPath::new(focus);
+                let depth = params.depth.unwrap_or(2);
+                match algo::compress::compress_l2(
+                    &state.graph,
+                    &state.clusters,
+                    &state.stats,
+                    &cp,
+                    depth,
+                ) {
+                    Ok(cg) => serde_json::to_string_pretty(&cg).unwrap(),
+                    Err(e) => {
+                        let result = serde_json::json!({
+                            "error": "not_found",
+                            "message": e,
+                        });
+                        serde_json::to_string_pretty(&result).unwrap()
+                    }
+                }
+            }
+            _ => {
+                let result = serde_json::json!({
+                    "error": "invalid_level",
+                    "message": "Level must be 0, 1, or 2",
+                });
+                serde_json::to_string_pretty(&result).unwrap()
+            }
+        }
+    }
+
+    // --- T17: Spectral ---
+
+    #[tool(
+        name = "ariadne_spectral",
+        description = "Spectral analysis: algebraic connectivity (λ₂), monolith score, natural graph bisection via Fiedler vector"
+    )]
+    fn spectral(&self) -> String {
+        let state = self.state.load();
+        serde_json::to_string_pretty(&state.spectral).unwrap()
     }
 
     // --- T11: Views export ---

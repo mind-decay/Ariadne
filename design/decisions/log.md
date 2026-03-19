@@ -767,3 +767,43 @@ Applies to: Brandes centrality (Phase 2), Louvain modularity (Phase 2b), PageRan
 **Context:** Need to classify structural changes for human-readable diff summaries.
 **Decision:** Four categories: Breaking (removed edges + new cycles), Additive (only additions), Refactor (balanced add/remove, small magnitude), Migration (more removed than added). Default to Refactor for ambiguous cases. Heuristic, not authoritative.
 **Affects:** `src/analysis/diff.rs`, `src/model/diff.rs`.
+
+## D-060: Fiedler Vector Sign Convention
+
+**Date:** 2026-03-19
+**Status:** Accepted
+**Context:** Eigenvectors are unique only up to sign. Need deterministic partition assignment.
+**Decision:** The lexicographically first node (by `CanonicalPath` in BTreeMap order) always gets a positive Fiedler vector component. If the raw vector gives it a negative component, flip all signs. Zero additional computation cost.
+**Affects:** `src/algo/spectral.rs`.
+
+## D-061: PageRank on Original Import Graph
+
+**Date:** 2026-03-19
+**Status:** Accepted (revised from spec)
+**Context:** The spec originally called for PageRank on the *reversed* import graph. Testing revealed this ranks importers high rather than foundations.
+**Decision:** Run standard PageRank on the original import graph (A→B where A imports B). This naturally ranks B (the dependency/foundation) highest, matching the stated goal of "authority ranking: files that important files depend on." The spec's reversal was based on a web-PageRank analogy that doesn't apply to import graphs where edges already point toward dependencies.
+**Affects:** `src/algo/pagerank.rs`.
+
+## D-062: Token Estimation Heuristic
+
+**Date:** 2026-03-19
+**Status:** Accepted
+**Context:** Need approximate token count for compressed graph views.
+**Decision:** Simple heuristic: serialized JSON bytes / 4 ≈ tokens. Exact tokenization depends on the model's tokenizer and is not worth computing. Order-of-magnitude guidance is sufficient.
+**Affects:** `src/algo/compress.rs`.
+
+## D-063: PageRank Edge Filter
+
+**Date:** 2026-03-19
+**Status:** Accepted
+**Context:** Not all edge types represent structural dependencies for importance ranking.
+**Decision:** PageRank includes only `imports` and `re_exports` edges. Excludes `tests` (not runtime dependencies) and `type_imports` (type-only imports don't represent runtime dependency weight). This prevents test utility files and type definition files from having inflated importance.
+**Affects:** `src/algo/pagerank.rs`.
+
+## D-064: Spectral Analysis Without External Sparse Matrix Library
+
+**Date:** 2026-03-19
+**Status:** Accepted
+**Context:** Spec proposed using `sprs` crate for Lanczos iteration. Decision gate: evaluate dependency cost.
+**Decision:** Implemented spectral analysis using hand-rolled power iteration with deflation on the graph Laplacian. No external dependency needed — the Laplacian matrix-vector product is computed directly from adjacency lists. This avoids binary size increase and dependency management complexity. Deterministic via fixed initial vector and BTreeMap iteration order.
+**Affects:** `src/algo/spectral.rs`, `Cargo.toml` (no new dependency).

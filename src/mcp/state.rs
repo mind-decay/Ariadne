@@ -2,6 +2,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
+use crate::algo::{compress, pagerank, spectral};
 use crate::analysis::metrics::{compute_martin_metrics, ClusterMetrics};
 use crate::diagnostic::FatalError;
 use crate::model::*;
@@ -26,6 +27,14 @@ pub struct GraphState {
     pub raw_imports: BTreeMap<String, Vec<RawImportOutput>>,
     /// Precomputed Martin metrics per cluster.
     pub cluster_metrics: BTreeMap<ClusterId, ClusterMetrics>,
+    /// Precomputed PageRank scores.
+    pub pagerank: BTreeMap<CanonicalPath, f64>,
+    /// Precomputed combined importance (centrality + PageRank).
+    pub combined_importance: BTreeMap<CanonicalPath, f64>,
+    /// Precomputed L0 compressed graph.
+    pub compressed_l0: CompressedGraph,
+    /// Precomputed spectral analysis result.
+    pub spectral: spectral::SpectralResult,
     /// Structural diff from the last auto-update (None before first update).
     pub last_diff: Option<StructuralDiff>,
     pub freshness: FreshnessState,
@@ -102,6 +111,11 @@ impl GraphState {
             .collect();
         let cluster_metrics = compute_martin_metrics(&graph, &clusters);
 
+        let pr = pagerank::pagerank(&graph, 0.85, 100, 1e-6);
+        let combined = pagerank::combined_importance(&stats.centrality, &pr);
+        let compressed_l0 = compress::compress_l0(&graph, &clusters, &stats);
+        let spectral_result = spectral::spectral_analysis(&graph, 200, 1e-6);
+
         Self {
             graph,
             stats,
@@ -112,6 +126,10 @@ impl GraphState {
             file_hashes,
             raw_imports,
             cluster_metrics,
+            pagerank: pr,
+            combined_importance: combined,
+            compressed_l0,
+            spectral: spectral_result,
             last_diff: None,
             freshness: FreshnessState::new(),
             loaded_at: SystemTime::now(),

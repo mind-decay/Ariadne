@@ -12,21 +12,14 @@
     "auth": {
       "files": [
         "src/auth/login.ts",
-        "src/auth/register.ts"
+        "src/auth/register.ts",
+        "src/index.ts",
+        "src/utils/format.ts"
       ],
-      "file_count": 2,
-      "internal_edges": 1,
-      "external_edges": 3,
-      "cohesion": 0.25
-    },
-    "root": {
-      "files": [
-        "src/index.ts"
-      ],
-      "file_count": 1,
-      "internal_edges": 0,
-      "external_edges": 2,
-      "cohesion": 0.0
+      "file_count": 4,
+      "internal_edges": 4,
+      "external_edges": 1,
+      "cohesion": 0.8
     },
     "types": {
       "files": [
@@ -36,15 +29,6 @@
       "internal_edges": 0,
       "external_edges": 0,
       "cohesion": 1.0
-    },
-    "utils": {
-      "files": [
-        "src/utils/format.ts"
-      ],
-      "file_count": 1,
-      "internal_edges": 0,
-      "external_edges": 2,
-      "cohesion": 0.0
     }
   }
 }

@@ -32,6 +32,8 @@ pub enum FatalError {
     LockFileHeld { pid: u32, lock_path: PathBuf },
     #[error("E012: MCP protocol error: {reason}")]
     McpProtocolError { reason: String },
+    #[error("E013: invalid argument: {reason}")]
+    InvalidArgument { reason: String },
 }
 
 /// Warning codes for recoverable errors.

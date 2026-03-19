@@ -1,8 +1,11 @@
 pub mod blast_radius;
 pub mod centrality;
+pub mod compress;
 pub mod delta;
 pub mod louvain;
+pub mod pagerank;
 pub mod scc;
+pub mod spectral;
 pub mod stats;
 pub mod subgraph;
 pub mod topo_sort;

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "project_root": "/Users/minddecay/Documents/Projects/ariadne/tests/fixtures/typescript-app",
+  "project_root": "tests/fixtures/typescript-app",
   "node_count": 6,
   "edge_count": 5,
   "nodes": {
@@ -16,7 +16,7 @@
     "src/auth/login.ts": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
+      "arch_depth": 1,
       "lines": 12,
       "hash": "5b3f09004953e37a",
       "exports": [
@@ -28,7 +28,7 @@
     "src/auth/register.ts": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
+      "arch_depth": 2,
       "lines": 10,
       "hash": "f7dd39564646435b",
       "exports": [
@@ -40,11 +40,11 @@
     "src/index.ts": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
+      "arch_depth": 2,
       "lines": 6,
       "hash": "a05840a21b0a9426",
       "exports": [],
-      "cluster": "root"
+      "cluster": "auth"
     },
     "src/types/index.d.ts": {
       "type": "type_def",
@@ -65,7 +65,7 @@
         "formatDate",
         "formatName"
       ],
-      "cluster": "utils"
+      "cluster": "auth"
     }
   },
   "edges": [
