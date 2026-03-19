@@ -26,6 +26,12 @@ pub enum FatalError {
     GraphCorrupted { path: PathBuf, reason: String },
     #[error("E009: file not found in graph: {path}")]
     FileNotInGraph { path: String },
+    #[error("E010: failed to start MCP server: {reason}")]
+    McpServerFailed { reason: String },
+    #[error("E011: another ariadne server is running (PID {pid}). Stop it first or remove {}", lock_path.display())]
+    LockFileHeld { pid: u32, lock_path: PathBuf },
+    #[error("E012: MCP protocol error: {reason}")]
+    McpProtocolError { reason: String },
 }
 
 /// Warning codes for recoverable errors.
@@ -45,6 +51,9 @@ pub enum WarningCode {
     W011GraphCorrupted,
     W012AlgorithmFailed,
     W013StaleStats,
+    W014FsWatcherFailed,
+    W015IncrementalRebuildFailed,
+    W016StaleLockRemoved,
 }
 
 impl WarningCode {
@@ -63,6 +72,9 @@ impl WarningCode {
             Self::W011GraphCorrupted => "W011",
             Self::W012AlgorithmFailed => "W012",
             Self::W013StaleStats => "W013",
+            Self::W014FsWatcherFailed => "W014",
+            Self::W015IncrementalRebuildFailed => "W015",
+            Self::W016StaleLockRemoved => "W016",
         }
     }
 }
@@ -280,6 +292,9 @@ impl DiagnosticCollector {
             WarningCode::W013StaleStats => {
                 guard.1.stale_stats += 1;
             }
+            WarningCode::W014FsWatcherFailed => {}
+            WarningCode::W015IncrementalRebuildFailed => {}
+            WarningCode::W016StaleLockRemoved => {}
         }
         guard.0.push(warning);
     }
