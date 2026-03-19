@@ -64,6 +64,22 @@ enum Commands {
         #[command(subcommand)]
         cmd: ViewsCommands,
     },
+    /// Start MCP server for instant graph queries
+    #[cfg(feature = "serve")]
+    Serve {
+        /// Project root to serve
+        #[arg(long, default_value = ".")]
+        project: PathBuf,
+        /// Output directory (default: <project>/.ariadne/graph/)
+        #[arg(long, short)]
+        output: Option<PathBuf>,
+        /// Debounce milliseconds for file watcher
+        #[arg(long, default_value_t = 2000)]
+        debounce: u64,
+        /// Disable file system watcher
+        #[arg(long)]
+        no_watch: bool,
+    },
     /// Incremental update via delta computation
     Update {
         /// Path to the project root
@@ -232,6 +248,31 @@ fn main() {
         }
         Commands::Query { cmd } => run_query(cmd),
         Commands::Views { cmd } => run_views(cmd),
+        #[cfg(feature = "serve")]
+        Commands::Serve {
+            project,
+            output,
+            debounce,
+            no_watch,
+        } => {
+            let abs_project = std::fs::canonicalize(&project).unwrap_or(project);
+            let output_dir = output.unwrap_or_else(|| abs_project.join(".ariadne").join("graph"));
+            let config = ariadne_graph::mcp::server::ServeConfig {
+                project_root: abs_project,
+                output_dir,
+                debounce_ms: debounce,
+                watch_enabled: !no_watch,
+            };
+            let rt = tokio::runtime::Runtime::new().map_err(|e| {
+                ariadne_graph::diagnostic::FatalError::McpServerFailed {
+                    reason: format!("failed to create tokio runtime: {}", e),
+                }
+            });
+            match rt {
+                Ok(rt) => rt.block_on(ariadne_graph::mcp::server::run(config)),
+                Err(e) => Err(e),
+            }
+        }
         Commands::Update {
             path,
             output,
