@@ -735,3 +735,35 @@ Applies to: Brandes centrality (Phase 2), Louvain modularity (Phase 2b), PageRan
 **Context:** Need a Rust MCP server implementation for `ariadne serve`.
 **Decision:** Use rmcp 1.2 (official Anthropic Rust SDK) with `#[tool_router]` / `#[tool_handler]` macros, `Parameters<T>` for structured tool inputs, and stdio transport. Server implements `ServerHandler` trait.
 **Affects:** `src/mcp/tools.rs`, `src/mcp/server.rs`, `Cargo.toml`.
+
+## D-056: Abstract File Classification
+
+**Date:** 2026-03-19
+**Status:** Accepted
+**Context:** Martin metrics require classifying files as abstract or concrete to compute Abstractness (A).
+**Decision:** A file is abstract if: (1) `FileType::TypeDef` (e.g., `.d.ts`, `.pyi`), OR (2) barrel file with >80% re-export ratio (`re_export_edges / exports > 0.8`). All other files are concrete. Simple, deterministic, avoids AST-level abstract/interface detection.
+**Affects:** `src/analysis/metrics.rs`.
+
+## D-057: Louvain Noise Filtering in Structural Diff
+
+**Date:** 2026-03-19
+**Status:** Accepted
+**Context:** Louvain community detection is non-deterministic — cluster assignments can change without any structural change.
+**Decision:** `changed_clusters` in StructuralDiff only includes files where the cluster assignment changed AND at least one edge was also added or removed. Pure Louvain re-assignments are filtered out.
+**Affects:** `src/analysis/diff.rs`.
+
+## D-058: StructuralDiff is MCP-Only
+
+**Date:** 2026-03-19
+**Status:** Accepted
+**Context:** Structural diff requires a "before" snapshot to compare against.
+**Decision:** `ariadne_diff` is MCP-only (no CLI equivalent). The MCP server holds the pre-update `Arc<GraphState>` in memory. CLI `ariadne update` doesn't persist previous state. `GraphState.last_diff` stores the diff from the last auto-update.
+**Affects:** `src/mcp/state.rs`, `src/mcp/watch.rs`, `src/mcp/tools.rs`.
+
+## D-059: ChangeClassification Heuristic
+
+**Date:** 2026-03-19
+**Status:** Accepted
+**Context:** Need to classify structural changes for human-readable diff summaries.
+**Decision:** Four categories: Breaking (removed edges + new cycles), Additive (only additions), Refactor (balanced add/remove, small magnitude), Migration (more removed than added). Default to Refactor for ambiguous cases. Heuristic, not authoritative.
+**Affects:** `src/analysis/diff.rs`, `src/model/diff.rs`.
