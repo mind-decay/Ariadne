@@ -102,7 +102,7 @@ dependencies = [
  "glob",
  "ignore",
  "insta",
- "notify 9.0.0-rc.2",
+ "notify",
  "notify-debouncer-full",
  "proptest",
  "rayon",
@@ -906,26 +906,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "notify"
-version = "9.0.0-rc.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c8b6510a5042c64929d0278a8d24f5f90aa3a9b5be52e08e4f8bf7403adb01dc"
-dependencies = [
- "bitflags 2.11.0",
- "inotify",
- "kqueue",
- "libc",
- "log",
- "mio",
- "notify-types",
- "objc2-core-foundation",
- "objc2-core-services",
- "walkdir",
- "windows-sys 0.61.2",
- "xxhash-rust",
-]
-
-[[package]]
 name = "notify-debouncer-full"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -933,7 +913,7 @@ checksum = "c02b49179cfebc9932238d04d6079912d26de0379328872846118a0fa0dbb302"
 dependencies = [
  "file-id",
  "log",
- "notify 8.2.0",
+ "notify",
  "notify-types",
  "walkdir",
 ]
@@ -960,25 +940,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841"
 dependencies = [
  "autocfg",
-]
-
-[[package]]
-name = "objc2-core-foundation"
-version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2a180dd8642fa45cdb7dd721cd4c11b1cadd4929ce112ebd8b9f5803cc79d536"
-dependencies = [
- "bitflags 2.11.0",
-]
-
-[[package]]
-name = "objc2-core-services"
-version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "583300ad934cba24ff5292aee751ecc070f7ca6b39a574cc21b7b5e588e06a0b"
-dependencies = [
- "libc",
- "objc2-core-foundation",
 ]
 
 [[package]]
