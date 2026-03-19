@@ -31,6 +31,7 @@ glob = "0.3"
 
 # MCP server dependencies (optional, behind "serve" feature)
 rmcp = { version = "1.2", features = ["server", "transport-io"], optional = true }
+schemars = { version = "1", optional = true }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal", "sync"], optional = true }
 arc-swap = { version = "1", optional = true }
 notify = { version = "9.0.0-rc.2", optional = true }
@@ -38,7 +39,7 @@ notify-debouncer-full = { version = "0.7", optional = true }
 
 [features]
 default = ["serve"]
-serve = ["rmcp", "tokio", "arc-swap", "notify", "notify-debouncer-full"]
+serve = ["rmcp", "tokio", "arc-swap", "notify", "notify-debouncer-full", "schemars"]
 
 [dev-dependencies]
 insta = { version = "1", features = ["yaml"] }

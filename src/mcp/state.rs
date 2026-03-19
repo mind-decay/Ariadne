@@ -8,6 +8,7 @@ use crate::serial::RawImportOutput;
 
 /// Core in-memory state for the MCP server.
 /// Contains the graph plus precomputed indices for O(1) lookups.
+#[derive(Debug)]
 pub struct GraphState {
     pub graph: ProjectGraph,
     pub stats: StatsOutput,
@@ -25,6 +26,7 @@ pub struct GraphState {
 }
 
 /// Freshness tracking with two-level confidence (D-053).
+#[derive(Debug)]
 pub struct FreshnessState {
     /// Files whose content hash differs from the in-memory graph.
     pub stale_files: BTreeSet<CanonicalPath>,

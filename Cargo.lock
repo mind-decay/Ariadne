@@ -107,6 +107,7 @@ dependencies = [
  "proptest",
  "rayon",
  "rmcp",
+ "schemars",
  "serde",
  "serde_json",
  "tempfile",
