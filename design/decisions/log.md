@@ -695,3 +695,43 @@ Applies to: Brandes centrality (Phase 2), Louvain modularity (Phase 2b), PageRan
 - Remove `ariadne update` and use `ariadne build` — loses the no-op fast path, which is valuable for CI idempotency checks
 **Reasoning:** Correctness over optimization. Full rebuild guarantees correct results. The no-op fast path provides the most common performance win (checking if anything changed). True incrementality is Phase 3 scope where the MCP server's in-memory graph makes partial updates worthwhile.
 **Affects:** `pipeline/mod.rs` update(), `algo/delta.rs`, architecture.md §Algorithms §6.
+
+## D-051: Tokio Isolated to Serve Subcommand
+
+**Date:** 2026-03-19
+**Status:** Accepted
+**Context:** The MCP server requires an async runtime for rmcp's stdio transport and signal handling. All CLI commands (build, query, update) are synchronous.
+**Decision:** Tokio runtime is created only inside the `Serve` match arm in `main.rs` via `Runtime::new().block_on()`. All other commands remain fully synchronous. The `serve` feature flag gates all async dependencies.
+**Affects:** `src/main.rs`, `Cargo.toml` feature flags.
+
+## D-052: ArcSwap for Lock-Free Graph State Reads
+
+**Date:** 2026-03-19
+**Status:** Accepted
+**Context:** The MCP server needs concurrent read access to the graph state while background rebuilds update it.
+**Decision:** Use `arc-swap` crate's `ArcSwap<GraphState>` for lock-free reads. Tool handlers call `state.load()` for a consistent snapshot. Background rebuilds construct a new `GraphState` and swap atomically via `state.store(Arc::new(new_state))`.
+**Affects:** `src/mcp/state.rs`, `src/mcp/tools.rs`, `src/mcp/watch.rs`.
+
+## D-053: Two-Level Freshness Confidence Scoring
+
+**Date:** 2026-03-19
+**Status:** Accepted
+**Context:** Binary fresh/stale is too coarse. A file can change content without changing imports (body-only edit).
+**Decision:** Two confidence levels: `hash_confidence` (any content change) and `structural_confidence` (import changes only). Body-only edits reduce hash confidence but not structural confidence. This lets consumers decide trust level.
+**Affects:** `src/mcp/state.rs` FreshnessState.
+
+## D-054: raw_imports.json Persistence
+
+**Date:** 2026-03-19
+**Status:** Accepted
+**Context:** The freshness engine needs to compare current imports against stored imports for structural confidence.
+**Decision:** Serialize raw imports to `raw_imports.json` during every build. `RawImportOutput` type in `serial/mod.rs` with path, symbols, and is_type_only fields.
+**Affects:** `src/serial/mod.rs`, `src/serial/json.rs`, `src/pipeline/mod.rs`.
+
+## D-055: rmcp 1.2 as MCP SDK
+
+**Date:** 2026-03-19
+**Status:** Accepted
+**Context:** Need a Rust MCP server implementation for `ariadne serve`.
+**Decision:** Use rmcp 1.2 (official Anthropic Rust SDK) with `#[tool_router]` / `#[tool_handler]` macros, `Parameters<T>` for structured tool inputs, and stdio transport. Server implements `ServerHandler` trait.
+**Affects:** `src/mcp/tools.rs`, `src/mcp/server.rs`, `Cargo.toml`.
