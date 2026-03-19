@@ -35,36 +35,41 @@ pub fn compute_martin_metrics(
 ) -> BTreeMap<ClusterId, ClusterMetrics> {
     let mut result = BTreeMap::new();
 
+    // Precompute Ca/Ce for all clusters in a single pass over edges
+    let mut ca_map: BTreeMap<&ClusterId, u32> = BTreeMap::new();
+    let mut ce_map: BTreeMap<&ClusterId, u32> = BTreeMap::new();
+
+    for edge in &graph.edges {
+        if !edge.edge_type.is_architectural() {
+            continue;
+        }
+        let from_cluster = graph.nodes.get(&edge.from).map(|n| &n.cluster);
+        let to_cluster = graph.nodes.get(&edge.to).map(|n| &n.cluster);
+
+        if let (Some(fc), Some(tc)) = (from_cluster, to_cluster) {
+            if fc != tc {
+                *ca_map.entry(tc).or_default() += 1;
+                *ce_map.entry(fc).or_default() += 1;
+            }
+        }
+    }
+
+    // Precompute re-export counts per file for barrel detection
+    let mut re_export_counts: BTreeMap<&CanonicalPath, usize> = BTreeMap::new();
+    for edge in &graph.edges {
+        if edge.edge_type == EdgeType::ReExports {
+            *re_export_counts.entry(&edge.from).or_default() += 1;
+        }
+    }
+
     for (cluster_id, cluster) in &clusters.clusters {
         let total_files = cluster.files.len() as u32;
         if total_files == 0 {
             continue;
         }
 
-        // Count Ca (afferent) and Ce (efferent) from inter-cluster edges
-        let mut ca: u32 = 0;
-        let mut ce: u32 = 0;
-
-        for edge in &graph.edges {
-            if !edge.edge_type.is_architectural() {
-                continue;
-            }
-
-            let from_cluster = graph.nodes.get(&edge.from).map(|n| &n.cluster);
-            let to_cluster = graph.nodes.get(&edge.to).map(|n| &n.cluster);
-
-            match (from_cluster, to_cluster) {
-                (Some(fc), Some(tc)) if fc != tc => {
-                    if tc == cluster_id {
-                        ca += 1; // incoming from another cluster
-                    }
-                    if fc == cluster_id {
-                        ce += 1; // outgoing to another cluster
-                    }
-                }
-                _ => {}
-            }
-        }
+        let ca = ca_map.get(cluster_id).copied().unwrap_or(0);
+        let ce = ce_map.get(cluster_id).copied().unwrap_or(0);
 
         // I = Ce / (Ca + Ce), edge case: 0/0 → 0.0
         let instability = if ca + ce == 0 {
@@ -81,7 +86,7 @@ pub fn compute_martin_metrics(
                 graph
                     .nodes
                     .get(*path)
-                    .map(|node| is_abstract_file(path, node, &graph.edges))
+                    .map(|node| is_abstract_file_fast(node, re_export_counts.get(path).copied().unwrap_or(0)))
                     .unwrap_or(false)
             })
             .count() as u32;
@@ -113,23 +118,14 @@ pub fn compute_martin_metrics(
     result
 }
 
-/// Classify a file as abstract (type definition or barrel file).
-fn is_abstract_file(path: &CanonicalPath, node: &Node, edges: &[Edge]) -> bool {
-    // Type definition files are always abstract
+/// Classify a file as abstract using precomputed re-export count.
+fn is_abstract_file_fast(node: &Node, re_export_count: usize) -> bool {
     if node.file_type == FileType::TypeDef {
         return true;
     }
-
-    // Barrel file: >80% of exports are re-exports
     if node.exports.is_empty() {
         return false;
     }
-
-    let re_export_count = edges
-        .iter()
-        .filter(|e| e.from == *path && e.edge_type == EdgeType::ReExports)
-        .count();
-
     let ratio = re_export_count as f64 / node.exports.len() as f64;
     ratio > 0.8
 }
