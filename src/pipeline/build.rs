@@ -90,7 +90,6 @@ pub fn resolve_and_build(
                 source_file_type,
                 nodes.get(&resolved).map(|n| n.file_type),
                 import.is_type_only,
-                false, // not a re-export from import
             );
 
             let symbols: Vec<Symbol> = import.symbols.iter().map(|s| Symbol::new(s)).collect();
@@ -157,7 +156,6 @@ fn classify_edge_type(
     source_type: Option<FileType>,
     target_type: Option<FileType>,
     is_type_only: bool,
-    _is_re_export: bool,
 ) -> EdgeType {
     // Test file importing source/typedef → tests edge
     if source_type == Some(FileType::Test) {

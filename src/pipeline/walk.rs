@@ -141,7 +141,7 @@ impl FileWalker for FsWalker {
             // Check max files limit (S2 fix — emit warning)
             if entries.len() >= config.max_files {
                 warnings.push(Warning {
-                    code: WarningCode::W003FileTooLarge,
+                    code: WarningCode::W005MaxFilesReached,
                     path: CanonicalPath::new(format!("(limit: {})", config.max_files)),
                     message: format!(
                         "file limit reached ({}), graph may be partial",

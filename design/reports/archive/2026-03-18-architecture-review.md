@@ -2,224 +2,148 @@
 
 **Date:** 2026-03-18
 **Focus:** Full System
-**Mode:** Pre-implementation
-**Reviewed:** architecture.md, ROADMAP.md, decisions/log.md (D-001–D-023), path-resolution.md, determinism.md, performance.md, error-handling.md, testing.md, distribution.md
-**Status:** All findings resolved (see fixes applied below)
+**Mode:** Post-implementation (Phase 1a + 1b complete)
+**Reviewed:** architecture.md, ROADMAP.md, decisions/log.md (D-001–D-031), error-handling.md, performance.md, testing.md, path-resolution.md, determinism.md, distribution.md, all src/ modules, all tests/
 
 ## Executive Summary
 
-The Ariadne design is architecturally sound — module boundaries are clean, dependency direction is consistent, and the trait-based pipeline is well-motivated. The core abstractions (newtypes, BTreeMap determinism, LanguageParser/ImportResolver separation) are good choices for the problem domain. However, the design has **meaningful complexity ahead of need**: several Phase 2 concerns leak into Phase 1a (notably `arch_depth`), and 4 types referenced in trait signatures are never defined. The most dangerous gap is under-specification of TypeScript module resolution — the highest-complexity parser with the least design detail. The most impactful quick win is resolving the `arch_depth` Phase 1a question before any code is written.
+The architecture is sound and well-implemented. Module boundaries are clean, dependency directions are correct, determinism guarantees hold, and the data model is well-suited for Phase 2 extension. The top concerns are: (1) `project_root` in graph.json is an absolute path, breaking cross-machine determinism; (2) walk-level errors bypass the structured diagnostic system; (3) architecture.md has not been updated after Phase 1b changes (ImportResolver signature, DiagnosticCounts fields, layer table expansion); (4) `find_case_insensitive()` is implemented but never called in the resolution pipeline.
 
 ## Key Themes
 
-### Theme 1: Undefined Types in Core Interfaces
+### Theme 1: Design Docs Lag Behind Implementation
 
-All 4 reviewers flagged missing type definitions that block implementation. Four types appear in trait signatures or function returns but are never specified anywhere:
+Multiple agents independently found that architecture.md, error-handling.md, and determinism.md no longer match the code after Phase 1b. The `ImportResolver::resolve` signature now takes `workspace: Option<&WorkspaceInfo>` but the architecture doc shows the 3-parameter version. `DiagnosticCounts` has 8 fields in code vs 3 in the design. The architectural layer table lists ~20 directory patterns but the code has ~50. The `From<ProjectGraph> for GraphOutput` conversion described in D-022 is implemented as a free function in pipeline/mod.rs.
 
-- **`FileSet`** — used in `ImportResolver::resolve(import, from_file, known_files: &FileSet)`. Is it `HashSet<CanonicalPath>`? `BTreeSet`? A custom wrapper? Every language resolver depends on this type.
-- **`FileSkipReason`** — returned by `FileReader::read()`. Distinct from `FatalError` and `Warning`, but its variants are undefined.
-- **`WalkConfig`** — passed to `FileWalker::walk()`. What fields? `max_files`? `max_depth`? `follow_symlinks`?
-- **`BuildOutput`** — returned by `pipeline.run()`. What does it contain?
+**Impact:** New contributors reading design docs will get a misleading picture. Phase 2 spec writers may base decisions on stale interfaces.
 
-These are not design decisions that can be deferred — they are prerequisites for writing any pipeline code.
+### Theme 2: Walk Stage Lacks Structured Error Reporting
 
-### Theme 2: Phase 1a/Phase 2 Boundary Violation via `arch_depth`
+The `FileWalker` trait returns `Result<Vec<FileEntry>, FatalError>` with no mechanism for per-entry warnings. Walk-level permission errors go to `eprintln!` (walk.rs:88), bypassing `DiagnosticCollector`. The max-files limit silently truncates with no warning. The `.ariadne/` exclusion override failure falls through with an `eprintln!` and no actual fallback. These bypass `--warnings json`, `--strict`, and warning counts.
 
-Three reviewers independently flagged the `arch_depth: u32` field in `Node`. This field requires topological sort (a Phase 2 algorithm) and correct cycle handling (Tarjan SCC, also Phase 2). Yet it exists in the Phase 1a data model and appears in graph.json output. The design never specifies how Phase 1a populates it. This forces an unplanned decision during implementation that affects the output schema, git-committed graph diffs, and Phase 2 migration.
+**Impact:** Machine consumers (CI, `--warnings json`) get incomplete diagnostic information. Users hitting max-files get no indication their graph is partial.
 
-### Theme 3: Under-Specified Resolution Logic
+### Theme 3: Absolute `project_root` Breaks Cross-Machine Determinism
 
-The TypeScript/JavaScript parser is rated "High" complexity but has the least resolution specification. The path-resolution.md describes a clean 4-step flow that is significantly simpler than real TS module resolution (tsconfig `paths`, `baseUrl`, package.json `exports` field, CJS vs ESM, `.d.ts` precedence). Similarly, Rust's `use crate::...` module path resolution is fundamentally different from filesystem-path resolution but the trait interface assumes path-based imports. The `tests` edge inference algorithm and `re_exports` edge semantics are also unspecified.
+`pipeline/mod.rs` line 265 sets `project_root` to `std::fs::canonicalize(root)` — an absolute machine-specific path. When graph.json is committed to git (per D-015), every machine produces a different `project_root`, creating spurious diffs. This directly contradicts D-006 (byte-identical output) for the primary use case.
 
-### Theme 4: Complexity Ahead of Need
+**Impact:** High — affects the core determinism guarantee that enables git-committed graphs.
 
-The design imports Phase 2 complexity into Phase 1a's cognitive surface area: 10 design documents, 23 decisions, 8 modules with enforced dependency rules, 13 invariants, 4 test levels. The LanguageParser/ImportResolver trait split and Internal/Output model separation are sound abstractions but solve problems that don't exist until Phase 1b (workspace resolution) and Phase 3+ (second output format). The 7 Phase 2 algorithms include 2 (Louvain clustering, Brandes centrality) that are over-engineered — simpler alternatives (directory clustering, in-degree counts) achieve 80% of the benefit.
+### Theme 4: Implemented But Unwired Features
+
+`find_case_insensitive()` in detect/case_sensitivity.rs is implemented and tested but never called from the import resolution pipeline. W007 (PartialParse) is defined in the error taxonomy and has a counter in DiagnosticCounts but is never emitted — the parser always extracts from all subtrees including ERROR nodes. `ImportKind::ModDeclaration` is parsed by the Rust parser but never consumed downstream.
+
+**Impact:** Medium — features documented as working are actually no-ops. Case-insensitive resolution on macOS is the most user-visible gap.
 
 ## Detailed Findings
 
 ### Foundational Issues
 
-**F-01: `FileSet`, `FileSkipReason`, `WalkConfig`, `BuildOutput` undefined (HIGH)**
-All four types appear in trait signatures in `design/architecture.md` but are never specified. Every pipeline implementor and test writer is blocked without these definitions.
-*Direction:* Define all four types in `architecture.md` before implementation. `FileSet` should be `BTreeSet<CanonicalPath>` for determinism consistency. `FileSkipReason` should be an enum with variants matching the W-codes.
+**F1. `project_root` absolute path (HIGH confidence)**
+`pipeline/mod.rs:265` — `project_root: project_root.to_string_lossy().to_string()` where `project_root` is the canonicalized absolute path. Should be relative (e.g., `.`) or omitted. Breaks D-006 and D-015.
 
-**F-02: `arch_depth` in Phase 1a requires Phase 2 algorithm (HIGH)**
-`Node.arch_depth: u32` is in the Phase 1a data model (`architecture.md` Internal Model) but topological sort and Tarjan SCC are Phase 2 algorithms. Phase 1a has no way to populate this field correctly.
-*Direction:* Choose one: (a) `arch_depth` is always 0 in Phase 1a (document in schema), (b) include simplified BFS-based depth without SCC handling, or (c) pull Tarjan into Phase 1a. Option (a) is simplest but produces a large diff when Phase 2 activates.
+**F2. `ImportResolver::resolve` signature divergence (HIGH confidence)**
+architecture.md shows 3-parameter `resolve()`. Actual trait has 4 parameters (+ workspace). All 6 parsers carry `_workspace: Option<&WorkspaceInfo>` — only TS uses it. The architecture doc's trait definition is the canonical reference for new parser authors.
 
-**F-03: D-002 contradicts D-018 — both marked Accepted (MEDIUM)**
-D-002 defines a 6-method `LanguageParser` trait including `resolve_import_path`. D-018 splits this into two traits and removes `resolve_import_path`. D-002's status remains `Accepted` rather than `Superseded`, creating contradicting trait definitions in the decision log.
-*Direction:* Mark D-002 as `Superseded by D-018`.
-
-**F-04: Rust `ImportResolver` model is fundamentally different from path-based languages (MEDIUM)**
-`ImportResolver::resolve` assumes `import.path` is a filesystem path. Rust's `use crate::auth::login` is a module path, not a filesystem path. The resolution requires mapping the module tree to files via `mod` declarations. The trait interface works but the contract for non-path-based languages is undocumented.
-*Direction:* Document how Rust's resolver works within the shared trait: either the parser pre-converts module paths to filesystem paths in `extract_imports`, or the resolver uses a different internal strategy. The trait need not change.
-
-**F-05: `ContentHash` example is 8 chars, spec says 16 (MEDIUM)**
-`architecture.md` graph.json example shows `"hash": "a1b2c3d4"` (8 hex chars). D-013 and the Domain Types section both specify 16 chars (xxHash64 = 64 bits = 16 hex). The example will mislead implementors.
-*Direction:* Fix the example to 16 characters.
+**F3. `find_case_insensitive` never called (HIGH confidence)**
+detect/case_sensitivity.rs implements the function. No call site exists in any resolver or pipeline code. The case-insensitive FS detection (`is_case_insensitive`) is also never called. The path-resolution.md spec for macOS case-insensitive matching is unimplemented.
 
 ### Structural Issues
 
-**S-01: `pipeline/build.rs` is a hidden accumulator of responsibilities (HIGH)**
-This single file must: iterate parsed files, call `detect/filetype.rs`, call `detect/layer.rs`, call `ImportResolver` per import, validate paths, deduplicate edges, compute `arch_depth`, sort exports/symbols, and assemble `ProjectGraph`. None of this is documented. The topological depth computation is a graph algorithm embedded in Phase 1 data assembly.
-*Direction:* Enumerate `build.rs`'s sub-responsibilities explicitly in `architecture.md`. Consider splitting into `build.rs` (assembly) and a separate module for derived metrics.
+**S1. Walk errors bypass DiagnosticCollector (HIGH confidence)**
+walk.rs:88 uses `eprintln!` for walk entry errors. error-handling.md specifies W002. The `FileWalker` trait interface has no mechanism to report per-entry warnings. Fix: pass `&DiagnosticCollector` to walker, or return `(Vec<FileEntry>, Vec<Warning>)`.
 
-**S-02: `detect/` is not listed in `pipeline/`'s dependency table (MEDIUM)**
-The D-023 dependency table says `pipeline/` depends on "traits from `parser/`, `serial/`; types from `model/`". But `pipeline/build.rs` must call `detect/filetype.rs` and `detect/layer.rs` during node assembly. This dependency is missing.
-*Direction:* Add `detect/` to `pipeline/`'s "Depends on" row.
+**S2. Max-files silent truncation (HIGH confidence)**
+walk.rs:113-116 breaks the loop at max_files with no warning. error-handling.md specifies: "Emit a single warning and stop file collection."
 
-**S-03: `serial/` → `cluster/` conversion path violates stated dependency rules (MEDIUM)**
-`GraphSerializer` has `write_clusters(&ClusterOutput)`. `ClusterOutput` lives in `serial/`. The conversion from `ClusterMap` (produced by `cluster/`) to `ClusterOutput` must happen somewhere. If in `serial/`, it imports from `cluster/`, violating the stated rule that `serial/` depends on `model/` only.
-*Direction:* Place the conversion in `pipeline/` (which legitimately knows both) and have `serial/` accept only pre-converted `ClusterOutput`.
+**S3. `.ariadne/` exclusion fallback missing (HIGH confidence)**
+walk.rs:72-79 — `OverrideBuilder` failure logs to `eprintln!` with a comment "falling back to manual exclusion" but no manual exclusion code follows. If the override fails, `.ariadne/` output files would be parsed as source.
 
-**S-04: `cluster/` has no documented interface (MEDIUM)**
-No function signatures, input types, or output types for the clustering module. Unknown whether it returns a `ClusterMap` or mutates `ProjectGraph` directly. The `ClusterOutput` struct is never concretely defined either.
-*Direction:* Add a brief interface spec: function signature, inputs, outputs, and note on whether it returns data or mutates the graph.
+**S4. `detect/workspace.rs` depends on `diagnostic.rs` (MEDIUM confidence)**
+D-023 dependency table says `detect/` depends on `model/` only. `detect/workspace.rs` imports `DiagnosticCollector`. The table should be updated or the function signature changed to return errors instead of emitting warnings.
 
-**S-05: `WorkspaceInfo` has no module home (MEDIUM)**
-Defined in `path-resolution.md` but not assigned to any module in `architecture.md`. If placed in `pipeline/`, `ImportResolver` must import from `pipeline/` — reversing dependency direction.
-*Direction:* Place `WorkspaceInfo` in `model/` (pure data structure, no behavior).
+**S5. `project_graph_to_output` placement (MEDIUM confidence)**
+D-022 describes `impl From<ProjectGraph> for GraphOutput` in serial/. Actual implementation is a free function in pipeline/mod.rs. Sort-point enforcement happens in build.rs, not in the conversion function.
 
-**S-06: `diagnostic.rs` and `hash.rs` missing from dependency table (LOW)**
-Neither appears as a row in the D-023 dependency table. `hash.rs` produces `ContentHash` (from `model/`) but its dependency on `model/` is undocumented.
-*Direction:* Add both as explicit rows.
+**S6. HashMap in ParserRegistry (MEDIUM confidence)**
+registry.rs uses `HashMap<String, usize>` for `extension_index`. D-006 and determinism.md prescribe "BTreeMap everywhere." The HashMap is lookup-only (no output-affecting iteration), but is an undocumented exception to the blanket rule.
 
 ### Surface Issues
 
-**U-01: TypeScript module resolution is far more complex than the design acknowledges (HIGH)**
-The path-resolution.md describes a clean 4-step flow. Real TS resolution involves tsconfig `paths`/`baseUrl`, package.json `exports` field with conditions, CJS vs ESM, `.d.ts` vs `.ts` precedence, and barrel re-export transitive analysis. This is the hardest parser and the least specified.
-*Direction:* Add a TS-specific resolution decision tree or table before implementing `typescript.rs`. At minimum: bare specifier → skip (external), relative → join + probe extensions, directory → try index files. Defer tsconfig `paths` to Phase 1b.
+**U1. W007 PartialParse never emitted (HIGH confidence)**
+registry.rs:parse_source returns `Ok(None)` for >50% errors (→ W001) or `Ok(Some(...))` for ≤50% (no warning). The <50% partial-parse path extracts from all subtrees including ERROR nodes without emitting W007. The warning code exists but is dead.
 
-**U-02: Architectural layer heuristics are named but not specified (MEDIUM)**
-8 layers are defined but the actual path patterns that trigger detection are nowhere in any document. Backend projects (Go, Java) may produce many `unknown` assignments since `component` and `hook` are frontend-only.
-*Direction:* Add a heuristic table (path pattern → layer) before implementing `detect/layer.rs`.
+**U2. Parser construction asymmetry (MEDIUM confidence)**
+TS/Python/Rust expose `pub(crate) struct XParser::new()`. Go/C#/Java use factory functions `pub(crate) fn parser()`. Both work but inconsistent patterns confuse new contributors.
 
-**U-03: `tests` edge inference algorithm unspecified (MEDIUM)**
-The criteria for producing `EdgeType::tests` edges — which naming conventions, which import patterns, whether language-specific rules apply — are not documented. Go uses `_test.go` (a language rule), TS uses `.test.ts`/`__tests__/` (conventions).
-*Direction:* Specify the algorithm and per-language patterns in `architecture.md` detect section.
+**U3. `ImportKind::ModDeclaration` unused downstream (HIGH confidence)**
+Defined in traits.rs, set by Rust parser, never consumed in build.rs or anywhere else. Dead variant in a public enum.
 
-**U-04: `re_exports` edge semantics not specified with example (MEDIUM)**
-When is an edge `re_exports` vs `imports`? The interaction between barrel re-exports, the `exports` field, and edge creation is underdocumented.
-*Direction:* Add an example graph shape for a barrel re-export pattern.
+**U4. `arch_depth: 0` always emitted in graph.json (MEDIUM confidence)**
+Every node has `arch_depth: 0`. Could use `skip_serializing_if` to omit until Phase 2 computes real values. Current output is misleading.
 
-**U-05: `performance.md` uses `HashMap` — contradicts D-006 BTreeMap (MEDIUM)**
-Memory Model section says `HashMap<String, Node>`. Should be `BTreeMap<CanonicalPath, Node>`.
-*Direction:* Text correction.
+**U5. architecture.md layer table outdated (HIGH confidence)**
+Code has ~50 directory patterns (DDD, CQRS, Hexagonal, Angular, SvelteKit, etc.). architecture.md table has ~20. The table is the reference for users — it should match.
 
-**U-06: Workspace detection scope contradicts ROADMAP (MEDIUM)**
-D-008 says "Phase 1 covers npm/yarn/pnpm workspaces." ROADMAP defers workspace detection entirely to Phase 1b. D-008 predates the Phase 1a/1b split (D-011).
-*Direction:* Update D-008 to say "Phase 1b" explicitly.
+**U6. `DiagnosticCounts` design/code divergence (HIGH confidence)**
+error-handling.md shows 3 fields. Code has 8 (per-reason breakdown added in Phase 1b review fixes). Doc needs updating.
 
-**U-07: `GraphSerializer` will need breaking change in Phase 2 (LOW)**
-Adding `write_stats` for `stats.json` breaks all existing `impl GraphSerializer` types.
-*Direction:* Note this in the trait design; consider a default method returning `Ok(())`.
-
-**U-08: Floating-point cohesion may break byte-identical output (LOW)**
-Cluster cohesion (`internal / (internal + external)`) produces `f64` that `serde_json` serializes with platform-dependent precision for boundary values.
-*Direction:* Round to fixed decimal precision (e.g., 4 places) or store as integer fraction.
-
-**U-09: `DiagnosticCollector` has two Mutexes where one suffices (LOW)**
-`warnings: Mutex<Vec<Warning>>` and `counts: Mutex<DiagnosticCounts>` — counts are derivable from warnings at drain time. Two mutexes introduce lock ordering risk.
-*Direction:* Merge into one `Mutex` or derive counts during `drain()`.
-
-**U-10: W005 (SymlinkLoop) is unreachable dead design (LOW)**
-Acknowledged in error-handling.md but still occupies a taxonomy slot. Adds confusion.
-*Direction:* Remove until symlink following is implemented.
-
-**U-11: `.ariadne/` output directory not explicitly excluded from walking (LOW)**
-If a future parser adds `.json` support, output files would be walked. Currently safe since no parser handles `.json`.
-*Direction:* Explicitly exclude `.ariadne/` from walking.
-
-**U-12: TOCTOU — walked file deleted before read creates dangling edge target (LOW)**
-A file in `known_files` that fails to read still appears in the walked set. If another file's import resolved to it, the edge's `to` target has no node, violating INV-1.
-*Direction:* Resolution should use successfully-read files, not walked files.
-
-**U-13: Case-insensitive FS fallback is O(n) per import without secondary index (LOW for Phase 1a, HIGH for Phase 1b)**
-Naive case-insensitive matching against `BTreeSet` requires linear scan. For 150k imports on 50k files: 7.5B comparisons.
-*Direction:* Build a `lowercase_path → canonical_path` lookup map during walking. Phase 1b concern.
-
-**U-14: File descriptor exhaustion mapped to W002 without distinguishing cause (LOW for Phase 1a)**
-`ErrorKind::TooManyOpenFiles` produces generic "read failed" warnings. In CI containers with tight limits, this causes silently partial graphs.
-*Direction:* Detect `TooManyOpenFiles` specifically in Phase 1b.
-
-**U-15: TypeScript→JSON imports produce silent W006 (LOW for Phase 1a)**
-`import config from './config.json'` is extremely common in TS but produces no edge since no JSON parser exists.
-*Direction:* Document as known limitation; consider "data" file type in future.
+**U7. Cohesion rounding not enforced at serialization boundary (MEDIUM confidence)**
+determinism.md specifies 4 decimal places. cluster/mod.rs rounds correctly, but serial/mod.rs has no enforcement — a future code change to clustering could produce unrounded values that pass through to JSON.
 
 ## Discussion Points
 
-### 1. Should Phase 1a ship with 3 languages instead of 6?
+### DP1: Should `project_root` be relative or removed?
 
-**Tension:** 6 Tier 1 parsers is ambitious for an MVP. Each parser has language-specific edge cases in resolution.
-**For 6:** Validates the trait abstraction across diverse languages. Go/C#/Java are low complexity.
-**For 3 (TS/JS + Go + Python):** Covers ~70% of use cases. Validates the pipeline. Reduces risk of discovering resolution bugs across 6 parsers simultaneously.
-**At stake:** Implementation timeline and risk of shipping parsers with untested resolution edge cases.
-**Recommendation:** Keep 6 — Go, C#, and Java parsers are genuinely low complexity (simple import syntax, straightforward resolution). The trait abstraction is validated better with 6 diverse implementations.
+**Tension:** Useful for consumers to know the scanned directory; but absolute paths break determinism.
+**Options:** (a) Use `"."` always, (b) make it relative to the git repo root, (c) use the CLI argument as-is, (d) remove entirely.
+**Recommendation:** Option (c) — store the `path` argument from `ariadne build <path>` as-is. Typically `"."` — portable and deterministic.
 
-### 2. Should Louvain and Brandes be deferred beyond Phase 2?
+### DP2: Should case-insensitive resolution be wired up or removed?
 
-**Tension:** Louvain clustering and Brandes centrality are the most complex Phase 2 algorithms. Simpler alternatives exist.
-**For keeping:** Louvain detects real module boundaries; Brandes identifies true bottlenecks beyond in-degree.
-**For deferring:** Directory clustering is "free" and intuitive. In-degree is a strong proxy for centrality. Both simpler alternatives should be validated with users before investing in the complex versions.
-**At stake:** Phase 2 scope and timeline.
-**Recommendation:** Defer both. Phase 2 ships with: Reverse BFS, Tarjan SCC, topological sort, subgraph extraction, delta computation. Add Brandes/Louvain in Phase 3 if user feedback demands it.
+**Tension:** Code exists but is never called. macOS users may get different results than Linux users for case-mismatched imports.
+**Options:** (a) Wire it into the resolve pipeline now, (b) defer to Phase 2 with a documented limitation, (c) remove dead code.
+**Recommendation:** Option (a) — the code and tests already exist. Wire `is_case_insensitive` check into pipeline/mod.rs (cache once per build), pass result to resolvers.
 
-### 3. How should `arch_depth` be handled in Phase 1a?
+### DP3: Should the `FileWalker` trait accept `DiagnosticCollector`?
 
-**Tension:** The field is in the data model but the algorithm is Phase 2.
-**Option A:** Store 0, document in schema. Simple. Produces large diff when Phase 2 activates.
-**Option B:** Simple BFS depth without SCC handling. Cycles get arbitrary depth. Partially useful.
-**Option C:** Pull Tarjan into Phase 1a. Correct but expands scope.
-**Recommendation:** Option A (store 0). The git diff concern is real but one-time. Correctness > convenience.
-
-### 4. Is the LanguageParser/ImportResolver trait split justified before Phase 1b?
-
-**Tension:** The split solves a Phase 1b problem (workspace-aware resolution) but adds Phase 1a complexity.
-**For split:** Clean design from day one. Same struct implements both traits — minimal overhead.
-**For single trait:** Simpler. Split when actually needed (YAGNI).
-**Recommendation:** Keep the split. Implementation cost is near-zero when one struct implements both. The mental model cost is worth the clean Phase 1b extension path.
+**Tension:** Adding it couples the walker to the diagnostic system, reducing testability of the walker in isolation.
+**Options:** (a) Pass `&DiagnosticCollector` to `walk()`, (b) return `(Vec<FileEntry>, Vec<Warning>)`, (c) keep `eprintln!` and document it as intentional.
+**Recommendation:** Option (b) — return warnings alongside entries. The pipeline converts them to `DiagnosticCollector` calls. Walker stays decoupled.
 
 ## Strengths
 
-1. **Dependency direction discipline.** The module dependency table (D-023) with explicit "Never depends on" columns is excellent. This level of explicit architectural constraint is rare and prevents the most common source of complexity growth.
-
-2. **Determinism as a first-class design principle.** D-006, `determinism.md`, and the sort-point analysis show deep consideration. BTreeMap everywhere, sorted rayon output, opt-in timestamps — this is the right approach for git-committed output.
-
-3. **Composition Root pattern (D-020).** Concentrating all wiring in `main.rs` is textbook Clean Architecture. The result: `lib.rs` is fully testable with mocks, concrete types never leak into library code.
-
-4. **Decision log quality.** D-001 through D-023 are well-structured: context, decision, alternatives rejected, reasoning. Each decision cites what it affects. This is unusually thorough for a pre-implementation design.
-
-5. **Phase 1a/1b split (D-011).** Recognizing that the design had grown beyond MVP scope and splitting proactively — before any code — shows good engineering judgment. The rationale ("working software validates design faster than documents") is exactly right.
-
-6. **Newtype pattern (D-017).** Zero-cost type safety for `CanonicalPath`, `ContentHash`, `ClusterId`, `Symbol`. This eliminates an entire category of runtime bugs at zero performance cost.
+- **BTreeMap-everywhere determinism** — D-006 is well-implemented and well-tested (INV-11). The commitment to byte-identical output is genuine and valuable.
+- **CanonicalPath newtype with construction-time normalization** — Eliminates an entire class of path-related bugs. Well-tested with 19 unit tests and proptest properties.
+- **Composition Root pattern** — main.rs is the sole wiring point. Library code is cleanly separated.
+- **Atomic writes** — serial/json.rs correctly sequences tmp-file → flush → rename.
+- **DiagnosticCollector** — Thread-safe, sorted output, per-reason breakdown. The single Mutex<(Vec, Counts)> is a better design than the two-Mutex approach in the docs.
+- **Workspace detection** — npm/yarn/pnpm support with manual YAML parsing (no serde_yaml dep), glob expansion, entry point probing (D-027), name collision handling (D-029). Robust implementation.
+- **Layer detection expansion** — Covering 12+ architectural patterns (DDD, Clean, Hexagonal, CQRS, MVVM, Angular, etc.) with simple pattern matching is high value for low complexity.
+- **Snapshot-based testing** — insta fixtures catch any behavioral regression. The 134-test suite provides strong coverage.
 
 ## Recommendations
 
 ### Quick Wins (doc updates only)
 
-1. Fix `ContentHash` example in `architecture.md` graph.json to 16 hex chars
-2. Fix `performance.md` Memory Model to use `BTreeMap<CanonicalPath, Node>`
-3. Mark D-002 as `Superseded by D-018`
-4. Add `detect/` to `pipeline/`'s dependency row in D-023 table
-5. Add `hash.rs` and `diagnostic.rs` as rows in D-023 dependency table
-6. Update D-008 to say "Phase 1b" instead of "Phase 1"
-7. Remove W005 from taxonomy until symlink following is implemented
+1. **Update architecture.md ImportResolver signature** to show 4-parameter version with workspace
+2. **Update architecture.md layer table** to reflect current ~50 patterns in layer.rs
+3. **Update error-handling.md DiagnosticCounts** to show 8-field version
+4. **Update error-handling.md DiagnosticCollector** to describe single Mutex (not two)
+5. **Add note to D-023** that `detect/` may depend on `diagnostic.rs`
+6. **Document HashMap exception** in determinism.md for ParserRegistry.extension_index
 
-### Targeted Improvements (localized design changes)
+### Targeted Improvements (localized code changes)
 
-1. **Define `FileSet`, `FileSkipReason`, `WalkConfig`, `BuildOutput`** in `architecture.md` — blocks implementation
-2. **Decide `arch_depth` Phase 1a behavior** — add to `architecture.md` Node section and Phase 1a spec
-3. **Add TS resolution specifics** — decision tree for import forms → resolution logic
-4. **Add layer heuristic table** — path patterns → layer assignment, covering both frontend and backend conventions
-5. **Specify `tests` edge and `re_exports` edge inference algorithms** with examples
-6. **Document Rust `ImportResolver` contract** — how module paths map to filesystem within the shared trait
-7. **Place `ClusterMap → ClusterOutput` conversion** in pipeline, not serial
-8. **Place `WorkspaceInfo`** in `model/`
+7. **Fix `project_root`** — store CLI argument as-is instead of canonicalized absolute path
+8. **Wire case-insensitive resolution** — call `is_case_insensitive` once per build, pass to resolvers
+9. **Add max-files warning** — emit W003-like warning when walk truncates at limit
+10. **Fix walk error reporting** — return `(Vec<FileEntry>, Vec<Warning>)` from FileWalker::walk
+11. **Add `.ariadne/` manual exclusion fallback** when OverrideBuilder fails
+12. **Emit W007** — detect partial parses in registry.rs and emit warning
 
-### Strategic Considerations (bigger architectural shifts)
+### Strategic Considerations (bigger changes for Phase 2)
 
-1. **Defer Louvain and Brandes beyond Phase 2** — validate simpler alternatives with real users first
-2. **Consider reducing Phase 1a to 3-4 languages** — TS/JS + Go + Python + Rust covers most use cases with lower risk
-3. **Add a "Limitations" section to `architecture.md`** — syntactic-only imports, no dynamic requires, no cross-language deps, no JSON file imports
-4. **Explicitly exclude `.ariadne/`** from walking to prevent future self-referential parsing
+13. **Consider removing workspace param from ImportResolver trait** — pass workspace only to TS resolver via a wrapper or separate dispatch. Keeps the core trait clean for Tier 2 parsers.
+14. **Consider standardizing parser construction** — factory function pattern for all 6 parsers
+15. **Consider skip-serializing arch_depth** until Phase 2 computes real values

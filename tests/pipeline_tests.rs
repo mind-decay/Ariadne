@@ -5,6 +5,7 @@ use ariadne_graph::model::CanonicalPath;
 use ariadne_graph::pipeline::{BuildPipeline, FileWalker, FsReader, FsWalker, WalkConfig};
 use ariadne_graph::parser::ParserRegistry;
 use ariadne_graph::serial::json::JsonSerializer;
+use ariadne_graph::serial::{GraphReader, RawImportOutput};
 
 // ---------------------------------------------------------------------------
 // DiagnosticCollector tests
@@ -196,7 +197,7 @@ fn timestamp_false_omits_generated_field() {
     let pipeline = make_pipeline();
 
     pipeline
-        .run_with_output(&path, WalkConfig::default(), Some(output_path), false, false)
+        .run_with_output(&path, WalkConfig::default(), Some(output_path), false, false, false)
         .expect("build should succeed");
 
     let graph_json = std::fs::read_to_string(output_path.join("graph.json")).unwrap();
@@ -216,7 +217,7 @@ fn timestamp_true_adds_generated_field() {
     let pipeline = make_pipeline();
 
     pipeline
-        .run_with_output(&path, WalkConfig::default(), Some(output_path), true, false)
+        .run_with_output(&path, WalkConfig::default(), Some(output_path), true, false, false)
         .expect("build should succeed");
 
     let graph_json = std::fs::read_to_string(output_path.join("graph.json")).unwrap();
@@ -261,6 +262,83 @@ fn walk_config_respects_max_files() {
 
     // The pipeline might still succeed if it finds at least 1 parseable file,
     // or fail with E004 if the 1 file isn't parseable. Either is valid.
-    let _result = pipeline.run_with_output(&path, config, Some(output_path), false, false);
+    let _result = pipeline.run_with_output(&path, config, Some(output_path), false, false, false);
     // We just verify it doesn't panic
+}
+
+// ---------------------------------------------------------------------------
+// Raw imports serialization tests
+// ---------------------------------------------------------------------------
+
+#[test]
+fn raw_imports_round_trip() {
+    use ariadne_graph::serial::GraphSerializer;
+    use std::collections::BTreeMap;
+
+    let dir = tempfile::tempdir().unwrap();
+    let serializer = JsonSerializer;
+
+    let mut imports = BTreeMap::new();
+    imports.insert(
+        "src/auth/login.ts".to_string(),
+        vec![RawImportOutput {
+            path: "./session".to_string(),
+            symbols: vec!["getSession".to_string()],
+            is_type_only: false,
+        }],
+    );
+
+    serializer.write_raw_imports(&imports, dir.path()).unwrap();
+
+    let reader = JsonSerializer;
+    let loaded = reader.read_raw_imports(dir.path()).unwrap();
+    assert_eq!(loaded, Some(imports));
+}
+
+#[test]
+fn raw_imports_missing_file_returns_none() {
+    let dir = tempfile::tempdir().unwrap();
+    let reader = JsonSerializer;
+    let loaded = reader.read_raw_imports(dir.path()).unwrap();
+    assert_eq!(loaded, None);
+}
+
+#[test]
+fn pipeline_produces_raw_imports_json() {
+    let path = helpers::fixture_path("typescript-app");
+    let output_dir = tempfile::tempdir().unwrap();
+    let pipeline = make_pipeline();
+
+    pipeline
+        .run_with_output(&path, WalkConfig::default(), Some(output_dir.path()), false, false, false)
+        .expect("build should succeed");
+
+    assert!(
+        output_dir.path().join("raw_imports.json").exists(),
+        "raw_imports.json should be produced by build"
+    );
+
+    let reader = JsonSerializer;
+    let imports = reader.read_raw_imports(output_dir.path()).unwrap();
+    assert!(imports.is_some(), "raw_imports.json should be readable");
+    assert!(!imports.unwrap().is_empty(), "raw_imports should not be empty for typescript-app");
+}
+
+#[test]
+fn reparse_imports_returns_imports_for_known_extension() {
+    let pipeline = make_pipeline();
+    let source = b"import { foo } from './bar';";
+    let result = pipeline.reparse_imports("ts", source);
+    assert!(result.is_some());
+    let imports = result.unwrap();
+    assert!(!imports.is_empty());
+    assert_eq!(imports[0].path, "./bar");
+}
+
+#[test]
+fn reparse_imports_returns_none_for_unknown_extension() {
+    let pipeline = make_pipeline();
+    let source = b"some random content";
+    let result = pipeline.reparse_imports("xyz", source);
+    assert!(result.is_none());
 }

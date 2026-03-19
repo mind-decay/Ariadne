@@ -96,7 +96,7 @@ ariadne/
 ├── design/              # Design documents (source of truth)
 │   ├── ROADMAP.md       # Implementation phases
 │   ├── architecture.md  # Full system design
-│   ├── decisions/       # Decision log (D-001 through D-023)
+│   ├── decisions/       # Decision log (D-001 through D-049)
 │   ├── specs/           # Phase specs and plans
 │   └── reports/         # Architecture reviews, audit reports
 ├── src/                 # Rust source
@@ -107,7 +107,9 @@ ariadne/
 │   ├── pipeline/        # BuildPipeline, stage traits (FileWalker, FileReader), orchestration (D-019)
 │   ├── detect/          # File type detection + architectural layer inference
 │   ├── cluster/         # Directory-based clustering
-│   ├── serial/          # GraphSerializer trait, output types, JSON impl (D-022)
+│   ├── algo/            # Graph algorithms: SCC, BFS, centrality, topo sort, subgraph (D-033) [Phase 2a]
+│   ├── views/           # Markdown view generation: L0 index, L1 cluster, L2 impact (D-033) [Phase 2a]
+│   ├── serial/          # GraphSerializer + GraphReader traits, output types, JSON impl (D-022, D-032)
 │   ├── diagnostic.rs    # FatalError, Warning, DiagnosticCollector (D-021)
 │   └── hash.rs          # xxHash64 → ContentHash
 ├── tests/               # Integration tests, fixtures, snapshots

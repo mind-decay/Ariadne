@@ -8,12 +8,13 @@ use std::time::Instant;
 
 use rayon::prelude::*;
 
+use crate::algo;
 use crate::cluster::assign_clusters;
 use crate::detect::{detect_workspace, is_case_insensitive};
 use crate::diagnostic::{DiagnosticCollector, DiagnosticCounts, FatalError, Warning, WarningCode};
 use crate::model::*;
 use crate::parser::{ParseOutcome, ParserRegistry, RawExport, RawImport};
-use crate::serial::{ClusterEntryOutput, ClusterOutput, GraphOutput, GraphSerializer, NodeOutput};
+use crate::serial::{ClusterEntryOutput, ClusterOutput, GraphOutput, GraphReader, GraphSerializer, NodeOutput, RawImportOutput};
 
 pub use read::{FileContent, FileReader, FileSkipReason, FsReader};
 pub use walk::{FileEntry, FileWalker, FsWalker, WalkConfig, WalkResult};
@@ -31,6 +32,7 @@ pub struct ParsedFile {
 pub struct BuildOutput {
     pub graph_path: PathBuf,
     pub clusters_path: PathBuf,
+    pub stats_path: PathBuf,
     pub file_count: usize,
     pub edge_count: usize,
     pub cluster_count: usize,
@@ -61,11 +63,18 @@ impl BuildPipeline {
         }
     }
 
-    pub fn run(&self, root: &Path, config: WalkConfig) -> Result<BuildOutput, FatalError> {
-        self.run_with_output(root, config, None, false, false)
+    /// Re-parse imports from source bytes for a given file extension.
+    /// Used by the freshness engine for lightweight import change detection.
+    /// Preserves the dependency boundary: mcp/ -> pipeline/ -> parser/.
+    pub fn reparse_imports(&self, extension: &str, source: &[u8]) -> Option<Vec<crate::parser::RawImport>> {
+        self.registry.reparse_imports(extension, source)
     }
 
-    pub fn run_with_output(&self, root: &Path, config: WalkConfig, output_dir: Option<&Path>, timestamp: bool, verbose: bool) -> Result<BuildOutput, FatalError> {
+    pub fn run(&self, root: &Path, config: WalkConfig) -> Result<BuildOutput, FatalError> {
+        self.run_with_output(root, config, None, false, false, false)
+    }
+
+    pub fn run_with_output(&self, root: &Path, config: WalkConfig, output_dir: Option<&Path>, timestamp: bool, verbose: bool, no_louvain: bool) -> Result<BuildOutput, FatalError> {
         let diagnostics = DiagnosticCollector::new();
         let abs_root = std::fs::canonicalize(root).map_err(|_| FatalError::ProjectNotFound {
             path: root.to_path_buf(),
@@ -196,7 +205,7 @@ impl BuildPipeline {
 
         // Stage 5: Cluster
         let cluster_start = Instant::now();
-        let cluster_map = assign_clusters(&graph);
+        let mut cluster_map = assign_clusters(&graph);
 
         // Apply cluster assignments to nodes
         for (cluster_id, cluster) in &cluster_map.clusters {
@@ -210,7 +219,63 @@ impl BuildPipeline {
             eprintln!("[cluster]   {:>6}ms  {} clusters", cluster_start.elapsed().as_millis(), cluster_map.clusters.len());
         }
 
-        // Stage 6: Convert to output model
+        // Stage 5b: Louvain clustering (refines directory-based clusters)
+        if !no_louvain {
+            let louvain_start = Instant::now();
+            let dir_cluster_count = cluster_map.clusters.len();
+            let (refined, converged) = algo::louvain::louvain_clustering(&graph, &cluster_map);
+            if !converged {
+                diagnostics.warn(Warning {
+                    code: WarningCode::W012AlgorithmFailed,
+                    path: CanonicalPath::new("<louvain>"),
+                    message: "Louvain clustering did not converge within iteration limit".to_string(),
+                    detail: None,
+                });
+            }
+            cluster_map = refined;
+
+            // Re-apply cluster assignments to nodes after Louvain
+            for (cluster_id, cluster) in &cluster_map.clusters {
+                for file_path in &cluster.files {
+                    if let Some(node) = graph.nodes.get_mut(file_path) {
+                        node.cluster = cluster_id.clone();
+                    }
+                }
+            }
+
+            if verbose {
+                eprintln!("[louvain]   {:>6}ms  {} clusters (was {} directory-based)",
+                    louvain_start.elapsed().as_millis(),
+                    cluster_map.clusters.len(),
+                    dir_cluster_count,
+                );
+            }
+        }
+
+        // Stage 6: Run algorithms (before serialization so arch_depth is correct in graph.json)
+        let algo_start = Instant::now();
+        let sccs = algo::scc::find_sccs(&graph);
+        let layers = algo::topo_sort::topological_layers(&graph, &sccs);
+
+        // Apply arch_depth from topological layers to graph nodes
+        for (path, &layer) in &layers {
+            if let Some(node) = graph.nodes.get_mut(path) {
+                node.arch_depth = layer;
+            }
+        }
+
+        let centrality = algo::centrality::betweenness_centrality(&graph);
+        let stats = algo::stats::compute_stats(&graph, &centrality, &sccs, &layers);
+        if verbose {
+            eprintln!("[algorithms]{:>6}ms  {} SCCs, {} layers, {} centrality scores",
+                algo_start.elapsed().as_millis(),
+                sccs.len(),
+                layers.values().copied().max().unwrap_or(0) + 1,
+                centrality.len(),
+            );
+        }
+
+        // Stage 7: Convert to output model
         // Use the original CLI path (not abs_root) for portability — D-006, D-015
         let mut graph_output = project_graph_to_output(&graph, root);
         if timestamp {
@@ -218,7 +283,7 @@ impl BuildPipeline {
         }
         let cluster_output = cluster_map_to_output(&cluster_map);
 
-        // Stage 7: Serialize
+        // Stage 8: Serialize
         let ser_start = Instant::now();
         let output_dir = match output_dir {
             Some(dir) => dir.to_path_buf(),
@@ -227,10 +292,26 @@ impl BuildPipeline {
         self.serializer.write_graph(&graph_output, &output_dir)?;
         self.serializer
             .write_clusters(&cluster_output, &output_dir)?;
+        self.serializer.write_stats(&stats, &output_dir)?;
+        // Serialize raw imports for freshness engine (D-054)
+        let raw_imports_output: std::collections::BTreeMap<String, Vec<RawImportOutput>> = parsed_files
+            .iter()
+            .map(|pf| {
+                let key = pf.path.as_str().to_string();
+                let imports = pf.imports.iter().map(|ri| RawImportOutput {
+                    path: ri.path.clone(),
+                    symbols: ri.symbols.clone(),
+                    is_type_only: ri.is_type_only,
+                }).collect();
+                (key, imports)
+            })
+            .collect();
+        self.serializer.write_raw_imports(&raw_imports_output, &output_dir)?;
         if verbose {
             let graph_size = std::fs::metadata(output_dir.join("graph.json")).map(|m| m.len()).unwrap_or(0);
             let cluster_size = std::fs::metadata(output_dir.join("clusters.json")).map(|m| m.len()).unwrap_or(0);
-            eprintln!("[serialize] {:>6}ms  graph.json ({}) + clusters.json ({})", ser_start.elapsed().as_millis(), format_size(graph_size), format_size(cluster_size));
+            let stats_size = std::fs::metadata(output_dir.join("stats.json")).map(|m| m.len()).unwrap_or(0);
+            eprintln!("[serialize] {:>6}ms  graph.json ({}) + clusters.json ({}) + stats.json ({})", ser_start.elapsed().as_millis(), format_size(graph_size), format_size(cluster_size), format_size(stats_size));
         }
 
         if verbose {
@@ -243,12 +324,169 @@ impl BuildPipeline {
         Ok(BuildOutput {
             graph_path: output_dir.join("graph.json"),
             clusters_path: output_dir.join("clusters.json"),
+            stats_path: output_dir.join("stats.json"),
             file_count: graph.nodes.len(),
             edge_count: graph.edges.len(),
             cluster_count: cluster_map.clusters.len(),
             warnings: report.warnings,
             counts: report.counts,
         })
+    }
+
+    /// Incremental update via delta computation (D9).
+    /// Loads existing graph, detects changes via content hash comparison.
+    /// Falls back to full build on errors or >5% changes.
+    /// When below threshold with actual changes, does a full rebuild
+    /// (algorithms are fast; correctness over optimization).
+    /// Incremental re-parse of only changed files is deferred to Phase 3.
+    /// Views are NOT regenerated (per spec D9).
+    pub fn update(
+        &self,
+        root: &Path,
+        config: WalkConfig,
+        reader: &dyn GraphReader,
+        output_dir: Option<&Path>,
+        timestamp: bool,
+        verbose: bool,
+        no_louvain: bool,
+    ) -> Result<BuildOutput, FatalError> {
+        let out_dir = match output_dir {
+            Some(dir) => dir.to_path_buf(),
+            None => root.join(".ariadne").join("graph"),
+        };
+
+        // Step 1: Load existing graph
+        let old_graph_output = match reader.read_graph(&out_dir) {
+            Ok(g) => g,
+            Err(FatalError::GraphNotFound { .. }) => {
+                if verbose {
+                    eprintln!("[delta]     no prior graph — falling back to full build");
+                }
+                return self.run_with_output(root, config, output_dir, timestamp, verbose, no_louvain);
+            }
+            Err(FatalError::GraphCorrupted { ref path, ref reason }) => {
+                // W011: corrupted graph — fall back to full rebuild (route through diagnostics)
+                let diagnostics = DiagnosticCollector::new();
+                diagnostics.warn(Warning {
+                    code: WarningCode::W011GraphCorrupted,
+                    path: CanonicalPath::new(path.to_string_lossy().to_string()),
+                    message: format!("corrupted graph: {}", reason),
+                    detail: None,
+                });
+                let report = diagnostics.drain();
+                for w in &report.warnings {
+                    eprintln!("warn[{}]: {}: {}", w.code, w.path, w.message);
+                }
+                return self.run_with_output(root, config, output_dir, timestamp, verbose, no_louvain);
+            }
+            Err(e) => return Err(e),
+        };
+
+        // W010: version mismatch check
+        if old_graph_output.version != 1 {
+            let diagnostics = DiagnosticCollector::new();
+            diagnostics.warn(Warning {
+                code: WarningCode::W010GraphVersionMismatch,
+                path: CanonicalPath::new(out_dir.to_string_lossy().to_string()),
+                message: format!(
+                    "graph version {} does not match expected version 1 — falling back to full build",
+                    old_graph_output.version
+                ),
+                detail: None,
+            });
+            let report = diagnostics.drain();
+            for w in &report.warnings {
+                eprintln!("warn[{}]: {}: {}", w.code, w.path, w.message);
+            }
+            return self.run_with_output(root, config, output_dir, timestamp, verbose, no_louvain);
+        }
+
+        let old_graph: ProjectGraph = match old_graph_output.try_into() {
+            Ok(g) => g,
+            Err(reason) => {
+                // W011: conversion failure (route through diagnostics)
+                let diagnostics = DiagnosticCollector::new();
+                diagnostics.warn(Warning {
+                    code: WarningCode::W011GraphCorrupted,
+                    path: CanonicalPath::new(out_dir.to_string_lossy().to_string()),
+                    message: format!("graph conversion failed: {}", reason),
+                    detail: None,
+                });
+                let report = diagnostics.drain();
+                for w in &report.warnings {
+                    eprintln!("warn[{}]: {}: {}", w.code, w.path, w.message);
+                }
+                return self.run_with_output(root, config, output_dir, timestamp, verbose, no_louvain);
+            }
+        };
+
+        // Step 2: Walk + read current files to get hashes
+        let abs_root = std::fs::canonicalize(root).map_err(|_| FatalError::ProjectNotFound {
+            path: root.to_path_buf(),
+        })?;
+
+        let walk_result = self.walker.walk(&abs_root, &config)?;
+        let mut file_contents: Vec<FileContent> = Vec::new();
+        for entry in &walk_result.entries {
+            if self.registry.parser_for(&entry.extension).is_none() {
+                continue;
+            }
+            if let Ok(content) = self.reader.read(entry, &abs_root, config.max_file_size) {
+                file_contents.push(content);
+            }
+        }
+        file_contents.sort_by(|a, b| a.path.cmp(&b.path));
+
+        // Step 3: Compute delta
+        let delta_start = Instant::now();
+        let current_hashes: Vec<(CanonicalPath, ContentHash)> = file_contents
+            .iter()
+            .map(|fc| (fc.path.clone(), fc.hash.clone()))
+            .collect();
+
+        let delta = algo::delta::compute_delta(&old_graph.nodes, &current_hashes);
+
+        if verbose {
+            let mode = if delta.changed.is_empty() && delta.added.is_empty() && delta.removed.is_empty() {
+                "no changes"
+            } else if delta.requires_full_recompute {
+                "full recompute — >5% threshold"
+            } else {
+                "incremental"
+            };
+            eprintln!(
+                "[delta]     {:>6}ms  {} changed, {} added, {} removed ({})",
+                delta_start.elapsed().as_millis(),
+                delta.changed.len(),
+                delta.added.len(),
+                delta.removed.len(),
+                mode,
+            );
+        }
+
+        // Short-circuit: no changes at all
+        if delta.changed.is_empty() && delta.added.is_empty() && delta.removed.is_empty() {
+            // Load cluster count from existing clusters.json
+            let cluster_count = reader
+                .read_clusters(&out_dir)
+                .map(|c| c.clusters.len())
+                .unwrap_or(0);
+            return Ok(BuildOutput {
+                graph_path: out_dir.join("graph.json"),
+                clusters_path: out_dir.join("clusters.json"),
+                stats_path: out_dir.join("stats.json"),
+                file_count: old_graph.nodes.len(),
+                edge_count: old_graph.edges.len(),
+                cluster_count,
+                warnings: vec![],
+                counts: DiagnosticCounts::default(),
+            });
+        }
+
+        // Any changes detected — do a full rebuild for correctness.
+        // The delta detection itself is the optimization: we skip the rebuild
+        // entirely when nothing changed.
+        self.run_with_output(root, config, output_dir, timestamp, verbose, no_louvain)
     }
 }
 

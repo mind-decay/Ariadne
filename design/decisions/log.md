@@ -39,16 +39,22 @@ All architectural decisions made during Ariadne development.
 - Silent skip — violates transparency (user doesn't know files were missed)
 **Reasoning:** Real projects have files that don't parse cleanly. The graph should be best-effort, with transparent reporting of what was skipped.
 
-## D-004: Separate Project from Moira
+## D-004: Separate Project — Consumer-Agnostic Design
 
 **Date:** 2026-03-17
-**Status:** Accepted
-**Context:** Ariadne was originally designed as `moira-graph`, a component of the Moira orchestration framework. However, the tool has no dependency on Moira's infrastructure and uses a completely different tech stack (Rust vs shell/markdown).
-**Decision:** Ariadne is a standalone project with its own repository, CI/CD, versioning, and release cycle. Moira integration (Phase 15 in Moira's roadmap) happens on Moira's side — shell wrappers invoke the `ariadne` CLI. Ariadne has zero knowledge of Moira.
+**Updated:** 2026-03-18 (Phase 3 planning — generalized from Moira-specific to consumer-agnostic)
+**Status:** Accepted (updated)
+**Context:** Ariadne was originally designed as `moira-graph`, a component of the Moira orchestration framework. However, the tool has no dependency on Moira's infrastructure and uses a completely different tech stack (Rust vs shell/markdown). Phase 3 introduces MCP server capabilities — the integration boundary must be clearly defined.
+**Decision:** Ariadne is a standalone project with its own repository, CI/CD, versioning, and release cycle. Ariadne provides **generic, consumer-agnostic APIs** (CLI commands and MCP tools). Consumer-specific adapters live in the consumer's codebase:
+- Moira: wraps Ariadne MCP tools into knowledge bridge, agent context injection, bootstrap acceleration — all on Moira's side
+- IDEs: wrap Ariadne MCP tools into editor UI — on IDE plugin's side
+- CI tools: wrap Ariadne CLI/MCP into pipeline checks — on CI config's side
+Ariadne has **zero knowledge of any specific consumer**. No Moira-specific formats, no agent role mappings, no consumer-specific export modes.
 **Alternatives rejected:**
 - Subdirectory in Moira repo — GitHub Actions doesn't work from nested `.github/`, `cargo install` doesn't work from subdirectory, Rust toolchain not needed for core Moira
 - Git submodule — worst of both approaches
-**Reasoning:** Clean separation enables: standard `cargo install ariadne`, native CI/CD, independent releases. The tool is useful beyond Moira — any system that needs structural code analysis can use it.
+- Consumer-specific export formats in Ariadne (e.g., `format: "moira"`) — violates separation, requires Ariadne to know consumer schemas, creates coupling that prevents independent releases
+**Reasoning:** Clean separation enables: standard `cargo install ariadne`, native CI/CD, independent releases. The tool is useful beyond any single consumer. Generic MCP tools let any MCP-compatible system benefit. Consumer-specific logic belongs in the consumer.
 
 ## D-005: Error Handling Strategy — Best-Effort with Structured Warnings
 
@@ -406,3 +412,326 @@ Dependency rules: `model/` depends on nothing. `parser/` depends on `model/` onl
 - Changing first-match to last-match globally — breaks non-FSD projects where outermost segment is the correct layer
 **Reasoning:** FSD support is best done alongside Phase 2's architectural algorithms (depth computation, layer violation detection) which will provide the infrastructure to properly model layered architectures. The graph itself is architecture-agnostic — only the classification metadata needs extension.
 **Affects:** detect/layer.rs, model/node.rs (ArchLayer enum), future architecture.md update.
+
+## D-032: GraphReader Trait — Separate from GraphSerializer
+
+**Date:** 2026-03-18
+**Status:** Accepted
+**Context:** Phase 2 needs to load graph.json/stats.json from disk for query commands and delta computation. The obvious approach — adding `read_*` methods to `GraphSerializer` — violates D-019's original intent (write-only stage abstractions) and creates a misleading API. Read and write have different error semantics: a missing file is acceptable during reads (fall back to full build) but never during writes.
+**Decision:** Introduce a separate `GraphReader` trait with `read_graph`, `read_clusters`, `read_stats` methods. `GraphSerializer` remains write-only, gaining only `write_stats` for Phase 2. `JsonSerializer` implements both traits. Test mocks implement each independently. `BuildPipeline` accepts `Box<dyn GraphReader>` as an additional parameter (or via a combined `Box<dyn GraphSerializer + GraphReader>` where needed).
+**Alternatives rejected:**
+- Add read methods to `GraphSerializer` — violates SRP, misleading trait name, breaks all existing mock implementations
+- Free functions (no trait) — loses testability, can't mock reads in pipeline tests
+- Combined `GraphIO` trait — better than extending `GraphSerializer`, but the separate concern argument still holds
+**Reasoning:** Follows the same Interface Segregation principle as D-018 (LanguageParser/ImportResolver split). Read and write are separate responsibilities with different lifecycles and error handling. Mocking is simpler when traits are narrow.
+**Affects:** Phase 2 spec D1, serial/mod.rs, pipeline/mod.rs, main.rs (wiring).
+
+## D-033: Module Dependency Rules — algo/, views/, analysis/, mcp/
+
+**Date:** 2026-03-18
+**Updated:** 2026-03-18 (Phase 3 planning — added analysis/ and mcp/ modules)
+**Status:** Accepted (extends D-023)
+**Context:** Phase 2 adds `src/algo/` (graph algorithms) and `src/views/` (markdown view generation). Phase 3 adds `src/analysis/` (architectural intelligence) and `src/mcp/` (MCP server). Their dependency rules must be defined to maintain the module boundary discipline established in D-023.
+**Decision:**
+- `algo/` depends on `model/` only. Pure functions on `ProjectGraph`. No I/O, no pipeline, no serialization. Delta diff logic lives in `algo/delta.rs` but receives pre-loaded data — orchestration (walk/read/re-parse) stays in `pipeline/`.
+- `views/` depends on `model/` and `serial/` (output types like `StatsOutput` only — never serialization methods). Receives pre-computed algorithm results. Does not depend on `algo/`.
+- `analysis/` depends on `model/` and `algo/`. Composes algorithm results into higher-level insights (Martin metrics, smell detection, structural diffs). Never depends on `serial/`, `pipeline/`, or `parser/`. Shared data types (`StructuralDiff`, `ArchSmell`) live in `model/` (see D-048).
+- `mcp/` depends on `model/`, `algo/`, `analysis/`, `serial/`, `pipeline/`. Never depends on `parser/` directly. This is the widest dependency set — justified because MCP server orchestrates all capabilities.
+- `pipeline/` gains dependency on `algo/` for invoking algorithms after build. This is additive — existing dependencies unchanged.
+- `SubgraphResult` lives in `model/query.rs` (pure data type) so both `algo/` and CLI code can reference it without circular dependencies.
+
+Full dependency table:
+
+| Module | Depends on | Never depends on |
+|--------|-----------|-----------------|
+| `model/` | (nothing) | everything |
+| `algo/` | `model/` | `serial/`, `pipeline/`, `parser/`, `views/`, `analysis/`, `mcp/` |
+| `views/` | `model/`, `serial/` (types only) | `parser/`, `pipeline/`, `algo/`, `analysis/`, `mcp/` |
+| `analysis/` | `model/`, `algo/` | `serial/`, `pipeline/`, `parser/`, `views/`, `mcp/` |
+| `mcp/` | `model/`, `algo/`, `analysis/`, `serial/`, `pipeline/` | `parser/` |
+| `pipeline/` | `model/`, `parser/` (traits), `serial/` (traits), `algo/`, `detect/`, `cluster/` | `views/`, `analysis/`, `mcp/` |
+
+**Alternatives rejected:**
+- `algo/` depending on `serial/` for delta deserialization — violates leaf-module design, makes algo/ impure
+- `views/` depending on `algo/` — tighter coupling, harder to test views without full algo infrastructure
+- Analysis logic inside `algo/` — would require `algo/` to depend on `serial/` (for StatsOutput), violating the pure-computation principle
+- All algorithm types in `algo/` — forces CLI/views code to depend on `algo/` for type definitions
+**Reasoning:** Preserves D-023's principle: each module has one reason to change. Algorithm logic is pure computation. View generation is pure template rendering. Pipeline orchestrates both. Data types shared across boundaries live in `model/`.
+**Affects:** Phase 2 spec (module structure), architecture.md (module dependency table — to be updated).
+
+## D-034: Phase 2 Algorithm Parameters and Policies
+
+**Date:** 2026-03-18
+**Status:** Accepted
+**Context:** Phase 2 introduces 5+ graph algorithms with parameters that are not fully specified in architecture.md. These include edge type filtering, centrality normalization, Louvain convergence, orphan definition, and build scope changes.
+**Decision:** Bundled policy decisions for Phase 2 algorithms:
+1. **Edge type filtering:** All algorithms (SCC, centrality, BFS, topo sort) use `imports` + `re_exports` + `type_imports`, excluding `tests` edges. Tests are not architectural dependencies. **Exception:** subgraph extraction (`extract_subgraph`) includes ALL edge types including `tests` — tests are relevant for scoped development views and impact reports. This exception applies only to subgraph, not to blast radius or other algorithms.
+2. **Centrality normalization:** Brandes raw BC divided by `(V-1)(V-2)` for directed graphs → values in [0.0, 1.0]. Bottleneck threshold 0.7 applies to normalized values. Rounded to 4 decimal places (same as cohesion in Phase 1).
+3. **Louvain parameters:** 100 iteration limit, ΔQ < 1e-6 convergence threshold. Directed graph converted to undirected weights (edge count between two nodes, ignoring direction). Cluster naming: directory-based name of plurality of files; lexicographic tie-break.
+4. **Orphan definition:** `source` or `test` file with zero incoming edges AND zero outgoing `imports`/`type_imports`/`re_exports` edges. Config, style, asset files are excluded (they naturally have no import edges).
+5. **Build scope:** `ariadne build` always produces stats.json (runs all algorithms). ~720ms overhead on 3000-file project. Avoids "forgot --stats" UX problem.
+6. **Louvain default:** On by default. `--no-louvain` flag to disable. No existing consumers means no breaking change.
+**Alternatives rejected:**
+- Per-algorithm edge type flags — over-engineering for Phase 2; can add `--include-tests` later if needed
+- Optional stats generation (`--stats` flag) — creates fragile dependency: query commands fail if build was run without `--stats`
+**Reasoning:** Batching these decisions enables consistent behavior across all algorithms. Edge type policy is the most impactful — excluding `tests` from structural algorithms matches the conceptual model (tests verify, they don't define architecture).
+**Affects:** Phase 2 spec D2-D9, stats.json schema, CLI behavior.
+
+## D-035: Subgraph Cluster Expansion Limit
+
+**Date:** 2026-03-18
+**Status:** Accepted
+**Context:** architecture.md §Algorithms §7 says subgraph extraction should "add all files in f.cluster to result_nodes." In large projects, a single cluster can contain hundreds of files. Including all of them defeats the purpose of scoped extraction — the subgraph balloons to near-full-graph size.
+**Decision:** Cap cluster expansion at 100 files. If a cluster has >100 files, include only BFS-reachable files within that cluster, not all files. 100 is large enough for real modules but prevents pathological expansion. Hardcoded for Phase 2; configurable flag deferred.
+**Alternatives rejected:**
+- No limit — subgraph can become uselessly large on projects with big clusters
+- 50 files — too conservative for medium-large modules
+- Configurable from the start — premature; 100 is a reasonable default until real usage data says otherwise
+**Reasoning:** Subgraph extraction is meant to provide focused context. A 100-file cluster included in full is still useful. A 500-file cluster included in full is noise. The BFS-reachable fallback ensures relevant files are still included.
+**Affects:** Phase 2 spec D7, algo/subgraph.rs.
+
+## D-036: Phase 2 Split into 2a and 2b
+
+**Date:** 2026-03-18
+**Status:** Accepted
+**Context:** Phase 2 contains 11 deliverables with varying risk. Two (Louvain clustering and delta computation) are ORANGE risk — Louvain modifies existing cluster behavior and involves iterative convergence; delta touches the core pipeline with incremental correctness concerns. The remaining 9 deliverables are GREEN/YELLOW risk and deliver 90% of user value (queryable graph).
+**Decision:** Split Phase 2 into:
+- **Phase 2a (YELLOW):** D1 (deserialization), D2 (SCC), D3 (blast radius), D4 (centrality), D5 (topo sort), D7 (subgraph), D8 (stats.json), D10 (views), D11 (CLI queries + views generate). This makes the graph queryable.
+- **Phase 2b (ORANGE):** D6 (Louvain), D9 (delta computation). Optimization and refinement.
+Phase 2b depends on 2a. Phase 2a can ship independently.
+**Alternatives rejected:**
+- Ship everything at once — delays query functionality behind ORANGE-risk items
+- Defer Louvain to Phase 3 — separates related graph algorithm work too far; better to keep it in Phase 2 scope
+**Reasoning:** Same principle as D-011 (Phase 1a/1b split). Deliver working value first, then enhance. Delta computation benefits from real usage patterns of full builds before optimizing. Louvain benefits from seeing whether directory clusters are "good enough" in practice.
+**Affects:** Phase 2 spec, ROADMAP.md (may need update to reflect sub-phases).
+
+---
+
+## Phase 3 Decisions
+
+## D-037: MCP Server over CLI for Integration
+
+**Date:** 2026-03-18
+**Status:** Accepted
+**Context:** Phase 3 introduces integration with external consumers (AI orchestrators, IDEs, CI). Three options: MCP server (long-running process with in-memory graph), CLI invocation (consumers call `ariadne query ...` per request), or direct file reading (consumers parse `.ariadne/graph/graph.json` themselves).
+**Decision:** Ariadne provides an MCP server via `ariadne serve`. The server loads the graph into memory on startup and answers queries via MCP tools over stdio JSON-RPC. CLI commands remain available for one-shot usage.
+**Alternatives rejected:**
+- CLI-only integration — cold start (load + parse graph.json) per query adds 100-500ms latency. Unacceptable for interactive agent workflows requiring multiple queries per task
+- Direct file reading by consumers — no query API (consumers would reimplement blast radius, subgraph extraction, etc.), no freshness tracking, no auto-update
+- HTTP server — more complex than stdio, requires port management, firewall considerations. MCP over stdio is the standard for Claude Code integration
+**Reasoning:** In-memory graph enables <10ms query responses. MCP is the native integration protocol for Claude Code and compatible tools. The server lifecycle aligns with development sessions. CLI remains for scripts and CI.
+**Affects:** Phase 3 spec, src/mcp/ module, main.rs (new `serve` subcommand).
+
+## D-038: File System Watcher with Debounced Delta Rebuild
+
+**Date:** 2026-03-18
+**Status:** Accepted
+**Context:** When the MCP server is running and agents modify source files, the in-memory graph becomes stale. Users should not have to manually run `ariadne update` — the graph should stay fresh automatically.
+**Decision:** Use the `notify` crate for OS-native file system watching (kqueue on macOS, inotify on Linux). Collect file change events with a 2-second debounce window (configurable via `--debounce`). After debounce expires, run delta computation (Phase 2b D9) on changed files and hot-swap the in-memory `GraphState`. `--no-watch` disables the watcher for environments where it's unavailable or undesirable.
+**Alternatives rejected:**
+- Manual `ariadne update` after each task — requires user discipline, easy to forget, breaks seamless agent integration
+- Poll-based checking (no watcher) — higher latency (30s+ vs 2s), wastes CPU on repeated hash comparisons. Used only as fallback when watcher is unavailable
+- Immediate rebuild on every file write — thrashing during multi-file saves (e.g., `git checkout`, batch writes by code generation agents)
+**Reasoning:** 2-second debounce balances freshness vs rebuild cost. OS-native watchers are efficient (no polling). Delta computation (Phase 2b) is fast (<2s for typical changes). The fallback to polling ensures graceful degradation on unsupported filesystems.
+**Affects:** Phase 3 spec D4, src/mcp/state.rs, Cargo.toml (notify dependency).
+
+## D-039: Hash-Based Freshness with Confidence Scoring
+
+**Date:** 2026-03-18
+**Status:** Accepted
+**Context:** Between auto-updates, the graph may be partially stale. Consumers need to know how much to trust query results. A binary fresh/stale signal is too coarse — if 3 out of 3000 files changed, the graph is 99.9% reliable for structural queries.
+**Decision:** Freshness engine computes a confidence score: `confidence = 1 - (stale_files / total_files)`. Additionally tracks structural confidence: if stale files have the same import structure (only body changes), structural queries (dependencies, layers, cycles) remain fully valid even though content hashes differ. Every MCP tool response includes freshness metadata. Thresholds: ≥0.95 (fresh), 0.80-0.95 (reliable), 0.50-0.80 (degraded), <0.50 (auto-rebuild triggered).
+**Alternatives rejected:**
+- Binary fresh/stale — too coarse; a single file change would mark entire graph as stale
+- Timestamp-based freshness — unreliable (clock skew, git checkout changes timestamps without content change)
+- No freshness tracking — consumers can't assess result reliability
+**Reasoning:** Hash-based comparison is precise (same mechanism as Phase 2b delta detection). Confidence score gives consumers a quantitative signal. Structural confidence distinguishes "file body edited" (common, graph still valid) from "imports changed" (structural staleness).
+**Affects:** Phase 3 spec D3, src/mcp/state.rs (FreshnessState).
+
+## D-040: Martin Metrics at Cluster Level
+
+**Date:** 2026-03-18
+**Status:** Accepted
+**Context:** Robert C. Martin's Instability/Abstractness metrics can be computed at any granularity (file, directory, cluster, package). File-level metrics are noisy (a single utility file has I=1.0 — meaningless). Package-level requires package boundary detection not available in Ariadne.
+**Decision:** Compute Martin metrics at the cluster level (directory-based or Louvain). Instability I = Ce/(Ca+Ce), Abstractness A = Na/Nc, Distance from Main Sequence D = |A+I-1|. Classify clusters into zones: Main Sequence (D < 0.3), Zone of Pain (low A, low I, high D), Zone of Uselessness (high A, high I, high D).
+**Alternatives rejected:**
+- File-level metrics — too noisy, every leaf file is I=1.0
+- Package-level metrics — requires explicit package boundaries; Ariadne works with implicit clustering
+- Skip metrics entirely — significant value for architectural quality assessment
+**Reasoning:** Cluster-level aligns with how developers think about modules. Directory-based clusters map to logical boundaries. The metrics are cheap to compute (single pass over edges) and provide actionable insights ("this module is in the Zone of Pain — high coupling, low abstraction").
+**Affects:** Phase 3 spec D5, src/analysis/metrics.rs.
+
+## D-041: Hierarchical Graph Compression
+
+**Date:** 2026-03-18
+**Status:** Accepted
+**Context:** For large codebases (10k+ files), full graph data in MCP tool responses can exceed token budgets. A 10k-node graph serialized as JSON is 50k+ tokens — too much for any single agent context.
+**Decision:** Three compression levels: L0 (cluster-level graph, ~200-500 tokens), L1 (per-cluster file detail, ~500-2000 tokens), L2 (per-file neighborhood, ~200-1000 tokens). MCP tool `ariadne_compressed(level, focus?)` returns the appropriate view. Token estimates are advisory — actual counts depend on naming conventions.
+**Alternatives rejected:**
+- Always send full graph — blows token budget on large projects
+- Fixed truncation (top-N files) — loses structural information, arbitrary cutoff
+- No compression (consumers handle it) — pushes complexity to every consumer
+**Reasoning:** Hierarchical views match natural zoom levels: project overview → module detail → file context. L0 is always small enough for any agent. Consumers request the level they need.
+**Affects:** Phase 3 spec D9, src/algo/ or src/analysis/.
+
+## D-042: PageRank + Centrality Combined Ranking
+
+**Date:** 2026-03-18
+**Status:** Accepted
+**Context:** Brandes betweenness centrality (Phase 2) identifies "bridge" files on many shortest paths. But files that are heavily depended upon (foundations) may have low centrality if they're leaves in the DAG. PageRank captures this — it measures recursive importance (files depended on by important files score higher).
+**Decision:** Compute both metrics. Combined score: `0.5 * normalized_centrality + 0.5 * normalized_pagerank`. Both normalized to [0.0, 1.0]. Exposed via `ariadne_importance` MCP tool and `ariadne query importance` CLI command.
+**Alternatives rejected:**
+- PageRank only — misses bridge files (high centrality, low PageRank)
+- Centrality only — misses foundational files (low centrality, high PageRank)
+- Configurable weights — premature; 50/50 is a reasonable default
+**Reasoning:** The two metrics are complementary. Combined ranking gives the most complete picture of file importance. Fixed 50/50 weight avoids configuration complexity.
+**Affects:** Phase 3 spec D8, src/algo/pagerank.rs (new).
+
+## D-043: Spectral Analysis as Optional (ORANGE Risk)
+
+**Date:** 2026-03-18
+**Status:** Accepted
+**Context:** Fiedler vector (second eigenvector of graph Laplacian) provides natural graph bisection — revealing module boundaries that community detection (Louvain) might miss. However, sparse eigensolvers involve iterative floating-point computation where accumulation order affects results. Cross-platform determinism (D-006) may be impossible without fixed-precision arithmetic.
+**Decision:** Implement spectral analysis as a best-effort feature. If cross-platform f64 determinism cannot be achieved at reasonable cost, either: (a) mark spectral results as advisory (not included in deterministic outputs), or (b) defer entirely. Evaluate during implementation.
+**Alternatives rejected:**
+- Fixed-precision arithmetic — significant performance penalty, complex implementation
+- Skip entirely at design time — the insight value is high enough to attempt
+- Require determinism — may be technically infeasible for eigensolver convergence
+**Reasoning:** Spectral analysis provides unique value (monolith detection, natural refactoring boundaries) that no other metric provides. Attempting implementation with a clear fallback plan is better than premature exclusion.
+**Affects:** Phase 3 spec D10, Cargo.toml (nalgebra-sparse or sprs dependency).
+
+## D-044: Consumer-Agnostic MCP Tools
+
+**Date:** 2026-03-18
+**Status:** Accepted
+**Context:** Phase 3 was initially designed with Moira-specific features: `ariadne_knowledge_export(format: "moira")`, Moira freshness metadata tags (`<!-- moira:freshness ... -->`), agent-specific access matrices in Ariadne's MCP registry. This violates D-004 (Ariadne has zero knowledge of consumers).
+**Decision:** All MCP tools return generic, structured JSON. No consumer-specific formatting, export modes, or metadata. Consumer-specific adapters (Moira knowledge bridge, IDE plugins, CI integrations) live entirely in the consumer's codebase. The `ariadne_views_export` tool returns pre-generated markdown views (Phase 2 D10) as-is — consumers transform them into their own format. Agent access matrices, context injection protocols, and bootstrap acceleration logic belong to the consumer.
+**Alternatives rejected:**
+- Moira-specific `format: "moira"` parameter — couples Ariadne releases to Moira schema changes
+- Plugin system for consumer adapters — over-engineering for Phase 3; can add later if multiple consumers emerge with complex needs
+- Separate Moira-specific MCP tools alongside generic ones — maintenance burden, version drift
+**Reasoning:** Follows the principle of D-004. Ariadne is a general-purpose structural analysis tool. Consumer-specific intelligence should leverage Ariadne's generic capabilities, not depend on Ariadne knowing consumer internals. This enables independent release cycles and prevents scope creep.
+**Affects:** Phase 3 spec (removes Phase 3b Moira Knowledge Bridge from Ariadne — moved to Moira project), all MCP tool definitions.
+
+## D-045: Single Binary with `serve` Subcommand
+
+**Date:** 2026-03-18
+**Status:** Accepted
+**Context:** Phase 3 introduces a long-running MCP server alongside existing one-shot CLI commands. Two options: add `serve` as a subcommand to the existing `ariadne` binary, or create a separate `ariadne-mcp` binary target.
+**Decision:** Single `ariadne` binary with `serve` subcommand. `main.rs` remains the sole Composition Root (D-020) — it dispatches to either one-shot mode (build/query/info) or long-running mode (serve) based on the subcommand. Shared code (graph loading, algorithm execution, serialization) is reused.
+**Alternatives rejected:**
+- Separate `ariadne-mcp` binary — duplicates Composition Root, binary distribution complexity, users must install two binaries
+- Library + two binaries — splits wiring logic, harder to keep consistent
+**Reasoning:** One binary to install, one binary to manage. `main.rs` is slightly more complex (dispatches to two modes) but all wiring is in one place. Users run `cargo install ariadne-graph` once and get both CLI and MCP server. Standard pattern (rustup, cargo, git all have subcommands with different lifecycles).
+**Affects:** Phase 3 spec D1, main.rs, Cargo.toml (no new [[bin]] target).
+
+## D-046: Lock File for Graph Write Exclusion
+
+**Date:** 2026-03-18
+**Status:** Accepted
+**Context:** When the MCP server is running, it owns `.ariadne/graph/` — reading, computing delta updates, and writing updated files. If a user simultaneously runs `ariadne build` or `ariadne update` in a terminal, two processes would write to the same files concurrently, causing corruption or race conditions.
+**Decision:** The MCP server creates `.ariadne/graph/.lock` on startup (containing PID and timestamp). CLI `build` and `update` commands check for this lock before proceeding. If lock exists and the PID is alive → refuse with message: `"error: MCP server (PID {pid}) is running and owns .ariadne/graph/. Stop the server first, or let it handle updates automatically."` If lock exists but PID is dead → remove stale lock and proceed. Lock is released on server shutdown (normal exit, SIGTERM, SIGINT).
+**Alternatives rejected:**
+- No locking — race conditions, corrupted graph files
+- File-level locks (per graph.json, per stats.json) — complex, doesn't prevent semantic races (partial state updates)
+- MCP server delegates to CLI (spawns `ariadne update` subprocess) — unnecessarily complex, no benefit over in-process delta computation
+**Reasoning:** Directory-level lock is simple and sufficient. The MCP server is the sole writer during its lifetime. CLI commands work normally when no server is running. Stale lock detection handles crash recovery.
+**Affects:** Phase 3 spec D4, src/mcp/state.rs, src/pipeline/mod.rs (lock check).
+
+## D-047: Thread-Based Architecture — No Async Runtime
+
+**Date:** 2026-03-18
+**Status:** Accepted
+**Context:** Phase 3 MCP server needs concurrency: fs watching, delta rebuilds, and MCP request handling. Two approaches: async runtime (tokio) or OS threads.
+**Decision:** Thread-based architecture. `notify` crate uses OS-native file watching with a dedicated watcher thread. MCP JSON-RPC runs on the main thread (stdio is inherently sequential — one request at a time). Delta rebuilds run on a background thread, communicate via `Arc<RwLock<GraphState>>`. No tokio or async-std dependency.
+**Alternatives rejected:**
+- tokio async runtime — adds ~1.5MB to binary, 30+ transitive dependencies, compile time increase. Async IO provides no benefit for stdio (sequential) or file watching (OS-native). The only concurrent operation (delta rebuild) is CPU-bound, not IO-bound
+- Single-threaded with blocking — delta rebuild would block MCP responses for 1-2 seconds
+**Reasoning:** The concurrency model is simple: main thread handles MCP requests, background thread handles delta rebuilds, watcher thread handles fs events. `Arc<RwLock<GraphState>>` is the only synchronization point. No async complexity. Binary stays small. Build stays fast. Phase 1-2 have zero async dependencies — Phase 3 should not introduce them without clear benefit.
+**Affects:** Phase 3 spec D1/D4, Cargo.toml (no tokio), src/mcp/.
+
+## D-048: `analysis/` Module Separate from `algo/`
+
+**Date:** 2026-03-18
+**Status:** Accepted
+**Context:** Phase 3 introduces architectural analysis features: Martin metrics, smell detection, structural diffs. These could live in `algo/` (which contains all Phase 2 algorithms) or in a new module.
+**Decision:** New `src/analysis/` module, separate from `algo/`. Key distinction:
+- `algo/` contains **pure graph algorithms** — takes `ProjectGraph`, returns computed results. Depends on `model/` only (D-033). No knowledge of stats, metrics, or higher-level concepts.
+- `analysis/` contains **architectural analysis** — composes algorithm results, graph data, and stats into higher-level insights (Martin metrics, smell detection, structural diffs). Depends on `model/` and `algo/`.
+Shared data types (`StructuralDiff`, `ArchSmell`, `SmellSeverity`) live in `model/` (pure data, no computation) so both `analysis/` and `mcp/` can reference them.
+**Alternatives rejected:**
+- Everything in `algo/` — `algo/` would need to depend on `serial/` (for `StatsOutput` in smell detection), violating D-033
+- Everything in `mcp/` — mixes analysis logic with transport/protocol code
+- Smell detection depends on `serial/StatsOutput` directly — move needed stats fields into `model/` types instead
+**Reasoning:** Preserves D-033 (`algo/` depends on `model/` only). Analysis logic is a higher abstraction layer — it consumes algorithm outputs rather than implementing algorithms. Separate module enables independent testing and clear dependency boundaries.
+**Affects:** Phase 3 spec D5-D7, src/analysis/, model/diff.rs, model/smell.rs.
+
+## D-049: Unified Float Determinism Strategy
+
+**Date:** 2026-03-18
+**Status:** Accepted
+**Context:** Phase 2 introduces Brandes centrality with f64 values (4 decimal rounding per D-034). Phase 3 adds PageRank, and potentially spectral analysis — more iterative f64 algorithms. Each needs deterministic output across platforms. Without a unified strategy, each algorithm handles determinism ad-hoc.
+**Decision:** All iterative floating-point algorithms share a common determinism strategy:
+1. **Rounding:** Final results rounded to 4 decimal places via `fn round4(v: f64) -> f64 { (v * 10000.0).round() / 10000.0 }`
+2. **Iteration order:** Nodes processed in `BTreeMap` key order (lexicographic path order). This ensures deterministic floating-point accumulation across platforms.
+3. **Fixed parameters:** Iteration limits and convergence tolerances are hardcoded (not configurable) to ensure identical convergence behavior.
+4. **Intermediate rounding:** No rounding during iteration (would slow convergence). Only final output is rounded.
+Applies to: Brandes centrality (Phase 2), Louvain modularity (Phase 2b), PageRank (Phase 3c), cohesion (Phase 1 — already uses round4).
+**Alternatives rejected:**
+- Per-algorithm determinism decisions — inconsistent, easy to miss an algorithm
+- Fixed-precision arithmetic throughout — severe performance penalty
+- No intermediate determinism (round only at output) — insufficient; accumulation order matters for f64
+**Reasoning:** Deterministic iteration order + final rounding is the minimum sufficient strategy. BTreeMap guarantees lexicographic order. Hardcoded parameters prevent user-introduced non-determinism. This approach has zero performance cost (BTreeMap already used everywhere per D-006).
+**Affects:** All f64 algorithms in algo/ and analysis/. Utility function in algo/mod.rs or a shared location.
+
+## D-050: `ariadne update` Full-Rebuild-Always Behavior
+
+**Date:** 2026-03-19
+**Status:** Accepted
+**Context:** Phase 2b delivers `ariadne update` with delta computation. The original design (architecture.md §Algorithms §6) described selective re-parsing of only changed files. During implementation, a simpler approach was chosen: detect changes → if zero changes, return immediately (no-op fast path); if any changes, full rebuild. The algorithms are fast enough (<1s for 3k files) that incremental re-parsing provides negligible benefit without Phase 3's in-memory graph.
+**Decision:** `ariadne update` performs a full rebuild when any changes are detected. The no-op fast path (zero changes) is the primary optimization. The delta module (`algo/delta.rs`) correctly computes changed/added/removed sets and the 5% threshold — this scaffolding is preserved for Phase 3's auto-update mechanism, which will benefit from incremental re-parsing due to its in-memory `GraphState`.
+**Alternatives rejected:**
+- Implement true incremental re-parse now — premature optimization; algorithms are fast, and the in-memory graph (Phase 3) is the correct place for incremental updates
+- Remove `ariadne update` and use `ariadne build` — loses the no-op fast path, which is valuable for CI idempotency checks
+**Reasoning:** Correctness over optimization. Full rebuild guarantees correct results. The no-op fast path provides the most common performance win (checking if anything changed). True incrementality is Phase 3 scope where the MCP server's in-memory graph makes partial updates worthwhile.
+**Affects:** `pipeline/mod.rs` update(), `algo/delta.rs`, architecture.md §Algorithms §6.
+
+## D-051: Tokio Isolated to Serve Subcommand
+
+**Date:** 2026-03-19
+**Status:** Accepted
+**Context:** The MCP server requires an async runtime for rmcp's stdio transport and signal handling. All CLI commands (build, query, update) are synchronous.
+**Decision:** Tokio runtime is created only inside the `Serve` match arm in `main.rs` via `Runtime::new().block_on()`. All other commands remain fully synchronous. The `serve` feature flag gates all async dependencies.
+**Affects:** `src/main.rs`, `Cargo.toml` feature flags.
+
+## D-052: ArcSwap for Lock-Free Graph State Reads
+
+**Date:** 2026-03-19
+**Status:** Accepted
+**Context:** The MCP server needs concurrent read access to the graph state while background rebuilds update it.
+**Decision:** Use `arc-swap` crate's `ArcSwap<GraphState>` for lock-free reads. Tool handlers call `state.load()` for a consistent snapshot. Background rebuilds construct a new `GraphState` and swap atomically via `state.store(Arc::new(new_state))`.
+**Affects:** `src/mcp/state.rs`, `src/mcp/tools.rs`, `src/mcp/watch.rs`.
+
+## D-053: Two-Level Freshness Confidence Scoring
+
+**Date:** 2026-03-19
+**Status:** Accepted
+**Context:** Binary fresh/stale is too coarse. A file can change content without changing imports (body-only edit).
+**Decision:** Two confidence levels: `hash_confidence` (any content change) and `structural_confidence` (import changes only). Body-only edits reduce hash confidence but not structural confidence. This lets consumers decide trust level.
+**Affects:** `src/mcp/state.rs` FreshnessState.
+
+## D-054: raw_imports.json Persistence
+
+**Date:** 2026-03-19
+**Status:** Accepted
+**Context:** The freshness engine needs to compare current imports against stored imports for structural confidence.
+**Decision:** Serialize raw imports to `raw_imports.json` during every build. `RawImportOutput` type in `serial/mod.rs` with path, symbols, and is_type_only fields.
+**Affects:** `src/serial/mod.rs`, `src/serial/json.rs`, `src/pipeline/mod.rs`.
+
+## D-055: rmcp 1.2 as MCP SDK
+
+**Date:** 2026-03-19
+**Status:** Accepted
+**Context:** Need a Rust MCP server implementation for `ariadne serve`.
+**Decision:** Use rmcp 1.2 (official Anthropic Rust SDK) with `#[tool_router]` / `#[tool_handler]` macros, `Parameters<T>` for structured tool inputs, and stdio transport. Server implements `ServerHandler` trait.
+**Affects:** `src/mcp/tools.rs`, `src/mcp/server.rs`, `Cargo.toml`.

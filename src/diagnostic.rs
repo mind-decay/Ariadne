@@ -5,6 +5,7 @@ use std::sync::Mutex;
 use crate::model::CanonicalPath;
 
 /// Fatal errors that stop the pipeline (exit code 1).
+#[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum FatalError {
     #[error("E001: project root not found: {path}")]
@@ -17,19 +18,42 @@ pub enum FatalError {
     NoParseableFiles { path: PathBuf },
     #[error("E005: cannot read project directory: {path}: {reason}")]
     WalkFailed { path: PathBuf, reason: String },
+    #[error("E006: graph not found in {path}. Run 'ariadne build' first.")]
+    GraphNotFound { path: PathBuf },
+    #[error("E007: stats not found in {path}. Run 'ariadne build' first.")]
+    StatsNotFound { path: PathBuf },
+    #[error("E008: corrupted file {path}: {reason}")]
+    GraphCorrupted { path: PathBuf, reason: String },
+    #[error("E009: file not found in graph: {path}")]
+    FileNotInGraph { path: String },
+    #[error("E010: failed to start MCP server: {reason}")]
+    McpServerFailed { reason: String },
+    #[error("E011: another ariadne server is running (PID {pid}). Stop it first or remove {}", lock_path.display())]
+    LockFileHeld { pid: u32, lock_path: PathBuf },
+    #[error("E012: MCP protocol error: {reason}")]
+    McpProtocolError { reason: String },
 }
 
 /// Warning codes for recoverable errors.
+#[non_exhaustive]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum WarningCode {
     W001ParseFailed,
     W002ReadFailed,
     W003FileTooLarge,
     W004BinaryFile,
+    W005MaxFilesReached,
     W006ImportUnresolved,
     W007PartialParse,
     W008ConfigParseFailed,
     W009EncodingError,
+    W010GraphVersionMismatch,
+    W011GraphCorrupted,
+    W012AlgorithmFailed,
+    W013StaleStats,
+    W014FsWatcherFailed,
+    W015IncrementalRebuildFailed,
+    W016StaleLockRemoved,
 }
 
 impl WarningCode {
@@ -39,10 +63,18 @@ impl WarningCode {
             Self::W002ReadFailed => "W002",
             Self::W003FileTooLarge => "W003",
             Self::W004BinaryFile => "W004",
+            Self::W005MaxFilesReached => "W005",
             Self::W006ImportUnresolved => "W006",
             Self::W007PartialParse => "W007",
             Self::W008ConfigParseFailed => "W008",
             Self::W009EncodingError => "W009",
+            Self::W010GraphVersionMismatch => "W010",
+            Self::W011GraphCorrupted => "W011",
+            Self::W012AlgorithmFailed => "W012",
+            Self::W013StaleStats => "W013",
+            Self::W014FsWatcherFailed => "W014",
+            Self::W015IncrementalRebuildFailed => "W015",
+            Self::W016StaleLockRemoved => "W016",
         }
     }
 }
@@ -191,6 +223,9 @@ pub struct DiagnosticCounts {
     pub encoding_errors: u32,
     pub imports_unresolved: u32,
     pub partial_parses: u32,
+    pub graph_load_warnings: u32,
+    pub algorithm_failures: u32,
+    pub stale_stats: u32,
 }
 
 /// Final diagnostic report after pipeline completion.
@@ -231,6 +266,9 @@ impl DiagnosticCollector {
                 guard.1.files_skipped += 1;
                 guard.1.binary_files += 1;
             }
+            WarningCode::W005MaxFilesReached => {
+                // Not a file skip — a walk-level limit warning
+            }
             WarningCode::W009EncodingError => {
                 guard.1.files_skipped += 1;
                 guard.1.encoding_errors += 1;
@@ -242,6 +280,21 @@ impl DiagnosticCollector {
                 guard.1.partial_parses += 1;
             }
             WarningCode::W008ConfigParseFailed => {}
+            WarningCode::W010GraphVersionMismatch => {
+                guard.1.graph_load_warnings += 1;
+            }
+            WarningCode::W011GraphCorrupted => {
+                guard.1.graph_load_warnings += 1;
+            }
+            WarningCode::W012AlgorithmFailed => {
+                guard.1.algorithm_failures += 1;
+            }
+            WarningCode::W013StaleStats => {
+                guard.1.stale_stats += 1;
+            }
+            WarningCode::W014FsWatcherFailed => {}
+            WarningCode::W015IncrementalRebuildFailed => {}
+            WarningCode::W016StaleLockRemoved => {}
         }
         guard.0.push(warning);
     }

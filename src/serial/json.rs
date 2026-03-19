@@ -1,9 +1,11 @@
 use std::fs;
-use std::io::BufWriter;
+use std::io::{BufReader, BufWriter};
 use std::path::Path;
 
+use std::collections::BTreeMap;
+
 use crate::diagnostic::FatalError;
-use super::{ClusterOutput, GraphOutput, GraphSerializer};
+use super::{ClusterOutput, GraphOutput, GraphReader, GraphSerializer, RawImportOutput, StatsOutput};
 
 /// JSON serializer with atomic writes.
 pub struct JsonSerializer;
@@ -17,6 +19,89 @@ impl GraphSerializer for JsonSerializer {
     fn write_clusters(&self, clusters: &ClusterOutput, dir: &Path) -> Result<(), FatalError> {
         ensure_dir(dir)?;
         atomic_write(dir, "clusters.json", clusters)
+    }
+
+    fn write_stats(&self, stats: &StatsOutput, dir: &Path) -> Result<(), FatalError> {
+        ensure_dir(dir)?;
+        atomic_write(dir, "stats.json", stats)
+    }
+
+    fn write_raw_imports(
+        &self,
+        imports: &BTreeMap<String, Vec<RawImportOutput>>,
+        dir: &Path,
+    ) -> Result<(), FatalError> {
+        ensure_dir(dir)?;
+        atomic_write(dir, "raw_imports.json", imports)
+    }
+}
+
+impl GraphReader for JsonSerializer {
+    fn read_graph(&self, dir: &Path) -> Result<GraphOutput, FatalError> {
+        let path = dir.join("graph.json");
+        let file = fs::File::open(&path).map_err(|_| FatalError::GraphNotFound {
+            path: dir.to_path_buf(),
+        })?;
+        let reader = BufReader::new(file);
+        serde_json::from_reader(reader).map_err(|e| FatalError::GraphCorrupted {
+            path,
+            reason: e.to_string(),
+        })
+    }
+
+    fn read_clusters(&self, dir: &Path) -> Result<ClusterOutput, FatalError> {
+        let path = dir.join("clusters.json");
+        let file = fs::File::open(&path).map_err(|_| FatalError::GraphNotFound {
+            path: dir.to_path_buf(),
+        })?;
+        let reader = BufReader::new(file);
+        serde_json::from_reader(reader).map_err(|e| FatalError::GraphCorrupted {
+            path,
+            reason: e.to_string(),
+        })
+    }
+
+    fn read_stats(&self, dir: &Path) -> Result<Option<StatsOutput>, FatalError> {
+        let path = dir.join("stats.json");
+        match fs::File::open(&path) {
+            Ok(file) => {
+                let reader = BufReader::new(file);
+                let stats: StatsOutput = serde_json::from_reader(reader).map_err(|e| {
+                    FatalError::GraphCorrupted {
+                        path: path.clone(),
+                        reason: e.to_string(),
+                    }
+                })?;
+                if stats.version != 1 {
+                    return Err(FatalError::GraphCorrupted {
+                        path,
+                        reason: format!("unsupported stats version: {}", stats.version),
+                    });
+                }
+                Ok(Some(stats))
+            }
+            Err(_) => Ok(None),
+        }
+    }
+
+    fn read_raw_imports(
+        &self,
+        dir: &Path,
+    ) -> Result<Option<BTreeMap<String, Vec<RawImportOutput>>>, FatalError> {
+        let path = dir.join("raw_imports.json");
+        match fs::File::open(&path) {
+            Ok(file) => {
+                let reader = BufReader::new(file);
+                let imports = serde_json::from_reader(reader).map_err(|e| {
+                    FatalError::GraphCorrupted {
+                        path,
+                        reason: e.to_string(),
+                    }
+                })?;
+                Ok(Some(imports))
+            }
+            Err(_) => Ok(None),
+        }
     }
 }
 
