@@ -257,26 +257,27 @@ fn detect_dead_clusters(
 }
 
 /// Shotgun Surgery: file with blast radius > 30% of project file count
-/// Optimization: only check files with out-degree > 10
+/// Optimization: only check files with in-degree > 10 (files with few dependents
+/// can't have 30% blast radius since blast_radius uses reverse BFS).
 fn detect_shotgun_surgery(graph: &ProjectGraph, smells: &mut Vec<ArchSmell>) {
     let total_files = graph.nodes.len();
     if total_files == 0 {
         return;
     }
 
-    // Pre-compute out-degrees
-    let mut out_degrees: BTreeMap<&CanonicalPath, usize> = BTreeMap::new();
+    // Pre-compute in-degrees (how many files import this file)
+    let mut in_degrees: BTreeMap<&CanonicalPath, usize> = BTreeMap::new();
     for edge in &graph.edges {
         if edge.edge_type.is_architectural() {
-            *out_degrees.entry(&edge.from).or_default() += 1;
+            *in_degrees.entry(&edge.to).or_default() += 1;
         }
     }
 
     let threshold = 0.3;
 
-    for (path, &out_deg) in &out_degrees {
-        // Optimization: files with few deps can't have 30% blast radius
-        if out_deg <= 10 {
+    for (path, &in_deg) in &in_degrees {
+        // Optimization: files with few dependents can't have 30% blast radius
+        if in_deg <= 10 {
             continue;
         }
 

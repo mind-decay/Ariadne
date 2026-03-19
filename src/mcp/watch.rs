@@ -9,7 +9,6 @@ use notify_debouncer_full::{new_debouncer, DebounceEventResult, Debouncer, Recom
 use notify::RecursiveMode;
 
 use crate::analysis::diff::compute_structural_diff;
-use crate::analysis::metrics::compute_martin_metrics;
 use crate::diagnostic::FatalError;
 use crate::mcp::state::{GraphState, load_graph_state};
 use crate::pipeline::{BuildPipeline, WalkConfig};
