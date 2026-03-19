@@ -32,7 +32,7 @@ impl EdgeType {
 }
 
 /// A directed edge in the dependency graph.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub struct Edge {
     pub from: CanonicalPath,
     pub to: CanonicalPath,
