@@ -45,7 +45,6 @@ pub fn generate_blast_radius_view(
 /// Generate L2 subgraph view as markdown.
 pub fn generate_subgraph_view(
     subgraph: &SubgraphResult,
-    _graph: &ProjectGraph,
 ) -> String {
     let mut out = String::new();
     let centers: Vec<&str> = subgraph.center_files.iter().map(|p| p.as_str()).collect();

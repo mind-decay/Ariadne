@@ -6,8 +6,7 @@ use std::fs;
 use std::path::Path;
 
 use crate::diagnostic::FatalError;
-use crate::model::{ClusterMap, ProjectGraph};
-use crate::serial::StatsOutput;
+use crate::model::{ClusterMap, ProjectGraph, StatsOutput};
 
 /// Generate L0 index + all L1 cluster views.
 pub fn generate_all_views(

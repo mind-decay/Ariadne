@@ -48,6 +48,9 @@ enum Commands {
         /// Maximum number of files to process (default: 50000)
         #[arg(long, default_value_t = 50_000)]
         max_files: usize,
+        /// Disable Louvain clustering (use directory-based clusters only)
+        #[arg(long)]
+        no_louvain: bool,
     },
     /// Show version and supported languages
     Info,
@@ -60,6 +63,35 @@ enum Commands {
     Views {
         #[command(subcommand)]
         cmd: ViewsCommands,
+    },
+    /// Incremental update via delta computation
+    Update {
+        /// Path to the project root
+        path: PathBuf,
+        /// Output directory (default: .ariadne/graph/)
+        #[arg(long, short)]
+        output: Option<PathBuf>,
+        /// Enable verbose output
+        #[arg(long)]
+        verbose: bool,
+        /// Warning output format: "human" or "json"
+        #[arg(long, default_value = "human", value_parser = ["human", "json"])]
+        warnings: String,
+        /// Exit with code 1 if any warnings occurred
+        #[arg(long)]
+        strict: bool,
+        /// Include generation timestamp in output
+        #[arg(long)]
+        timestamp: bool,
+        /// Maximum file size in bytes (default: 1048576 = 1MB)
+        #[arg(long, default_value_t = 1_048_576)]
+        max_file_size: u64,
+        /// Maximum number of files to process (default: 50000)
+        #[arg(long, default_value_t = 50_000)]
+        max_files: usize,
+        /// Disable Louvain clustering
+        #[arg(long)]
+        no_louvain: bool,
     },
 }
 
@@ -182,6 +214,7 @@ fn main() {
             timestamp,
             max_file_size,
             max_files,
+            no_louvain,
         } => run_build(
             &path,
             output.as_deref(),
@@ -191,6 +224,7 @@ fn main() {
             timestamp,
             max_file_size,
             max_files,
+            no_louvain,
         ),
         Commands::Info => {
             run_info();
@@ -198,6 +232,27 @@ fn main() {
         }
         Commands::Query { cmd } => run_query(cmd),
         Commands::Views { cmd } => run_views(cmd),
+        Commands::Update {
+            path,
+            output,
+            verbose,
+            warnings,
+            strict,
+            timestamp,
+            max_file_size,
+            max_files,
+            no_louvain,
+        } => run_update(
+            &path,
+            output.as_deref(),
+            verbose,
+            &warnings,
+            strict,
+            timestamp,
+            max_file_size,
+            max_files,
+            no_louvain,
+        ),
     };
 
     if let Err(e) = result {
@@ -215,6 +270,7 @@ fn run_build(
     timestamp: bool,
     max_file_size: u64,
     max_files: usize,
+    no_louvain: bool,
 ) -> Result<(), FatalError> {
     let start = Instant::now();
 
@@ -236,7 +292,70 @@ fn run_build(
         ..WalkConfig::default()
     };
 
-    let build_output = pipeline.run_with_output(path, config, output, timestamp, verbose)?;
+    let build_output = pipeline.run_with_output(path, config, output, timestamp, verbose, no_louvain)?;
+    let elapsed = start.elapsed();
+    let report = DiagnosticReport {
+        warnings: build_output.warnings,
+        counts: build_output.counts,
+    };
+
+    println!(
+        "{}",
+        format_summary(
+            &report,
+            build_output.file_count,
+            build_output.edge_count,
+            build_output.cluster_count,
+            elapsed,
+        )
+    );
+
+    let warning_output = format_warnings(&report, warning_format, verbose);
+    if !warning_output.is_empty() {
+        eprintln!("{}", warning_output);
+    }
+
+    if strict && !report.warnings.is_empty() {
+        process::exit(1);
+    }
+
+    Ok(())
+}
+
+fn run_update(
+    path: &PathBuf,
+    output: Option<&std::path::Path>,
+    verbose: bool,
+    warnings: &str,
+    strict: bool,
+    timestamp: bool,
+    max_file_size: u64,
+    max_files: usize,
+    no_louvain: bool,
+) -> Result<(), FatalError> {
+    let start = Instant::now();
+
+    let warning_format = match warnings {
+        "json" => WarningFormat::Json,
+        _ => WarningFormat::Human,
+    };
+
+    let pipeline = BuildPipeline::new(
+        Box::new(FsWalker::new()),
+        Box::new(FsReader::new()),
+        ParserRegistry::with_tier1(),
+        Box::new(JsonSerializer),
+    );
+
+    let reader = JsonSerializer;
+
+    let config = WalkConfig {
+        max_files,
+        max_file_size,
+        ..WalkConfig::default()
+    };
+
+    let build_output = pipeline.update(path, config, &reader, output, timestamp, verbose, no_louvain)?;
     let elapsed = start.elapsed();
     let report = DiagnosticReport {
         warnings: build_output.warnings,
@@ -309,6 +428,14 @@ fn load_clusters(reader: &dyn GraphReader, dir: &std::path::Path) -> Result<Clus
 
 // --- Query commands ---
 
+/// Serialize to pretty JSON, mapping errors to FatalError.
+fn json_pretty<T: serde::Serialize>(value: &T) -> Result<String, FatalError> {
+    serde_json::to_string_pretty(value).map_err(|e| FatalError::OutputNotWritable {
+        path: std::path::PathBuf::from("<stdout>"),
+        reason: format!("JSON serialization failed: {}", e),
+    })
+}
+
 fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
     let reader = JsonSerializer;
 
@@ -328,7 +455,7 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
                     .iter()
                     .map(|(k, &v)| (k.as_str().to_string(), v))
                     .collect();
-                println!("{}", serde_json::to_string_pretty(&json_result).unwrap());
+                println!("{}", json_pretty(&json_result)?);
             } else {
                 let view = ariadne_graph::views::impact::generate_blast_radius_view(
                     path.as_str(),
@@ -351,10 +478,10 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
             if format == "json" {
                 // Serialize SubgraphResult to JSON
                 let json = serialize_subgraph_result(&result);
-                println!("{}", serde_json::to_string_pretty(&json).unwrap());
+                println!("{}", json_pretty(&json)?);
             } else {
                 let view =
-                    ariadne_graph::views::impact::generate_subgraph_view(&result, &graph);
+                    ariadne_graph::views::impact::generate_subgraph_view(&result);
                 print!("{}", view);
             }
         }
@@ -362,7 +489,7 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
             let stats = load_stats(&reader, &graph_dir)?;
 
             if format == "json" {
-                println!("{}", serde_json::to_string_pretty(&stats).unwrap());
+                println!("{}", json_pretty(&stats)?);
             } else {
                 print_stats_md(&stats);
             }
@@ -380,7 +507,7 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
                 .collect();
 
             if format == "json" {
-                println!("{}", serde_json::to_string_pretty(&filtered).unwrap());
+                println!("{}", json_pretty(&filtered)?);
             } else {
                 println!("# Betweenness Centrality (min: {:.4})\n", min);
                 println!("| File | Centrality |");
@@ -405,7 +532,7 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
             if format == "json" {
                 let cluster_output = reader_ref.read_clusters(&graph_dir)?;
                 if let Some(entry) = cluster_output.clusters.get(&name) {
-                    println!("{}", serde_json::to_string_pretty(entry).unwrap());
+                    println!("{}", json_pretty(entry)?);
                 } else {
                     eprintln!("Cluster '{}' not found", name);
                     process::exit(1);
@@ -427,8 +554,8 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
             let stats = load_stats(&reader, &graph_dir)?;
             let cp = CanonicalPath::new(&path);
 
-            let node = graph.nodes.get(&cp).ok_or_else(|| FatalError::GraphNotFound {
-                path: graph_dir.clone(),
+            let node = graph.nodes.get(&cp).ok_or_else(|| FatalError::FileNotInGraph {
+                path: path.clone(),
             })?;
 
             if format == "json" {
@@ -464,7 +591,7 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
                     centrality: stats.centrality.get(&path).copied(),
                     cluster: node.cluster.as_str().to_string(),
                 };
-                println!("{}", serde_json::to_string_pretty(&file_output).unwrap());
+                println!("{}", json_pretty(&file_output)?);
             } else {
                 println!("# File: `{}`\n", path);
                 println!("- **Type:** {}", node.file_type.as_str());
@@ -501,7 +628,7 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
             let stats = load_stats(&reader, &graph_dir)?;
 
             if format == "json" {
-                println!("{}", serde_json::to_string_pretty(&stats.sccs).unwrap());
+                println!("{}", json_pretty(&stats.sccs)?);
             } else {
                 println!("# Circular Dependencies\n");
                 if stats.sccs.is_empty() {
@@ -517,7 +644,7 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
             let stats = load_stats(&reader, &graph_dir)?;
 
             if format == "json" {
-                println!("{}", serde_json::to_string_pretty(&stats.layers).unwrap());
+                println!("{}", json_pretty(&stats.layers)?);
             } else {
                 println!("# Topological Layers\n");
                 println!("Max depth: {}\n", stats.summary.max_depth);

@@ -196,7 +196,7 @@ fn timestamp_false_omits_generated_field() {
     let pipeline = make_pipeline();
 
     pipeline
-        .run_with_output(&path, WalkConfig::default(), Some(output_path), false, false)
+        .run_with_output(&path, WalkConfig::default(), Some(output_path), false, false, false)
         .expect("build should succeed");
 
     let graph_json = std::fs::read_to_string(output_path.join("graph.json")).unwrap();
@@ -216,7 +216,7 @@ fn timestamp_true_adds_generated_field() {
     let pipeline = make_pipeline();
 
     pipeline
-        .run_with_output(&path, WalkConfig::default(), Some(output_path), true, false)
+        .run_with_output(&path, WalkConfig::default(), Some(output_path), true, false, false)
         .expect("build should succeed");
 
     let graph_json = std::fs::read_to_string(output_path.join("graph.json")).unwrap();
@@ -261,6 +261,6 @@ fn walk_config_respects_max_files() {
 
     // The pipeline might still succeed if it finds at least 1 parseable file,
     // or fail with E004 if the 1 file isn't parseable. Either is valid.
-    let _result = pipeline.run_with_output(&path, config, Some(output_path), false, false);
+    let _result = pipeline.run_with_output(&path, config, Some(output_path), false, false, false);
     // We just verify it doesn't panic
 }

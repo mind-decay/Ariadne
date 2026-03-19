@@ -22,7 +22,7 @@ pub struct Cluster {
 }
 
 /// Map of all clusters in the project.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct ClusterMap {
     pub clusters: BTreeMap<ClusterId, Cluster>,
 }

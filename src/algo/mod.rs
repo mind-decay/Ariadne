@@ -1,5 +1,7 @@
 pub mod blast_radius;
 pub mod centrality;
+pub mod delta;
+pub mod louvain;
 pub mod scc;
 pub mod stats;
 pub mod subgraph;
@@ -13,6 +15,11 @@ use crate::model::{CanonicalPath, Edge};
 /// Excludes tests edges per D-034.
 pub fn is_architectural(edge: &Edge) -> bool {
     edge.edge_type.is_architectural()
+}
+
+/// Round to 4 decimal places — standardized float determinism utility (D-049).
+pub fn round4(v: f64) -> f64 {
+    (v * 10000.0).round() / 10000.0
 }
 
 /// Build forward and reverse adjacency indices from edges, filtered by predicate.

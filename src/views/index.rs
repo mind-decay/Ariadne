@@ -1,8 +1,7 @@
 use std::collections::BTreeMap;
 use std::fmt::Write;
 
-use crate::model::{ClusterMap, ProjectGraph};
-use crate::serial::StatsOutput;
+use crate::model::{ClusterMap, ProjectGraph, StatsOutput};
 
 /// Generate L0 index.md content.
 pub fn generate_index(

@@ -7,6 +7,9 @@ use std::path::Path;
 use serde::{Deserialize, Serialize};
 
 use crate::diagnostic::FatalError;
+// Re-export StatsOutput/StatsSummary from model/ for backwards compatibility.
+// These types live in model/ so algo/ can depend on them without violating D-033.
+pub use crate::model::{StatsOutput, StatsSummary};
 
 /// Output model for graph.json (D-022).
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -48,26 +51,6 @@ pub struct ClusterEntryOutput {
     pub internal_edges: u32,
     pub external_edges: u32,
     pub cohesion: f64,
-}
-
-/// Output model for stats.json.
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct StatsOutput {
-    pub version: u32,
-    pub centrality: BTreeMap<String, f64>,
-    pub sccs: Vec<Vec<String>>,
-    pub layers: BTreeMap<String, Vec<String>>,
-    pub summary: StatsSummary,
-}
-
-/// Summary statistics for the project graph.
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct StatsSummary {
-    pub max_depth: u32,
-    pub avg_in_degree: f64,
-    pub avg_out_degree: f64,
-    pub bottleneck_files: Vec<String>,
-    pub orphan_files: Vec<String>,
 }
 
 /// Output model for `ariadne query file --format json`.

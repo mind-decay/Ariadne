@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, VecDeque};
 
-use crate::algo::{build_adjacency, is_architectural};
+use crate::algo::{build_adjacency, is_architectural, round4};
 use crate::model::{CanonicalPath, ProjectGraph};
 
 /// Compute betweenness centrality using Brandes algorithm.
@@ -87,10 +87,6 @@ pub fn betweenness_centrality(graph: &ProjectGraph) -> BTreeMap<CanonicalPath, f
         .into_iter()
         .map(|(k, v)| (k.clone(), round4(v / normalization)))
         .collect()
-}
-
-fn round4(v: f64) -> f64 {
-    (v * 10000.0).round() / 10000.0
 }
 
 #[cfg(test)]

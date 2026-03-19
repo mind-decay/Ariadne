@@ -24,6 +24,8 @@ pub enum FatalError {
     StatsNotFound { path: PathBuf },
     #[error("E008: corrupted file {path}: {reason}")]
     GraphCorrupted { path: PathBuf, reason: String },
+    #[error("E009: file not found in graph: {path}")]
+    FileNotInGraph { path: String },
 }
 
 /// Warning codes for recoverable errors.
@@ -34,6 +36,7 @@ pub enum WarningCode {
     W002ReadFailed,
     W003FileTooLarge,
     W004BinaryFile,
+    W005MaxFilesReached,
     W006ImportUnresolved,
     W007PartialParse,
     W008ConfigParseFailed,
@@ -51,6 +54,7 @@ impl WarningCode {
             Self::W002ReadFailed => "W002",
             Self::W003FileTooLarge => "W003",
             Self::W004BinaryFile => "W004",
+            Self::W005MaxFilesReached => "W005",
             Self::W006ImportUnresolved => "W006",
             Self::W007PartialParse => "W007",
             Self::W008ConfigParseFailed => "W008",
@@ -249,6 +253,9 @@ impl DiagnosticCollector {
             WarningCode::W004BinaryFile => {
                 guard.1.files_skipped += 1;
                 guard.1.binary_files += 1;
+            }
+            WarningCode::W005MaxFilesReached => {
+                // Not a file skip — a walk-level limit warning
             }
             WarningCode::W009EncodingError => {
                 guard.1.files_skipped += 1;

@@ -57,10 +57,16 @@ impl GraphReader for JsonSerializer {
                 let reader = BufReader::new(file);
                 let stats: StatsOutput = serde_json::from_reader(reader).map_err(|e| {
                     FatalError::GraphCorrupted {
-                        path,
+                        path: path.clone(),
                         reason: e.to_string(),
                     }
                 })?;
+                if stats.version != 1 {
+                    return Err(FatalError::GraphCorrupted {
+                        path,
+                        reason: format!("unsupported stats version: {}", stats.version),
+                    });
+                }
                 Ok(Some(stats))
             }
             Err(_) => Ok(None),

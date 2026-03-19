@@ -1,8 +1,7 @@
 use std::collections::BTreeMap;
 
 use crate::algo::is_architectural;
-use crate::model::{CanonicalPath, FileType, ProjectGraph};
-use crate::serial::{StatsOutput, StatsSummary};
+use crate::model::{CanonicalPath, FileType, ProjectGraph, StatsOutput, StatsSummary};
 
 /// Compute StatsOutput from algorithm results.
 pub fn compute_stats(
@@ -28,11 +27,12 @@ pub fn compute_stats(
         .collect();
     sccs_output.sort_by(|a, b| a[0].cmp(&b[0]));
 
-    // Layers: invert file→layer to layer→files
+    // Layers: invert file→layer to layer→files.
+    // Zero-pad keys for correct numeric ordering in BTreeMap (N12 fix).
     let mut layers_output: BTreeMap<String, Vec<String>> = BTreeMap::new();
     for (file, &layer) in layers {
         layers_output
-            .entry(layer.to_string())
+            .entry(format!("{:05}", layer))
             .or_default()
             .push(file.as_str().to_string());
     }
@@ -114,6 +114,4 @@ pub fn compute_stats(
     }
 }
 
-fn round4(v: f64) -> f64 {
-    (v * 10000.0).round() / 10000.0
-}
+use super::round4;

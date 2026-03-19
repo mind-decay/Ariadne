@@ -1,8 +1,7 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write;
 
-use crate::model::{EdgeType, ProjectGraph};
-use crate::serial::StatsOutput;
+use crate::model::{EdgeType, ProjectGraph, StatsOutput};
 
 /// Generate L1 cluster detail view.
 pub fn generate_cluster_view(
@@ -14,8 +13,8 @@ pub fn generate_cluster_view(
     writeln!(out, "# Cluster: {}", cluster_name).unwrap();
     writeln!(out).unwrap();
 
-    // Collect files in this cluster
-    let cluster_files: Vec<&str> = graph
+    // Collect files in this cluster (BTreeSet for O(1) membership tests)
+    let cluster_files: BTreeSet<&str> = graph
         .nodes
         .iter()
         .filter(|(_, node)| node.cluster.as_str() == cluster_name)
