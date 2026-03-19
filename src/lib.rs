@@ -1,4 +1,5 @@
 pub mod algo;
+pub mod analysis;
 pub mod cluster;
 pub mod detect;
 pub mod diagnostic;
