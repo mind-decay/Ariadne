@@ -302,6 +302,21 @@ fn main() {
     }
 }
 
+/// Check if MCP server is running and block CLI write operations.
+#[cfg(feature = "serve")]
+fn check_server_lock(output_dir: &std::path::Path) -> Result<(), FatalError> {
+    let lock_path = output_dir.join(".lock");
+    if let Ok(status) = ariadne_graph::mcp::lock::check_lock(&lock_path) {
+        if let ariadne_graph::mcp::lock::LockStatus::HeldByOther { pid } = status {
+            return Err(FatalError::LockFileHeld {
+                pid,
+                lock_path,
+            });
+        }
+    }
+    Ok(())
+}
+
 fn run_build(
     path: &PathBuf,
     output: Option<&std::path::Path>,
@@ -313,6 +328,15 @@ fn run_build(
     max_files: usize,
     no_louvain: bool,
 ) -> Result<(), FatalError> {
+    // Check if MCP server is running
+    #[cfg(feature = "serve")]
+    {
+        let output_dir = output
+            .map(|d| d.to_path_buf())
+            .unwrap_or_else(|| path.join(".ariadne").join("graph"));
+        check_server_lock(&output_dir)?;
+    }
+
     let start = Instant::now();
 
     let warning_format = match warnings {
@@ -374,6 +398,15 @@ fn run_update(
     max_files: usize,
     no_louvain: bool,
 ) -> Result<(), FatalError> {
+    // Check if MCP server is running
+    #[cfg(feature = "serve")]
+    {
+        let output_dir = output
+            .map(|d| d.to_path_buf())
+            .unwrap_or_else(|| path.join(".ariadne").join("graph"));
+        check_server_lock(&output_dir)?;
+    }
+
     let start = Instant::now();
 
     let warning_format = match warnings {
