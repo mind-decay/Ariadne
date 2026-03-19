@@ -221,11 +221,15 @@ When algorithms are added (blast radius, centrality, cycles, Louvain):
 | Tarjan's SCC | O(V + E) | <10ms | Linear, fast |
 | Louvain clustering | O(n log n) | <200ms | Iterative, converges fast |
 | Topological sort | O(V + E) | <10ms | Linear, fast |
-| Delta computation | O(changed files) | <1s typical | Only re-parses changed files |
+| Delta computation | O(V + E) | <1s typical | Full rebuild on any change (D-050) |
 
 All algorithms run on the in-memory graph (already loaded). No I/O during computation.
 
-**Delta computation** is the key Phase 2 performance feature: instead of full rebuild, only re-parse files whose content hash changed. Typical delta (10 files changed out of 3000) should complete in <1s.
+Delta computation detects changes via content hash comparison. When no changes
+are detected, returns immediately (no-op fast path). When any changes are
+detected, performs a full rebuild (D-050). The algorithms are fast enough
+(<1s for 3k files) that incremental re-parsing provides negligible benefit
+without Phase 3's in-memory graph.
 
 ## Benchmark Targets Summary
 

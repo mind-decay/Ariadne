@@ -8,8 +8,6 @@ use criterion::{criterion_group, criterion_main, Criterion};
 
 use ariadne_graph::algo;
 use ariadne_graph::model::*;
-use ariadne_graph::serial::RawImportOutput;
-
 #[cfg(feature = "serve")]
 use ariadne_graph::mcp::state::GraphState;
 

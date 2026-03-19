@@ -174,7 +174,7 @@ impl AriadneTools {
             },
         });
 
-        serde_json::to_string_pretty(&result).unwrap()
+        to_json(&result)
     }
 
     // --- T2: File detail ---
@@ -196,7 +196,7 @@ impl AriadneTools {
                     "suggestion": format!("File may be new. Graph freshness: {:.0}%",
                         state.freshness.hash_confidence * 100.0),
                 });
-                return serde_json::to_string_pretty(&result).unwrap();
+                return to_json(&result);
             }
         };
 
@@ -228,7 +228,7 @@ impl AriadneTools {
             "outgoing_edges": outgoing,
         });
 
-        serde_json::to_string_pretty(&result).unwrap()
+        to_json(&result)
     }
 
     // --- T3: Blast radius ---
@@ -247,7 +247,7 @@ impl AriadneTools {
             .map(|(k, &v)| (k.as_str().to_string(), v))
             .collect();
 
-        serde_json::to_string_pretty(&json_result).unwrap()
+        to_json(&json_result)
     }
 
     // --- T4: Subgraph ---
@@ -288,7 +288,7 @@ impl AriadneTools {
             "depth": result.depth,
         });
 
-        serde_json::to_string_pretty(&json).unwrap()
+        to_json(&json)
     }
 
     // --- T5: Centrality ---
@@ -318,7 +318,7 @@ impl AriadneTools {
             .map(|(path, &score)| serde_json::json!({"path": path, "centrality": score}))
             .collect();
 
-        serde_json::to_string_pretty(&result).unwrap()
+        to_json(&result)
     }
 
     // --- T6: Cycles ---
@@ -329,7 +329,7 @@ impl AriadneTools {
     )]
     fn cycles(&self) -> String {
         let state = self.state.load();
-        serde_json::to_string_pretty(&state.stats.sccs).unwrap()
+        to_json(&state.stats.sccs)
     }
 
     // --- T7: Layers ---
@@ -348,7 +348,7 @@ impl AriadneTools {
                 .map(|paths| paths.iter().map(|p| p.as_str().to_string()).collect())
                 .unwrap_or_default();
             let result = serde_json::json!({ "layer": layer, "files": files });
-            serde_json::to_string_pretty(&result).unwrap()
+            to_json(&result)
         } else {
             let result: BTreeMap<u32, Vec<String>> = state
                 .layer_index
@@ -357,7 +357,7 @@ impl AriadneTools {
                     (depth, paths.iter().map(|p| p.as_str().to_string()).collect())
                 })
                 .collect();
-            serde_json::to_string_pretty(&result).unwrap()
+            to_json(&result)
         }
     }
 
@@ -381,7 +381,7 @@ impl AriadneTools {
                     "external_edges": cluster.external_edges,
                     "cohesion": cluster.cohesion,
                 });
-                serde_json::to_string_pretty(&result).unwrap()
+                to_json(&result)
             }
             None => {
                 let result = serde_json::json!({
@@ -389,7 +389,7 @@ impl AriadneTools {
                     "cluster": params.name,
                     "available_clusters": state.clusters.clusters.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
                 });
-                serde_json::to_string_pretty(&result).unwrap()
+                to_json(&result)
             }
         }
     }
@@ -433,7 +433,7 @@ impl AriadneTools {
             "outgoing": outgoing,
         });
 
-        serde_json::to_string_pretty(&result).unwrap()
+        to_json(&result)
     }
 
     // --- T10: Freshness ---
@@ -457,7 +457,7 @@ impl AriadneTools {
             "total_files": state.graph.nodes.len(),
         });
 
-        serde_json::to_string_pretty(&result).unwrap()
+        to_json(&result)
     }
 
     // --- T12: Metrics ---
@@ -468,7 +468,7 @@ impl AriadneTools {
     )]
     fn metrics(&self) -> String {
         let state = self.state.load();
-        serde_json::to_string_pretty(&state.cluster_metrics).unwrap()
+        to_json(&state.cluster_metrics)
     }
 
     // --- T13: Smells ---
@@ -487,27 +487,13 @@ impl AriadneTools {
         );
 
         let filtered: Vec<_> = if let Some(ref min_sev) = params.min_severity {
-            let min = match min_sev.to_lowercase().as_str() {
-                "high" => 2,
-                "medium" => 1,
-                _ => 0,
-            };
-            smells
-                .into_iter()
-                .filter(|s| {
-                    let level = match s.severity {
-                        crate::model::SmellSeverity::High => 2,
-                        crate::model::SmellSeverity::Medium => 1,
-                        crate::model::SmellSeverity::Low => 0,
-                    };
-                    level >= min
-                })
-                .collect()
+            let min = crate::model::SmellSeverity::from_str_loose(min_sev);
+            smells.into_iter().filter(|s| s.severity.level() >= min.level()).collect()
         } else {
             smells
         };
 
-        serde_json::to_string_pretty(&filtered).unwrap()
+        to_json(&filtered)
     }
 
     // --- T14: Diff ---
@@ -519,7 +505,7 @@ impl AriadneTools {
     fn diff(&self) -> String {
         let state = self.state.load();
         match &state.last_diff {
-            Some(diff) => serde_json::to_string_pretty(diff).unwrap(),
+            Some(diff) => to_json(diff),
             None => "null".to_string(),
         }
     }
@@ -554,7 +540,7 @@ impl AriadneTools {
             })
             .collect();
 
-        serde_json::to_string_pretty(&result).unwrap()
+        to_json(&result)
     }
 
     // --- T16: Compressed ---
@@ -567,7 +553,7 @@ impl AriadneTools {
         let state = self.state.load();
 
         match params.level {
-            0 => serde_json::to_string_pretty(&state.compressed_l0).unwrap(),
+            0 => to_json(&state.compressed_l0),
             1 => {
                 let focus = match &params.focus {
                     Some(f) => f,
@@ -578,7 +564,7 @@ impl AriadneTools {
                             "available_clusters": state.clusters.clusters.keys()
                                 .map(|k| k.as_str()).collect::<Vec<_>>(),
                         });
-                        return serde_json::to_string_pretty(&result).unwrap();
+                        return to_json(&result);
                     }
                 };
                 let cluster_id = crate::model::ClusterId::new(focus);
@@ -588,7 +574,7 @@ impl AriadneTools {
                     &state.stats,
                     &cluster_id,
                 ) {
-                    Ok(cg) => serde_json::to_string_pretty(&cg).unwrap(),
+                    Ok(cg) => to_json(&cg),
                     Err(e) => {
                         let result = serde_json::json!({
                             "error": "not_found",
@@ -596,7 +582,7 @@ impl AriadneTools {
                             "available_clusters": state.clusters.clusters.keys()
                                 .map(|k| k.as_str()).collect::<Vec<_>>(),
                         });
-                        serde_json::to_string_pretty(&result).unwrap()
+                        to_json(&result)
                     }
                 }
             }
@@ -608,7 +594,7 @@ impl AriadneTools {
                             "error": "missing_focus",
                             "message": "Level 2 requires a 'focus' parameter (file path)",
                         });
-                        return serde_json::to_string_pretty(&result).unwrap();
+                        return to_json(&result);
                     }
                 };
                 let cp = CanonicalPath::new(focus);
@@ -620,13 +606,13 @@ impl AriadneTools {
                     &cp,
                     depth,
                 ) {
-                    Ok(cg) => serde_json::to_string_pretty(&cg).unwrap(),
+                    Ok(cg) => to_json(&cg),
                     Err(e) => {
                         let result = serde_json::json!({
                             "error": "not_found",
                             "message": e,
                         });
-                        serde_json::to_string_pretty(&result).unwrap()
+                        to_json(&result)
                     }
                 }
             }
@@ -635,7 +621,7 @@ impl AriadneTools {
                     "error": "invalid_level",
                     "message": "Level must be 0, 1, or 2",
                 });
-                serde_json::to_string_pretty(&result).unwrap()
+                to_json(&result)
             }
         }
     }
@@ -648,7 +634,7 @@ impl AriadneTools {
     )]
     fn spectral(&self) -> String {
         let state = self.state.load();
-        serde_json::to_string_pretty(&state.spectral).unwrap()
+        to_json(&state.spectral)
     }
 
     // --- T11: Views export ---
@@ -695,6 +681,12 @@ impl AriadneTools {
             _ => format!("Unknown level '{}'. Use L0, L1, or L2.", params.level),
         }
     }
+}
+
+/// Serialize to pretty JSON, returning error string on failure instead of panicking.
+fn to_json<T: serde::Serialize>(value: &T) -> String {
+    serde_json::to_string_pretty(value)
+        .unwrap_or_else(|e| format!("{{\"error\":\"serialization_failed\",\"reason\":\"{}\"}}", e))
 }
 
 /// Helper: convert Edge to JSON value.

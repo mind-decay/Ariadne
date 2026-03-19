@@ -29,6 +29,7 @@ fn bench_build_100(c: &mut Criterion) {
                     Some(output_dir.path()),
                     false,
                     false,
+                    false,
                 )
                 .unwrap();
         });
@@ -47,6 +48,7 @@ fn bench_build_1000(c: &mut Criterion) {
                     project.path(),
                     WalkConfig::default(),
                     Some(output_dir.path()),
+                    false,
                     false,
                     false,
                 )
@@ -69,6 +71,7 @@ fn bench_build_3000(c: &mut Criterion) {
                     project.path(),
                     WalkConfig::default(),
                     Some(output_dir.path()),
+                    false,
                     false,
                     false,
                 )

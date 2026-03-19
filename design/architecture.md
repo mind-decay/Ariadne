@@ -114,7 +114,7 @@ Used by the pipeline and algorithms. Optimized for programmatic use with newtype
 Node {
     file_type: FileType,       // source | test | config | style | asset | type_def
     layer: ArchLayer,          // api | service | data | util | component | hook | config | unknown
-    arch_depth: u32,           // topological depth (Phase 1a: always 0; computed via topo sort in Phase 2)
+    arch_depth: u32,           // topological depth via topo sort after SCC contraction (0 = leaf/foundation)
     lines: u32,                // line count
     hash: ContentHash,         // content hash for delta detection (D-013)
     exports: Vec<Symbol>,      // exported symbol names (sorted)
@@ -206,10 +206,12 @@ WalkConfig {
 BuildOutput {
     graph_path: PathBuf,       // path to written graph.json
     clusters_path: PathBuf,    // path to written clusters.json
+    stats_path: PathBuf,       // path to written stats.json (Phase 2+)
     file_count: usize,
     edge_count: usize,
     cluster_count: usize,
     warnings: Vec<Warning>,    // drained from DiagnosticCollector, sorted
+    counts: DiagnosticCounts,  // aggregate counts for summary reporting
 }
 ```
 
@@ -336,7 +338,7 @@ BuildPipeline {
 
 ```
 walk(root) → Vec<FileEntry>
-  → read_files() → Vec<FileContent>           (parallel via rayon on sorted list)
+  → read_files() → Vec<FileContent>           (sequential, I/O-bound)
     → parse_files() → Vec<ParsedFile>          (parallel via rayon, preserves order)
       → resolve_and_build() → ProjectGraph     (sequential: resolution + edge creation)
         → cluster() → ClusterMap               (sequential: directory-based grouping)
@@ -445,6 +447,8 @@ src/
 | `cluster/` | `model/` | `parser/`, `pipeline/`, `serial/` |
 | `algo/` | `model/` | `serial/`, `pipeline/`, `parser/`, `views/` |
 | `views/` | `model/`, `diagnostic.rs` (for `FatalError`) | `parser/`, `pipeline/`, `algo/`, `serial/` |
+| `analysis/` | `model/`, `algo/` | `serial/`, `pipeline/`, `parser/`, `views/`, `mcp/` |
+| `mcp/` | `model/`, `algo/`, `analysis/`, `serial/`, `pipeline/` | `parser/` |
 | `serial/` | `model/`, `diagnostic.rs` (for `FatalError`) | `parser/`, `pipeline/`, `detect/`, `cluster/` |
 | `diagnostic.rs` | `model/` (for `CanonicalPath` in warnings) | everything else |
 | `hash.rs` | `model/` (returns `ContentHash`) | everything else |
@@ -504,7 +508,8 @@ Output goes under `.ariadne/` in the project root. The graph output directory is
 ├── graph/
 │   ├── graph.json      # full graph — source of truth
 │   ├── clusters.json   # cluster definitions with metadata
-│   └── stats.json      # precomputed metrics (centrality, layers, SCCs) (Phase 2)
+│   ├── stats.json      # precomputed metrics (centrality, layers, SCCs) (Phase 2)
+│   └── raw_imports.json # per-file import data for freshness engine (D-054, not committed)
 └── views/              # generated markdown views (Phase 2)
     ├── index.md        # L0: cluster list, critical files, cycles
     ├── clusters/       # L1: per-cluster detail
@@ -867,6 +872,7 @@ chmod +x /usr/local/bin/ariadne
 
 - `.ariadne/graph/graph.json`, `clusters.json`, `stats.json`: **committed** (canonical, deterministic)
 - `.ariadne/views/`: **committed** (generated but stable, useful for review)
+- `.ariadne/graph/raw_imports.json`: **not committed** (internal data for freshness engine, regenerated on every build)
 - No gitignored state — everything is reproducible
 
 ## Integration

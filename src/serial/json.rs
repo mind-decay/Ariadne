@@ -5,7 +5,8 @@ use std::path::Path;
 use std::collections::BTreeMap;
 
 use crate::diagnostic::FatalError;
-use super::{ClusterOutput, GraphOutput, GraphReader, GraphSerializer, RawImportOutput, StatsOutput};
+use crate::model::StatsOutput;
+use super::{ClusterOutput, GraphOutput, GraphReader, GraphSerializer, RawImportOutput};
 
 /// JSON serializer with atomic writes.
 pub struct JsonSerializer;

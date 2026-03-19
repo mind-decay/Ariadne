@@ -254,7 +254,7 @@ impl DiagnosticCollector {
 
     /// Record a warning.
     pub fn warn(&self, warning: Warning) {
-        let mut guard = self.inner.lock().unwrap();
+        let mut guard = self.inner.lock().unwrap_or_else(|e| e.into_inner());
         match warning.code {
             WarningCode::W001ParseFailed => {
                 guard.1.files_skipped += 1;
@@ -310,13 +310,13 @@ impl DiagnosticCollector {
     /// Increment unresolved import count without recording a warning
     /// (used when not in verbose mode).
     pub fn increment_unresolved(&self) {
-        let mut guard = self.inner.lock().unwrap();
+        let mut guard = self.inner.lock().unwrap_or_else(|e| e.into_inner());
         guard.1.imports_unresolved += 1;
     }
 
     /// Consume the collector and return a sorted diagnostic report.
     pub fn drain(self) -> DiagnosticReport {
-        let (mut warnings, counts) = self.inner.into_inner().unwrap();
+        let (mut warnings, counts) = self.inner.into_inner().unwrap_or_else(|e| e.into_inner());
         // Sort by (path, code) for deterministic output (D-006)
         warnings.sort_by(|a, b| a.path.cmp(&b.path).then(a.code.cmp(&b.code)));
         DiagnosticReport { warnings, counts }

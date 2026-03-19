@@ -14,7 +14,7 @@ use crate::mcp::state::{load_graph_state, GraphState};
 use crate::mcp::tools::AriadneTools;
 use crate::mcp::watch::FileWatcher;
 use crate::parser::ParserRegistry;
-use crate::pipeline::{BuildPipeline, FsReader, FsWalker, WalkConfig};
+use crate::pipeline::{BuildPipeline, WalkConfig};
 use crate::serial::json::JsonSerializer;
 
 pub struct ServeConfig {
@@ -22,6 +22,7 @@ pub struct ServeConfig {
     pub output_dir: PathBuf,
     pub debounce_ms: u64,
     pub watch_enabled: bool,
+    pub pipeline: Arc<BuildPipeline>,
 }
 
 /// Run the MCP server. This is the main entry point for `ariadne serve`.
@@ -39,8 +40,7 @@ pub async fn run(config: ServeConfig) -> Result<(), FatalError> {
                 "[ariadne] No graph found in {}. Running initial build...",
                 config.output_dir.display()
             );
-            let pipeline = make_pipeline();
-            pipeline.run_with_output(
+            config.pipeline.run_with_output(
                 &config.project_root,
                 WalkConfig::default(),
                 Some(&config.output_dir),
@@ -59,7 +59,7 @@ pub async fn run(config: ServeConfig) -> Result<(), FatalError> {
 
     // 4. Start file watcher or poll fallback
     let _watcher = if config.watch_enabled {
-        let pipeline = Arc::new(make_pipeline());
+        let pipeline = config.pipeline.clone();
         let registry = ParserRegistry::with_tier1();
         let known_extensions: HashSet<String> = registry
             .supported_extensions()
@@ -208,11 +208,3 @@ fn start_poll_fallback(
     });
 }
 
-fn make_pipeline() -> BuildPipeline {
-    BuildPipeline::new(
-        Box::new(FsWalker::new()),
-        Box::new(FsReader::new()),
-        ParserRegistry::with_tier1(),
-        Box::new(JsonSerializer),
-    )
-}

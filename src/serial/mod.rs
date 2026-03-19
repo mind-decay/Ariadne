@@ -7,9 +7,7 @@ use std::path::Path;
 use serde::{Deserialize, Serialize};
 
 use crate::diagnostic::FatalError;
-// Re-export StatsOutput/StatsSummary from model/ for backwards compatibility.
-// These types live in model/ so algo/ can depend on them without violating D-033.
-pub use crate::model::{StatsOutput, StatsSummary};
+use crate::model::StatsOutput;
 
 /// Output model for graph.json (D-022).
 #[derive(Clone, Debug, Serialize, Deserialize)]

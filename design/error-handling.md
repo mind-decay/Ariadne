@@ -25,6 +25,10 @@ These prevent any useful work. The binary exits with code 1 and a clear error me
 | `E007: StatsNotFound`     | `ariadne query stats/layers/cycles` when stats.json doesn't exist (Phase 2) | `error: stats not found in {path}. Run 'ariadne build' first.`                              |
 | `E008: GraphCorrupted`    | graph.json or stats.json exists but can't be parsed during query commands (Phase 2) | `error: corrupted file {path}: {reason}`                                                    |
 | `E009: FileNotInGraph`    | `ariadne query file` when the specified file is not in the graph (Phase 2) | `error: file not found in graph: {path}`                                                     |
+| `E010: McpServerFailed` | MCP server failed to start | Exit 1 |
+| `E011: LockFileHeld` | Another ariadne server is running (lock held) | Exit 1 |
+| `E012: McpProtocolError` | MCP protocol-level error during serving | Exit 1 |
+| `E013: InvalidArgument` | Invalid CLI argument value | Exit 1 |
 
 ### Recoverable Errors (exit code 0, file skipped, warning emitted)
 
@@ -45,6 +49,11 @@ These affect individual files. The file is excluded from the graph. Build contin
 | `W011: GraphCorrupted`    | graph.json exists but can't be parsed (Phase 2)                                                        | Fall back to full rebuild, emit warning                                                                                                                                             |
 | `W012: AlgorithmFailed`   | Algorithm failed (e.g., Louvain didn't converge) (Phase 2)                                             | Skip that output, continue. Fall back to directory clusters if Louvain fails                                                                                                        |
 | `W013: StaleStats`        | stats.json modification time older than graph.json (Phase 2)                                           | Recompute stats, emit warning                                                                                                                                                       |
+| `W014: FsWatcherFailed` | File system watcher failed to start | Fall back to 30s polling |
+| `W015: IncrementalRebuildFailed` | Auto-rebuild during MCP serving failed | Serve stale data with freshness warning |
+| `W016: StaleLockRemoved` | Removed stale lock file from dead process | Continue normally |
+| `W017: SmellDetectionSkipped` | Smell detection skipped due to missing data | Return partial results |
+| `W018: BlastRadiusTimeout` | Blast radius computation exceeded limit | Skip file in shotgun surgery detection |
 
 ### Design Decisions
 
@@ -81,6 +90,14 @@ pub enum FatalError {
     GraphCorrupted { path: PathBuf, reason: String },
     #[error("E009: file not found in graph: {path}")]
     FileNotInGraph { path: String },
+    #[error("E010: failed to start MCP server: {reason}")]
+    McpServerFailed { reason: String },
+    #[error("E011: another ariadne server is running (PID {pid})")]
+    LockFileHeld { pid: u32, lock_path: PathBuf },
+    #[error("E012: MCP protocol error: {reason}")]
+    McpProtocolError { reason: String },
+    #[error("E013: invalid argument: {reason}")]
+    InvalidArgument { reason: String },
 }
 ```
 
@@ -90,7 +107,7 @@ Warnings are collected during parallel processing (rayon) and reported after all
 
 ```rust
 pub struct Warning {
-    pub code: WarningCode,         // W001-W013 enum
+    pub code: WarningCode,         // W001-W018 enum
     pub path: CanonicalPath,       // affected file
     pub message: String,           // human-readable description
     pub detail: Option<String>,    // additional context

@@ -12,7 +12,8 @@ use ariadne_graph::model::{CanonicalPath, ClusterMap, ProjectGraph};
 use ariadne_graph::pipeline::{BuildPipeline, FsReader, FsWalker, WalkConfig};
 use ariadne_graph::parser::ParserRegistry;
 use ariadne_graph::serial::json::JsonSerializer;
-use ariadne_graph::serial::{GraphReader, StatsOutput};
+use ariadne_graph::model::StatsOutput;
+use ariadne_graph::serial::GraphReader;
 
 #[derive(Parser)]
 #[command(name = "ariadne", version, about = "Structural dependency graph engine")]
@@ -317,11 +318,18 @@ fn main() {
         } => {
             let abs_project = std::fs::canonicalize(&project).unwrap_or(project);
             let output_dir = output.unwrap_or_else(|| abs_project.join(".ariadne").join("graph"));
+            let pipeline = std::sync::Arc::new(BuildPipeline::new(
+                Box::new(FsWalker::new()),
+                Box::new(FsReader::new()),
+                ParserRegistry::with_tier1(),
+                Box::new(JsonSerializer),
+            ));
             let config = ariadne_graph::mcp::server::ServeConfig {
                 project_root: abs_project,
                 output_dir,
                 debounce_ms: debounce,
                 watch_enabled: !no_watch,
+                pipeline,
             };
             let rt = tokio::runtime::Runtime::new().map_err(|e| {
                 ariadne_graph::diagnostic::FatalError::McpServerFailed {
@@ -955,23 +963,8 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
             );
 
             let filtered: Vec<_> = if let Some(ref min_sev) = min_severity {
-                use ariadne_graph::model::SmellSeverity;
-                let min = match min_sev.to_lowercase().as_str() {
-                    "high" => 2,
-                    "medium" => 1,
-                    _ => 0,
-                };
-                smells
-                    .into_iter()
-                    .filter(|s| {
-                        let level = match s.severity {
-                            SmellSeverity::High => 2,
-                            SmellSeverity::Medium => 1,
-                            SmellSeverity::Low => 0,
-                        };
-                        level >= min
-                    })
-                    .collect()
+                let min = ariadne_graph::model::SmellSeverity::from_str_loose(min_sev);
+                smells.into_iter().filter(|s| s.severity.level() >= min.level()).collect()
             } else {
                 smells
             };

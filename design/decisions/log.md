@@ -273,7 +273,7 @@ Ariadne has **zero knowledge of any specific consumer**. No Moira-specific forma
 **Date:** 2026-03-18
 **Status:** Accepted
 **Context:** `ProjectGraph` is used both for in-memory graph operations and as the serialization target. These have different requirements: internal operations benefit from newtypes (`CanonicalPath`) and enums, while JSON output needs string keys and compact tuple edges (D-012). Mixing both in one type forces compromises or complex serde attributes.
-**Decision:** Separate internal model (`ProjectGraph` with newtypes, used by pipeline and algorithms) from output model (`GraphOutput` with string keys and tuple edges, used only for serialization). Conversion via `impl From<ProjectGraph> for GraphOutput`. All sort-point enforcement (D-006) happens during conversion — internal model doesn't need to maintain sort order during construction. `ClusterOutput` similarly separated from internal `ClusterMap`.
+**Decision:** Separate internal model (`ProjectGraph` with newtypes, used by pipeline and algorithms) from output model (`GraphOutput` with string keys and tuple edges, used only for serialization). Conversion via `project_graph_to_output(graph, project_root)` free function (requires `project_root` parameter, so `From` impl is not suitable). All sort-point enforcement (D-006) happens during conversion — internal model doesn't need to maintain sort order during construction. `ClusterOutput` similarly separated from internal `ClusterMap`.
 **Alternatives rejected:**
 - Single type with serde attributes — complex, couples internal structure to JSON format
 - Single type with BTreeMap everywhere — works but forces serialization concerns into pipeline code
@@ -641,7 +641,7 @@ Phase 2b depends on 2a. Phase 2a can ship independently.
 ## D-047: Thread-Based Architecture — No Async Runtime
 
 **Date:** 2026-03-18
-**Status:** Accepted
+**Status:** Partially superseded by D-051
 **Context:** Phase 3 MCP server needs concurrency: fs watching, delta rebuilds, and MCP request handling. Two approaches: async runtime (tokio) or OS threads.
 **Decision:** Thread-based architecture. `notify` crate uses OS-native file watching with a dedicated watcher thread. MCP JSON-RPC runs on the main thread (stdio is inherently sequential — one request at a time). Delta rebuilds run on a background thread, communicate via `Arc<RwLock<GraphState>>`. No tokio or async-std dependency.
 **Alternatives rejected:**
@@ -649,6 +649,8 @@ Phase 2b depends on 2a. Phase 2a can ship independently.
 - Single-threaded with blocking — delta rebuild would block MCP responses for 1-2 seconds
 **Reasoning:** The concurrency model is simple: main thread handles MCP requests, background thread handles delta rebuilds, watcher thread handles fs events. `Arc<RwLock<GraphState>>` is the only synchronization point. No async complexity. Binary stays small. Build stays fast. Phase 1-2 have zero async dependencies — Phase 3 should not introduce them without clear benefit.
 **Affects:** Phase 3 spec D1/D4, Cargo.toml (no tokio), src/mcp/.
+
+**Note (updated 2026-03-19):** The `serve` subcommand uses tokio due to `rmcp` crate requirements (D-051). The "no async runtime" principle still applies to all non-serve code paths (build, query, update, info).
 
 ## D-048: `analysis/` Module Separate from `algo/`
 

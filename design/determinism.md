@@ -42,7 +42,7 @@ pub struct GraphOutput {
 }
 ```
 
-Conversion via `impl From<ProjectGraph> for GraphOutput` — single place where sort-point enforcement happens. Internal pipeline code doesn't need to worry about serialization ordering.
+Conversion via `project_graph_to_output(graph, project_root)` free function — single place where sort-point enforcement happens. Internal pipeline code doesn't need to worry about serialization ordering.
 
 **BTreeMap everywhere (KISS decision):** We use `BTreeMap` in both internal and output models rather than `HashMap` internally + conversion. The ~20% lookup overhead is negligible compared to parsing. This avoids a category of "forgot to sort" bugs.
 
@@ -126,6 +126,8 @@ Cluster cohesion is `f64`. To ensure byte-identical JSON output across platforms
 | `stats.json` layers      | BTreeMap by layer number (string). Files: lexicographic | Construction time |
 | `stats.json` bottleneck_files | Centrality descending, then path ascending | Before serialization |
 | `stats.json` orphan_files | Lexicographic by path    | Before serialization |
+| `raw_imports.json` keys | `BTreeMap<String, Vec<RawImportOutput>>` — outer keys sorted lexicographically by file path | Construction time |
+| `raw_imports.json` import entries | `Vec` order matches `parsed_files` iteration order (sorted by `CanonicalPath` before parsing) | Before serialization |
 
 **Note:** All `stats.json` float values (`centrality`, `avg_in_degree`, `avg_out_degree`) are rounded to 4 decimal places before serialization, following the same pattern as cluster cohesion. See D-034, D-049.
 

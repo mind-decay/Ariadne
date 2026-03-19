@@ -364,18 +364,9 @@ impl BuildPipeline {
                 }
                 return self.run_with_output(root, config, output_dir, timestamp, verbose, no_louvain);
             }
-            Err(FatalError::GraphCorrupted { ref path, ref reason }) => {
-                // W011: corrupted graph — fall back to full rebuild (route through diagnostics)
-                let diagnostics = DiagnosticCollector::new();
-                diagnostics.warn(Warning {
-                    code: WarningCode::W011GraphCorrupted,
-                    path: CanonicalPath::new(path.to_string_lossy().to_string()),
-                    message: format!("corrupted graph: {}", reason),
-                    detail: None,
-                });
-                let report = diagnostics.drain();
-                for w in &report.warnings {
-                    eprintln!("warn[{}]: {}: {}", w.code, w.path, w.message);
+            Err(FatalError::GraphCorrupted { ref reason, .. }) => {
+                if verbose {
+                    eprintln!("[delta]     corrupted graph: {} — falling back to full build", reason);
                 }
                 return self.run_with_output(root, config, output_dir, timestamp, verbose, no_louvain);
             }
@@ -384,19 +375,8 @@ impl BuildPipeline {
 
         // W010: version mismatch check
         if old_graph_output.version != 1 {
-            let diagnostics = DiagnosticCollector::new();
-            diagnostics.warn(Warning {
-                code: WarningCode::W010GraphVersionMismatch,
-                path: CanonicalPath::new(out_dir.to_string_lossy().to_string()),
-                message: format!(
-                    "graph version {} does not match expected version 1 — falling back to full build",
-                    old_graph_output.version
-                ),
-                detail: None,
-            });
-            let report = diagnostics.drain();
-            for w in &report.warnings {
-                eprintln!("warn[{}]: {}: {}", w.code, w.path, w.message);
+            if verbose {
+                eprintln!("[delta]     graph version {} != 1 — falling back to full build", old_graph_output.version);
             }
             return self.run_with_output(root, config, output_dir, timestamp, verbose, no_louvain);
         }
@@ -404,17 +384,8 @@ impl BuildPipeline {
         let old_graph: ProjectGraph = match old_graph_output.try_into() {
             Ok(g) => g,
             Err(reason) => {
-                // W011: conversion failure (route through diagnostics)
-                let diagnostics = DiagnosticCollector::new();
-                diagnostics.warn(Warning {
-                    code: WarningCode::W011GraphCorrupted,
-                    path: CanonicalPath::new(out_dir.to_string_lossy().to_string()),
-                    message: format!("graph conversion failed: {}", reason),
-                    detail: None,
-                });
-                let report = diagnostics.drain();
-                for w in &report.warnings {
-                    eprintln!("warn[{}]: {}: {}", w.code, w.path, w.message);
+                if verbose {
+                    eprintln!("[delta]     graph conversion failed: {} — falling back to full build", reason);
                 }
                 return self.run_with_output(root, config, output_dir, timestamp, verbose, no_louvain);
             }
