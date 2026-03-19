@@ -15,6 +15,8 @@ pub struct GraphState {
     pub clusters: ClusterMap,
     /// Precomputed reverse adjacency: target -> edges pointing to it.
     pub reverse_index: BTreeMap<CanonicalPath, Vec<Edge>>,
+    /// Precomputed forward adjacency: source -> edges going out from it.
+    pub forward_index: BTreeMap<CanonicalPath, Vec<Edge>>,
     /// Arch depth -> files at that layer.
     pub layer_index: BTreeMap<u32, Vec<CanonicalPath>>,
     /// File path -> content hash (from graph nodes).
@@ -86,6 +88,7 @@ impl GraphState {
         raw_imports: BTreeMap<String, Vec<RawImportOutput>>,
     ) -> Self {
         let reverse_index = Self::build_reverse_index(&graph);
+        let forward_index = Self::build_forward_index(&graph);
         let layer_index = Self::build_layer_index(&graph);
         let file_hashes = graph
             .nodes
@@ -98,6 +101,7 @@ impl GraphState {
             stats,
             clusters,
             reverse_index,
+            forward_index,
             layer_index,
             file_hashes,
             raw_imports,
@@ -111,6 +115,17 @@ impl GraphState {
         for edge in &graph.edges {
             index
                 .entry(edge.to.clone())
+                .or_default()
+                .push(edge.clone());
+        }
+        index
+    }
+
+    fn build_forward_index(graph: &ProjectGraph) -> BTreeMap<CanonicalPath, Vec<Edge>> {
+        let mut index: BTreeMap<CanonicalPath, Vec<Edge>> = BTreeMap::new();
+        for edge in &graph.edges {
+            index
+                .entry(edge.from.clone())
                 .or_default()
                 .push(edge.clone());
         }

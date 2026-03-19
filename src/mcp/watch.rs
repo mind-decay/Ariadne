@@ -18,8 +18,23 @@ pub struct FileWatcher {
     _debouncer: Debouncer<notify::RecommendedWatcher, RecommendedCache>,
 }
 
-/// Check if a file change should trigger a rebuild based on its extension.
-pub fn should_trigger_rebuild(path: &Path, known_extensions: &HashSet<String>) -> bool {
+/// Check if a file change should trigger a rebuild.
+/// Rejects paths under `.ariadne/` output directory and filters by known extensions.
+pub fn should_trigger_rebuild(
+    path: &Path,
+    known_extensions: &HashSet<String>,
+    output_dir: &Path,
+) -> bool {
+    // Exclude changes under the output directory to prevent recursive rebuilds
+    if path.starts_with(output_dir) {
+        return false;
+    }
+    // Also exclude .ariadne/ by component match (covers non-canonical paths)
+    for component in path.components() {
+        if component.as_os_str() == ".ariadne" {
+            return false;
+        }
+    }
     path.extension()
         .and_then(|e| e.to_str())
         .map(|ext| known_extensions.contains(ext))
@@ -54,9 +69,10 @@ impl FileWatcher {
                     match result {
                         Ok(events) => {
                             // Check if any event involves a file we care about
+                            // Excludes .ariadne/ output directory to prevent recursive rebuilds
                             let relevant = events.iter().any(|e| {
                                 e.event.paths.iter().any(|p| {
-                                    should_trigger_rebuild(p, &known_extensions)
+                                    should_trigger_rebuild(p, &known_extensions, &output_dir)
                                 })
                             });
 
@@ -135,22 +151,44 @@ impl FileWatcher {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_should_trigger_rebuild() {
-        let extensions: HashSet<String> = ["ts", "js", "rs", "go", "py"]
+    fn exts() -> HashSet<String> {
+        ["ts", "js", "rs", "go", "py"]
             .iter()
             .map(|s| s.to_string())
-            .collect();
+            .collect()
+    }
 
-        assert!(should_trigger_rebuild(Path::new("src/foo.ts"), &extensions));
-        assert!(should_trigger_rebuild(Path::new("src/bar.rs"), &extensions));
+    #[test]
+    fn test_should_trigger_rebuild() {
+        let out = Path::new("/project/.ariadne/graph");
+        assert!(should_trigger_rebuild(Path::new("src/foo.ts"), &exts(), out));
+        assert!(should_trigger_rebuild(Path::new("src/bar.rs"), &exts(), out));
+        assert!(!should_trigger_rebuild(Path::new("README.md"), &exts(), out));
+        assert!(!should_trigger_rebuild(Path::new("image.png"), &exts(), out));
+    }
+
+    #[test]
+    fn test_excludes_ariadne_output_dir() {
+        let out = Path::new("/project/.ariadne/graph");
         assert!(!should_trigger_rebuild(
-            Path::new("README.md"),
-            &extensions
+            Path::new("/project/.ariadne/graph/graph.json"),
+            &exts(),
+            out,
         ));
         assert!(!should_trigger_rebuild(
-            Path::new("image.png"),
-            &extensions
+            Path::new("/project/.ariadne/graph/raw_imports.json"),
+            &exts(),
+            out,
+        ));
+    }
+
+    #[test]
+    fn test_excludes_ariadne_component() {
+        let out = Path::new("/project/.ariadne/graph");
+        assert!(!should_trigger_rebuild(
+            Path::new("project/.ariadne/views/index.md"),
+            &exts(),
+            out,
         ));
     }
 }

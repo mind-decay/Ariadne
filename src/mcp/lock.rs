@@ -61,19 +61,20 @@ pub fn release_lock(lock_path: &Path) -> Result<(), FatalError> {
 }
 
 /// Check the status of the lock file without modifying it.
+/// If the lock file is corrupted (unreadable or invalid JSON), treat it as stale
+/// rather than returning a confusing GraphCorrupted error.
 pub fn check_lock(lock_path: &Path) -> Result<LockStatus, FatalError> {
     if !lock_path.exists() {
         return Ok(LockStatus::Free);
     }
-    let content = std::fs::read_to_string(lock_path).map_err(|e| FatalError::GraphCorrupted {
-        path: lock_path.to_path_buf(),
-        reason: e.to_string(),
-    })?;
-    let lock: LockContent =
-        serde_json::from_str(&content).map_err(|e| FatalError::GraphCorrupted {
-            path: lock_path.to_path_buf(),
-            reason: e.to_string(),
-        })?;
+    let content = match std::fs::read_to_string(lock_path) {
+        Ok(c) => c,
+        Err(_) => return Ok(LockStatus::Stale { pid: 0 }),
+    };
+    let lock: LockContent = match serde_json::from_str(&content) {
+        Ok(l) => l,
+        Err(_) => return Ok(LockStatus::Stale { pid: 0 }),
+    };
 
     let current_pid = std::process::id();
     if lock.pid == current_pid {
@@ -104,8 +105,17 @@ fn write_lock(lock_path: &Path) -> Result<(), FatalError> {
 
 #[cfg(unix)]
 fn is_process_alive(pid: u32) -> bool {
-    // kill(pid, 0) checks if process exists without sending a signal
-    unsafe { libc::kill(pid as i32, 0) == 0 }
+    // kill(pid, 0) checks if process exists without sending a signal.
+    // Returns 0 if process exists and we have permission.
+    // Returns -1 with errno EPERM if process exists but we lack permission.
+    // Returns -1 with errno ESRCH if process does not exist.
+    let ret = unsafe { libc::kill(pid as i32, 0) };
+    if ret == 0 {
+        return true;
+    }
+    // Check errno: EPERM means process exists but owned by another user
+    let err = std::io::Error::last_os_error();
+    err.raw_os_error() == Some(1) // EPERM = 1 on all Unix platforms
 }
 
 #[cfg(not(unix))]
@@ -127,7 +137,7 @@ fn current_timestamp() -> String {
     )
 }
 
-// Re-export libc for unix kill check
+// Minimal libc bindings for kill(2)
 #[cfg(unix)]
 mod libc {
     extern "C" {

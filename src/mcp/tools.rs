@@ -184,12 +184,10 @@ impl AriadneTools {
             .unwrap_or_default();
 
         let outgoing: Vec<serde_json::Value> = state
-            .graph
-            .edges
-            .iter()
-            .filter(|e| e.from == cp)
-            .map(edge_to_json)
-            .collect();
+            .forward_index
+            .get(&cp)
+            .map(|edges| edges.iter().map(edge_to_json).collect())
+            .unwrap_or_default();
 
         let centrality = state.stats.centrality.get(params.path.as_str()).copied();
 
@@ -397,12 +395,10 @@ impl AriadneTools {
         let outgoing: Vec<serde_json::Value> =
             if params.direction == "out" || params.direction == "both" {
                 state
-                    .graph
-                    .edges
-                    .iter()
-                    .filter(|e| e.from == cp)
-                    .map(edge_to_json)
-                    .collect()
+                    .forward_index
+                    .get(&cp)
+                    .map(|edges| edges.iter().map(edge_to_json).collect())
+                    .unwrap_or_default()
             } else {
                 vec![]
             };

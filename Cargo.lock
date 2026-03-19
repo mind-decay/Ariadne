@@ -114,6 +114,7 @@ dependencies = [
  "thiserror",
  "time",
  "tokio",
+ "tokio-util",
  "tree-sitter",
  "tree-sitter-c-sharp",
  "tree-sitter-go",

@@ -46,6 +46,18 @@ mod lock_tests {
     }
 
     #[test]
+    fn test_corrupted_lock_treated_as_stale() {
+        let dir = tempdir().unwrap();
+        let lock_path = dir.path().join(".lock");
+
+        // Write garbage to the lock file
+        std::fs::write(&lock_path, "not valid json!!!").unwrap();
+
+        let status = check_lock(&lock_path).unwrap();
+        assert!(status.is_stale(), "Corrupted lock should be treated as stale");
+    }
+
+    #[test]
     fn test_acquire_removes_stale_lock() {
         let dir = tempdir().unwrap();
         let lock_path = dir.path().join(".lock");
@@ -257,6 +269,26 @@ mod state_tests {
         let layer1 = state.layer_index.get(&1).unwrap();
         assert_eq!(layer1.len(), 1);
         assert_eq!(layer1[0], CanonicalPath::new("src/a.ts"));
+    }
+
+    #[test]
+    fn graph_state_builds_forward_index() {
+        let (graph, stats, clusters) = make_test_graph();
+        let state = GraphState::from_loaded_data(graph, stats, clusters, BTreeMap::new());
+
+        // a.ts should have one outgoing edge to b.ts
+        let a_outgoing = state
+            .forward_index
+            .get(&CanonicalPath::new("src/a.ts"))
+            .unwrap();
+        assert_eq!(a_outgoing.len(), 1);
+        assert_eq!(a_outgoing[0].to, CanonicalPath::new("src/b.ts"));
+
+        // b.ts has no outgoing edges
+        assert!(state
+            .forward_index
+            .get(&CanonicalPath::new("src/b.ts"))
+            .is_none());
     }
 
     #[test]
