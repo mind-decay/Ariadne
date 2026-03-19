@@ -202,6 +202,27 @@ enum QueryCommands {
         #[arg(long, default_value = ".ariadne/graph/")]
         graph_dir: PathBuf,
     },
+    /// Show Martin metrics per cluster
+    Metrics {
+        /// Output format
+        #[arg(long, default_value = "md", value_parser = ["md", "json"])]
+        format: String,
+        /// Graph directory
+        #[arg(long, default_value = ".ariadne/graph/")]
+        graph_dir: PathBuf,
+    },
+    /// Detect architectural smells
+    Smells {
+        /// Minimum severity: "high", "medium", or "low"
+        #[arg(long)]
+        min_severity: Option<String>,
+        /// Output format
+        #[arg(long, default_value = "md", value_parser = ["md", "json"])]
+        format: String,
+        /// Graph directory
+        #[arg(long, default_value = ".ariadne/graph/")]
+        graph_dir: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]
@@ -728,6 +749,89 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
                         println!("- `{}`", file);
                     }
                     println!();
+                }
+            }
+        }
+        QueryCommands::Metrics { format, graph_dir } => {
+            let graph = load_graph(&reader, &graph_dir)?;
+            let clusters = load_clusters(&reader, &graph_dir)?;
+            let metrics = ariadne_graph::analysis::metrics::compute_martin_metrics(&graph, &clusters);
+
+            if format == "json" {
+                println!("{}", json_pretty(&metrics)?);
+            } else {
+                println!("# Martin Metrics\n");
+                println!("| Cluster | I | A | D | Zone |");
+                println!("|---------|-----|-----|-----|------|");
+                for (id, m) in &metrics {
+                    println!(
+                        "| {} | {:.4} | {:.4} | {:.4} | {:?} |",
+                        id.as_str(),
+                        m.instability,
+                        m.abstractness,
+                        m.distance,
+                        m.zone
+                    );
+                }
+            }
+        }
+        QueryCommands::Smells {
+            min_severity,
+            format,
+            graph_dir,
+        } => {
+            let graph = load_graph(&reader, &graph_dir)?;
+            let stats = load_stats(&reader, &graph_dir)?;
+            let clusters = load_clusters(&reader, &graph_dir)?;
+            let metrics = ariadne_graph::analysis::metrics::compute_martin_metrics(&graph, &clusters);
+            let smells = ariadne_graph::analysis::smells::detect_smells(
+                &graph, &stats, &clusters, &metrics,
+            );
+
+            let filtered: Vec<_> = if let Some(ref min_sev) = min_severity {
+                use ariadne_graph::model::SmellSeverity;
+                let min = match min_sev.to_lowercase().as_str() {
+                    "high" => 2,
+                    "medium" => 1,
+                    _ => 0,
+                };
+                smells
+                    .into_iter()
+                    .filter(|s| {
+                        let level = match s.severity {
+                            SmellSeverity::High => 2,
+                            SmellSeverity::Medium => 1,
+                            SmellSeverity::Low => 0,
+                        };
+                        level >= min
+                    })
+                    .collect()
+            } else {
+                smells
+            };
+
+            if format == "json" {
+                println!("{}", json_pretty(&filtered)?);
+            } else {
+                println!("# Architectural Smells\n");
+                if filtered.is_empty() {
+                    println!("No architectural smells detected.");
+                } else {
+                    for smell in &filtered {
+                        println!(
+                            "- **{:?}** ({:?}): {}",
+                            smell.smell_type, smell.severity, smell.explanation
+                        );
+                        println!(
+                            "  Files: {}",
+                            smell
+                                .files
+                                .iter()
+                                .map(|f| format!("`{}`", f.as_str()))
+                                .collect::<Vec<_>>()
+                                .join(", ")
+                        );
+                    }
                 }
             }
         }

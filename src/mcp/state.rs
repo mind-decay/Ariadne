@@ -2,6 +2,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
+use crate::analysis::metrics::{compute_martin_metrics, ClusterMetrics};
 use crate::diagnostic::FatalError;
 use crate::model::*;
 use crate::serial::RawImportOutput;
@@ -23,6 +24,10 @@ pub struct GraphState {
     pub file_hashes: BTreeMap<CanonicalPath, ContentHash>,
     /// Raw imports per file (for structural freshness checks).
     pub raw_imports: BTreeMap<String, Vec<RawImportOutput>>,
+    /// Precomputed Martin metrics per cluster.
+    pub cluster_metrics: BTreeMap<ClusterId, ClusterMetrics>,
+    /// Structural diff from the last auto-update (None before first update).
+    pub last_diff: Option<StructuralDiff>,
     pub freshness: FreshnessState,
     pub loaded_at: SystemTime,
 }
@@ -95,6 +100,7 @@ impl GraphState {
             .iter()
             .map(|(path, node)| (path.clone(), node.hash.clone()))
             .collect();
+        let cluster_metrics = compute_martin_metrics(&graph, &clusters);
 
         Self {
             graph,
@@ -105,6 +111,8 @@ impl GraphState {
             layer_index,
             file_hashes,
             raw_imports,
+            cluster_metrics,
+            last_diff: None,
             freshness: FreshnessState::new(),
             loaded_at: SystemTime::now(),
         }

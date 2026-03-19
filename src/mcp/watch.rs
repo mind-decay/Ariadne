@@ -8,6 +8,8 @@ use arc_swap::ArcSwap;
 use notify_debouncer_full::{new_debouncer, DebounceEventResult, Debouncer, RecommendedCache};
 use notify::RecursiveMode;
 
+use crate::analysis::diff::compute_structural_diff;
+use crate::analysis::metrics::compute_martin_metrics;
 use crate::diagnostic::FatalError;
 use crate::mcp::state::{GraphState, load_graph_state};
 use crate::pipeline::{BuildPipeline, WalkConfig};
@@ -104,7 +106,20 @@ impl FileWatcher {
                                     // Reload state from disk
                                     let reader = JsonSerializer;
                                     match load_graph_state(&output_dir, &reader) {
-                                        Ok(new_state) => {
+                                        Ok(mut new_state) => {
+                                            // Compute structural diff before state swap
+                                            let old_state = state.load();
+                                            let diff = compute_structural_diff(
+                                                &old_state.graph,
+                                                &old_state.stats,
+                                                &old_state.clusters,
+                                                &old_state.cluster_metrics,
+                                                &new_state.graph,
+                                                &new_state.stats,
+                                                &new_state.clusters,
+                                                &new_state.cluster_metrics,
+                                            );
+                                            new_state.last_diff = Some(diff);
                                             state.store(Arc::new(new_state));
                                             eprintln!("[ariadne] Rebuild complete, state updated.");
                                         }

@@ -12,6 +12,7 @@ use rmcp::{tool, tool_handler, tool_router, ServerHandler};
 use serde::Deserialize;
 
 use crate::algo;
+use crate::analysis::smells::detect_smells;
 use crate::mcp::state::GraphState;
 use crate::model::CanonicalPath;
 
@@ -103,6 +104,12 @@ pub struct ViewsExportParam {
     pub level: String,
     /// Cluster name (required for L1, ignored for L0)
     pub cluster: Option<String>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct SmellsParam {
+    /// Minimum severity filter: "high", "medium", or "low" (default: all)
+    pub min_severity: Option<String>,
 }
 
 #[tool_router]
@@ -435,6 +442,70 @@ impl AriadneTools {
         });
 
         serde_json::to_string_pretty(&result).unwrap()
+    }
+
+    // --- T12: Metrics ---
+
+    #[tool(
+        name = "ariadne_metrics",
+        description = "Martin metrics per cluster: instability, abstractness, distance from main sequence, zone classification"
+    )]
+    fn metrics(&self) -> String {
+        let state = self.state.load();
+        serde_json::to_string_pretty(&state.cluster_metrics).unwrap()
+    }
+
+    // --- T13: Smells ---
+
+    #[tool(
+        name = "ariadne_smells",
+        description = "Detect architectural smells: god files, circular dependencies, layer violations, hub-and-spoke, unstable foundations, dead clusters, shotgun surgery"
+    )]
+    fn smells(&self, Parameters(params): Parameters<SmellsParam>) -> String {
+        let state = self.state.load();
+        let smells = detect_smells(
+            &state.graph,
+            &state.stats,
+            &state.clusters,
+            &state.cluster_metrics,
+        );
+
+        let filtered: Vec<_> = if let Some(ref min_sev) = params.min_severity {
+            let min = match min_sev.to_lowercase().as_str() {
+                "high" => 2,
+                "medium" => 1,
+                _ => 0,
+            };
+            smells
+                .into_iter()
+                .filter(|s| {
+                    let level = match s.severity {
+                        crate::model::SmellSeverity::High => 2,
+                        crate::model::SmellSeverity::Medium => 1,
+                        crate::model::SmellSeverity::Low => 0,
+                    };
+                    level >= min
+                })
+                .collect()
+        } else {
+            smells
+        };
+
+        serde_json::to_string_pretty(&filtered).unwrap()
+    }
+
+    // --- T14: Diff ---
+
+    #[tool(
+        name = "ariadne_diff",
+        description = "Structural diff since last auto-update: added/removed nodes and edges, new/resolved cycles, new/resolved smells"
+    )]
+    fn diff(&self) -> String {
+        let state = self.state.load();
+        match &state.last_diff {
+            Some(diff) => serde_json::to_string_pretty(diff).unwrap(),
+            None => "null".to_string(),
+        }
     }
 
     // --- T11: Views export ---
