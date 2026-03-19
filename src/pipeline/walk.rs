@@ -28,7 +28,34 @@ impl Default for WalkConfig {
         Self {
             max_files: 50_000,
             max_file_size: 1_048_576, // 1MB
-            exclude_dirs: vec![".ariadne".to_string()],
+            exclude_dirs: vec![
+                // Ariadne output
+                ".ariadne".to_string(),
+                // JS/TS
+                "node_modules".to_string(),
+                "bower_components".to_string(),
+                // Python
+                "__pycache__".to_string(),
+                ".venv".to_string(),
+                "venv".to_string(),
+                ".tox".to_string(),
+                ".mypy_cache".to_string(),
+                ".pytest_cache".to_string(),
+                // Rust
+                "target".to_string(),
+                // Go
+                "vendor".to_string(),
+                // Java/Kotlin
+                "build".to_string(),
+                // .NET
+                "bin".to_string(),
+                "obj".to_string(),
+                // Common build/dist output
+                "dist".to_string(),
+                ".next".to_string(),
+                ".nuxt".to_string(),
+                ".output".to_string(),
+            ],
         }
     }
 }
