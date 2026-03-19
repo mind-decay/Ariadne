@@ -3,6 +3,8 @@ pub mod cluster;
 pub mod detect;
 pub mod diagnostic;
 pub mod hash;
+#[cfg(feature = "serve")]
+pub mod mcp;
 pub mod model;
 pub mod parser;
 pub mod pipeline;
