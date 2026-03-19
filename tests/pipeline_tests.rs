@@ -323,3 +323,22 @@ fn pipeline_produces_raw_imports_json() {
     assert!(imports.is_some(), "raw_imports.json should be readable");
     assert!(!imports.unwrap().is_empty(), "raw_imports should not be empty for typescript-app");
 }
+
+#[test]
+fn reparse_imports_returns_imports_for_known_extension() {
+    let pipeline = make_pipeline();
+    let source = b"import { foo } from './bar';";
+    let result = pipeline.reparse_imports("ts", source);
+    assert!(result.is_some());
+    let imports = result.unwrap();
+    assert!(!imports.is_empty());
+    assert_eq!(imports[0].path, "./bar");
+}
+
+#[test]
+fn reparse_imports_returns_none_for_unknown_extension() {
+    let pipeline = make_pipeline();
+    let source = b"some random content";
+    let result = pipeline.reparse_imports("xyz", source);
+    assert!(result.is_none());
+}

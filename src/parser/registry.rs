@@ -132,6 +132,17 @@ impl ParserRegistry {
         }
     }
 
+    /// Re-parse imports from source bytes for a given file extension.
+    /// Used by the freshness engine for lightweight import change detection.
+    pub fn reparse_imports(&self, extension: &str, source: &[u8]) -> Option<Vec<RawImport>> {
+        let parser = self.parser_for(extension)?;
+        let ts_lang = parser.tree_sitter_language();
+        let mut ts_parser = tree_sitter::Parser::new();
+        ts_parser.set_language(&ts_lang).ok()?;
+        let tree = ts_parser.parse(source, None)?;
+        Some(parser.extract_imports(&tree, source))
+    }
+
     /// List all supported extensions.
     pub fn supported_extensions(&self) -> Vec<&str> {
         let mut exts: Vec<&str> = self.extension_index.keys().map(|s| s.as_str()).collect();

@@ -63,6 +63,13 @@ impl BuildPipeline {
         }
     }
 
+    /// Re-parse imports from source bytes for a given file extension.
+    /// Used by the freshness engine for lightweight import change detection.
+    /// Preserves the dependency boundary: mcp/ -> pipeline/ -> parser/.
+    pub fn reparse_imports(&self, extension: &str, source: &[u8]) -> Option<Vec<crate::parser::RawImport>> {
+        self.registry.reparse_imports(extension, source)
+    }
+
     pub fn run(&self, root: &Path, config: WalkConfig) -> Result<BuildOutput, FatalError> {
         self.run_with_output(root, config, None, false, false, false)
     }
