@@ -93,6 +93,12 @@ impl FreshnessState {
     }
 }
 
+impl Default for FreshnessState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl GraphState {
     /// Build GraphState from loaded data, constructing derived indices.
     pub fn from_loaded_data(
@@ -139,10 +145,7 @@ impl GraphState {
     fn build_reverse_index(graph: &ProjectGraph) -> BTreeMap<CanonicalPath, Vec<Edge>> {
         let mut index: BTreeMap<CanonicalPath, Vec<Edge>> = BTreeMap::new();
         for edge in &graph.edges {
-            index
-                .entry(edge.to.clone())
-                .or_default()
-                .push(edge.clone());
+            index.entry(edge.to.clone()).or_default().push(edge.clone());
         }
         index
     }
@@ -161,10 +164,7 @@ impl GraphState {
     fn build_layer_index(graph: &ProjectGraph) -> BTreeMap<u32, Vec<CanonicalPath>> {
         let mut index: BTreeMap<u32, Vec<CanonicalPath>> = BTreeMap::new();
         for (path, node) in &graph.nodes {
-            index
-                .entry(node.arch_depth)
-                .or_default()
-                .push(path.clone());
+            index.entry(node.arch_depth).or_default().push(path.clone());
         }
         index
     }
@@ -176,12 +176,13 @@ pub fn load_graph_state(
     reader: &dyn crate::serial::GraphReader,
 ) -> Result<GraphState, FatalError> {
     let graph_output = reader.read_graph(output_dir)?;
-    let graph: ProjectGraph = graph_output
-        .try_into()
-        .map_err(|e: String| FatalError::GraphCorrupted {
-            path: output_dir.join("graph.json"),
-            reason: e,
-        })?;
+    let graph: ProjectGraph =
+        graph_output
+            .try_into()
+            .map_err(|e: String| FatalError::GraphCorrupted {
+                path: output_dir.join("graph.json"),
+                reason: e,
+            })?;
 
     let cluster_output = reader.read_clusters(output_dir)?;
     let clusters: ClusterMap =

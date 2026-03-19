@@ -19,11 +19,7 @@ impl WorkspaceInfo {
                 .iter()
                 .map(|m| WorkspaceMember {
                     name: m.name.clone(),
-                    path: m
-                        .path
-                        .strip_prefix(root)
-                        .unwrap_or(&m.path)
-                        .to_path_buf(),
+                    path: m.path.strip_prefix(root).unwrap_or(&m.path).to_path_buf(),
                     entry_point: m
                         .entry_point
                         .strip_prefix(root)

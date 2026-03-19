@@ -207,4 +207,3 @@ fn start_poll_fallback(
         }
     });
 }
-

@@ -6,6 +6,7 @@ use crate::analysis::smells::detect_smells;
 use crate::model::*;
 
 /// Compute the structural diff between two graph snapshots.
+#[allow(clippy::too_many_arguments)]
 pub fn compute_structural_diff(
     old_graph: &ProjectGraph,
     old_stats: &StatsOutput,
@@ -102,8 +103,8 @@ fn edge_key(e: &Edge) -> EdgeKey {
 }
 
 fn diff_edges(old: &ProjectGraph, new: &ProjectGraph) -> (Vec<Edge>, Vec<Edge>) {
-    let old_keys: BTreeSet<EdgeKey> = old.edges.iter().map(|e| edge_key(e)).collect();
-    let new_keys: BTreeSet<EdgeKey> = new.edges.iter().map(|e| edge_key(e)).collect();
+    let old_keys: BTreeSet<EdgeKey> = old.edges.iter().map(edge_key).collect();
+    let new_keys: BTreeSet<EdgeKey> = new.edges.iter().map(edge_key).collect();
 
     let added: Vec<Edge> = new
         .edges
@@ -217,12 +218,12 @@ fn diff_cycles(
 
     let new_cycles: Vec<Vec<CanonicalPath>> = new_set
         .difference(&old_set)
-        .map(|scc| scc.iter().map(|s| CanonicalPath::new(s)).collect())
+        .map(|scc| scc.iter().map(CanonicalPath::new).collect())
         .collect();
 
     let resolved_cycles: Vec<Vec<CanonicalPath>> = old_set
         .difference(&new_set)
-        .map(|scc| scc.iter().map(|s| CanonicalPath::new(s)).collect())
+        .map(|scc| scc.iter().map(CanonicalPath::new).collect())
         .collect();
 
     (new_cycles, resolved_cycles)
@@ -241,8 +242,8 @@ fn diff_smells(
         (format!("{:?}", s.smell_type), files)
     };
 
-    let old_keys: BTreeSet<SmellKey> = old_smells.iter().map(|s| key(s)).collect();
-    let new_keys: BTreeSet<SmellKey> = new_smells.iter().map(|s| key(s)).collect();
+    let old_keys: BTreeSet<SmellKey> = old_smells.iter().map(&key).collect();
+    let new_keys: BTreeSet<SmellKey> = new_smells.iter().map(&key).collect();
 
     let new_only: Vec<ArchSmell> = new_smells
         .iter()
@@ -286,10 +287,7 @@ fn classify_change(
         return ChangeClassification::Breaking;
     }
 
-    if !added_nodes.is_empty()
-        && removed_nodes.is_empty()
-        && removed_edges.is_empty()
-    {
+    if !added_nodes.is_empty() && removed_nodes.is_empty() && removed_edges.is_empty() {
         return ChangeClassification::Additive;
     }
 
@@ -450,10 +448,7 @@ mod tests {
     #[test]
     fn refactor() {
         // Roughly equal add/remove, small magnitude
-        let old = make_graph(
-            &[("a.ts", "c1", 0), ("b.ts", "c1", 0)],
-            &[("a.ts", "b.ts")],
-        );
+        let old = make_graph(&[("a.ts", "c1", 0), ("b.ts", "c1", 0)], &[("a.ts", "b.ts")]);
         let new = make_graph(
             &[("a2.ts", "c1", 0), ("b.ts", "c1", 0)],
             &[("a2.ts", "b.ts")],
@@ -484,12 +479,14 @@ mod tests {
                 ("d.ts", "c1", 0),
                 ("e.ts", "c1", 0),
             ],
-            &[("a.ts", "b.ts"), ("b.ts", "c.ts"), ("c.ts", "d.ts"), ("d.ts", "e.ts")],
+            &[
+                ("a.ts", "b.ts"),
+                ("b.ts", "c.ts"),
+                ("c.ts", "d.ts"),
+                ("d.ts", "e.ts"),
+            ],
         );
-        let new = make_graph(
-            &[("a.ts", "c1", 0), ("b.ts", "c1", 0)],
-            &[("a.ts", "b.ts")],
-        );
+        let new = make_graph(&[("a.ts", "c1", 0), ("b.ts", "c1", 0)], &[("a.ts", "b.ts")]);
         let old_stats = make_stats(vec![]);
         let new_stats = make_stats(vec![]);
         let old_cl = make_clusters(&[
@@ -513,15 +510,9 @@ mod tests {
     #[test]
     fn louvain_noise_filtered() {
         // Same edges, but Louvain changed cluster assignment
-        let old = make_graph(
-            &[("a.ts", "c1", 0), ("b.ts", "c1", 0)],
-            &[("a.ts", "b.ts")],
-        );
+        let old = make_graph(&[("a.ts", "c1", 0), ("b.ts", "c1", 0)], &[("a.ts", "b.ts")]);
         // Same graph, same edges — only cluster assignment changed
-        let new = make_graph(
-            &[("a.ts", "c2", 0), ("b.ts", "c1", 0)],
-            &[("a.ts", "b.ts")],
-        );
+        let new = make_graph(&[("a.ts", "c2", 0), ("b.ts", "c1", 0)], &[("a.ts", "b.ts")]);
         let old_stats = make_stats(vec![]);
         let new_stats = make_stats(vec![]);
         let old_cl = make_clusters(&[("a.ts", "c1"), ("b.ts", "c1")]);

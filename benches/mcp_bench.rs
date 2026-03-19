@@ -7,9 +7,9 @@ use std::sync::Arc;
 use criterion::{criterion_group, criterion_main, Criterion};
 
 use ariadne_graph::algo;
-use ariadne_graph::model::*;
 #[cfg(feature = "serve")]
 use ariadne_graph::mcp::state::GraphState;
+use ariadne_graph::model::*;
 
 /// Build a synthetic GraphState for MCP benchmarks.
 #[cfg(feature = "serve")]
@@ -93,7 +93,12 @@ fn bench_mcp_overview(c: &mut Criterion) {
             // Simulate overview computation
             let mut lang_counts: BTreeMap<String, usize> = BTreeMap::new();
             for path in s.graph.nodes.keys() {
-                let ext = path.as_str().rsplit('.').next().unwrap_or("unknown").to_string();
+                let ext = path
+                    .as_str()
+                    .rsplit('.')
+                    .next()
+                    .unwrap_or("unknown")
+                    .to_string();
                 *lang_counts.entry(ext).or_default() += 1;
             }
             let _ = s.stats.sccs.len();

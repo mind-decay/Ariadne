@@ -42,275 +42,344 @@ macro_rules! invariant_test {
 }
 
 // INV-1: Every edge's `from` and `to` must reference a node that exists in `nodes`.
-invariant_test!(inv1_edge_referential_integrity, |graph: &serde_json::Value,
-                                                  _clusters: &serde_json::Value,
-                                                  _stats: &serde_json::Value,
-                                                  fixture: &str| {
-    let nodes = graph["nodes"].as_object().expect("nodes should be an object");
-    let edges = graph["edges"].as_array().expect("edges should be an array");
-    let node_ids: HashSet<&str> = nodes.keys().map(|k| k.as_str()).collect();
+invariant_test!(
+    inv1_edge_referential_integrity,
+    |graph: &serde_json::Value,
+     _clusters: &serde_json::Value,
+     _stats: &serde_json::Value,
+     fixture: &str| {
+        let nodes = graph["nodes"]
+            .as_object()
+            .expect("nodes should be an object");
+        let edges = graph["edges"].as_array().expect("edges should be an array");
+        let node_ids: HashSet<&str> = nodes.keys().map(|k| k.as_str()).collect();
 
-    for (i, edge) in edges.iter().enumerate() {
-        let edge_arr = edge.as_array().expect("each edge should be an array");
-        let from = edge_arr[0].as_str().expect("edge[0] (from) should be a string");
-        let to = edge_arr[1].as_str().expect("edge[1] (to) should be a string");
-
-        assert!(
-            node_ids.contains(from),
-            "INV-1 violated in '{}': edge {} has from='{}' which is not in nodes",
-            fixture, i, from
-        );
-        assert!(
-            node_ids.contains(to),
-            "INV-1 violated in '{}': edge {} has to='{}' which is not in nodes",
-            fixture, i, to
-        );
-    }
-});
-
-// INV-2: No edge has from == to (no self-imports).
-invariant_test!(inv2_no_self_imports, |graph: &serde_json::Value,
-                                       _clusters: &serde_json::Value,
-                                       _stats: &serde_json::Value,
-                                       fixture: &str| {
-    let edges = graph["edges"].as_array().expect("edges should be an array");
-
-    for (i, edge) in edges.iter().enumerate() {
-        let edge_arr = edge.as_array().expect("each edge should be an array");
-        let from = edge_arr[0].as_str().expect("edge[0] (from) should be a string");
-        let to = edge_arr[1].as_str().expect("edge[1] (to) should be a string");
-
-        assert_ne!(
-            from, to,
-            "INV-2 violated in '{}': edge {} is a self-import (from == to == '{}')",
-            fixture, i, from
-        );
-    }
-});
-
-// INV-3: Test edges connect test files to source/type_def files.
-invariant_test!(inv3_test_edges_connect_test_to_source, |graph: &serde_json::Value,
-                                                          _clusters: &serde_json::Value,
-                                                          _stats: &serde_json::Value,
-                                                          fixture: &str| {
-    let nodes = graph["nodes"].as_object().expect("nodes should be an object");
-    let edges = graph["edges"].as_array().expect("edges should be an array");
-
-    for (i, edge) in edges.iter().enumerate() {
-        let edge_arr = edge.as_array().expect("each edge should be an array");
-        let from = edge_arr[0].as_str().unwrap();
-        let to = edge_arr[1].as_str().unwrap();
-        let edge_type = edge_arr[2].as_str().unwrap();
-
-        if edge_type == "tests" {
-            let from_type = nodes[from]["type"].as_str().unwrap_or("");
-            let to_type = nodes[to]["type"].as_str().unwrap_or("");
+        for (i, edge) in edges.iter().enumerate() {
+            let edge_arr = edge.as_array().expect("each edge should be an array");
+            let from = edge_arr[0]
+                .as_str()
+                .expect("edge[0] (from) should be a string");
+            let to = edge_arr[1]
+                .as_str()
+                .expect("edge[1] (to) should be a string");
 
             assert!(
-                from_type == "test" && (to_type == "source" || to_type == "type_def"),
-                "INV-3 violated in '{}': test edge {} (from='{}' type={}, to='{}' type={}) \
-                 — expected from to be 'test' AND to to be 'source'/'type_def'",
-                fixture, i, from, from_type, to, to_type
+                node_ids.contains(from),
+                "INV-1 violated in '{}': edge {} has from='{}' which is not in nodes",
+                fixture,
+                i,
+                from
+            );
+            assert!(
+                node_ids.contains(to),
+                "INV-1 violated in '{}': edge {} has to='{}' which is not in nodes",
+                fixture,
+                i,
+                to
             );
         }
     }
-});
+);
+
+// INV-2: No edge has from == to (no self-imports).
+invariant_test!(
+    inv2_no_self_imports,
+    |graph: &serde_json::Value,
+     _clusters: &serde_json::Value,
+     _stats: &serde_json::Value,
+     fixture: &str| {
+        let edges = graph["edges"].as_array().expect("edges should be an array");
+
+        for (i, edge) in edges.iter().enumerate() {
+            let edge_arr = edge.as_array().expect("each edge should be an array");
+            let from = edge_arr[0]
+                .as_str()
+                .expect("edge[0] (from) should be a string");
+            let to = edge_arr[1]
+                .as_str()
+                .expect("edge[1] (to) should be a string");
+
+            assert_ne!(
+                from, to,
+                "INV-2 violated in '{}': edge {} is a self-import (from == to == '{}')",
+                fixture, i, from
+            );
+        }
+    }
+);
+
+// INV-3: Test edges connect test files to source/type_def files.
+invariant_test!(
+    inv3_test_edges_connect_test_to_source,
+    |graph: &serde_json::Value,
+     _clusters: &serde_json::Value,
+     _stats: &serde_json::Value,
+     fixture: &str| {
+        let nodes = graph["nodes"]
+            .as_object()
+            .expect("nodes should be an object");
+        let edges = graph["edges"].as_array().expect("edges should be an array");
+
+        for (i, edge) in edges.iter().enumerate() {
+            let edge_arr = edge.as_array().expect("each edge should be an array");
+            let from = edge_arr[0].as_str().unwrap();
+            let to = edge_arr[1].as_str().unwrap();
+            let edge_type = edge_arr[2].as_str().unwrap();
+
+            if edge_type == "tests" {
+                let from_type = nodes[from]["type"].as_str().unwrap_or("");
+                let to_type = nodes[to]["type"].as_str().unwrap_or("");
+
+                assert!(
+                    from_type == "test" && (to_type == "source" || to_type == "type_def"),
+                    "INV-3 violated in '{}': test edge {} (from='{}' type={}, to='{}' type={}) \
+                 — expected from to be 'test' AND to to be 'source'/'type_def'",
+                    fixture,
+                    i,
+                    from,
+                    from_type,
+                    to,
+                    to_type
+                );
+            }
+        }
+    }
+);
 
 // INV-4: Every node belongs to a cluster (cluster field is non-empty).
-invariant_test!(inv4_every_node_has_cluster, |graph: &serde_json::Value,
-                                              _clusters: &serde_json::Value,
-                                              _stats: &serde_json::Value,
-                                              fixture: &str| {
-    let nodes = graph["nodes"].as_object().expect("nodes should be an object");
+invariant_test!(
+    inv4_every_node_has_cluster,
+    |graph: &serde_json::Value,
+     _clusters: &serde_json::Value,
+     _stats: &serde_json::Value,
+     fixture: &str| {
+        let nodes = graph["nodes"]
+            .as_object()
+            .expect("nodes should be an object");
 
-    for (path, node) in nodes {
-        let cluster = node["cluster"].as_str().unwrap_or("");
-        assert!(
-            !cluster.is_empty(),
-            "INV-4 violated in '{}': node '{}' has empty cluster",
-            fixture, path
-        );
+        for (path, node) in nodes {
+            let cluster = node["cluster"].as_str().unwrap_or("");
+            assert!(
+                !cluster.is_empty(),
+                "INV-4 violated in '{}': node '{}' has empty cluster",
+                fixture,
+                path
+            );
+        }
     }
-});
+);
 
 // INV-5: Cluster file lists are complete.
 // - Every file in a cluster exists as a node in graph.json
 // - Every node's cluster field points to an existing cluster
-invariant_test!(inv5_cluster_file_lists_complete, |graph: &serde_json::Value,
-                                                    clusters: &serde_json::Value,
-                                                    _stats: &serde_json::Value,
-                                                    fixture: &str| {
-    let nodes = graph["nodes"].as_object().expect("nodes should be an object");
-    let cluster_map = clusters["clusters"]
-        .as_object()
-        .expect("clusters should be an object");
+invariant_test!(
+    inv5_cluster_file_lists_complete,
+    |graph: &serde_json::Value,
+     clusters: &serde_json::Value,
+     _stats: &serde_json::Value,
+     fixture: &str| {
+        let nodes = graph["nodes"]
+            .as_object()
+            .expect("nodes should be an object");
+        let cluster_map = clusters["clusters"]
+            .as_object()
+            .expect("clusters should be an object");
 
-    let cluster_ids: HashSet<&str> = cluster_map.keys().map(|k| k.as_str()).collect();
-    let node_ids: HashSet<&str> = nodes.keys().map(|k| k.as_str()).collect();
+        let cluster_ids: HashSet<&str> = cluster_map.keys().map(|k| k.as_str()).collect();
+        let node_ids: HashSet<&str> = nodes.keys().map(|k| k.as_str()).collect();
 
-    // Every file listed in a cluster must exist as a node
-    for (cluster_id, cluster_entry) in cluster_map {
-        let files = cluster_entry["files"]
-            .as_array()
-            .expect("cluster files should be an array");
-        for file in files {
-            let file_path = file.as_str().unwrap();
-            assert!(
-                node_ids.contains(file_path),
-                "INV-5 violated in '{}': cluster '{}' lists file '{}' which is not a node",
-                fixture, cluster_id, file_path
-            );
+        // Every file listed in a cluster must exist as a node
+        for (cluster_id, cluster_entry) in cluster_map {
+            let files = cluster_entry["files"]
+                .as_array()
+                .expect("cluster files should be an array");
+            for file in files {
+                let file_path = file.as_str().unwrap();
+                assert!(
+                    node_ids.contains(file_path),
+                    "INV-5 violated in '{}': cluster '{}' lists file '{}' which is not a node",
+                    fixture,
+                    cluster_id,
+                    file_path
+                );
+            }
         }
-    }
 
-    // Every node's cluster must reference an existing cluster
-    for (path, node) in nodes {
-        let cluster = node["cluster"].as_str().unwrap_or("");
-        assert!(
+        // Every node's cluster must reference an existing cluster
+        for (path, node) in nodes {
+            let cluster = node["cluster"].as_str().unwrap_or("");
+            assert!(
             cluster_ids.contains(cluster),
             "INV-5 violated in '{}': node '{}' has cluster '{}' which doesn't exist in clusters.json",
             fixture, path, cluster
         );
+        }
     }
-});
+);
 
 // INV-6: Cluster edge counts are correct.
 // internal_edges = edges where both from and to are in the cluster
 // external_edges = edges where exactly one endpoint is in the cluster
-invariant_test!(inv6_cluster_edge_counts, |graph: &serde_json::Value,
-                                           clusters: &serde_json::Value,
-                                           _stats: &serde_json::Value,
-                                           fixture: &str| {
-    let edges = graph["edges"].as_array().expect("edges should be an array");
-    let cluster_map = clusters["clusters"]
-        .as_object()
-        .expect("clusters should be an object");
+invariant_test!(
+    inv6_cluster_edge_counts,
+    |graph: &serde_json::Value,
+     clusters: &serde_json::Value,
+     _stats: &serde_json::Value,
+     fixture: &str| {
+        let edges = graph["edges"].as_array().expect("edges should be an array");
+        let cluster_map = clusters["clusters"]
+            .as_object()
+            .expect("clusters should be an object");
 
-    for (cluster_id, cluster_entry) in cluster_map {
-        let files = cluster_entry["files"]
-            .as_array()
-            .expect("cluster files should be an array");
-        let file_set: HashSet<&str> = files.iter().map(|f| f.as_str().unwrap()).collect();
+        for (cluster_id, cluster_entry) in cluster_map {
+            let files = cluster_entry["files"]
+                .as_array()
+                .expect("cluster files should be an array");
+            let file_set: HashSet<&str> = files.iter().map(|f| f.as_str().unwrap()).collect();
 
-        let expected_internal = cluster_entry["internal_edges"].as_u64().unwrap() as usize;
-        let expected_external = cluster_entry["external_edges"].as_u64().unwrap() as usize;
+            let expected_internal = cluster_entry["internal_edges"].as_u64().unwrap() as usize;
+            let expected_external = cluster_entry["external_edges"].as_u64().unwrap() as usize;
 
-        let mut actual_internal = 0usize;
-        let mut actual_external = 0usize;
+            let mut actual_internal = 0usize;
+            let mut actual_external = 0usize;
 
-        for edge in edges {
-            let edge_arr = edge.as_array().unwrap();
-            let from = edge_arr[0].as_str().unwrap();
-            let to = edge_arr[1].as_str().unwrap();
+            for edge in edges {
+                let edge_arr = edge.as_array().unwrap();
+                let from = edge_arr[0].as_str().unwrap();
+                let to = edge_arr[1].as_str().unwrap();
 
-            // Look up which cluster from/to belong to
-            let from_in = file_set.contains(from);
-            let to_in = file_set.contains(to);
+                // Look up which cluster from/to belong to
+                let from_in = file_set.contains(from);
+                let to_in = file_set.contains(to);
 
-            if from_in && to_in {
-                actual_internal += 1;
-            } else if from_in || to_in {
-                actual_external += 1;
+                if from_in && to_in {
+                    actual_internal += 1;
+                } else if from_in || to_in {
+                    actual_external += 1;
+                }
             }
-        }
 
-        assert_eq!(
-            actual_internal, expected_internal,
-            "INV-6 violated in '{}': cluster '{}' internal_edges: expected {}, got {}",
-            fixture, cluster_id, expected_internal, actual_internal
-        );
-        assert_eq!(
-            actual_external, expected_external,
-            "INV-6 violated in '{}': cluster '{}' external_edges: expected {}, got {}",
-            fixture, cluster_id, expected_external, actual_external
-        );
+            assert_eq!(
+                actual_internal, expected_internal,
+                "INV-6 violated in '{}': cluster '{}' internal_edges: expected {}, got {}",
+                fixture, cluster_id, expected_internal, actual_internal
+            );
+            assert_eq!(
+                actual_external, expected_external,
+                "INV-6 violated in '{}': cluster '{}' external_edges: expected {}, got {}",
+                fixture, cluster_id, expected_external, actual_external
+            );
+        }
     }
-});
+);
 
 // INV-7: Cohesion is correctly computed.
 // Formula: if internal == 0 && external == 0 → 1.0; else internal / (internal + external)
 // Rounded to 4 decimal places.
-invariant_test!(inv7_cohesion_correct, |_graph: &serde_json::Value,
-                                        clusters: &serde_json::Value,
-                                        _stats: &serde_json::Value,
-                                        fixture: &str| {
-    let cluster_map = clusters["clusters"]
-        .as_object()
-        .expect("clusters should be an object");
+invariant_test!(
+    inv7_cohesion_correct,
+    |_graph: &serde_json::Value,
+     clusters: &serde_json::Value,
+     _stats: &serde_json::Value,
+     fixture: &str| {
+        let cluster_map = clusters["clusters"]
+            .as_object()
+            .expect("clusters should be an object");
 
-    for (cluster_id, cluster_entry) in cluster_map {
-        let internal_edges = cluster_entry["internal_edges"].as_u64().unwrap() as f64;
-        let external_edges = cluster_entry["external_edges"].as_u64().unwrap() as f64;
-        let cohesion = cluster_entry["cohesion"].as_f64().unwrap();
+        for (cluster_id, cluster_entry) in cluster_map {
+            let internal_edges = cluster_entry["internal_edges"].as_u64().unwrap() as f64;
+            let external_edges = cluster_entry["external_edges"].as_u64().unwrap() as f64;
+            let cohesion = cluster_entry["cohesion"].as_f64().unwrap();
 
-        let expected = if internal_edges == 0.0 && external_edges == 0.0 {
-            1.0
-        } else {
-            internal_edges / (internal_edges + external_edges)
-        };
-        let expected_rounded = (expected * 10000.0).round() / 10000.0;
-        let cohesion_rounded = (cohesion * 10000.0).round() / 10000.0;
+            let expected = if internal_edges == 0.0 && external_edges == 0.0 {
+                1.0
+            } else {
+                internal_edges / (internal_edges + external_edges)
+            };
+            let expected_rounded = (expected * 10000.0).round() / 10000.0;
+            let cohesion_rounded = (cohesion * 10000.0).round() / 10000.0;
 
-        assert_eq!(
-            cohesion_rounded, expected_rounded,
-            "INV-7 violated in '{}': cluster '{}' cohesion: expected {}, got {} \
+            assert_eq!(
+                cohesion_rounded,
+                expected_rounded,
+                "INV-7 violated in '{}': cluster '{}' cohesion: expected {}, got {} \
              (internal_edges={}, external_edges={})",
-            fixture, cluster_id, expected_rounded, cohesion_rounded, internal_edges, external_edges
-        );
+                fixture,
+                cluster_id,
+                expected_rounded,
+                cohesion_rounded,
+                internal_edges,
+                external_edges
+            );
+        }
     }
-});
+);
 
 // INV-8: node_count matches nodes.len(), edge_count matches edges.len().
-invariant_test!(inv8_counts_match, |graph: &serde_json::Value,
-                                    _clusters: &serde_json::Value,
-                                    _stats: &serde_json::Value,
-                                    fixture: &str| {
-    let node_count = graph["node_count"].as_u64().expect("node_count should be a number") as usize;
-    let edge_count = graph["edge_count"].as_u64().expect("edge_count should be a number") as usize;
+invariant_test!(
+    inv8_counts_match,
+    |graph: &serde_json::Value,
+     _clusters: &serde_json::Value,
+     _stats: &serde_json::Value,
+     fixture: &str| {
+        let node_count = graph["node_count"]
+            .as_u64()
+            .expect("node_count should be a number") as usize;
+        let edge_count = graph["edge_count"]
+            .as_u64()
+            .expect("edge_count should be a number") as usize;
 
-    let nodes_len = graph["nodes"]
-        .as_object()
-        .expect("nodes should be an object")
-        .len();
-    let edges_len = graph["edges"]
-        .as_array()
-        .expect("edges should be an array")
-        .len();
+        let nodes_len = graph["nodes"]
+            .as_object()
+            .expect("nodes should be an object")
+            .len();
+        let edges_len = graph["edges"]
+            .as_array()
+            .expect("edges should be an array")
+            .len();
 
-    assert_eq!(
-        node_count, nodes_len,
-        "INV-8 violated in '{}': node_count ({}) != nodes.len() ({})",
-        fixture, node_count, nodes_len
-    );
-    assert_eq!(
-        edge_count, edges_len,
-        "INV-8 violated in '{}': edge_count ({}) != edges.len() ({})",
-        fixture, edge_count, edges_len
-    );
-});
-
-// INV-9: No two edges have the same (from, to, edge_type) triple.
-invariant_test!(inv9_no_duplicate_edges, |graph: &serde_json::Value,
-                                          _clusters: &serde_json::Value,
-                                          _stats: &serde_json::Value,
-                                          fixture: &str| {
-    let edges = graph["edges"].as_array().expect("edges should be an array");
-
-    let mut seen = BTreeSet::new();
-    for (i, edge) in edges.iter().enumerate() {
-        let edge_arr = edge.as_array().expect("each edge should be an array");
-        let from = edge_arr[0].as_str().unwrap();
-        let to = edge_arr[1].as_str().unwrap();
-        let edge_type = edge_arr[2].as_str().unwrap();
-
-        let key = (from.to_string(), to.to_string(), edge_type.to_string());
-        assert!(
-            seen.insert(key.clone()),
-            "INV-9 violated in '{}': duplicate edge at index {}: ({}, {}, {})",
-            fixture, i, key.0, key.1, key.2
+        assert_eq!(
+            node_count, nodes_len,
+            "INV-8 violated in '{}': node_count ({}) != nodes.len() ({})",
+            fixture, node_count, nodes_len
+        );
+        assert_eq!(
+            edge_count, edges_len,
+            "INV-8 violated in '{}': edge_count ({}) != edges.len() ({})",
+            fixture, edge_count, edges_len
         );
     }
-});
+);
+
+// INV-9: No two edges have the same (from, to, edge_type) triple.
+invariant_test!(
+    inv9_no_duplicate_edges,
+    |graph: &serde_json::Value,
+     _clusters: &serde_json::Value,
+     _stats: &serde_json::Value,
+     fixture: &str| {
+        let edges = graph["edges"].as_array().expect("edges should be an array");
+
+        let mut seen = BTreeSet::new();
+        for (i, edge) in edges.iter().enumerate() {
+            let edge_arr = edge.as_array().expect("each edge should be an array");
+            let from = edge_arr[0].as_str().unwrap();
+            let to = edge_arr[1].as_str().unwrap();
+            let edge_type = edge_arr[2].as_str().unwrap();
+
+            let key = (from.to_string(), to.to_string(), edge_type.to_string());
+            assert!(
+                seen.insert(key.clone()),
+                "INV-9 violated in '{}': duplicate edge at index {}: ({}, {}, {})",
+                fixture,
+                i,
+                key.0,
+                key.1,
+                key.2
+            );
+        }
+    }
+);
 
 /// INV-10: Content hashes are deterministic across builds.
 #[test]
@@ -319,8 +388,12 @@ fn inv10_content_hashes_deterministic() {
         let (graph1, _, _) = build_and_parse(fixture);
         let (graph2, _, _) = build_and_parse(fixture);
 
-        let nodes1 = graph1["nodes"].as_object().expect("nodes should be an object");
-        let nodes2 = graph2["nodes"].as_object().expect("nodes should be an object");
+        let nodes1 = graph1["nodes"]
+            .as_object()
+            .expect("nodes should be an object");
+        let nodes2 = graph2["nodes"]
+            .as_object()
+            .expect("nodes should be an object");
 
         assert_eq!(
             nodes1.len(),
@@ -363,210 +436,242 @@ fn inv11_determinism() {
 
 // INV-12: Type-only imports produce type_imports edges.
 // If any edge has type "type_imports", it structurally exists (basic check).
-invariant_test!(inv12_type_imports_edges, |graph: &serde_json::Value,
-                                           _clusters: &serde_json::Value,
-                                           _stats: &serde_json::Value,
-                                           _fixture: &str| {
-    let nodes = graph["nodes"].as_object().expect("nodes should be an object");
-    let edges = graph["edges"].as_array().expect("edges should be an array");
-    let node_ids: HashSet<&str> = nodes.keys().map(|k| k.as_str()).collect();
+invariant_test!(
+    inv12_type_imports_edges,
+    |graph: &serde_json::Value,
+     _clusters: &serde_json::Value,
+     _stats: &serde_json::Value,
+     _fixture: &str| {
+        let nodes = graph["nodes"]
+            .as_object()
+            .expect("nodes should be an object");
+        let edges = graph["edges"].as_array().expect("edges should be an array");
+        let node_ids: HashSet<&str> = nodes.keys().map(|k| k.as_str()).collect();
 
-    for edge in edges {
-        let edge_arr = edge.as_array().unwrap();
-        let from = edge_arr[0].as_str().unwrap();
-        let to = edge_arr[1].as_str().unwrap();
-        let edge_type = edge_arr[2].as_str().unwrap();
+        for edge in edges {
+            let edge_arr = edge.as_array().unwrap();
+            let from = edge_arr[0].as_str().unwrap();
+            let to = edge_arr[1].as_str().unwrap();
+            let edge_type = edge_arr[2].as_str().unwrap();
 
-        if edge_type == "type_imports" {
-            // Both endpoints must exist (already covered by INV-1, but verify specifically)
-            assert!(
-                node_ids.contains(from) && node_ids.contains(to),
-                "INV-12: type_imports edge has invalid endpoints: from='{}', to='{}'",
-                from, to
-            );
-        }
-    }
-});
-
-// INV-13: Re-export edges have valid structure.
-// If any edge has type "re_exports", verify it exists with valid endpoints.
-invariant_test!(inv13_re_export_edges_valid, |graph: &serde_json::Value,
-                                              _clusters: &serde_json::Value,
-                                              _stats: &serde_json::Value,
-                                              _fixture: &str| {
-    let nodes = graph["nodes"].as_object().expect("nodes should be an object");
-    let edges = graph["edges"].as_array().expect("edges should be an array");
-    let node_ids: HashSet<&str> = nodes.keys().map(|k| k.as_str()).collect();
-
-    for edge in edges {
-        let edge_arr = edge.as_array().unwrap();
-        let from = edge_arr[0].as_str().unwrap();
-        let to = edge_arr[1].as_str().unwrap();
-        let edge_type = edge_arr[2].as_str().unwrap();
-
-        if edge_type == "re_exports" {
-            assert!(
-                node_ids.contains(from) && node_ids.contains(to),
-                "INV-13: re_exports edge has invalid endpoints: from='{}', to='{}'",
-                from, to
-            );
-            // from and to must be different (already covered by INV-2, but verify specifically)
-            assert_ne!(
-                from, to,
-                "INV-13: re_exports edge is a self-reference: '{}'",
-                from
-            );
-        }
-    }
-});
-
-// INV-14: arch_depth is consistent with topological ordering.
-// No file depends on a higher-layer file, outside SCCs.
-invariant_test!(inv14_arch_depth_consistent, |graph: &serde_json::Value,
-                                              _clusters: &serde_json::Value,
-                                              stats: &serde_json::Value,
-                                              fixture: &str| {
-    let nodes = graph["nodes"].as_object().unwrap();
-    let edges = graph["edges"].as_array().unwrap();
-    let sccs = stats["sccs"].as_array().unwrap();
-
-    // Build SCC membership set
-    let mut scc_members: HashSet<String> = HashSet::new();
-    for scc in sccs {
-        let members = scc.as_array().unwrap();
-        if members.len() > 1 {
-            for m in members {
-                scc_members.insert(m.as_str().unwrap().to_string());
+            if edge_type == "type_imports" {
+                // Both endpoints must exist (already covered by INV-1, but verify specifically)
+                assert!(
+                    node_ids.contains(from) && node_ids.contains(to),
+                    "INV-12: type_imports edge has invalid endpoints: from='{}', to='{}'",
+                    from,
+                    to
+                );
             }
         }
     }
+);
 
-    for edge in edges {
-        let edge_arr = edge.as_array().unwrap();
-        let from = edge_arr[0].as_str().unwrap();
-        let to = edge_arr[1].as_str().unwrap();
-        let edge_type = edge_arr[2].as_str().unwrap();
+// INV-13: Re-export edges have valid structure.
+// If any edge has type "re_exports", verify it exists with valid endpoints.
+invariant_test!(
+    inv13_re_export_edges_valid,
+    |graph: &serde_json::Value,
+     _clusters: &serde_json::Value,
+     _stats: &serde_json::Value,
+     _fixture: &str| {
+        let nodes = graph["nodes"]
+            .as_object()
+            .expect("nodes should be an object");
+        let edges = graph["edges"].as_array().expect("edges should be an array");
+        let node_ids: HashSet<&str> = nodes.keys().map(|k| k.as_str()).collect();
 
-        // Only check architectural edges
-        if edge_type == "tests" {
-            continue;
+        for edge in edges {
+            let edge_arr = edge.as_array().unwrap();
+            let from = edge_arr[0].as_str().unwrap();
+            let to = edge_arr[1].as_str().unwrap();
+            let edge_type = edge_arr[2].as_str().unwrap();
+
+            if edge_type == "re_exports" {
+                assert!(
+                    node_ids.contains(from) && node_ids.contains(to),
+                    "INV-13: re_exports edge has invalid endpoints: from='{}', to='{}'",
+                    from,
+                    to
+                );
+                // from and to must be different (already covered by INV-2, but verify specifically)
+                assert_ne!(
+                    from, to,
+                    "INV-13: re_exports edge is a self-reference: '{}'",
+                    from
+                );
+            }
         }
-
-        // Skip if either endpoint is in an SCC (cycle members share layer)
-        if scc_members.contains(from) || scc_members.contains(to) {
-            continue;
-        }
-
-        let from_depth = nodes[from]["arch_depth"].as_u64().unwrap();
-        let to_depth = nodes[to]["arch_depth"].as_u64().unwrap();
-
-        assert!(
-            from_depth >= to_depth,
-            "INV-14 violated in '{}': '{}' (depth {}) imports '{}' (depth {}) — \
-             importer should have >= depth of dependency",
-            fixture, from, from_depth, to, to_depth
-        );
     }
-});
+);
+
+// INV-14: arch_depth is consistent with topological ordering.
+// No file depends on a higher-layer file, outside SCCs.
+invariant_test!(
+    inv14_arch_depth_consistent,
+    |graph: &serde_json::Value,
+     _clusters: &serde_json::Value,
+     stats: &serde_json::Value,
+     fixture: &str| {
+        let nodes = graph["nodes"].as_object().unwrap();
+        let edges = graph["edges"].as_array().unwrap();
+        let sccs = stats["sccs"].as_array().unwrap();
+
+        // Build SCC membership set
+        let mut scc_members: HashSet<String> = HashSet::new();
+        for scc in sccs {
+            let members = scc.as_array().unwrap();
+            if members.len() > 1 {
+                for m in members {
+                    scc_members.insert(m.as_str().unwrap().to_string());
+                }
+            }
+        }
+
+        for edge in edges {
+            let edge_arr = edge.as_array().unwrap();
+            let from = edge_arr[0].as_str().unwrap();
+            let to = edge_arr[1].as_str().unwrap();
+            let edge_type = edge_arr[2].as_str().unwrap();
+
+            // Only check architectural edges
+            if edge_type == "tests" {
+                continue;
+            }
+
+            // Skip if either endpoint is in an SCC (cycle members share layer)
+            if scc_members.contains(from) || scc_members.contains(to) {
+                continue;
+            }
+
+            let from_depth = nodes[from]["arch_depth"].as_u64().unwrap();
+            let to_depth = nodes[to]["arch_depth"].as_u64().unwrap();
+
+            assert!(
+                from_depth >= to_depth,
+                "INV-14 violated in '{}': '{}' (depth {}) imports '{}' (depth {}) — \
+             importer should have >= depth of dependency",
+                fixture,
+                from,
+                from_depth,
+                to,
+                to_depth
+            );
+        }
+    }
+);
 
 // INV-15: All SCC members share the same arch_depth.
-invariant_test!(inv15_scc_shared_depth, |graph: &serde_json::Value,
-                                         _clusters: &serde_json::Value,
-                                         stats: &serde_json::Value,
-                                         fixture: &str| {
-    let nodes = graph["nodes"].as_object().unwrap();
-    let sccs = stats["sccs"].as_array().unwrap();
+invariant_test!(
+    inv15_scc_shared_depth,
+    |graph: &serde_json::Value,
+     _clusters: &serde_json::Value,
+     stats: &serde_json::Value,
+     fixture: &str| {
+        let nodes = graph["nodes"].as_object().unwrap();
+        let sccs = stats["sccs"].as_array().unwrap();
 
-    for scc in sccs {
-        let members = scc.as_array().unwrap();
-        if members.len() <= 1 {
-            continue;
-        }
-        let first = members[0].as_str().unwrap();
-        let first_depth = nodes[first]["arch_depth"].as_u64().unwrap();
+        for scc in sccs {
+            let members = scc.as_array().unwrap();
+            if members.len() <= 1 {
+                continue;
+            }
+            let first = members[0].as_str().unwrap();
+            let first_depth = nodes[first]["arch_depth"].as_u64().unwrap();
 
-        for m in members.iter().skip(1) {
-            let member = m.as_str().unwrap();
-            let depth = nodes[member]["arch_depth"].as_u64().unwrap();
-            assert_eq!(
+            for m in members.iter().skip(1) {
+                let member = m.as_str().unwrap();
+                let depth = nodes[member]["arch_depth"].as_u64().unwrap();
+                assert_eq!(
                 depth, first_depth,
                 "INV-15 violated in '{}': SCC members '{}' (depth {}) and '{}' (depth {}) differ",
                 fixture, first, first_depth, member, depth
             );
+            }
         }
     }
-});
+);
 
 // INV-16: Centrality values are in [0.0, 1.0].
-invariant_test!(inv16_centrality_range, |_graph: &serde_json::Value,
-                                         _clusters: &serde_json::Value,
-                                         stats: &serde_json::Value,
-                                         fixture: &str| {
-    let centrality = stats["centrality"].as_object().unwrap();
+invariant_test!(
+    inv16_centrality_range,
+    |_graph: &serde_json::Value,
+     _clusters: &serde_json::Value,
+     stats: &serde_json::Value,
+     fixture: &str| {
+        let centrality = stats["centrality"].as_object().unwrap();
 
-    for (path, value) in centrality {
-        let bc = value.as_f64().unwrap();
-        assert!(
-            (0.0..=1.0).contains(&bc),
-            "INV-16 violated in '{}': '{}' has centrality {} (outside [0.0, 1.0])",
-            fixture, path, bc
-        );
-    }
-});
-
-// INV-17: Layers cover all nodes.
-invariant_test!(inv17_layers_cover_all, |graph: &serde_json::Value,
-                                         _clusters: &serde_json::Value,
-                                         stats: &serde_json::Value,
-                                         fixture: &str| {
-    let nodes = graph["nodes"].as_object().unwrap();
-    let layers = stats["layers"].as_object().unwrap();
-
-    let mut layer_files: HashSet<String> = HashSet::new();
-    for (_layer, files) in layers {
-        for f in files.as_array().unwrap() {
-            layer_files.insert(f.as_str().unwrap().to_string());
+        for (path, value) in centrality {
+            let bc = value.as_f64().unwrap();
+            assert!(
+                (0.0..=1.0).contains(&bc),
+                "INV-16 violated in '{}': '{}' has centrality {} (outside [0.0, 1.0])",
+                fixture,
+                path,
+                bc
+            );
         }
     }
+);
 
-    for path in nodes.keys() {
-        assert!(
-            layer_files.contains(path.as_str()),
-            "INV-17 violated in '{}': node '{}' not found in any layer",
-            fixture, path
-        );
+// INV-17: Layers cover all nodes.
+invariant_test!(
+    inv17_layers_cover_all,
+    |graph: &serde_json::Value,
+     _clusters: &serde_json::Value,
+     stats: &serde_json::Value,
+     fixture: &str| {
+        let nodes = graph["nodes"].as_object().unwrap();
+        let layers = stats["layers"].as_object().unwrap();
+
+        let mut layer_files: HashSet<String> = HashSet::new();
+        for (_layer, files) in layers {
+            for f in files.as_array().unwrap() {
+                layer_files.insert(f.as_str().unwrap().to_string());
+            }
+        }
+
+        for path in nodes.keys() {
+            assert!(
+                layer_files.contains(path.as_str()),
+                "INV-17 violated in '{}': node '{}' not found in any layer",
+                fixture,
+                path
+            );
+        }
     }
-});
+);
 
 // INV-18: bottleneck_files = exactly files with centrality > 0.7.
-invariant_test!(inv18_bottleneck_correct, |_graph: &serde_json::Value,
-                                           _clusters: &serde_json::Value,
-                                           stats: &serde_json::Value,
-                                           fixture: &str| {
-    let centrality = stats["centrality"].as_object().unwrap();
-    let bottleneck = stats["summary"]["bottleneck_files"]
-        .as_array()
-        .unwrap();
+invariant_test!(
+    inv18_bottleneck_correct,
+    |_graph: &serde_json::Value,
+     _clusters: &serde_json::Value,
+     stats: &serde_json::Value,
+     fixture: &str| {
+        let centrality = stats["centrality"].as_object().unwrap();
+        let bottleneck = stats["summary"]["bottleneck_files"].as_array().unwrap();
 
-    let mut expected: Vec<String> = centrality
-        .iter()
-        .filter(|(_, v)| v.as_f64().unwrap() > 0.7)
-        .map(|(k, _)| k.clone())
-        .collect();
-    expected.sort();
+        let mut expected: Vec<String> = centrality
+            .iter()
+            .filter(|(_, v)| v.as_f64().unwrap() > 0.7)
+            .map(|(k, _)| k.clone())
+            .collect();
+        expected.sort();
 
-    let mut actual: Vec<String> = bottleneck
-        .iter()
-        .map(|v| v.as_str().unwrap().to_string())
-        .collect();
-    actual.sort();
+        let mut actual: Vec<String> = bottleneck
+            .iter()
+            .map(|v| v.as_str().unwrap().to_string())
+            .collect();
+        actual.sort();
 
-    assert_eq!(
-        actual, expected,
-        "INV-18 violated in '{}': bottleneck_files doesn't match centrality > 0.7",
-        fixture
-    );
-});
+        assert_eq!(
+            actual, expected,
+            "INV-18 violated in '{}': bottleneck_files doesn't match centrality > 0.7",
+            fixture
+        );
+    }
+);
 
 /// INV-11 extension: stats.json is also byte-identical across builds.
 #[test]

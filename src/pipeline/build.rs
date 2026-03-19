@@ -47,11 +47,8 @@ pub fn resolve_and_build(
     // Populate exports from parsed files
     for pf in parsed_files {
         if let Some(node) = nodes.get_mut(&pf.path) {
-            let mut export_symbols: Vec<Symbol> = pf
-                .exports
-                .iter()
-                .map(|e| Symbol::new(&e.name))
-                .collect();
+            let mut export_symbols: Vec<Symbol> =
+                pf.exports.iter().map(|e| Symbol::new(&e.name)).collect();
             export_symbols.sort();
             export_symbols.dedup();
             node.exports = export_symbols;
@@ -92,7 +89,7 @@ pub fn resolve_and_build(
                 import.is_type_only,
             );
 
-            let symbols: Vec<Symbol> = import.symbols.iter().map(|s| Symbol::new(s)).collect();
+            let symbols: Vec<Symbol> = import.symbols.iter().map(Symbol::new).collect();
 
             edges.push(Edge {
                 from: pf.path.clone(),
@@ -158,10 +155,13 @@ fn classify_edge_type(
     is_type_only: bool,
 ) -> EdgeType {
     // Test file importing source/typedef → tests edge
-    if source_type == Some(FileType::Test) {
-        if matches!(target_type, Some(FileType::Source) | Some(FileType::TypeDef)) {
-            return EdgeType::Tests;
-        }
+    if source_type == Some(FileType::Test)
+        && matches!(
+            target_type,
+            Some(FileType::Source) | Some(FileType::TypeDef)
+        )
+    {
+        return EdgeType::Tests;
     }
 
     // Type-only imports
@@ -220,17 +220,17 @@ fn infer_test_edges_by_naming(
 
         // Try suffix patterns (e.g., foo.test.ts → foo.ts)
         for (test_suffix, source_suffix) in test_patterns {
-            if path_str.ends_with(test_suffix) {
-                let source_path_str = format!(
-                    "{}{}",
-                    &path_str[..path_str.len() - test_suffix.len()],
-                    source_suffix
-                );
+            if let Some(stem) = path_str.strip_suffix(test_suffix) {
+                let source_path_str = format!("{}{}", stem, source_suffix);
                 let source_path = CanonicalPath::new(&source_path_str);
 
                 if file_set.contains(&source_path) {
                     if !existing_edges.contains(&(path, &source_path, EdgeType::Tests))
-                        && !new_edge_keys.contains(&(path.clone(), source_path.clone(), EdgeType::Tests))
+                        && !new_edge_keys.contains(&(
+                            path.clone(),
+                            source_path.clone(),
+                            EdgeType::Tests,
+                        ))
                     {
                         new_edge_keys.insert((path.clone(), source_path.clone(), EdgeType::Tests));
                         new_edges.push(Edge {
@@ -262,7 +262,11 @@ fn infer_test_edges_by_naming(
 
                 if file_set.contains(&source_path) {
                     if !existing_edges.contains(&(path, &source_path, EdgeType::Tests))
-                        && !new_edge_keys.contains(&(path.clone(), source_path.clone(), EdgeType::Tests))
+                        && !new_edge_keys.contains(&(
+                            path.clone(),
+                            source_path.clone(),
+                            EdgeType::Tests,
+                        ))
                     {
                         new_edge_keys.insert((path.clone(), source_path.clone(), EdgeType::Tests));
                         new_edges.push(Edge {

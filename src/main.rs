@@ -8,15 +8,19 @@ use ariadne_graph::algo;
 use ariadne_graph::diagnostic::{
     format_summary, format_warnings, DiagnosticReport, FatalError, WarningFormat,
 };
-use ariadne_graph::model::{CanonicalPath, ClusterMap, ProjectGraph};
-use ariadne_graph::pipeline::{BuildPipeline, FsReader, FsWalker, WalkConfig};
-use ariadne_graph::parser::ParserRegistry;
-use ariadne_graph::serial::json::JsonSerializer;
 use ariadne_graph::model::StatsOutput;
+use ariadne_graph::model::{CanonicalPath, ClusterMap, ProjectGraph};
+use ariadne_graph::parser::ParserRegistry;
+use ariadne_graph::pipeline::{BuildPipeline, FsReader, FsWalker, WalkConfig};
+use ariadne_graph::serial::json::JsonSerializer;
 use ariadne_graph::serial::GraphReader;
 
 #[derive(Parser)]
-#[command(name = "ariadne", version, about = "Structural dependency graph engine")]
+#[command(
+    name = "ariadne",
+    version,
+    about = "Structural dependency graph engine"
+)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -374,19 +378,17 @@ fn main() {
 #[cfg(feature = "serve")]
 fn check_server_lock(output_dir: &std::path::Path) -> Result<(), FatalError> {
     let lock_path = output_dir.join(".lock");
-    if let Ok(status) = ariadne_graph::mcp::lock::check_lock(&lock_path) {
-        if let ariadne_graph::mcp::lock::LockStatus::HeldByOther { pid } = status {
-            return Err(FatalError::LockFileHeld {
-                pid,
-                lock_path,
-            });
-        }
+    if let Ok(ariadne_graph::mcp::lock::LockStatus::HeldByOther { pid }) =
+        ariadne_graph::mcp::lock::check_lock(&lock_path)
+    {
+        return Err(FatalError::LockFileHeld { pid, lock_path });
     }
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 fn run_build(
-    path: &PathBuf,
+    path: &std::path::Path,
     output: Option<&std::path::Path>,
     verbose: bool,
     warnings: &str,
@@ -425,7 +427,8 @@ fn run_build(
         ..WalkConfig::default()
     };
 
-    let build_output = pipeline.run_with_output(path, config, output, timestamp, verbose, no_louvain)?;
+    let build_output =
+        pipeline.run_with_output(path, config, output, timestamp, verbose, no_louvain)?;
     let elapsed = start.elapsed();
     let report = DiagnosticReport {
         warnings: build_output.warnings,
@@ -455,8 +458,9 @@ fn run_build(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 fn run_update(
-    path: &PathBuf,
+    path: &std::path::Path,
     output: Option<&std::path::Path>,
     verbose: bool,
     warnings: &str,
@@ -497,7 +501,9 @@ fn run_update(
         ..WalkConfig::default()
     };
 
-    let build_output = pipeline.update(path, config, &reader, output, timestamp, verbose, no_louvain)?;
+    let build_output = pipeline.update(
+        path, config, &reader, output, timestamp, verbose, no_louvain,
+    )?;
     let elapsed = start.elapsed();
     let report = DiagnosticReport {
         warnings: build_output.warnings,
@@ -546,25 +552,36 @@ fn run_info() {
 
 fn load_graph(reader: &dyn GraphReader, dir: &std::path::Path) -> Result<ProjectGraph, FatalError> {
     let output = reader.read_graph(dir)?;
-    let graph: ProjectGraph = output.try_into().map_err(|e: String| FatalError::GraphCorrupted {
-        path: dir.join("graph.json"),
-        reason: e,
-    })?;
+    let graph: ProjectGraph =
+        output
+            .try_into()
+            .map_err(|e: String| FatalError::GraphCorrupted {
+                path: dir.join("graph.json"),
+                reason: e,
+            })?;
     Ok(graph)
 }
 
 fn load_stats(reader: &dyn GraphReader, dir: &std::path::Path) -> Result<StatsOutput, FatalError> {
-    reader.read_stats(dir)?.ok_or_else(|| FatalError::StatsNotFound {
-        path: dir.to_path_buf(),
-    })
+    reader
+        .read_stats(dir)?
+        .ok_or_else(|| FatalError::StatsNotFound {
+            path: dir.to_path_buf(),
+        })
 }
 
-fn load_clusters(reader: &dyn GraphReader, dir: &std::path::Path) -> Result<ClusterMap, FatalError> {
+fn load_clusters(
+    reader: &dyn GraphReader,
+    dir: &std::path::Path,
+) -> Result<ClusterMap, FatalError> {
     let output = reader.read_clusters(dir)?;
-    let clusters: ClusterMap = output.try_into().map_err(|e: String| FatalError::GraphCorrupted {
-        path: dir.join("clusters.json"),
-        reason: e,
-    })?;
+    let clusters: ClusterMap =
+        output
+            .try_into()
+            .map_err(|e: String| FatalError::GraphCorrupted {
+                path: dir.join("clusters.json"),
+                reason: e,
+            })?;
     Ok(clusters)
 }
 
@@ -622,8 +639,7 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
                 let json = serialize_subgraph_result(&result);
                 println!("{}", json_pretty(&json)?);
             } else {
-                let view =
-                    ariadne_graph::views::impact::generate_subgraph_view(&result);
+                let view = ariadne_graph::views::impact::generate_subgraph_view(&result);
                 print!("{}", view);
             }
         }
@@ -642,11 +658,8 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
             graph_dir,
         } => {
             let stats = load_stats(&reader, &graph_dir)?;
-            let filtered: std::collections::BTreeMap<&String, &f64> = stats
-                .centrality
-                .iter()
-                .filter(|(_, &v)| v >= min)
-                .collect();
+            let filtered: std::collections::BTreeMap<&String, &f64> =
+                stats.centrality.iter().filter(|(_, &v)| v >= min).collect();
 
             if format == "json" {
                 println!("{}", json_pretty(&filtered)?);
@@ -696,9 +709,10 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
             let stats = load_stats(&reader, &graph_dir)?;
             let cp = CanonicalPath::new(&path);
 
-            let node = graph.nodes.get(&cp).ok_or_else(|| FatalError::FileNotInGraph {
-                path: path.clone(),
-            })?;
+            let node = graph
+                .nodes
+                .get(&cp)
+                .ok_or_else(|| FatalError::FileNotInGraph { path: path.clone() })?;
 
             if format == "json" {
                 let file_output = ariadne_graph::serial::FileQueryOutput {
@@ -709,26 +723,38 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
                         arch_depth: node.arch_depth,
                         lines: node.lines,
                         hash: node.hash.as_str().to_string(),
-                        exports: node.exports.iter().map(|s| s.as_str().to_string()).collect(),
+                        exports: node
+                            .exports
+                            .iter()
+                            .map(|s| s.as_str().to_string())
+                            .collect(),
                         cluster: node.cluster.as_str().to_string(),
                     },
-                    incoming_edges: graph.edges.iter()
+                    incoming_edges: graph
+                        .edges
+                        .iter()
                         .filter(|e| e.to == cp)
-                        .map(|e| (
-                            e.from.as_str().to_string(),
-                            e.to.as_str().to_string(),
-                            e.edge_type.as_str().to_string(),
-                            e.symbols.iter().map(|s| s.as_str().to_string()).collect(),
-                        ))
+                        .map(|e| {
+                            (
+                                e.from.as_str().to_string(),
+                                e.to.as_str().to_string(),
+                                e.edge_type.as_str().to_string(),
+                                e.symbols.iter().map(|s| s.as_str().to_string()).collect(),
+                            )
+                        })
                         .collect(),
-                    outgoing_edges: graph.edges.iter()
+                    outgoing_edges: graph
+                        .edges
+                        .iter()
                         .filter(|e| e.from == cp)
-                        .map(|e| (
-                            e.from.as_str().to_string(),
-                            e.to.as_str().to_string(),
-                            e.edge_type.as_str().to_string(),
-                            e.symbols.iter().map(|s| s.as_str().to_string()).collect(),
-                        ))
+                        .map(|e| {
+                            (
+                                e.from.as_str().to_string(),
+                                e.to.as_str().to_string(),
+                                e.edge_type.as_str().to_string(),
+                                e.symbols.iter().map(|s| s.as_str().to_string()).collect(),
+                            )
+                        })
                         .collect(),
                     centrality: stats.centrality.get(&path).copied(),
                     cluster: node.cluster.as_str().to_string(),
@@ -737,7 +763,11 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
             } else {
                 println!("# File: `{}`\n", path);
                 println!("- **Type:** {}", node.file_type.as_str());
-                println!("- **Layer:** {} (depth {})", node.layer.as_str(), node.arch_depth);
+                println!(
+                    "- **Layer:** {} (depth {})",
+                    node.layer.as_str(),
+                    node.arch_depth
+                );
                 println!("- **Cluster:** {}", node.cluster.as_str());
                 println!("- **Lines:** {}", node.lines);
                 if let Some(&bc) = stats.centrality.get(&path) {
@@ -749,8 +779,12 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
                 if !incoming.is_empty() {
                     println!("## Incoming Edges\n");
                     for e in &incoming {
-                        println!("- `{}` ({}, {:?})", e.from.as_str(), e.edge_type.as_str(),
-                            e.symbols.iter().map(|s| s.as_str()).collect::<Vec<_>>());
+                        println!(
+                            "- `{}` ({}, {:?})",
+                            e.from.as_str(),
+                            e.edge_type.as_str(),
+                            e.symbols.iter().map(|s| s.as_str()).collect::<Vec<_>>()
+                        );
                     }
                     println!();
                 }
@@ -759,8 +793,12 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
                 if !outgoing.is_empty() {
                     println!("## Outgoing Edges\n");
                     for e in &outgoing {
-                        println!("- `{}` ({}, {:?})", e.to.as_str(), e.edge_type.as_str(),
-                            e.symbols.iter().map(|s| s.as_str()).collect::<Vec<_>>());
+                        println!(
+                            "- `{}` ({}, {:?})",
+                            e.to.as_str(),
+                            e.edge_type.as_str(),
+                            e.symbols.iter().map(|s| s.as_str()).collect::<Vec<_>>()
+                        );
                     }
                     println!();
                 }
@@ -802,7 +840,8 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
         QueryCommands::Metrics { format, graph_dir } => {
             let graph = load_graph(&reader, &graph_dir)?;
             let clusters = load_clusters(&reader, &graph_dir)?;
-            let metrics = ariadne_graph::analysis::metrics::compute_martin_metrics(&graph, &clusters);
+            let metrics =
+                ariadne_graph::analysis::metrics::compute_martin_metrics(&graph, &clusters);
 
             if format == "json" {
                 println!("{}", json_pretty(&metrics)?);
@@ -861,7 +900,13 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
                 for (path, &score) in &ranked {
                     let c = stats.centrality.get(path.as_str()).copied().unwrap_or(0.0);
                     let p = pr.get(*path).copied().unwrap_or(0.0);
-                    println!("| `{}` | {:.4} | {:.4} | {:.4} |", path.as_str(), score, c, p);
+                    println!(
+                        "| `{}` | {:.4} | {:.4} | {:.4} |",
+                        path.as_str(),
+                        score,
+                        c,
+                        p
+                    );
                 }
             }
         }
@@ -873,7 +918,10 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
                 println!("{}", json_pretty(&result)?);
             } else {
                 println!("# Spectral Analysis\n");
-                println!("- **Algebraic connectivity (λ₂):** {:.4}", result.algebraic_connectivity);
+                println!(
+                    "- **Algebraic connectivity (λ₂):** {:.4}",
+                    result.algebraic_connectivity
+                );
                 println!("- **Monolith score:** {:.4}\n", result.monolith_score);
                 for part in &result.natural_partitions {
                     println!("## Partition {}\n", part.partition_id);
@@ -898,24 +946,26 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
             let result = match level {
                 0 => Ok(algo::compress::compress_l0(&graph, &clusters, &stats)),
                 1 => {
-                    let focus_name = focus.as_deref().ok_or_else(|| FatalError::InvalidArgument {
-                        reason: "Level 1 requires --focus <cluster_name>".to_string(),
-                    })?;
+                    let focus_name =
+                        focus
+                            .as_deref()
+                            .ok_or_else(|| FatalError::InvalidArgument {
+                                reason: "Level 1 requires --focus <cluster_name>".to_string(),
+                            })?;
                     let cluster_id = ariadne_graph::model::ClusterId::new(focus_name);
                     algo::compress::compress_l1(&graph, &clusters, &stats, &cluster_id)
-                        .map_err(|e| FatalError::InvalidArgument {
-                            reason: e,
-                        })
+                        .map_err(|e| FatalError::InvalidArgument { reason: e })
                 }
                 2 => {
-                    let focus_path = focus.as_deref().ok_or_else(|| FatalError::InvalidArgument {
-                        reason: "Level 2 requires --focus <file_path>".to_string(),
-                    })?;
+                    let focus_path =
+                        focus
+                            .as_deref()
+                            .ok_or_else(|| FatalError::InvalidArgument {
+                                reason: "Level 2 requires --focus <file_path>".to_string(),
+                            })?;
                     let cp = CanonicalPath::new(focus_path);
                     algo::compress::compress_l2(&graph, &clusters, &stats, &cp, depth)
-                        .map_err(|e| FatalError::InvalidArgument {
-                            reason: e,
-                        })
+                        .map_err(|e| FatalError::InvalidArgument { reason: e })
                 }
                 _ => Err(FatalError::InvalidArgument {
                     reason: "Level must be 0, 1, or 2".to_string(),
@@ -929,21 +979,33 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
                 if let Some(ref f) = result.focus {
                     println!("Focus: `{}`\n", f);
                 }
-                println!("Nodes: {}, Edges: {}, Tokens: ~{}\n", result.nodes.len(), result.edges.len(), result.token_estimate);
+                println!(
+                    "Nodes: {}, Edges: {}, Tokens: ~{}\n",
+                    result.nodes.len(),
+                    result.edges.len(),
+                    result.token_estimate
+                );
                 println!("## Nodes\n");
                 for node in &result.nodes {
                     match node.node_type {
                         ariadne_graph::model::CompressedNodeType::Cluster => {
-                            println!("- **{}** ({} files, cohesion: {:.2})", node.name,
-                                node.file_count.unwrap_or(0), node.cohesion.unwrap_or(0.0));
+                            println!(
+                                "- **{}** ({} files, cohesion: {:.2})",
+                                node.name,
+                                node.file_count.unwrap_or(0),
+                                node.cohesion.unwrap_or(0.0)
+                            );
                             if !node.key_files.is_empty() {
                                 println!("  Key files: {}", node.key_files.join(", "));
                             }
                         }
                         ariadne_graph::model::CompressedNodeType::File => {
-                            println!("- `{}` ({}, {})", node.name,
+                            println!(
+                                "- `{}` ({}, {})",
+                                node.name,
                                 node.file_type.as_deref().unwrap_or("?"),
-                                node.layer.as_deref().unwrap_or("?"));
+                                node.layer.as_deref().unwrap_or("?")
+                            );
                         }
                     }
                 }
@@ -957,14 +1019,17 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
             let graph = load_graph(&reader, &graph_dir)?;
             let stats = load_stats(&reader, &graph_dir)?;
             let clusters = load_clusters(&reader, &graph_dir)?;
-            let metrics = ariadne_graph::analysis::metrics::compute_martin_metrics(&graph, &clusters);
-            let smells = ariadne_graph::analysis::smells::detect_smells(
-                &graph, &stats, &clusters, &metrics,
-            );
+            let metrics =
+                ariadne_graph::analysis::metrics::compute_martin_metrics(&graph, &clusters);
+            let smells =
+                ariadne_graph::analysis::smells::detect_smells(&graph, &stats, &clusters, &metrics);
 
             let filtered: Vec<_> = if let Some(ref min_sev) = min_severity {
                 let min = ariadne_graph::model::SmellSeverity::from_str_loose(min_sev);
-                smells.into_iter().filter(|s| s.severity.level() >= min.level()).collect()
+                smells
+                    .into_iter()
+                    .filter(|s| s.severity.level() >= min.level())
+                    .collect()
             } else {
                 smells
             };

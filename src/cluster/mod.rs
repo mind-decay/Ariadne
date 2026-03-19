@@ -11,10 +11,7 @@ pub fn assign_clusters(graph: &ProjectGraph) -> ClusterMap {
 
     for path in graph.nodes.keys() {
         let cluster_name = extract_cluster_name(path);
-        groups
-            .entry(cluster_name)
-            .or_default()
-            .push(path.clone());
+        groups.entry(cluster_name).or_default().push(path.clone());
     }
 
     // Sort file lists within each group
@@ -117,7 +114,7 @@ fn extract_cluster_name(path: &CanonicalPath) -> String {
 mod tests {
     use super::*;
     use crate::model::{
-        CanonicalPath, ClusterId, ContentHash, Edge, EdgeType, FileType, ArchLayer, Node,
+        ArchLayer, CanonicalPath, ClusterId, ContentHash, Edge, EdgeType, FileType, Node,
     };
 
     fn make_node() -> Node {
@@ -151,10 +148,7 @@ mod tests {
 
     #[test]
     fn cluster_name_extraction() {
-        assert_eq!(
-            extract_cluster_name(&CanonicalPath::new("main.rs")),
-            "root"
-        );
+        assert_eq!(extract_cluster_name(&CanonicalPath::new("main.rs")), "root");
         assert_eq!(
             extract_cluster_name(&CanonicalPath::new("src/main.rs")),
             "root"
@@ -176,7 +170,11 @@ mod tests {
     #[test]
     fn basic_clustering() {
         let graph = make_graph(
-            &["src/auth/login.ts", "src/auth/register.ts", "src/db/conn.ts"],
+            &[
+                "src/auth/login.ts",
+                "src/auth/register.ts",
+                "src/db/conn.ts",
+            ],
             vec![
                 ("src/auth/login.ts", "src/auth/register.ts"),
                 ("src/auth/login.ts", "src/db/conn.ts"),
@@ -225,10 +223,7 @@ mod tests {
 
     #[test]
     fn files_are_sorted() {
-        let graph = make_graph(
-            &["src/auth/z.ts", "src/auth/a.ts", "src/auth/m.ts"],
-            vec![],
-        );
+        let graph = make_graph(&["src/auth/z.ts", "src/auth/a.ts", "src/auth/m.ts"], vec![]);
         let cluster_map = assign_clusters(&graph);
         let auth = &cluster_map.clusters[&ClusterId::new("auth")];
         let names: Vec<&str> = auth.files.iter().map(|p| p.file_name()).collect();
@@ -240,24 +235,14 @@ mod tests {
         let graph = make_graph(&["main.rs", "lib.rs"], vec![]);
         let cluster_map = assign_clusters(&graph);
         assert!(cluster_map.clusters.contains_key(&ClusterId::new("root")));
-        assert_eq!(
-            cluster_map.clusters[&ClusterId::new("root")].file_count,
-            2
-        );
+        assert_eq!(cluster_map.clusters[&ClusterId::new("root")].file_count, 2);
     }
 
     #[test]
     fn deterministic_output() {
-        let graph = make_graph(
-            &["src/b/x.ts", "src/a/y.ts", "src/c/z.ts"],
-            vec![],
-        );
+        let graph = make_graph(&["src/b/x.ts", "src/a/y.ts", "src/c/z.ts"], vec![]);
         let cluster_map = assign_clusters(&graph);
-        let keys: Vec<&str> = cluster_map
-            .clusters
-            .keys()
-            .map(|k| k.as_str())
-            .collect();
+        let keys: Vec<&str> = cluster_map.clusters.keys().map(|k| k.as_str()).collect();
         assert_eq!(keys, vec!["a", "b", "c"]);
     }
 }

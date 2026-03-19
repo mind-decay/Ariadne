@@ -16,8 +16,8 @@ pub use diff::{ChangeClassification, ClusterChange, DiffSummary, LayerChange, St
 pub use edge::{Edge, EdgeType};
 pub use graph::{Cluster, ClusterMap, ProjectGraph};
 pub use node::{ArchLayer, FileType, Node};
+pub use query::SubgraphResult;
 pub use smell::{ArchSmell, SmellMetrics, SmellSeverity, SmellType};
 pub use stats::{StatsOutput, StatsSummary};
 pub use types::{CanonicalPath, ClusterId, ContentHash, FileSet, Symbol};
-pub use query::SubgraphResult;
 pub use workspace::{WorkspaceInfo, WorkspaceKind, WorkspaceMember};

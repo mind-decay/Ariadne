@@ -106,9 +106,7 @@ fn node_text(node: &tree_sitter::Node, source: &[u8]) -> String {
 
 fn strip_go_quotes(s: &str) -> String {
     let s = s.trim();
-    if (s.starts_with('"') && s.ends_with('"'))
-        || (s.starts_with('`') && s.ends_with('`'))
-    {
+    if (s.starts_with('"') && s.ends_with('"')) || (s.starts_with('`') && s.ends_with('`')) {
         s[1..s.len() - 1].to_string()
     } else {
         s.to_string()

@@ -25,7 +25,12 @@ pub enum FileSkipReason {
 
 /// File reading + filtering abstraction.
 pub trait FileReader: Send + Sync {
-    fn read(&self, entry: &FileEntry, project_root: &std::path::Path, max_file_size: u64) -> Result<FileContent, FileSkipReason>;
+    fn read(
+        &self,
+        entry: &FileEntry,
+        project_root: &std::path::Path,
+        max_file_size: u64,
+    ) -> Result<FileContent, FileSkipReason>;
 }
 
 /// Filesystem-based file reader.
@@ -37,8 +42,19 @@ impl FsReader {
     }
 }
 
+impl Default for FsReader {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl FileReader for FsReader {
-    fn read(&self, entry: &FileEntry, project_root: &std::path::Path, max_file_size: u64) -> Result<FileContent, FileSkipReason> {
+    fn read(
+        &self,
+        entry: &FileEntry,
+        project_root: &std::path::Path,
+        max_file_size: u64,
+    ) -> Result<FileContent, FileSkipReason> {
         // Check file size first
         let metadata = std::fs::metadata(&entry.path).map_err(|e| FileSkipReason::ReadError {
             path: entry.path.clone(),
@@ -80,10 +96,7 @@ impl FileReader for FsReader {
         let lines = bytes.iter().filter(|&&b| b == b'\n').count() as u32;
 
         // Canonicalize path relative to project root
-        let relative = entry
-            .path
-            .strip_prefix(project_root)
-            .unwrap_or(&entry.path);
+        let relative = entry.path.strip_prefix(project_root).unwrap_or(&entry.path);
         let canonical = CanonicalPath::new(relative.to_string_lossy().to_string());
 
         Ok(FileContent {

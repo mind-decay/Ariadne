@@ -53,7 +53,10 @@ impl CanonicalPath {
 
     /// Get the file name (last segment).
     pub fn file_name(&self) -> &str {
-        self.0.rsplit_once('/').map(|(_, name)| name).unwrap_or(&self.0)
+        self.0
+            .rsplit_once('/')
+            .map(|(_, name)| name)
+            .unwrap_or(&self.0)
     }
 }
 
@@ -158,6 +161,7 @@ impl FileSet {
         Self(BTreeSet::new())
     }
 
+    #[allow(clippy::should_implement_trait)]
     pub fn from_iter(iter: impl IntoIterator<Item = CanonicalPath>) -> Self {
         Self(iter.into_iter().collect())
     }
@@ -312,10 +316,7 @@ mod tests {
 
     #[test]
     fn fileset_contains_and_len() {
-        let fs = FileSet::from_iter(vec![
-            CanonicalPath::new("a.ts"),
-            CanonicalPath::new("b.ts"),
-        ]);
+        let fs = FileSet::from_iter(vec![CanonicalPath::new("a.ts"), CanonicalPath::new("b.ts")]);
         assert_eq!(fs.len(), 2);
         assert!(fs.contains(&CanonicalPath::new("a.ts")));
         assert!(!fs.contains(&CanonicalPath::new("c.ts")));

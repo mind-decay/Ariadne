@@ -14,7 +14,10 @@ use crate::detect::{detect_workspace, is_case_insensitive};
 use crate::diagnostic::{DiagnosticCollector, DiagnosticCounts, FatalError, Warning, WarningCode};
 use crate::model::*;
 use crate::parser::{ParseOutcome, ParserRegistry, RawExport, RawImport};
-use crate::serial::{ClusterEntryOutput, ClusterOutput, GraphOutput, GraphReader, GraphSerializer, NodeOutput, RawImportOutput};
+use crate::serial::{
+    ClusterEntryOutput, ClusterOutput, GraphOutput, GraphReader, GraphSerializer, NodeOutput,
+    RawImportOutput,
+};
 
 pub use read::{FileContent, FileReader, FileSkipReason, FsReader};
 pub use walk::{FileEntry, FileWalker, FsWalker, WalkConfig, WalkResult};
@@ -66,7 +69,11 @@ impl BuildPipeline {
     /// Re-parse imports from source bytes for a given file extension.
     /// Used by the freshness engine for lightweight import change detection.
     /// Preserves the dependency boundary: mcp/ -> pipeline/ -> parser/.
-    pub fn reparse_imports(&self, extension: &str, source: &[u8]) -> Option<Vec<crate::parser::RawImport>> {
+    pub fn reparse_imports(
+        &self,
+        extension: &str,
+        source: &[u8],
+    ) -> Option<Vec<crate::parser::RawImport>> {
         self.registry.reparse_imports(extension, source)
     }
 
@@ -74,7 +81,15 @@ impl BuildPipeline {
         self.run_with_output(root, config, None, false, false, false)
     }
 
-    pub fn run_with_output(&self, root: &Path, config: WalkConfig, output_dir: Option<&Path>, timestamp: bool, verbose: bool, no_louvain: bool) -> Result<BuildOutput, FatalError> {
+    pub fn run_with_output(
+        &self,
+        root: &Path,
+        config: WalkConfig,
+        output_dir: Option<&Path>,
+        timestamp: bool,
+        verbose: bool,
+        no_louvain: bool,
+    ) -> Result<BuildOutput, FatalError> {
         let diagnostics = DiagnosticCollector::new();
         let abs_root = std::fs::canonicalize(root).map_err(|_| FatalError::ProjectNotFound {
             path: root.to_path_buf(),
@@ -91,7 +106,11 @@ impl BuildPipeline {
             diagnostics.warn(w);
         }
         if verbose {
-            eprintln!("[walk]      {:>6}ms  {} files found", walk_start.elapsed().as_millis(), entries.len());
+            eprintln!(
+                "[walk]      {:>6}ms  {} files found",
+                walk_start.elapsed().as_millis(),
+                entries.len()
+            );
         }
 
         // Stage 2: Read (with diagnostics)
@@ -115,7 +134,12 @@ impl BuildPipeline {
             }
         }
         if verbose {
-            eprintln!("[read+hash] {:>6}ms  {} files read ({} skipped)", read_start.elapsed().as_millis(), file_contents.len(), read_skipped);
+            eprintln!(
+                "[read+hash] {:>6}ms  {} files read ({} skipped)",
+                read_start.elapsed().as_millis(),
+                file_contents.len(),
+                read_skipped
+            );
         }
 
         // E004: no parseable files
@@ -181,7 +205,12 @@ impl BuildPipeline {
             .collect();
         if verbose {
             let parse_warnings = file_count_before_parse - parsed_files.len();
-            eprintln!("[parse]     {:>6}ms  {} files parsed ({} warnings)", parse_start.elapsed().as_millis(), parsed_files.len(), parse_warnings);
+            eprintln!(
+                "[parse]     {:>6}ms  {} files parsed ({} warnings)",
+                parse_start.elapsed().as_millis(),
+                parsed_files.len(),
+                parse_warnings
+            );
         }
 
         // Stage 4: Resolve + Build graph
@@ -200,7 +229,11 @@ impl BuildPipeline {
             case_insensitive,
         );
         if verbose {
-            eprintln!("[resolve]   {:>6}ms  {} edges created", resolve_start.elapsed().as_millis(), graph.edges.len());
+            eprintln!(
+                "[resolve]   {:>6}ms  {} edges created",
+                resolve_start.elapsed().as_millis(),
+                graph.edges.len()
+            );
         }
 
         // Stage 5: Cluster
@@ -216,7 +249,11 @@ impl BuildPipeline {
             }
         }
         if verbose {
-            eprintln!("[cluster]   {:>6}ms  {} clusters", cluster_start.elapsed().as_millis(), cluster_map.clusters.len());
+            eprintln!(
+                "[cluster]   {:>6}ms  {} clusters",
+                cluster_start.elapsed().as_millis(),
+                cluster_map.clusters.len()
+            );
         }
 
         // Stage 5b: Louvain clustering (refines directory-based clusters)
@@ -228,7 +265,8 @@ impl BuildPipeline {
                 diagnostics.warn(Warning {
                     code: WarningCode::W012AlgorithmFailed,
                     path: CanonicalPath::new("<louvain>"),
-                    message: "Louvain clustering did not converge within iteration limit".to_string(),
+                    message: "Louvain clustering did not converge within iteration limit"
+                        .to_string(),
                     detail: None,
                 });
             }
@@ -244,7 +282,8 @@ impl BuildPipeline {
             }
 
             if verbose {
-                eprintln!("[louvain]   {:>6}ms  {} clusters (was {} directory-based)",
+                eprintln!(
+                    "[louvain]   {:>6}ms  {} clusters (was {} directory-based)",
                     louvain_start.elapsed().as_millis(),
                     cluster_map.clusters.len(),
                     dir_cluster_count,
@@ -267,7 +306,8 @@ impl BuildPipeline {
         let centrality = algo::centrality::betweenness_centrality(&graph);
         let stats = algo::stats::compute_stats(&graph, &centrality, &sccs, &layers);
         if verbose {
-            eprintln!("[algorithms]{:>6}ms  {} SCCs, {} layers, {} centrality scores",
+            eprintln!(
+                "[algorithms]{:>6}ms  {} SCCs, {} layers, {} centrality scores",
                 algo_start.elapsed().as_millis(),
                 sccs.len(),
                 layers.values().copied().max().unwrap_or(0) + 1,
@@ -294,24 +334,42 @@ impl BuildPipeline {
             .write_clusters(&cluster_output, &output_dir)?;
         self.serializer.write_stats(&stats, &output_dir)?;
         // Serialize raw imports for freshness engine (D-054)
-        let raw_imports_output: std::collections::BTreeMap<String, Vec<RawImportOutput>> = parsed_files
-            .iter()
-            .map(|pf| {
-                let key = pf.path.as_str().to_string();
-                let imports = pf.imports.iter().map(|ri| RawImportOutput {
-                    path: ri.path.clone(),
-                    symbols: ri.symbols.clone(),
-                    is_type_only: ri.is_type_only,
-                }).collect();
-                (key, imports)
-            })
-            .collect();
-        self.serializer.write_raw_imports(&raw_imports_output, &output_dir)?;
+        let raw_imports_output: std::collections::BTreeMap<String, Vec<RawImportOutput>> =
+            parsed_files
+                .iter()
+                .map(|pf| {
+                    let key = pf.path.as_str().to_string();
+                    let imports = pf
+                        .imports
+                        .iter()
+                        .map(|ri| RawImportOutput {
+                            path: ri.path.clone(),
+                            symbols: ri.symbols.clone(),
+                            is_type_only: ri.is_type_only,
+                        })
+                        .collect();
+                    (key, imports)
+                })
+                .collect();
+        self.serializer
+            .write_raw_imports(&raw_imports_output, &output_dir)?;
         if verbose {
-            let graph_size = std::fs::metadata(output_dir.join("graph.json")).map(|m| m.len()).unwrap_or(0);
-            let cluster_size = std::fs::metadata(output_dir.join("clusters.json")).map(|m| m.len()).unwrap_or(0);
-            let stats_size = std::fs::metadata(output_dir.join("stats.json")).map(|m| m.len()).unwrap_or(0);
-            eprintln!("[serialize] {:>6}ms  graph.json ({}) + clusters.json ({}) + stats.json ({})", ser_start.elapsed().as_millis(), format_size(graph_size), format_size(cluster_size), format_size(stats_size));
+            let graph_size = std::fs::metadata(output_dir.join("graph.json"))
+                .map(|m| m.len())
+                .unwrap_or(0);
+            let cluster_size = std::fs::metadata(output_dir.join("clusters.json"))
+                .map(|m| m.len())
+                .unwrap_or(0);
+            let stats_size = std::fs::metadata(output_dir.join("stats.json"))
+                .map(|m| m.len())
+                .unwrap_or(0);
+            eprintln!(
+                "[serialize] {:>6}ms  graph.json ({}) + clusters.json ({}) + stats.json ({})",
+                ser_start.elapsed().as_millis(),
+                format_size(graph_size),
+                format_size(cluster_size),
+                format_size(stats_size)
+            );
         }
 
         if verbose {
@@ -340,6 +398,7 @@ impl BuildPipeline {
     /// (algorithms are fast; correctness over optimization).
     /// Incremental re-parse of only changed files is deferred to Phase 3.
     /// Views are NOT regenerated (per spec D9).
+    #[allow(clippy::too_many_arguments)]
     pub fn update(
         &self,
         root: &Path,
@@ -362,13 +421,18 @@ impl BuildPipeline {
                 if verbose {
                     eprintln!("[delta]     no prior graph — falling back to full build");
                 }
-                return self.run_with_output(root, config, output_dir, timestamp, verbose, no_louvain);
+                return self
+                    .run_with_output(root, config, output_dir, timestamp, verbose, no_louvain);
             }
             Err(FatalError::GraphCorrupted { ref reason, .. }) => {
                 if verbose {
-                    eprintln!("[delta]     corrupted graph: {} — falling back to full build", reason);
+                    eprintln!(
+                        "[delta]     corrupted graph: {} — falling back to full build",
+                        reason
+                    );
                 }
-                return self.run_with_output(root, config, output_dir, timestamp, verbose, no_louvain);
+                return self
+                    .run_with_output(root, config, output_dir, timestamp, verbose, no_louvain);
             }
             Err(e) => return Err(e),
         };
@@ -376,7 +440,10 @@ impl BuildPipeline {
         // W010: version mismatch check
         if old_graph_output.version != 1 {
             if verbose {
-                eprintln!("[delta]     graph version {} != 1 — falling back to full build", old_graph_output.version);
+                eprintln!(
+                    "[delta]     graph version {} != 1 — falling back to full build",
+                    old_graph_output.version
+                );
             }
             return self.run_with_output(root, config, output_dir, timestamp, verbose, no_louvain);
         }
@@ -385,9 +452,13 @@ impl BuildPipeline {
             Ok(g) => g,
             Err(reason) => {
                 if verbose {
-                    eprintln!("[delta]     graph conversion failed: {} — falling back to full build", reason);
+                    eprintln!(
+                        "[delta]     graph conversion failed: {} — falling back to full build",
+                        reason
+                    );
                 }
-                return self.run_with_output(root, config, output_dir, timestamp, verbose, no_louvain);
+                return self
+                    .run_with_output(root, config, output_dir, timestamp, verbose, no_louvain);
             }
         };
 
@@ -418,13 +489,14 @@ impl BuildPipeline {
         let delta = algo::delta::compute_delta(&old_graph.nodes, &current_hashes);
 
         if verbose {
-            let mode = if delta.changed.is_empty() && delta.added.is_empty() && delta.removed.is_empty() {
-                "no changes"
-            } else if delta.requires_full_recompute {
-                "full recompute — >5% threshold"
-            } else {
-                "incremental"
-            };
+            let mode =
+                if delta.changed.is_empty() && delta.added.is_empty() && delta.removed.is_empty() {
+                    "no changes"
+                } else if delta.requires_full_recompute {
+                    "full recompute — >5% threshold"
+                } else {
+                    "incremental"
+                };
             eprintln!(
                 "[delta]     {:>6}ms  {} changed, {} added, {} removed ({})",
                 delta_start.elapsed().as_millis(),
@@ -473,7 +545,11 @@ fn project_graph_to_output(graph: &ProjectGraph, project_root: &Path) -> GraphOu
                 arch_depth: node.arch_depth,
                 lines: node.lines,
                 hash: node.hash.as_str().to_string(),
-                exports: node.exports.iter().map(|s| s.as_str().to_string()).collect(),
+                exports: node
+                    .exports
+                    .iter()
+                    .map(|s| s.as_str().to_string())
+                    .collect(),
                 cluster: node.cluster.as_str().to_string(),
             },
         );
@@ -510,7 +586,11 @@ fn cluster_map_to_output(cluster_map: &ClusterMap) -> ClusterOutput {
         clusters.insert(
             id.as_str().to_string(),
             ClusterEntryOutput {
-                files: cluster.files.iter().map(|p| p.as_str().to_string()).collect(),
+                files: cluster
+                    .files
+                    .iter()
+                    .map(|p| p.as_str().to_string())
+                    .collect(),
                 file_count: cluster.file_count,
                 internal_edges: cluster.internal_edges,
                 external_edges: cluster.external_edges,

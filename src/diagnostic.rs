@@ -115,7 +115,10 @@ pub fn format_warnings(report: &DiagnosticReport, format: WarningFormat, verbose
                     Some(d) => format!(": {}", d),
                     None => String::new(),
                 };
-                lines.push(format!("warn[{}]: {}: {}{}", w.code, w.path, w.message, detail_part));
+                lines.push(format!(
+                    "warn[{}]: {}: {}{}",
+                    w.code, w.path, w.message, detail_part
+                ));
             }
             WarningFormat::Json => {
                 let detail_json = match &w.detail {
@@ -170,7 +173,10 @@ pub fn format_summary(
             reasons.push(format!("{} encoding error", report.counts.encoding_errors));
         }
         if reasons.is_empty() {
-            result.push_str(&format!("\n  {} files skipped", report.counts.files_skipped));
+            result.push_str(&format!(
+                "\n  {} files skipped",
+                report.counts.files_skipped
+            ));
         } else {
             result.push_str(&format!(
                 "\n  {} files skipped ({})",
@@ -392,7 +398,8 @@ mod tests {
         );
         let output = format_warnings(&report, WarningFormat::Json, false);
         // Verify it's valid JSON
-        let parsed: serde_json::Value = serde_json::from_str(&output).expect("should be valid JSON");
+        let parsed: serde_json::Value =
+            serde_json::from_str(&output).expect("should be valid JSON");
         assert_eq!(parsed["level"], "warn");
         assert_eq!(parsed["code"], "W001");
         assert_eq!(parsed["file"], "src/foo.ts");
@@ -412,7 +419,8 @@ mod tests {
             DiagnosticCounts::default(),
         );
         let output = format_warnings(&report, WarningFormat::Json, false);
-        let parsed: serde_json::Value = serde_json::from_str(&output).expect("should be valid JSON");
+        let parsed: serde_json::Value =
+            serde_json::from_str(&output).expect("should be valid JSON");
         assert_eq!(parsed["level"], "warn");
         assert_eq!(parsed["code"], "W003");
         assert!(parsed.get("detail").is_none());
@@ -431,7 +439,13 @@ mod tests {
                 ..DiagnosticCounts::default()
             },
         );
-        let output = format_summary(&report, 847, 2341, 12, std::time::Duration::from_secs_f64(1.23));
+        let output = format_summary(
+            &report,
+            847,
+            2341,
+            12,
+            std::time::Duration::from_secs_f64(1.23),
+        );
         assert!(output.starts_with("Built graph: 847 files, 2341 edges, 12 clusters in 1.2s"));
         assert!(output.contains("3 files skipped (1 parse error, 1 read error, 1 too large)"));
         assert!(output.contains("42 imports unresolved (external packages)"));
@@ -451,7 +465,12 @@ mod tests {
         let report = make_report(
             vec![
                 make_warning(WarningCode::W001ParseFailed, "a.ts", "parse failed", None),
-                make_warning(WarningCode::W006ImportUnresolved, "b.ts", "unresolved import", None),
+                make_warning(
+                    WarningCode::W006ImportUnresolved,
+                    "b.ts",
+                    "unresolved import",
+                    None,
+                ),
             ],
             DiagnosticCounts::default(),
         );
@@ -465,7 +484,12 @@ mod tests {
         let report = make_report(
             vec![
                 make_warning(WarningCode::W001ParseFailed, "a.ts", "parse failed", None),
-                make_warning(WarningCode::W006ImportUnresolved, "b.ts", "unresolved import", None),
+                make_warning(
+                    WarningCode::W006ImportUnresolved,
+                    "b.ts",
+                    "unresolved import",
+                    None,
+                ),
             ],
             DiagnosticCounts::default(),
         );

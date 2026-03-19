@@ -94,8 +94,11 @@ fn collect_public_java_declarations(
         };
 
         match child.kind() {
-            "class_declaration" | "interface_declaration" | "enum_declaration"
-            | "record_declaration" | "annotation_type_declaration" => {
+            "class_declaration"
+            | "interface_declaration"
+            | "enum_declaration"
+            | "record_declaration"
+            | "annotation_type_declaration" => {
                 if has_public_modifier(&child, source) {
                     if let Some(name) = find_java_declaration_name(&child, source) {
                         exports.push(RawExport {

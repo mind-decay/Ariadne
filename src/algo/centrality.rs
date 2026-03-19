@@ -175,7 +175,14 @@ mod tests {
     fn float_determinism() {
         let graph = make_graph(
             &["a", "b", "c", "d", "e"],
-            &[("a", "b"), ("b", "c"), ("c", "d"), ("d", "e"), ("a", "c"), ("b", "d")],
+            &[
+                ("a", "b"),
+                ("b", "c"),
+                ("c", "d"),
+                ("d", "e"),
+                ("a", "c"),
+                ("b", "d"),
+            ],
         );
         let bc1 = betweenness_centrality(&graph);
         let bc2 = betweenness_centrality(&graph);

@@ -21,11 +21,8 @@ pub fn detect_file_type(path: &CanonicalPath) -> FileType {
     }
 
     // Priority 4 — Style extensions
-    if let Some(ext) = path.extension() {
-        match ext {
-            "css" | "scss" | "sass" | "less" => return FileType::Style,
-            _ => {}
-        }
+    if let Some("css" | "scss" | "sass" | "less") = path.extension() {
+        return FileType::Style;
     }
 
     // Priority 5 — Asset extensions
@@ -81,7 +78,7 @@ fn is_config_filename(filename: &str) -> bool {
             | "Pipfile"
             | "build.rs"
     ) || is_tsconfig(filename)
-      || is_env_variant(filename)
+        || is_env_variant(filename)
 }
 
 /// Match `tsconfig.json` and `tsconfig.*.json` variants.
@@ -126,7 +123,9 @@ fn is_test_file(filename: &str, path_str: &str) -> bool {
     if filename == "conftest.py" {
         return true;
     }
-    if filename.ends_with(".py") && (filename.starts_with("test_") || filename.ends_with("_test.py")) {
+    if filename.ends_with(".py")
+        && (filename.starts_with("test_") || filename.ends_with("_test.py"))
+    {
         return true;
     }
     if filename.ends_with(".py") && path_contains_segment(path_str, "tests") {
@@ -148,7 +147,10 @@ fn is_test_file(filename: &str, path_str: &str) -> bool {
     }
 
     // Java test patterns
-    if filename.ends_with("Test.java") || filename.ends_with("Tests.java") || filename.ends_with("IT.java") {
+    if filename.ends_with("Test.java")
+        || filename.ends_with("Tests.java")
+        || filename.ends_with("IT.java")
+    {
         return true;
     }
     // Files in src/test/ directory
@@ -184,9 +186,19 @@ fn is_asset_file(_filename: &str, ext: Option<&str>) -> bool {
     match ext {
         Some(ext) => matches!(
             ext,
-            "png" | "jpg" | "jpeg" | "gif" | "svg" | "ico"
-                | "woff" | "woff2" | "ttf" | "eot"
-                | "json" | "yaml" | "yml"
+            "png"
+                | "jpg"
+                | "jpeg"
+                | "gif"
+                | "svg"
+                | "ico"
+                | "woff"
+                | "woff2"
+                | "ttf"
+                | "eot"
+                | "json"
+                | "yaml"
+                | "yml"
         ),
         // Files without extensions that weren't caught earlier are not assets
         None => false,

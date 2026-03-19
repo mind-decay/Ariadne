@@ -77,6 +77,12 @@ impl FsWalker {
     }
 }
 
+impl Default for FsWalker {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl FileWalker for FsWalker {
     fn walk(&self, root: &Path, config: &WalkConfig) -> Result<WalkResult, FatalError> {
         // Validate root
@@ -133,7 +139,7 @@ impl FileWalker for FsWalker {
             };
 
             // Skip directories
-            if entry.file_type().map_or(true, |ft| ft.is_dir()) {
+            if entry.file_type().is_none_or(|ft| ft.is_dir()) {
                 continue;
             }
 
@@ -145,7 +151,7 @@ impl FileWalker for FsWalker {
                 let should_exclude = manual_exclude.iter().any(|dir| {
                     rel.components()
                         .next()
-                        .map_or(false, |c| c.as_os_str() == dir.as_str())
+                        .is_some_and(|c| c.as_os_str() == dir.as_str())
                 });
                 if should_exclude {
                     continue;

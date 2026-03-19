@@ -178,7 +178,14 @@ mod tests {
     fn fully_connected() {
         let graph = make_graph(
             &["a", "b", "c"],
-            &[("a", "b"), ("b", "c"), ("c", "a"), ("a", "c"), ("b", "a"), ("c", "b")],
+            &[
+                ("a", "b"),
+                ("b", "c"),
+                ("c", "a"),
+                ("a", "c"),
+                ("b", "a"),
+                ("c", "b"),
+            ],
         );
         let sccs = find_sccs(&graph);
         assert_eq!(sccs.len(), 1);

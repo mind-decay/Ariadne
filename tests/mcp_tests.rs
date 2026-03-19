@@ -54,7 +54,10 @@ mod lock_tests {
         std::fs::write(&lock_path, "not valid json!!!").unwrap();
 
         let status = check_lock(&lock_path).unwrap();
-        assert!(status.is_stale(), "Corrupted lock should be treated as stale");
+        assert!(
+            status.is_stale(),
+            "Corrupted lock should be treated as stale"
+        );
     }
 
     #[test]
@@ -150,9 +153,7 @@ mod freshness_tests {
     #[test]
     fn new_files_affect_confidence() {
         let mut state = FreshnessState::new();
-        state
-            .new_files
-            .push(std::path::PathBuf::from("src/new.ts"));
+        state.new_files.push(std::path::PathBuf::from("src/new.ts"));
         state.recompute_confidence(10);
         assert!((state.hash_confidence - 0.9).abs() < 0.001);
         assert!((state.structural_confidence - 0.9).abs() < 0.001);
@@ -285,10 +286,9 @@ mod state_tests {
         assert_eq!(a_outgoing[0].to, CanonicalPath::new("src/b.ts"));
 
         // b.ts has no outgoing edges
-        assert!(state
+        assert!(!state
             .forward_index
-            .get(&CanonicalPath::new("src/b.ts"))
-            .is_none());
+            .contains_key(&CanonicalPath::new("src/b.ts")));
     }
 
     #[test]
@@ -394,23 +394,24 @@ mod integration_tests {
         let mut tools_response = String::new();
         reader.read_line(&mut tools_response).unwrap();
 
-        let tools_resp: serde_json::Value =
-            serde_json::from_str(tools_response.trim()).unwrap();
+        let tools_resp: serde_json::Value = serde_json::from_str(tools_response.trim()).unwrap();
         assert_eq!(tools_resp["id"], 2);
         let tools = tools_resp["result"]["tools"].as_array().unwrap();
-        assert!(tools.len() >= 11, "Should have at least 11 tools, got {}", tools.len());
+        assert!(
+            tools.len() >= 11,
+            "Should have at least 11 tools, got {}",
+            tools.len()
+        );
 
         // Verify tool names
-        let tool_names: Vec<&str> = tools
-            .iter()
-            .map(|t| t["name"].as_str().unwrap())
-            .collect();
+        let tool_names: Vec<&str> = tools.iter().map(|t| t["name"].as_str().unwrap()).collect();
         assert!(tool_names.contains(&"ariadne_overview"));
         assert!(tool_names.contains(&"ariadne_file"));
         assert!(tool_names.contains(&"ariadne_blast_radius"));
         assert!(tool_names.contains(&"ariadne_freshness"));
 
-        // Kill the server
+        // Kill the server and wait to avoid zombie process
         child.kill().ok();
+        child.wait().ok();
     }
 }

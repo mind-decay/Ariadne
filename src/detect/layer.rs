@@ -18,14 +18,9 @@ pub fn infer_arch_layer(path: &CanonicalPath) -> ArchLayer {
 
 /// Extract directory segments from a path (everything except the last component).
 fn directory_segments(path: &str) -> impl Iterator<Item = &str> {
-    let parts: Vec<&str> = path.split('/').collect();
-    // All segments except the last one (which is the filename)
-    let dir_parts = if parts.len() > 1 {
-        &parts[..parts.len() - 1]
-    } else {
-        &[]
-    };
-    dir_parts.to_vec().into_iter()
+    // Split on '/' and drop the last segment (the filename).
+    let total = path.split('/').count();
+    path.split('/').take(total.saturating_sub(1))
 }
 
 /// Match a lowercased directory segment to an architectural layer.
@@ -43,10 +38,10 @@ fn match_layer(segment: &str) -> Option<ArchLayer> {
             Some(ArchLayer::Service)
         }
         // Data (DDD, Clean, Layered, CQRS, Rails/Django)
-        "data" | "db" | "database" | "repository" | "repositories" | "models" | "model"
-        | "dao" | "store" | "stores" | "schema" | "migration" | "migrations"
-        | "entities" | "aggregates" | "value-objects" | "infrastructure" | "persistence"
-        | "gateways" | "queries" | "serializers" => Some(ArchLayer::Data),
+        "data" | "db" | "database" | "repository" | "repositories" | "models" | "model" | "dao"
+        | "store" | "stores" | "schema" | "migration" | "migrations" | "entities"
+        | "aggregates" | "value-objects" | "infrastructure" | "persistence" | "gateways"
+        | "queries" | "serializers" => Some(ArchLayer::Data),
         // Util (Angular)
         "utils" | "util" | "helpers" | "lib" | "shared" | "common" | "pkg" | "pipes" => {
             Some(ArchLayer::Util)

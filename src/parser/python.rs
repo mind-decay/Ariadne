@@ -34,12 +34,10 @@ impl PythonParser {
         kind: &str,
     ) -> Option<tree_sitter::Node<'a>> {
         let mut cursor = node.walk();
-        for child in node.children(&mut cursor) {
-            if child.kind() == kind {
-                return Some(child);
-            }
-        }
-        None
+        let result = node
+            .children(&mut cursor)
+            .find(|child| child.kind() == kind);
+        result
     }
 
     /// Count the number of leading dots in a relative import.
@@ -236,34 +234,31 @@ impl LanguageParser for PythonParser {
         let mut has_all = false;
 
         for node in root.children(&mut cursor) {
-            match node.kind() {
-                // __all__ = ['foo', 'bar']
-                "expression_statement" => {
-                    if let Some(assignment) = Self::find_child_by_kind(&node, "assignment") {
-                        let mut assign_cursor = assignment.walk();
-                        let children: Vec<_> = assignment.children(&mut assign_cursor).collect();
+            // __all__ = ['foo', 'bar']
+            if node.kind() == "expression_statement" {
+                if let Some(assignment) = Self::find_child_by_kind(&node, "assignment") {
+                    let mut assign_cursor = assignment.walk();
+                    let children: Vec<_> = assignment.children(&mut assign_cursor).collect();
 
-                        // Check if left side is __all__
-                        if let Some(left) = children.first() {
-                            if left.kind() == "identifier"
-                                && left.utf8_text(source).ok() == Some("__all__")
-                            {
-                                has_all = true;
-                                // Right side should be a list
-                                for child in &children {
-                                    if child.kind() == "list" {
-                                        let mut list_cursor = child.walk();
-                                        for item in child.children(&mut list_cursor) {
-                                            if item.kind() == "string" {
-                                                if let Some(name) =
-                                                    Self::string_content(&item, source)
-                                                {
-                                                    exports.push(RawExport {
-                                                        name: name.to_string(),
-                                                        is_re_export: false,
-                                                        source: None,
-                                                    });
-                                                }
+                    // Check if left side is __all__
+                    if let Some(left) = children.first() {
+                        if left.kind() == "identifier"
+                            && left.utf8_text(source).ok() == Some("__all__")
+                        {
+                            has_all = true;
+                            // Right side should be a list
+                            for child in &children {
+                                if child.kind() == "list" {
+                                    let mut list_cursor = child.walk();
+                                    for item in child.children(&mut list_cursor) {
+                                        if item.kind() == "string" {
+                                            if let Some(name) = Self::string_content(&item, source)
+                                            {
+                                                exports.push(RawExport {
+                                                    name: name.to_string(),
+                                                    is_re_export: false,
+                                                    source: None,
+                                                });
                                             }
                                         }
                                     }
@@ -272,7 +267,6 @@ impl LanguageParser for PythonParser {
                         }
                     }
                 }
-                _ => {}
             }
         }
 

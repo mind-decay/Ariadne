@@ -31,12 +31,10 @@ impl TypeScriptParser {
         kind: &str,
     ) -> Option<tree_sitter::Node<'a>> {
         let mut cursor = node.walk();
-        for child in node.children(&mut cursor) {
-            if child.kind() == kind {
-                return Some(child);
-            }
-        }
-        None
+        let result = node
+            .children(&mut cursor)
+            .find(|child| child.kind() == kind);
+        result
     }
 
     /// Extract named import symbols from an import clause.
@@ -186,131 +184,126 @@ impl LanguageParser for TypeScriptParser {
         let mut cursor = root.walk();
 
         for node in root.children(&mut cursor) {
-            match node.kind() {
-                // export default function() {} / export default class Foo {}
-                // export function foo() {} / export class Foo {}
-                // export const foo = ...
-                "export_statement" => {
-                    let mut has_source = false;
-                    let mut source_path = None;
-                    let mut is_default = false;
-                    let mut exported_names = Vec::new();
+            // export default function() {} / export default class Foo {}
+            // export function foo() {} / export class Foo {}
+            // export const foo = ...
+            if node.kind() == "export_statement" {
+                let mut has_source = false;
+                let mut source_path = None;
+                let mut is_default = false;
+                let mut exported_names = Vec::new();
 
-                    let mut child_cursor = node.walk();
-                    for child in node.children(&mut child_cursor) {
-                        match child.kind() {
-                            "default" => {
-                                is_default = true;
-                            }
-                            "export_clause" => {
-                                // export { foo, bar } or export { foo } from './bar'
-                                let mut clause_cursor = child.walk();
-                                for spec in child.children(&mut clause_cursor) {
-                                    if spec.kind() == "export_specifier" {
-                                        let mut spec_cursor = spec.walk();
-                                        for spec_child in spec.children(&mut spec_cursor) {
-                                            if spec_child.kind() == "identifier"
-                                                || spec_child.kind() == "type_identifier"
-                                            {
-                                                if let Ok(name) = spec_child.utf8_text(source) {
-                                                    exported_names.push(name.to_string());
-                                                }
-                                                break;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            "string" => {
-                                // from './bar'
-                                if let Some(path) = Self::string_content(&child, source) {
-                                    has_source = true;
-                                    source_path = Some(path.to_string());
-                                }
-                            }
-                            "function_declaration" | "generator_function_declaration" => {
-                                // export function foo() {}
-                                if let Some(name_node) =
-                                    Self::find_child_by_kind(&child, "identifier")
-                                {
-                                    if let Ok(name) = name_node.utf8_text(source) {
-                                        exported_names.push(name.to_string());
-                                    }
-                                }
-                            }
-                            "class_declaration" => {
-                                if let Some(name_node) =
-                                    Self::find_child_by_kind(&child, "type_identifier")
-                                {
-                                    if let Ok(name) = name_node.utf8_text(source) {
-                                        exported_names.push(name.to_string());
-                                    }
-                                }
-                            }
-                            "lexical_declaration" | "variable_declaration" => {
-                                // export const foo = ..., bar = ...
-                                let mut decl_cursor = child.walk();
-                                for declarator in child.children(&mut decl_cursor) {
-                                    if declarator.kind() == "variable_declarator" {
-                                        if let Some(name_node) =
-                                            Self::find_child_by_kind(&declarator, "identifier")
+                let mut child_cursor = node.walk();
+                for child in node.children(&mut child_cursor) {
+                    match child.kind() {
+                        "default" => {
+                            is_default = true;
+                        }
+                        "export_clause" => {
+                            // export { foo, bar } or export { foo } from './bar'
+                            let mut clause_cursor = child.walk();
+                            for spec in child.children(&mut clause_cursor) {
+                                if spec.kind() == "export_specifier" {
+                                    let mut spec_cursor = spec.walk();
+                                    for spec_child in spec.children(&mut spec_cursor) {
+                                        if spec_child.kind() == "identifier"
+                                            || spec_child.kind() == "type_identifier"
                                         {
-                                            if let Ok(name) = name_node.utf8_text(source) {
+                                            if let Ok(name) = spec_child.utf8_text(source) {
                                                 exported_names.push(name.to_string());
                                             }
+                                            break;
                                         }
                                     }
                                 }
                             }
-                            "interface_declaration" | "type_alias_declaration" => {
-                                if let Some(name_node) =
-                                    Self::find_child_by_kind(&child, "type_identifier")
-                                {
-                                    if let Ok(name) = name_node.utf8_text(source) {
-                                        exported_names.push(name.to_string());
-                                    }
-                                }
-                            }
-                            "enum_declaration" => {
-                                if let Some(name_node) =
-                                    Self::find_child_by_kind(&child, "identifier")
-                                {
-                                    if let Ok(name) = name_node.utf8_text(source) {
-                                        exported_names.push(name.to_string());
-                                    }
-                                }
-                            }
-                            "*" => {
-                                // export * from './bar'
-                                exported_names.push("*".to_string());
-                            }
-                            "namespace_export" => {
-                                // export * as ns from './bar'
-                                exported_names.push("*".to_string());
-                            }
-                            _ => {}
                         }
+                        "string" => {
+                            // from './bar'
+                            if let Some(path) = Self::string_content(&child, source) {
+                                has_source = true;
+                                source_path = Some(path.to_string());
+                            }
+                        }
+                        "function_declaration" | "generator_function_declaration" => {
+                            // export function foo() {}
+                            if let Some(name_node) = Self::find_child_by_kind(&child, "identifier")
+                            {
+                                if let Ok(name) = name_node.utf8_text(source) {
+                                    exported_names.push(name.to_string());
+                                }
+                            }
+                        }
+                        "class_declaration" => {
+                            if let Some(name_node) =
+                                Self::find_child_by_kind(&child, "type_identifier")
+                            {
+                                if let Ok(name) = name_node.utf8_text(source) {
+                                    exported_names.push(name.to_string());
+                                }
+                            }
+                        }
+                        "lexical_declaration" | "variable_declaration" => {
+                            // export const foo = ..., bar = ...
+                            let mut decl_cursor = child.walk();
+                            for declarator in child.children(&mut decl_cursor) {
+                                if declarator.kind() == "variable_declarator" {
+                                    if let Some(name_node) =
+                                        Self::find_child_by_kind(&declarator, "identifier")
+                                    {
+                                        if let Ok(name) = name_node.utf8_text(source) {
+                                            exported_names.push(name.to_string());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        "interface_declaration" | "type_alias_declaration" => {
+                            if let Some(name_node) =
+                                Self::find_child_by_kind(&child, "type_identifier")
+                            {
+                                if let Ok(name) = name_node.utf8_text(source) {
+                                    exported_names.push(name.to_string());
+                                }
+                            }
+                        }
+                        "enum_declaration" => {
+                            if let Some(name_node) = Self::find_child_by_kind(&child, "identifier")
+                            {
+                                if let Ok(name) = name_node.utf8_text(source) {
+                                    exported_names.push(name.to_string());
+                                }
+                            }
+                        }
+                        "*" => {
+                            // export * from './bar'
+                            exported_names.push("*".to_string());
+                        }
+                        "namespace_export" => {
+                            // export * as ns from './bar'
+                            exported_names.push("*".to_string());
+                        }
+                        _ => {}
                     }
+                }
 
-                    if is_default {
+                if is_default {
+                    exports.push(RawExport {
+                        name: "default".to_string(),
+                        is_re_export: has_source,
+                        source: source_path.clone(),
+                    });
+                } else if exported_names.is_empty() && !is_default {
+                    // Side-effect only export or unrecognized pattern
+                } else {
+                    for name in exported_names {
                         exports.push(RawExport {
-                            name: "default".to_string(),
+                            name,
                             is_re_export: has_source,
                             source: source_path.clone(),
                         });
-                    } else if exported_names.is_empty() && !is_default {
-                        // Side-effect only export or unrecognized pattern
-                    } else {
-                        for name in exported_names {
-                            exports.push(RawExport {
-                                name,
-                                is_re_export: has_source,
-                                source: source_path.clone(),
-                            });
-                        }
                     }
                 }
-                _ => {}
             }
         }
 
@@ -332,9 +325,7 @@ impl TypeScriptParser {
                     // Check if it's require('...')
                     if let Some(func) = Self::find_child_by_kind(&current, "identifier") {
                         if func.utf8_text(source).ok() == Some("require") {
-                            if let Some(args) =
-                                Self::find_child_by_kind(&current, "arguments")
-                            {
+                            if let Some(args) = Self::find_child_by_kind(&current, "arguments") {
                                 let mut args_cursor = args.walk();
                                 for arg in args.children(&mut args_cursor) {
                                     if arg.kind() == "string" {
@@ -422,7 +413,9 @@ impl TypeScriptResolver {
                 let entry = member.entry_point.to_string_lossy();
                 // Convert to forward slashes, strip leading ./
                 let entry_canonical = entry.replace('\\', "/");
-                let entry_canonical = entry_canonical.strip_prefix("./").unwrap_or(&entry_canonical);
+                let entry_canonical = entry_canonical
+                    .strip_prefix("./")
+                    .unwrap_or(&entry_canonical);
                 let candidate = CanonicalPath::new(entry_canonical);
                 if known_files.contains(&candidate) {
                     return Some(candidate);
@@ -499,7 +492,9 @@ impl ImportResolver for TypeScriptResolver {
 
         // Check workspace packages first (before relative/external classification)
         if let Some(ws) = workspace {
-            if let Some(resolved) = self.resolve_workspace_import(specifier, from_file, known_files, ws) {
+            if let Some(resolved) =
+                self.resolve_workspace_import(specifier, from_file, known_files, ws)
+            {
                 return Some(resolved);
             }
         }
@@ -633,7 +628,10 @@ mod tests {
         let import = make_import("@myapp/auth/helpers/validate");
 
         let result = resolver.resolve(&import, &from, &files, Some(&ws));
-        assert_eq!(result.unwrap().as_str(), "packages/auth/helpers/validate.ts");
+        assert_eq!(
+            result.unwrap().as_str(),
+            "packages/auth/helpers/validate.ts"
+        );
     }
 
     #[test]
@@ -664,10 +662,7 @@ mod tests {
     fn relative_import_unchanged_with_workspace() {
         let resolver = TypeScriptResolver::new();
         let ws = make_workspace();
-        let files = make_files(&[
-            "apps/web/src/app.ts",
-            "apps/web/src/utils.ts",
-        ]);
+        let files = make_files(&["apps/web/src/app.ts", "apps/web/src/utils.ts"]);
         let from = CanonicalPath::new("apps/web/src/app.ts");
         let import = make_import("./utils");
 
@@ -678,10 +673,7 @@ mod tests {
     #[test]
     fn workspace_none_keeps_existing_behavior() {
         let resolver = TypeScriptResolver::new();
-        let files = make_files(&[
-            "src/app.ts",
-            "src/utils.ts",
-        ]);
+        let files = make_files(&["src/app.ts", "src/utils.ts"]);
         let from = CanonicalPath::new("src/app.ts");
         let import = make_import("./utils");
 

@@ -35,11 +35,7 @@ impl ParserRegistry {
     }
 
     /// Register a parser and its corresponding resolver.
-    pub fn register(
-        &mut self,
-        parser: Box<dyn LanguageParser>,
-        resolver: Box<dyn ImportResolver>,
-    ) {
+    pub fn register(&mut self, parser: Box<dyn LanguageParser>, resolver: Box<dyn ImportResolver>) {
         let index = self.parsers.len();
         for ext in parser.extensions() {
             self.extension_index.insert(ext.to_string(), index);
@@ -74,10 +70,7 @@ impl ParserRegistry {
             Box::new(PythonParser::new()),
             Box::new(PythonResolver::new()),
         );
-        registry.register(
-            Box::new(RustParser::new()),
-            Box::new(RustResolver::new()),
-        );
+        registry.register(Box::new(RustParser::new()), Box::new(RustResolver::new()));
         registry.register(go::parser(), go::resolver());
         registry.register(csharp::parser(), csharp::resolver());
         registry.register(java::parser(), java::resolver());
@@ -110,7 +103,7 @@ impl ParserRegistry {
             let total = root.child_count();
             if total > 0 {
                 let error_count = (0..total)
-                    .filter(|&i| root.child(i).map_or(false, |n| n.is_error()))
+                    .filter(|&i| root.child(i).is_some_and(|n| n.is_error()))
                     .count();
                 if error_count * 2 > total {
                     // >50% ERROR nodes → skip file entirely

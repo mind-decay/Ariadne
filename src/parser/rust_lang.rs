@@ -16,12 +16,10 @@ impl RustParser {
         kind: &str,
     ) -> Option<tree_sitter::Node<'a>> {
         let mut cursor = node.walk();
-        for child in node.children(&mut cursor) {
-            if child.kind() == kind {
-                return Some(child);
-            }
-        }
-        None
+        let result = node
+            .children(&mut cursor)
+            .find(|child| child.kind() == kind);
+        result
     }
 
     /// Extract path segments from a scoped_identifier or use path.
@@ -32,11 +30,7 @@ impl RustParser {
     }
 
     /// Recursively collect path segments from scoped identifiers.
-    fn collect_path_segments(
-        node: &tree_sitter::Node,
-        source: &[u8],
-        segments: &mut Vec<String>,
-    ) {
+    fn collect_path_segments(node: &tree_sitter::Node, source: &[u8], segments: &mut Vec<String>) {
         match node.kind() {
             "scoped_identifier" | "scoped_type_identifier" => {
                 // Has a path (left) and a name (right)
@@ -138,10 +132,9 @@ impl RustParser {
                 "use_wildcard" => {
                     // use crate::foo::*
                     // Get the path part
-                    if let Some(path_node) =
-                        Self::find_child_by_kind(&child, "scoped_identifier")
-                            .or_else(|| Self::find_child_by_kind(&child, "identifier"))
-                            .or_else(|| Self::find_child_by_kind(&child, "crate"))
+                    if let Some(path_node) = Self::find_child_by_kind(&child, "scoped_identifier")
+                        .or_else(|| Self::find_child_by_kind(&child, "identifier"))
+                        .or_else(|| Self::find_child_by_kind(&child, "crate"))
                     {
                         let segments = Self::extract_path_segments(&path_node, source);
                         results.push((segments, vec!["*".to_string()]));
@@ -187,8 +180,7 @@ impl RustParser {
                                 let sub_segments = Self::extract_path_segments(&item, source);
                                 let mut full_path = prefix_segments.clone();
                                 full_path.extend(sub_segments.clone());
-                                let symbol =
-                                    sub_segments.last().cloned().unwrap_or_default();
+                                let symbol = sub_segments.last().cloned().unwrap_or_default();
                                 results.push((full_path, vec![symbol]));
                             }
                             "scoped_use_list" => {
@@ -207,15 +199,15 @@ impl RustParser {
                                 results.push((full_path, vec![symbol]));
                             }
                             "use_as_clause" => {
-                                if let Some(orig) =
-                                    Self::find_child_by_kind(&item, "identifier")
-                                        .or_else(|| Self::find_child_by_kind(&item, "scoped_identifier"))
+                                if let Some(orig) = Self::find_child_by_kind(&item, "identifier")
+                                    .or_else(|| {
+                                        Self::find_child_by_kind(&item, "scoped_identifier")
+                                    })
                                 {
                                     let sub_segments = Self::extract_path_segments(&orig, source);
                                     let mut full_path = prefix_segments.clone();
                                     full_path.extend(sub_segments.clone());
-                                    let symbol =
-                                        sub_segments.last().cloned().unwrap_or_default();
+                                    let symbol = sub_segments.last().cloned().unwrap_or_default();
                                     results.push((full_path, vec![symbol]));
                                 }
                             }

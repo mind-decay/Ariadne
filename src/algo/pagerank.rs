@@ -75,8 +75,7 @@ pub fn pagerank(
                 })
                 .sum();
 
-            let new_rank =
-                (1.0 - damping) / n_f64 + damping * (dangling_sum / n_f64 + in_sum);
+            let new_rank = (1.0 - damping) / n_f64 + damping * (dangling_sum / n_f64 + in_sum);
             let diff = (new_rank - ranks[node]).abs();
             if diff > max_diff {
                 max_diff = diff;

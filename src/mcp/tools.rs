@@ -7,8 +7,8 @@ use arc_swap::ArcSwap;
 use rmcp::handler::server::tool::ToolRouter;
 use rmcp::handler::server::wrapper::Parameters;
 use rmcp::model::*;
-use schemars::JsonSchema;
 use rmcp::{tool, tool_handler, tool_router, ServerHandler};
+use schemars::JsonSchema;
 use serde::Deserialize;
 
 use crate::algo;
@@ -258,8 +258,7 @@ impl AriadneTools {
     )]
     fn subgraph(&self, Parameters(params): Parameters<SubgraphParam>) -> String {
         let state = self.state.load();
-        let paths: Vec<CanonicalPath> =
-            params.paths.iter().map(|p| CanonicalPath::new(p)).collect();
+        let paths: Vec<CanonicalPath> = params.paths.iter().map(CanonicalPath::new).collect();
         let depth = params.depth.unwrap_or(2);
         let result = algo::subgraph::extract_subgraph(&state.graph, &paths, depth);
 
@@ -354,7 +353,10 @@ impl AriadneTools {
                 .layer_index
                 .iter()
                 .map(|(&depth, paths)| {
-                    (depth, paths.iter().map(|p| p.as_str().to_string()).collect())
+                    (
+                        depth,
+                        paths.iter().map(|p| p.as_str().to_string()).collect(),
+                    )
                 })
                 .collect();
             to_json(&result)
@@ -488,7 +490,10 @@ impl AriadneTools {
 
         let filtered: Vec<_> = if let Some(ref min_sev) = params.min_severity {
             let min = crate::model::SmellSeverity::from_str_loose(min_sev);
-            smells.into_iter().filter(|s| s.severity.level() >= min.level()).collect()
+            smells
+                .into_iter()
+                .filter(|s| s.severity.level() >= min.level())
+                .collect()
         } else {
             smells
         };
@@ -685,8 +690,12 @@ impl AriadneTools {
 
 /// Serialize to pretty JSON, returning error string on failure instead of panicking.
 fn to_json<T: serde::Serialize>(value: &T) -> String {
-    serde_json::to_string_pretty(value)
-        .unwrap_or_else(|e| format!("{{\"error\":\"serialization_failed\",\"reason\":\"{}\"}}", e))
+    serde_json::to_string_pretty(value).unwrap_or_else(|e| {
+        format!(
+            "{{\"error\":\"serialization_failed\",\"reason\":\"{}\"}}",
+            e
+        )
+    })
 }
 
 /// Helper: convert Edge to JSON value.

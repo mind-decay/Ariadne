@@ -80,7 +80,9 @@ fn edge_cases() {
     // Read graph.json for detailed assertions
     let json_str = std::fs::read_to_string(&output.graph_path).expect("read graph.json");
     let graph: serde_json::Value = serde_json::from_str(&json_str).expect("parse JSON");
-    let nodes = graph["nodes"].as_object().expect("nodes should be an object");
+    let nodes = graph["nodes"]
+        .as_object()
+        .expect("nodes should be an object");
     let node_keys: HashSet<&str> = nodes.keys().map(|k| k.as_str()).collect();
 
     // empty.ts should appear as a node
@@ -94,8 +96,16 @@ fn edge_cases() {
     // Both circular files should be nodes
     let has_a = node_keys.iter().any(|k| k.contains("circular-a.ts"));
     let has_b = node_keys.iter().any(|k| k.contains("circular-b.ts"));
-    assert!(has_a, "circular-a.ts should be a node; found: {:?}", node_keys);
-    assert!(has_b, "circular-b.ts should be a node; found: {:?}", node_keys);
+    assert!(
+        has_a,
+        "circular-a.ts should be a node; found: {:?}",
+        node_keys
+    );
+    assert!(
+        has_b,
+        "circular-b.ts should be a node; found: {:?}",
+        node_keys
+    );
 
     // There should be edges between circular files
     let edges = graph["edges"].as_array().expect("edges should be an array");

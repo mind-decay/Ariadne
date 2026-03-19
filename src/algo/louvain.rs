@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use crate::model::{CanonicalPath, ClusterId, ClusterMap, Cluster, Edge, ProjectGraph};
+use crate::model::{CanonicalPath, Cluster, ClusterId, ClusterMap, Edge, ProjectGraph};
 
 use super::{is_architectural, round4};
 
@@ -37,11 +37,8 @@ pub fn louvain_clustering(
 
     // Node list in deterministic order (BTreeMap key order per D-049)
     let nodes: Vec<&CanonicalPath> = graph.nodes.keys().collect();
-    let node_index: BTreeMap<&CanonicalPath, usize> = nodes
-        .iter()
-        .enumerate()
-        .map(|(i, &n)| (n, i))
-        .collect();
+    let node_index: BTreeMap<&CanonicalPath, usize> =
+        nodes.iter().enumerate().map(|(i, &n)| (n, i)).collect();
     let n = nodes.len();
 
     for edge in &arch_edges {
@@ -78,7 +75,7 @@ pub fn louvain_clustering(
     let mut community: Vec<usize> = vec![0; n];
     let mut next_comm_id: usize = 0;
 
-    for (_cluster_id, cluster) in &initial_clusters.clusters {
+    for cluster in initial_clusters.clusters.values() {
         let comm_idx = next_comm_id;
         next_comm_id += 1;
         for file in &cluster.files {
@@ -89,9 +86,9 @@ pub fn louvain_clustering(
     }
 
     // Assign any nodes not in any cluster to their own community
-    for i in 0..n {
-        if community[i] >= next_comm_id {
-            community[i] = next_comm_id;
+    for (_, item) in community.iter_mut().enumerate().take(n) {
+        if *item >= next_comm_id {
+            *item = next_comm_id;
             next_comm_id += 1;
         }
     }
@@ -134,8 +131,8 @@ pub fn louvain_clustering(
         let mut comm_remap: BTreeMap<usize, usize> = BTreeMap::new();
         let mut next_id: usize = 0;
         for &c in &w_community {
-            if !comm_remap.contains_key(&c) {
-                comm_remap.insert(c, next_id);
+            if let std::collections::btree_map::Entry::Vacant(e) = comm_remap.entry(c) {
+                e.insert(next_id);
                 next_id += 1;
             }
         }
@@ -304,7 +301,7 @@ fn build_cluster_map(
     // Name each community by plurality of original cluster names
     let mut clusters: BTreeMap<ClusterId, Cluster> = BTreeMap::new();
 
-    for (_comm_id, files) in &community_files {
+    for files in community_files.values() {
         // Count original cluster names in this community
         let mut name_counts: BTreeMap<&ClusterId, usize> = BTreeMap::new();
         for file in files {
@@ -422,7 +419,7 @@ fn recompute_cohesion(clusters: &mut BTreeMap<ClusterId, Cluster>, edges: &[Edge
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::{Node, ArchLayer, FileType, ContentHash, Symbol};
+    use crate::model::{ArchLayer, ContentHash, FileType, Node, Symbol};
 
     fn make_node(cluster: &str) -> Node {
         Node {
@@ -503,10 +500,7 @@ mod tests {
 
     #[test]
     fn single_file_unchanged() {
-        let (graph, cluster_map) = make_graph(
-            vec![("src/a.ts", "src")],
-            vec![],
-        );
+        let (graph, cluster_map) = make_graph(vec![("src/a.ts", "src")], vec![]);
         let (result, converged) = louvain_clustering(&graph, &cluster_map);
         assert!(converged);
         assert_eq!(result.clusters.len(), 1);
@@ -515,13 +509,8 @@ mod tests {
 
     #[test]
     fn no_edges_keeps_directory_clusters() {
-        let (graph, cluster_map) = make_graph(
-            vec![
-                ("src/a.ts", "src"),
-                ("lib/b.ts", "lib"),
-            ],
-            vec![],
-        );
+        let (graph, cluster_map) =
+            make_graph(vec![("src/a.ts", "src"), ("lib/b.ts", "lib")], vec![]);
         let (result, converged) = louvain_clustering(&graph, &cluster_map);
         assert!(converged);
         assert_eq!(result.clusters.len(), 2);
@@ -564,7 +553,7 @@ mod tests {
         assert_eq!(result.clusters.len(), 2);
 
         // Each cluster should have 3 files
-        for (_id, cluster) in &result.clusters {
+        for cluster in result.clusters.values() {
             assert_eq!(cluster.file_count, 3);
         }
     }
@@ -601,17 +590,11 @@ mod tests {
     #[test]
     fn cohesion_computed_correctly() {
         let (graph, cluster_map) = make_graph(
-            vec![
-                ("a/a1.ts", "a"),
-                ("a/a2.ts", "a"),
-            ],
-            vec![
-                ("a/a1.ts", "a/a2.ts"),
-                ("a/a2.ts", "a/a1.ts"),
-            ],
+            vec![("a/a1.ts", "a"), ("a/a2.ts", "a")],
+            vec![("a/a1.ts", "a/a2.ts"), ("a/a2.ts", "a/a1.ts")],
         );
         let (result, _) = louvain_clustering(&graph, &cluster_map);
-        for (_id, cluster) in &result.clusters {
+        for cluster in result.clusters.values() {
             assert_eq!(cluster.cohesion, 1.0);
         }
     }

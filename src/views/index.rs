@@ -4,11 +4,7 @@ use std::fmt::Write;
 use crate::model::{ClusterMap, ProjectGraph, StatsOutput};
 
 /// Generate L0 index.md content.
-pub fn generate_index(
-    graph: &ProjectGraph,
-    clusters: &ClusterMap,
-    stats: &StatsOutput,
-) -> String {
+pub fn generate_index(graph: &ProjectGraph, clusters: &ClusterMap, stats: &StatsOutput) -> String {
     let mut out = String::new();
     writeln!(out, "# Project Index").unwrap();
     writeln!(out).unwrap();
@@ -26,12 +22,7 @@ pub fn generate_index(
     writeln!(out).unwrap();
     writeln!(out, "- **Files:** {}", graph.nodes.len()).unwrap();
     writeln!(out, "- **Edges:** {}", graph.edges.len()).unwrap();
-    writeln!(
-        out,
-        "- **Clusters:** {}",
-        clusters.clusters.len()
-    )
-    .unwrap();
+    writeln!(out, "- **Clusters:** {}", clusters.clusters.len()).unwrap();
     writeln!(out, "- **Max depth:** {}", stats.summary.max_depth).unwrap();
     writeln!(
         out,
@@ -58,12 +49,7 @@ pub fn generate_index(
         let key_file = cluster
             .files
             .iter()
-            .filter_map(|f| {
-                stats
-                    .centrality
-                    .get(f.as_str())
-                    .map(|&c| (f.as_str(), c))
-            })
+            .filter_map(|f| stats.centrality.get(f.as_str()).map(|&c| (f.as_str(), c)))
             .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal))
             .map(|(f, _)| f)
             .unwrap_or("-");

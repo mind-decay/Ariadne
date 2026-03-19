@@ -96,7 +96,12 @@ mod tests {
     fn make_current(files: &[(&str, &str)]) -> Vec<(CanonicalPath, ContentHash)> {
         files
             .iter()
-            .map(|(path, hash)| (CanonicalPath::new(*path), ContentHash::new(hash.to_string())))
+            .map(|(path, hash)| {
+                (
+                    CanonicalPath::new(*path),
+                    ContentHash::new(hash.to_string()),
+                )
+            })
             .collect()
     }
 

@@ -31,11 +31,7 @@ pub fn detect_smells(
 /// God File: centrality > 0.8 AND out-degree > 20 AND lines > 500
 fn detect_god_files(graph: &ProjectGraph, stats: &StatsOutput, smells: &mut Vec<ArchSmell>) {
     for (path, node) in &graph.nodes {
-        let centrality = stats
-            .centrality
-            .get(path.as_str())
-            .copied()
-            .unwrap_or(0.0);
+        let centrality = stats.centrality.get(path.as_str()).copied().unwrap_or(0.0);
 
         if centrality <= 0.8 {
             continue;
@@ -73,7 +69,7 @@ fn detect_circular_dependencies(stats: &StatsOutput, smells: &mut Vec<ArchSmell>
         if scc.len() <= 1 {
             continue;
         }
-        let mut files: Vec<CanonicalPath> = scc.iter().map(|s| CanonicalPath::new(s)).collect();
+        let mut files: Vec<CanonicalPath> = scc.iter().map(CanonicalPath::new).collect();
         files.sort();
         smells.push(ArchSmell {
             smell_type: SmellType::CircularDependency,
@@ -106,10 +102,7 @@ fn detect_layer_violations(graph: &ProjectGraph, smells: &mut Vec<ArchSmell>) {
                     smell_type: SmellType::LayerViolation,
                     files,
                     severity: SmellSeverity::Medium,
-                    explanation: format!(
-                        "Dependency from depth {} to depth {} (upward)",
-                        fd, td
-                    ),
+                    explanation: format!("Dependency from depth {} to depth {} (upward)", fd, td),
                     metrics: SmellMetrics {
                         primary_value: depth_diff as f64,
                         threshold: 0.0,
@@ -121,11 +114,7 @@ fn detect_layer_violations(graph: &ProjectGraph, smells: &mut Vec<ArchSmell>) {
 }
 
 /// Hub-and-Spoke: one file has >50% of cluster's external edges
-fn detect_hub_and_spoke(
-    graph: &ProjectGraph,
-    clusters: &ClusterMap,
-    smells: &mut Vec<ArchSmell>,
-) {
+fn detect_hub_and_spoke(graph: &ProjectGraph, clusters: &ClusterMap, smells: &mut Vec<ArchSmell>) {
     for (cluster_id, cluster) in &clusters.clusters {
         // Need at least 2 files and 2 external edges for hub detection to be meaningful
         if cluster.external_edges < 2 || cluster.files.len() < 2 {
@@ -206,13 +195,14 @@ fn detect_unstable_foundations(
 }
 
 /// Dead Cluster: 0 incoming external edges AND not a top-level entry point
-fn detect_dead_clusters(
-    graph: &ProjectGraph,
-    clusters: &ClusterMap,
-    smells: &mut Vec<ArchSmell>,
-) {
+fn detect_dead_clusters(graph: &ProjectGraph, clusters: &ClusterMap, smells: &mut Vec<ArchSmell>) {
     // Find max arch_depth
-    let max_depth = graph.nodes.values().map(|n| n.arch_depth).max().unwrap_or(0);
+    let max_depth = graph
+        .nodes
+        .values()
+        .map(|n| n.arch_depth)
+        .max()
+        .unwrap_or(0);
 
     for (cluster_id, cluster) in &clusters.clusters {
         // Check if any file in this cluster is at max depth (top-level entry)
@@ -308,12 +298,7 @@ mod tests {
     use super::*;
     use crate::analysis::metrics::compute_martin_metrics;
 
-    fn make_node(
-        file_type: FileType,
-        cluster: &ClusterId,
-        arch_depth: u32,
-        lines: u32,
-    ) -> Node {
+    fn make_node(file_type: FileType, cluster: &ClusterId, arch_depth: u32, lines: u32) -> Node {
         Node {
             file_type,
             layer: ArchLayer::Unknown,
@@ -334,10 +319,7 @@ mod tests {
         }
     }
 
-    fn make_stats(
-        centrality: Vec<(&str, f64)>,
-        sccs: Vec<Vec<&str>>,
-    ) -> StatsOutput {
+    fn make_stats(centrality: Vec<(&str, f64)>, sccs: Vec<Vec<&str>>) -> StatsOutput {
         StatsOutput {
             version: 1,
             centrality: centrality
@@ -436,10 +418,7 @@ mod tests {
             nodes,
             edges: vec![],
         };
-        let stats = make_stats(
-            vec![],
-            vec![vec!["src/a.ts", "src/b.ts", "src/c.ts"]],
-        );
+        let stats = make_stats(vec![], vec![vec!["src/a.ts", "src/b.ts", "src/c.ts"]]);
 
         let smells = detect_smells(&graph, &stats, &empty_clusters(), &empty_metrics());
         let cycle_smells: Vec<_> = smells
@@ -469,7 +448,9 @@ mod tests {
         let stats = make_stats(vec![], vec![]);
 
         let smells = detect_smells(&graph, &stats, &empty_clusters(), &empty_metrics());
-        assert!(smells.iter().any(|s| s.smell_type == SmellType::LayerViolation));
+        assert!(smells
+            .iter()
+            .any(|s| s.smell_type == SmellType::LayerViolation));
     }
 
     #[test]
@@ -478,9 +459,18 @@ mod tests {
         let c2 = ClusterId::new("c2");
         let mut nodes = BTreeMap::new();
         // c1 has 3 files: hub, f1, f2
-        nodes.insert(CanonicalPath::new("src/hub.ts"), make_node(FileType::Source, &c1, 0, 50));
-        nodes.insert(CanonicalPath::new("src/f1.ts"), make_node(FileType::Source, &c1, 0, 50));
-        nodes.insert(CanonicalPath::new("src/f2.ts"), make_node(FileType::Source, &c1, 0, 50));
+        nodes.insert(
+            CanonicalPath::new("src/hub.ts"),
+            make_node(FileType::Source, &c1, 0, 50),
+        );
+        nodes.insert(
+            CanonicalPath::new("src/f1.ts"),
+            make_node(FileType::Source, &c1, 0, 50),
+        );
+        nodes.insert(
+            CanonicalPath::new("src/f2.ts"),
+            make_node(FileType::Source, &c1, 0, 50),
+        );
         // c2 has external files
         for i in 0..10 {
             nodes.insert(
@@ -492,7 +482,11 @@ mod tests {
         // hub.ts has 6 external edges, f1 has 1, f2 has 1 → hub = 6/8 = 75%
         let mut edges = Vec::new();
         for i in 0..6 {
-            edges.push(make_edge("src/hub.ts", &format!("lib/ext{}.ts", i), EdgeType::Imports));
+            edges.push(make_edge(
+                "src/hub.ts",
+                &format!("lib/ext{}.ts", i),
+                EdgeType::Imports,
+            ));
         }
         edges.push(make_edge("src/f1.ts", "lib/ext7.ts", EdgeType::Imports));
         edges.push(make_edge("src/f2.ts", "lib/ext8.ts", EdgeType::Imports));
@@ -533,7 +527,9 @@ mod tests {
         let stats = make_stats(vec![], vec![]);
         let smells = detect_smells(&graph, &stats, &clusters, &empty_metrics());
         assert!(
-            smells.iter().any(|s| s.smell_type == SmellType::HubAndSpoke),
+            smells
+                .iter()
+                .any(|s| s.smell_type == SmellType::HubAndSpoke),
             "Should detect hub-and-spoke"
         );
     }
@@ -662,7 +658,9 @@ mod tests {
 
         let smells = detect_smells(&graph, &stats, &clusters, &empty_metrics());
         assert!(
-            !smells.iter().any(|s| s.smell_type == SmellType::DeadCluster),
+            !smells
+                .iter()
+                .any(|s| s.smell_type == SmellType::DeadCluster),
             "Top-level entry should not be dead"
         );
     }
@@ -775,6 +773,10 @@ mod tests {
 
         let metrics = compute_martin_metrics(&graph, &clusters);
         let smells = detect_smells(&graph, &stats, &clusters, &metrics);
-        assert!(smells.is_empty(), "Clean architecture should have no smells, got: {:?}", smells);
+        assert!(
+            smells.is_empty(),
+            "Clean architecture should have no smells, got: {:?}",
+            smells
+        );
     }
 }

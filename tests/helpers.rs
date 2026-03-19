@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
-use ariadne_graph::pipeline::{BuildOutput, BuildPipeline, FsReader, FsWalker, WalkConfig};
 use ariadne_graph::parser::ParserRegistry;
+use ariadne_graph::pipeline::{BuildOutput, BuildPipeline, FsReader, FsWalker, WalkConfig};
 use ariadne_graph::serial::json::JsonSerializer;
 
 /// Returns the absolute path to a named test fixture directory.
@@ -25,7 +25,14 @@ pub fn build_fixture(name: &str) -> BuildOutput {
         Box::new(JsonSerializer),
     );
     pipeline
-        .run_with_output(&path, WalkConfig::default(), Some(&output_path), false, false, false)
+        .run_with_output(
+            &path,
+            WalkConfig::default(),
+            Some(&output_path),
+            false,
+            false,
+            false,
+        )
         .unwrap_or_else(|e| panic!("build failed for fixture '{}': {}", name, e))
 }
 

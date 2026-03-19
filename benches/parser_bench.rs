@@ -1,4 +1,3 @@
-#[allow(dead_code)]
 mod helpers;
 
 use criterion::{criterion_group, criterion_main, Criterion};
@@ -12,10 +11,7 @@ fn bench_parse_typescript(c: &mut Criterion) {
     // Generate a TS file with 50 imports
     let mut source = String::new();
     for i in 0..50 {
-        source.push_str(&format!(
-            "import {{ item_{} }} from './module_{}';\n",
-            i, i
-        ));
+        source.push_str(&format!("import {{ item_{} }} from './module_{}';\n", i, i));
     }
     source.push_str("export const result = 42;\n");
     let bytes = source.into_bytes();
@@ -78,9 +74,9 @@ fn bench_hash_1mb(c: &mut Criterion) {
 }
 
 fn bench_clustering_3000(c: &mut Criterion) {
-    use std::collections::BTreeMap;
     use ariadne_graph::cluster::assign_clusters;
     use ariadne_graph::model::*;
+    use std::collections::BTreeMap;
 
     // Build a synthetic ProjectGraph with 3000 nodes across 100 directories
     let mut nodes = BTreeMap::new();
@@ -125,8 +121,8 @@ fn bench_clustering_3000(c: &mut Criterion) {
 }
 
 fn bench_serialization_3000(c: &mut Criterion) {
-    use std::collections::BTreeMap;
     use ariadne_graph::serial::{GraphOutput, NodeOutput};
+    use std::collections::BTreeMap;
 
     // Build a synthetic GraphOutput with 3000 nodes
     let mut nodes = BTreeMap::new();

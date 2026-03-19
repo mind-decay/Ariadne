@@ -2,8 +2,8 @@ mod helpers;
 
 use ariadne_graph::diagnostic::{DiagnosticCollector, Warning, WarningCode};
 use ariadne_graph::model::CanonicalPath;
-use ariadne_graph::pipeline::{BuildPipeline, FileWalker, FsReader, FsWalker, WalkConfig};
 use ariadne_graph::parser::ParserRegistry;
+use ariadne_graph::pipeline::{BuildPipeline, FileWalker, FsReader, FsWalker, WalkConfig};
 use ariadne_graph::serial::json::JsonSerializer;
 use ariadne_graph::serial::{GraphReader, RawImportOutput};
 
@@ -15,7 +15,10 @@ use ariadne_graph::serial::{GraphReader, RawImportOutput};
 fn diagnostic_collector_empty() {
     let collector = DiagnosticCollector::new();
     let report = collector.drain();
-    assert!(report.warnings.is_empty(), "fresh collector should have no warnings");
+    assert!(
+        report.warnings.is_empty(),
+        "fresh collector should have no warnings"
+    );
     assert_eq!(report.counts.files_skipped, 0);
     assert_eq!(report.counts.imports_unresolved, 0);
     assert_eq!(report.counts.partial_parses, 0);
@@ -64,7 +67,10 @@ fn diagnostic_collector_increment_unresolved() {
     collector.increment_unresolved();
 
     let report = collector.drain();
-    assert!(report.warnings.is_empty(), "increment_unresolved should not add warnings");
+    assert!(
+        report.warnings.is_empty(),
+        "increment_unresolved should not add warnings"
+    );
     assert_eq!(report.counts.imports_unresolved, 3);
 }
 
@@ -148,21 +154,27 @@ fn walk_excludes_all_configured_dirs() {
     }
 
     // Sanity: we should still get some files (the fixture has .ts files)
-    assert!(!walk_result.entries.is_empty(), "walk should find at least one file");
+    assert!(
+        !walk_result.entries.is_empty(),
+        "walk should find at least one file"
+    );
 }
 
 #[test]
 fn binary_file_detected_by_null_bytes() {
-    use ariadne_graph::pipeline::{FsReader, FileReader, FileEntry};
+    use ariadne_graph::pipeline::{FileEntry, FileReader, FsReader};
     let temp_dir = tempfile::tempdir().expect("create tempdir");
     let file_path = temp_dir.path().join("binary.ts");
     std::fs::write(&file_path, b"import foo\x00\x00 from 'bar';\n").unwrap();
     let reader = FsReader::new();
-    let entry = FileEntry { path: file_path, extension: "ts".to_string() };
+    let entry = FileEntry {
+        path: file_path,
+        extension: "ts".to_string(),
+    };
     let result = reader.read(&entry, temp_dir.path(), 1_048_576);
     assert!(result.is_err());
     match result.unwrap_err() {
-        ariadne_graph::pipeline::FileSkipReason::BinaryFile { .. } => {},
+        ariadne_graph::pipeline::FileSkipReason::BinaryFile { .. } => {}
         other => panic!("expected BinaryFile, got {:?}", other),
     }
 }
@@ -197,7 +209,14 @@ fn timestamp_false_omits_generated_field() {
     let pipeline = make_pipeline();
 
     pipeline
-        .run_with_output(&path, WalkConfig::default(), Some(output_path), false, false, false)
+        .run_with_output(
+            &path,
+            WalkConfig::default(),
+            Some(output_path),
+            false,
+            false,
+            false,
+        )
         .expect("build should succeed");
 
     let graph_json = std::fs::read_to_string(output_path.join("graph.json")).unwrap();
@@ -217,7 +236,14 @@ fn timestamp_true_adds_generated_field() {
     let pipeline = make_pipeline();
 
     pipeline
-        .run_with_output(&path, WalkConfig::default(), Some(output_path), true, false, false)
+        .run_with_output(
+            &path,
+            WalkConfig::default(),
+            Some(output_path),
+            true,
+            false,
+            false,
+        )
         .expect("build should succeed");
 
     let graph_json = std::fs::read_to_string(output_path.join("graph.json")).unwrap();
@@ -310,7 +336,14 @@ fn pipeline_produces_raw_imports_json() {
     let pipeline = make_pipeline();
 
     pipeline
-        .run_with_output(&path, WalkConfig::default(), Some(output_dir.path()), false, false, false)
+        .run_with_output(
+            &path,
+            WalkConfig::default(),
+            Some(output_dir.path()),
+            false,
+            false,
+            false,
+        )
         .expect("build should succeed");
 
     assert!(
@@ -321,7 +354,10 @@ fn pipeline_produces_raw_imports_json() {
     let reader = JsonSerializer;
     let imports = reader.read_raw_imports(output_dir.path()).unwrap();
     assert!(imports.is_some(), "raw_imports.json should be readable");
-    assert!(!imports.unwrap().is_empty(), "raw_imports should not be empty for typescript-app");
+    assert!(
+        !imports.unwrap().is_empty(),
+        "raw_imports should not be empty for typescript-app"
+    );
 }
 
 #[test]

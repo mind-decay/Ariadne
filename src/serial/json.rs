@@ -4,9 +4,9 @@ use std::path::Path;
 
 use std::collections::BTreeMap;
 
+use super::{ClusterOutput, GraphOutput, GraphReader, GraphSerializer, RawImportOutput};
 use crate::diagnostic::FatalError;
 use crate::model::StatsOutput;
-use super::{ClusterOutput, GraphOutput, GraphReader, GraphSerializer, RawImportOutput};
 
 /// JSON serializer with atomic writes.
 pub struct JsonSerializer;
@@ -67,12 +67,11 @@ impl GraphReader for JsonSerializer {
         match fs::File::open(&path) {
             Ok(file) => {
                 let reader = BufReader::new(file);
-                let stats: StatsOutput = serde_json::from_reader(reader).map_err(|e| {
-                    FatalError::GraphCorrupted {
+                let stats: StatsOutput =
+                    serde_json::from_reader(reader).map_err(|e| FatalError::GraphCorrupted {
                         path: path.clone(),
                         reason: e.to_string(),
-                    }
-                })?;
+                    })?;
                 if stats.version != 1 {
                     return Err(FatalError::GraphCorrupted {
                         path,
@@ -93,12 +92,11 @@ impl GraphReader for JsonSerializer {
         match fs::File::open(&path) {
             Ok(file) => {
                 let reader = BufReader::new(file);
-                let imports = serde_json::from_reader(reader).map_err(|e| {
-                    FatalError::GraphCorrupted {
+                let imports =
+                    serde_json::from_reader(reader).map_err(|e| FatalError::GraphCorrupted {
                         path,
                         reason: e.to_string(),
-                    }
-                })?;
+                    })?;
                 Ok(Some(imports))
             }
             Err(_) => Ok(None),
@@ -115,7 +113,11 @@ fn ensure_dir(dir: &Path) -> Result<(), FatalError> {
 }
 
 /// Write JSON atomically: write to a unique temp file, then rename.
-fn atomic_write<T: serde::Serialize>(dir: &Path, filename: &str, value: &T) -> Result<(), FatalError> {
+fn atomic_write<T: serde::Serialize>(
+    dir: &Path,
+    filename: &str,
+    value: &T,
+) -> Result<(), FatalError> {
     let final_path = dir.join(filename);
     let tmp_path = dir.join(format!("{}.{}.tmp", filename, std::process::id()));
 

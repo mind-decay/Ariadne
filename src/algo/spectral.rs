@@ -41,11 +41,8 @@ pub fn spectral_analysis(
     }
 
     // Build index mapping
-    let idx: BTreeMap<&CanonicalPath, usize> = nodes
-        .iter()
-        .enumerate()
-        .map(|(i, p)| (*p, i))
-        .collect();
+    let idx: BTreeMap<&CanonicalPath, usize> =
+        nodes.iter().enumerate().map(|(i, p)| (*p, i)).collect();
 
     // Build undirected adjacency
     let mut adj: Vec<Vec<usize>> = vec![vec![]; n];
@@ -79,8 +76,8 @@ pub fn spectral_analysis(
     // Step 1: Find λ_max of L using power iteration
     let lambda_max = {
         let mut v = vec![0.0; n];
-        for i in 0..n {
-            v[i] = if i % 2 == 0 { 1.0 } else { -1.0 };
+        for (i, vi) in v.iter_mut().enumerate().take(n) {
+            *vi = if i % 2 == 0 { 1.0 } else { -1.0 };
         }
         normalize(&mut v);
 
@@ -132,8 +129,8 @@ pub fn spectral_analysis(
 
     // Initialize with deterministic vector orthogonal to constant
     let mut fiedler = vec![0.0; n];
-    for i in 0..n {
-        fiedler[i] = (i as f64) - (n as f64 - 1.0) / 2.0;
+    for (i, fi) in fiedler.iter_mut().enumerate().take(n) {
+        *fi = (i as f64) - (n as f64 - 1.0) / 2.0;
     }
     // Project out constant vector
     project_out(&mut fiedler, &constant_vec);
@@ -475,14 +472,13 @@ mod tests {
             .collect();
 
         // {a,b,c} should be in one partition and {x,y,z} in the other
-        let abc_in_p0 =
-            p0.contains(&"a.ts") && p0.contains(&"b.ts") && p0.contains(&"c.ts");
-        let abc_in_p1 =
-            p1.contains(&"a.ts") && p1.contains(&"b.ts") && p1.contains(&"c.ts");
+        let abc_in_p0 = p0.contains(&"a.ts") && p0.contains(&"b.ts") && p0.contains(&"c.ts");
+        let abc_in_p1 = p1.contains(&"a.ts") && p1.contains(&"b.ts") && p1.contains(&"c.ts");
         assert!(
             abc_in_p0 || abc_in_p1,
             "Bridged triangles should be separated. P0: {:?}, P1: {:?}",
-            p0, p1
+            p0,
+            p1
         );
     }
 }

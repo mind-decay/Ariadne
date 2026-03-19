@@ -86,7 +86,12 @@ pub fn compute_martin_metrics(
                 graph
                     .nodes
                     .get(*path)
-                    .map(|node| is_abstract_file_fast(node, re_export_counts.get(path).copied().unwrap_or(0)))
+                    .map(|node| {
+                        is_abstract_file_fast(
+                            node,
+                            re_export_counts.get(path).copied().unwrap_or(0),
+                        )
+                    })
                     .unwrap_or(false)
             })
             .count() as u32;
@@ -240,8 +245,18 @@ mod tests {
         let cid = ClusterId::new("types");
         let (graph, clusters) = build_test_graph(
             vec![
-                ("types/a.d.ts", FileType::TypeDef, cid.clone(), vec![Symbol::new("A")]),
-                ("types/b.d.ts", FileType::TypeDef, cid.clone(), vec![Symbol::new("B")]),
+                (
+                    "types/a.d.ts",
+                    FileType::TypeDef,
+                    cid.clone(),
+                    vec![Symbol::new("A")],
+                ),
+                (
+                    "types/b.d.ts",
+                    FileType::TypeDef,
+                    cid.clone(),
+                    vec![Symbol::new("B")],
+                ),
             ],
             vec![],
         );
@@ -254,8 +269,18 @@ mod tests {
         let cid = ClusterId::new("src");
         let (graph, clusters) = build_test_graph(
             vec![
-                ("src/a.ts", FileType::Source, cid.clone(), vec![Symbol::new("foo")]),
-                ("src/b.ts", FileType::Source, cid.clone(), vec![Symbol::new("bar")]),
+                (
+                    "src/a.ts",
+                    FileType::Source,
+                    cid.clone(),
+                    vec![Symbol::new("foo")],
+                ),
+                (
+                    "src/b.ts",
+                    FileType::Source,
+                    cid.clone(),
+                    vec![Symbol::new("bar")],
+                ),
             ],
             vec![],
         );
@@ -338,8 +363,18 @@ mod tests {
         let c2 = ClusterId::new("other");
         let (graph, clusters) = build_test_graph(
             vec![
-                ("src/a.d.ts", FileType::TypeDef, c1.clone(), vec![Symbol::new("A")]),
-                ("src/b.d.ts", FileType::TypeDef, c1.clone(), vec![Symbol::new("B")]),
+                (
+                    "src/a.d.ts",
+                    FileType::TypeDef,
+                    c1.clone(),
+                    vec![Symbol::new("A")],
+                ),
+                (
+                    "src/b.d.ts",
+                    FileType::TypeDef,
+                    c1.clone(),
+                    vec![Symbol::new("B")],
+                ),
                 ("src/c.ts", FileType::Source, c1.clone(), vec![]),
                 ("lib/x.ts", FileType::Source, c2.clone(), vec![]),
             ],
@@ -367,7 +402,12 @@ mod tests {
         let c2 = ClusterId::new("other");
         let (graph, clusters) = build_test_graph(
             vec![
-                ("src/a.d.ts", FileType::TypeDef, c1.clone(), vec![Symbol::new("A")]),
+                (
+                    "src/a.d.ts",
+                    FileType::TypeDef,
+                    c1.clone(),
+                    vec![Symbol::new("A")],
+                ),
                 ("src/b.ts", FileType::Source, c1.clone(), vec![]),
                 ("lib/x.ts", FileType::Source, c2.clone(), vec![]),
             ],
@@ -419,8 +459,18 @@ mod tests {
         let c2 = ClusterId::new("c2");
         let (graph, clusters) = build_test_graph(
             vec![
-                ("src/a.ts", FileType::Source, c1.clone(), vec![Symbol::new("x")]),
-                ("src/b.d.ts", FileType::TypeDef, c1.clone(), vec![Symbol::new("y")]),
+                (
+                    "src/a.ts",
+                    FileType::Source,
+                    c1.clone(),
+                    vec![Symbol::new("x")],
+                ),
+                (
+                    "src/b.d.ts",
+                    FileType::TypeDef,
+                    c1.clone(),
+                    vec![Symbol::new("y")],
+                ),
                 ("lib/c.ts", FileType::Source, c2.clone(), vec![]),
             ],
             vec![
@@ -430,9 +480,21 @@ mod tests {
         );
         let metrics = compute_martin_metrics(&graph, &clusters);
         for m in metrics.values() {
-            assert!(m.instability >= 0.0 && m.instability <= 1.0, "I out of range: {}", m.instability);
-            assert!(m.abstractness >= 0.0 && m.abstractness <= 1.0, "A out of range: {}", m.abstractness);
-            assert!(m.distance >= 0.0 && m.distance <= 1.0, "D out of range: {}", m.distance);
+            assert!(
+                m.instability >= 0.0 && m.instability <= 1.0,
+                "I out of range: {}",
+                m.instability
+            );
+            assert!(
+                m.abstractness >= 0.0 && m.abstractness <= 1.0,
+                "A out of range: {}",
+                m.abstractness
+            );
+            assert!(
+                m.distance >= 0.0 && m.distance <= 1.0,
+                "D out of range: {}",
+                m.distance
+            );
         }
     }
 }

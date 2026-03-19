@@ -39,16 +39,8 @@ pub fn generate_cluster_view(
     // File table
     writeln!(out, "## Files").unwrap();
     writeln!(out).unwrap();
-    writeln!(
-        out,
-        "| File | Type | Layer | In | Out | Centrality |"
-    )
-    .unwrap();
-    writeln!(
-        out,
-        "|------|------|------:|---:|----:|-----------:|"
-    )
-    .unwrap();
+    writeln!(out, "| File | Type | Layer | In | Out | Centrality |").unwrap();
+    writeln!(out, "|------|------|------:|---:|----:|-----------:|").unwrap();
 
     for &file in &cluster_files {
         if let Some(node) = graph.nodes.get(&crate::model::CanonicalPath::new(file)) {

@@ -423,8 +423,7 @@ mod tests {
     #[test]
     fn l1_contains_all_cluster_files() {
         let (graph, clusters, stats) = make_test_graph();
-        let result =
-            compress_l1(&graph, &clusters, &stats, &ClusterId::new("auth")).unwrap();
+        let result = compress_l1(&graph, &clusters, &stats, &ClusterId::new("auth")).unwrap();
 
         assert_eq!(result.level, CompressionLevel::Cluster);
         assert_eq!(result.focus.as_deref(), Some("auth"));
@@ -438,8 +437,7 @@ mod tests {
     #[test]
     fn l1_external_edges_aggregated() {
         let (graph, clusters, stats) = make_test_graph();
-        let result =
-            compress_l1(&graph, &clusters, &stats, &ClusterId::new("auth")).unwrap();
+        let result = compress_l1(&graph, &clusters, &stats, &ClusterId::new("auth")).unwrap();
 
         // Should have: 1 internal edge (login→session)
         // External edges aggregated by cluster
@@ -532,8 +530,16 @@ mod tests {
         let l0 = compress_l0(&graph, &clusters, &stats);
         let l0_names: BTreeSet<&str> = l0.nodes.iter().map(|n| n.name.as_str()).collect();
         for edge in &l0.edges {
-            assert!(l0_names.contains(edge.from.as_str()), "L0 edge.from '{}' not in nodes", edge.from);
-            assert!(l0_names.contains(edge.to.as_str()), "L0 edge.to '{}' not in nodes", edge.to);
+            assert!(
+                l0_names.contains(edge.from.as_str()),
+                "L0 edge.from '{}' not in nodes",
+                edge.from
+            );
+            assert!(
+                l0_names.contains(edge.to.as_str()),
+                "L0 edge.to '{}' not in nodes",
+                edge.to
+            );
         }
 
         // L2
@@ -547,8 +553,16 @@ mod tests {
         .unwrap();
         let l2_names: BTreeSet<&str> = l2.nodes.iter().map(|n| n.name.as_str()).collect();
         for edge in &l2.edges {
-            assert!(l2_names.contains(edge.from.as_str()), "L2 edge.from '{}' not in nodes", edge.from);
-            assert!(l2_names.contains(edge.to.as_str()), "L2 edge.to '{}' not in nodes", edge.to);
+            assert!(
+                l2_names.contains(edge.from.as_str()),
+                "L2 edge.from '{}' not in nodes",
+                edge.from
+            );
+            assert!(
+                l2_names.contains(edge.to.as_str()),
+                "L2 edge.to '{}' not in nodes",
+                edge.to
+            );
         }
     }
 }

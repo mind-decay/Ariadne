@@ -1,8 +1,8 @@
 use proptest::prelude::*;
 
+use ariadne_graph::diagnostic::WarningCode;
 use ariadne_graph::hash::hash_content;
 use ariadne_graph::model::CanonicalPath;
-use ariadne_graph::diagnostic::WarningCode;
 
 // --- CanonicalPath normalization properties ---
 

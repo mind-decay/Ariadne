@@ -158,9 +158,21 @@ mod tests {
     fn cluster_inclusion() {
         // A→B, where A and B are in different clusters, C is in same cluster as B
         let mut graph = make_graph(&["a", "b", "c"], &[("a", "b")]);
-        graph.nodes.get_mut(&CanonicalPath::new("a")).unwrap().cluster = ClusterId::new("cluster_a");
-        graph.nodes.get_mut(&CanonicalPath::new("b")).unwrap().cluster = ClusterId::new("cluster_b");
-        graph.nodes.get_mut(&CanonicalPath::new("c")).unwrap().cluster = ClusterId::new("cluster_b");
+        graph
+            .nodes
+            .get_mut(&CanonicalPath::new("a"))
+            .unwrap()
+            .cluster = ClusterId::new("cluster_a");
+        graph
+            .nodes
+            .get_mut(&CanonicalPath::new("b"))
+            .unwrap()
+            .cluster = ClusterId::new("cluster_b");
+        graph
+            .nodes
+            .get_mut(&CanonicalPath::new("c"))
+            .unwrap()
+            .cluster = ClusterId::new("cluster_b");
 
         let result = extract_subgraph(&graph, &[CanonicalPath::new("a")], 1);
         // C should be included via cluster expansion of B

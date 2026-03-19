@@ -34,9 +34,8 @@ pub fn generate_all_views(
 
     // L1: per-cluster views
     let mut cluster_count = 0;
-    for (cluster_id, _cluster) in &clusters.clusters {
-        let content =
-            cluster::generate_cluster_view(cluster_id.as_str(), graph, stats);
+    for cluster_id in clusters.clusters.keys() {
+        let content = cluster::generate_cluster_view(cluster_id.as_str(), graph, stats);
         let filename = sanitize_filename(cluster_id.as_str());
         fs::write(clusters_dir.join(format!("{}.md", filename)), content).map_err(|e| {
             FatalError::OutputNotWritable {
@@ -52,5 +51,5 @@ pub fn generate_all_views(
 
 /// Sanitize cluster name for use as filename.
 fn sanitize_filename(name: &str) -> String {
-    name.replace('/', "_").replace('\\', "_")
+    name.replace(['/', '\\'], "_")
 }

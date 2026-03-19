@@ -392,11 +392,7 @@ mod tests {
             r#"{ "name": "yarn-mono", "workspaces": { "packages": ["packages/*"] } }"#,
         );
         write_file(root, "yarn.lock", "");
-        write_file(
-            root,
-            "packages/core/package.json",
-            r#"{ "name": "core" }"#,
-        );
+        write_file(root, "packages/core/package.json", r#"{ "name": "core" }"#);
         write_file(root, "packages/core/index.ts", "export {}");
 
         let diag = DiagnosticCollector::new();
@@ -424,11 +420,7 @@ mod tests {
             r#"{ "name": "lib-a" }"#,
         );
         write_file(root, "packages/lib-a/src/index.ts", "export {}");
-        write_file(
-            root,
-            "apps/web/package.json",
-            r#"{ "name": "web-app" }"#,
-        );
+        write_file(root, "apps/web/package.json", r#"{ "name": "web-app" }"#);
         write_file(root, "apps/web/src/index.ts", "export {}");
 
         let diag = DiagnosticCollector::new();
@@ -505,11 +497,7 @@ mod tests {
         );
 
         // Two members with the same name
-        write_file(
-            root,
-            "packages/dup/package.json",
-            r#"{ "name": "shared" }"#,
-        );
+        write_file(root, "packages/dup/package.json", r#"{ "name": "shared" }"#);
         write_file(root, "packages/dup/src/index.ts", "");
         write_file(root, "libs/dup/package.json", r#"{ "name": "shared" }"#);
         write_file(root, "libs/dup/src/index.ts", "");

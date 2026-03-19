@@ -38,11 +38,7 @@ impl LanguageParser for CSharpParser {
 }
 
 /// Recursively collect using directives from the tree.
-fn collect_using_directives(
-    node: &tree_sitter::Node,
-    source: &[u8],
-    imports: &mut Vec<RawImport>,
-) {
+fn collect_using_directives(node: &tree_sitter::Node, source: &[u8], imports: &mut Vec<RawImport>) {
     for i in 0..node.child_count() {
         let child = match node.child(i) {
             Some(c) => c,
@@ -140,8 +136,11 @@ fn collect_public_declarations(
         };
 
         match child.kind() {
-            "class_declaration" | "interface_declaration" | "struct_declaration"
-            | "enum_declaration" | "record_declaration" => {
+            "class_declaration"
+            | "interface_declaration"
+            | "struct_declaration"
+            | "enum_declaration"
+            | "record_declaration" => {
                 if is_public(&child, source) {
                     if let Some(name) = find_declaration_name(&child, source) {
                         exports.push(RawExport {

@@ -28,12 +28,13 @@ pub fn round4(v: f64) -> f64 {
 /// Build forward and reverse adjacency indices from edges, filtered by predicate.
 /// Deduplicates neighbors to ensure each (from, to) pair appears at most once,
 /// which is required for correct Brandes centrality computation.
-pub fn build_adjacency<'a>(
-    edges: &'a [Edge],
+#[allow(clippy::type_complexity)]
+pub fn build_adjacency(
+    edges: &[Edge],
     filter: fn(&Edge) -> bool,
 ) -> (
-    BTreeMap<&'a CanonicalPath, Vec<&'a CanonicalPath>>,
-    BTreeMap<&'a CanonicalPath, Vec<&'a CanonicalPath>>,
+    BTreeMap<&CanonicalPath, Vec<&CanonicalPath>>,
+    BTreeMap<&CanonicalPath, Vec<&CanonicalPath>>,
 ) {
     let mut forward_set: BTreeMap<&CanonicalPath, BTreeSet<&CanonicalPath>> = BTreeMap::new();
     let mut reverse_set: BTreeMap<&CanonicalPath, BTreeSet<&CanonicalPath>> = BTreeMap::new();
@@ -43,7 +44,13 @@ pub fn build_adjacency<'a>(
             reverse_set.entry(&edge.to).or_default().insert(&edge.from);
         }
     }
-    let forward = forward_set.into_iter().map(|(k, v)| (k, v.into_iter().collect())).collect();
-    let reverse = reverse_set.into_iter().map(|(k, v)| (k, v.into_iter().collect())).collect();
+    let forward = forward_set
+        .into_iter()
+        .map(|(k, v)| (k, v.into_iter().collect()))
+        .collect();
+    let reverse = reverse_set
+        .into_iter()
+        .map(|(k, v)| (k, v.into_iter().collect()))
+        .collect();
     (forward, reverse)
 }

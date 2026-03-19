@@ -5,12 +5,12 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use arc_swap::ArcSwap;
-use notify_debouncer_full::{new_debouncer, DebounceEventResult, Debouncer, RecommendedCache};
 use notify::RecursiveMode;
+use notify_debouncer_full::{new_debouncer, DebounceEventResult, Debouncer, RecommendedCache};
 
 use crate::analysis::diff::compute_structural_diff;
 use crate::diagnostic::FatalError;
-use crate::mcp::state::{GraphState, load_graph_state};
+use crate::mcp::state::{load_graph_state, GraphState};
 use crate::pipeline::{BuildPipeline, WalkConfig};
 use crate::serial::json::JsonSerializer;
 
@@ -56,8 +56,6 @@ impl FileWatcher {
     ) -> Result<Self, FatalError> {
         let watch_root = project_root.clone();
         let debouncer = {
-            let project_root = project_root;
-            let output_dir = output_dir;
             let state = state.clone();
             let rebuilding = rebuilding.clone();
             let pipeline = pipeline.clone();
@@ -175,10 +173,26 @@ mod tests {
     #[test]
     fn test_should_trigger_rebuild() {
         let out = Path::new("/project/.ariadne/graph");
-        assert!(should_trigger_rebuild(Path::new("src/foo.ts"), &exts(), out));
-        assert!(should_trigger_rebuild(Path::new("src/bar.rs"), &exts(), out));
-        assert!(!should_trigger_rebuild(Path::new("README.md"), &exts(), out));
-        assert!(!should_trigger_rebuild(Path::new("image.png"), &exts(), out));
+        assert!(should_trigger_rebuild(
+            Path::new("src/foo.ts"),
+            &exts(),
+            out
+        ));
+        assert!(should_trigger_rebuild(
+            Path::new("src/bar.rs"),
+            &exts(),
+            out
+        ));
+        assert!(!should_trigger_rebuild(
+            Path::new("README.md"),
+            &exts(),
+            out
+        ));
+        assert!(!should_trigger_rebuild(
+            Path::new("image.png"),
+            &exts(),
+            out
+        ));
     }
 
     #[test]

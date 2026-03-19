@@ -1,5 +1,5 @@
 pub mod lock;
+pub mod server;
 pub mod state;
 pub mod tools;
 pub mod watch;
-pub mod server;

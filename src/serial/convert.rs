@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
-use crate::model::*;
 use super::{ClusterOutput, GraphOutput};
+use crate::model::*;
 
 /// Convert GraphOutput (deserialized from graph.json) back to ProjectGraph.
 impl TryFrom<GraphOutput> for ProjectGraph {
@@ -28,11 +28,7 @@ impl TryFrom<GraphOutput> for ProjectGraph {
                     arch_depth: node_output.arch_depth,
                     lines: node_output.lines,
                     hash: ContentHash::new(node_output.hash),
-                    exports: node_output
-                        .exports
-                        .into_iter()
-                        .map(Symbol::new)
-                        .collect(),
+                    exports: node_output.exports.into_iter().map(Symbol::new).collect(),
                     cluster: ClusterId::new(node_output.cluster),
                 },
             );
