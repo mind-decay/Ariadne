@@ -54,6 +54,8 @@ pub enum WarningCode {
     W014FsWatcherFailed,
     W015IncrementalRebuildFailed,
     W016StaleLockRemoved,
+    W017SmellDetectionSkipped,
+    W018BlastRadiusTimeout,
 }
 
 impl WarningCode {
@@ -75,6 +77,8 @@ impl WarningCode {
             Self::W014FsWatcherFailed => "W014",
             Self::W015IncrementalRebuildFailed => "W015",
             Self::W016StaleLockRemoved => "W016",
+            Self::W017SmellDetectionSkipped => "W017",
+            Self::W018BlastRadiusTimeout => "W018",
         }
     }
 }
@@ -295,6 +299,8 @@ impl DiagnosticCollector {
             WarningCode::W014FsWatcherFailed => {}
             WarningCode::W015IncrementalRebuildFailed => {}
             WarningCode::W016StaleLockRemoved => {}
+            WarningCode::W017SmellDetectionSkipped => {}
+            WarningCode::W018BlastRadiusTimeout => {}
         }
         guard.0.push(warning);
     }
