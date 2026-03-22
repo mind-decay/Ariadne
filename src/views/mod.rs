@@ -53,3 +53,43 @@ pub fn generate_all_views(
 fn sanitize_filename(name: &str) -> String {
     name.replace(['/', '\\'], "_")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sanitize_normal_name() {
+        assert_eq!(sanitize_filename("src"), "src");
+    }
+
+    #[test]
+    fn sanitize_forward_slash() {
+        assert_eq!(sanitize_filename("src/parser"), "src_parser");
+    }
+
+    #[test]
+    fn sanitize_backslash() {
+        assert_eq!(sanitize_filename("src\\parser"), "src_parser");
+    }
+
+    #[test]
+    fn sanitize_empty() {
+        assert_eq!(sanitize_filename(""), "");
+    }
+
+    #[test]
+    fn sanitize_multiple_slashes() {
+        assert_eq!(sanitize_filename("a/b/c\\d"), "a_b_c_d");
+    }
+
+    #[test]
+    fn sanitize_path_traversal_dots() {
+        assert_eq!(sanitize_filename("../etc/passwd"), ".._etc_passwd");
+    }
+
+    #[test]
+    fn sanitize_preserves_other_chars() {
+        assert_eq!(sanitize_filename("my-cluster_v2.0"), "my-cluster_v2.0");
+    }
+}

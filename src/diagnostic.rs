@@ -34,6 +34,8 @@ pub enum FatalError {
     McpProtocolError { reason: String },
     #[error("E013: invalid argument: {reason}")]
     InvalidArgument { reason: String },
+    #[error("E014: clusters not found in {path}. Run 'ariadne build' first.")]
+    ClustersNotFound { path: PathBuf },
 }
 
 /// Warning codes for recoverable errors.

@@ -100,9 +100,10 @@ fn build_clusters(graph: &ProjectGraph) -> ClusterMap {
 }
 
 fn build_stats(graph: &ProjectGraph) -> StatsOutput {
-    let sccs = algo::scc::find_sccs(graph);
-    let layers = algo::topo_sort::topological_layers(graph, &sccs);
-    let centrality = algo::centrality::betweenness_centrality(graph);
+    let index = algo::AdjacencyIndex::build(&graph.edges, algo::is_architectural);
+    let sccs = algo::scc::find_sccs(graph, &index);
+    let layers = algo::topo_sort::topological_layers(graph, &sccs, &index);
+    let centrality = algo::centrality::betweenness_centrality(graph, &index);
     algo::stats::compute_stats(graph, &centrality, &sccs, &layers)
 }
 

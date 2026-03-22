@@ -25,32 +25,40 @@ pub fn round4(v: f64) -> f64 {
     (v * 10000.0).round() / 10000.0
 }
 
-/// Build forward and reverse adjacency indices from edges, filtered by predicate.
-/// Deduplicates neighbors to ensure each (from, to) pair appears at most once,
-/// which is required for correct Brandes centrality computation.
-#[allow(clippy::type_complexity)]
-pub fn build_adjacency(
-    edges: &[Edge],
-    filter: fn(&Edge) -> bool,
-) -> (
-    BTreeMap<&CanonicalPath, Vec<&CanonicalPath>>,
-    BTreeMap<&CanonicalPath, Vec<&CanonicalPath>>,
-) {
-    let mut forward_set: BTreeMap<&CanonicalPath, BTreeSet<&CanonicalPath>> = BTreeMap::new();
-    let mut reverse_set: BTreeMap<&CanonicalPath, BTreeSet<&CanonicalPath>> = BTreeMap::new();
-    for edge in edges {
-        if filter(edge) {
-            forward_set.entry(&edge.from).or_default().insert(&edge.to);
-            reverse_set.entry(&edge.to).or_default().insert(&edge.from);
+/// Pre-built adjacency index with forward/reverse maps and degree counts.
+/// Built once, passed to all graph algorithms — eliminates redundant edge scans.
+pub struct AdjacencyIndex<'a> {
+    pub forward: BTreeMap<&'a CanonicalPath, Vec<&'a CanonicalPath>>,
+    pub reverse: BTreeMap<&'a CanonicalPath, Vec<&'a CanonicalPath>>,
+    pub out_degree: BTreeMap<&'a CanonicalPath, usize>,
+    pub in_degree: BTreeMap<&'a CanonicalPath, usize>,
+}
+
+impl<'a> AdjacencyIndex<'a> {
+    pub fn build(edges: &'a [Edge], filter: fn(&Edge) -> bool) -> Self {
+        let mut forward_set: BTreeMap<&CanonicalPath, BTreeSet<&CanonicalPath>> = BTreeMap::new();
+        let mut reverse_set: BTreeMap<&CanonicalPath, BTreeSet<&CanonicalPath>> = BTreeMap::new();
+        for edge in edges {
+            if filter(edge) {
+                forward_set.entry(&edge.from).or_default().insert(&edge.to);
+                reverse_set.entry(&edge.to).or_default().insert(&edge.from);
+            }
+        }
+        let forward: BTreeMap<_, Vec<_>> = forward_set
+            .into_iter()
+            .map(|(k, v)| (k, v.into_iter().collect()))
+            .collect();
+        let reverse: BTreeMap<_, Vec<_>> = reverse_set
+            .into_iter()
+            .map(|(k, v)| (k, v.into_iter().collect()))
+            .collect();
+        let out_degree = forward.iter().map(|(k, v)| (*k, v.len())).collect();
+        let in_degree = reverse.iter().map(|(k, v)| (*k, v.len())).collect();
+        Self {
+            forward,
+            reverse,
+            out_degree,
+            in_degree,
         }
     }
-    let forward = forward_set
-        .into_iter()
-        .map(|(k, v)| (k, v.into_iter().collect()))
-        .collect();
-    let reverse = reverse_set
-        .into_iter()
-        .map(|(k, v)| (k, v.into_iter().collect()))
-        .collect();
-    (forward, reverse)
 }

@@ -11,14 +11,15 @@ pub fn detect_smells(
     clusters: &ClusterMap,
     metrics: &BTreeMap<ClusterId, ClusterMetrics>,
 ) -> Vec<ArchSmell> {
+    let index = algo::AdjacencyIndex::build(&graph.edges, algo::is_architectural);
     let mut smells = Vec::new();
-    detect_god_files(graph, stats, &mut smells);
+    detect_god_files(graph, stats, &index, &mut smells);
     detect_circular_dependencies(stats, &mut smells);
     detect_layer_violations(graph, &mut smells);
     detect_hub_and_spoke(graph, clusters, &mut smells);
     detect_unstable_foundations(metrics, &mut smells);
     detect_dead_clusters(graph, clusters, &mut smells);
-    detect_shotgun_surgery(graph, &mut smells);
+    detect_shotgun_surgery(graph, &index, &mut smells);
     // Sort by (smell_type debug, files) for determinism
     smells.sort_by(|a, b| {
         format!("{:?}", a.smell_type)
@@ -29,7 +30,12 @@ pub fn detect_smells(
 }
 
 /// God File: centrality > 0.8 AND out-degree > 20 AND lines > 500
-fn detect_god_files(graph: &ProjectGraph, stats: &StatsOutput, smells: &mut Vec<ArchSmell>) {
+fn detect_god_files(
+    graph: &ProjectGraph,
+    stats: &StatsOutput,
+    index: &algo::AdjacencyIndex,
+    smells: &mut Vec<ArchSmell>,
+) {
     for (path, node) in &graph.nodes {
         let centrality = stats.centrality.get(path.as_str()).copied().unwrap_or(0.0);
 
@@ -37,11 +43,7 @@ fn detect_god_files(graph: &ProjectGraph, stats: &StatsOutput, smells: &mut Vec<
             continue;
         }
 
-        let out_degree = graph
-            .edges
-            .iter()
-            .filter(|e| e.from == *path && e.edge_type.is_architectural())
-            .count();
+        let out_degree = index.out_degree.get(path).copied().unwrap_or(0);
 
         if out_degree <= 20 || node.lines <= 500 {
             continue;
@@ -249,29 +251,25 @@ fn detect_dead_clusters(graph: &ProjectGraph, clusters: &ClusterMap, smells: &mu
 /// Shotgun Surgery: file with blast radius > 30% of project file count
 /// Optimization: only check files with in-degree > 10 (files with few dependents
 /// can't have 30% blast radius since blast_radius uses reverse BFS).
-fn detect_shotgun_surgery(graph: &ProjectGraph, smells: &mut Vec<ArchSmell>) {
+fn detect_shotgun_surgery(
+    graph: &ProjectGraph,
+    index: &algo::AdjacencyIndex,
+    smells: &mut Vec<ArchSmell>,
+) {
     let total_files = graph.nodes.len();
     if total_files == 0 {
         return;
     }
 
-    // Pre-compute in-degrees (how many files import this file)
-    let mut in_degrees: BTreeMap<&CanonicalPath, usize> = BTreeMap::new();
-    for edge in &graph.edges {
-        if edge.edge_type.is_architectural() {
-            *in_degrees.entry(&edge.to).or_default() += 1;
-        }
-    }
-
     let threshold = 0.3;
 
-    for (path, &in_deg) in &in_degrees {
+    for (path, &in_deg) in &index.in_degree {
         // Optimization: files with few dependents can't have 30% blast radius
         if in_deg <= 10 {
             continue;
         }
 
-        let radius = algo::blast_radius::blast_radius(graph, path, None);
+        let radius = algo::blast_radius::blast_radius(graph, path, None, index);
         let blast_pct = radius.len() as f64 / total_files as f64;
 
         if blast_pct > threshold {

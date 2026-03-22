@@ -217,3 +217,119 @@ pub(crate) fn parser() -> Box<dyn LanguageParser> {
 pub(crate) fn resolver() -> Box<dyn ImportResolver> {
     Box::new(GoResolver)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::parser::traits::LanguageParser;
+
+    fn parse(source: &str) -> tree_sitter::Tree {
+        let mut parser = tree_sitter::Parser::new();
+        parser
+            .set_language(&tree_sitter::Language::from(tree_sitter_go::LANGUAGE))
+            .unwrap();
+        parser.parse(source, None).unwrap()
+    }
+
+    fn go_imports(source: &str) -> Vec<RawImport> {
+        let tree = parse(source);
+        GoParser.extract_imports(&tree, source.as_bytes())
+    }
+
+    fn go_exports(source: &str) -> Vec<RawExport> {
+        let tree = parse(source);
+        GoParser.extract_exports(&tree, source.as_bytes())
+    }
+
+    // ---- Import tests ----
+
+    #[test]
+    fn single_import() {
+        let source = r#"package main
+import "fmt"
+"#;
+        let result = go_imports(source);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].path, "fmt");
+        assert!(result[0].symbols.is_empty());
+    }
+
+    #[test]
+    fn grouped_imports() {
+        let source = r#"package main
+import (
+    "fmt"
+    "os"
+    "net/http"
+)
+"#;
+        let result = go_imports(source);
+        assert_eq!(result.len(), 3);
+        let paths: Vec<&str> = result.iter().map(|i| i.path.as_str()).collect();
+        assert!(paths.contains(&"fmt"));
+        assert!(paths.contains(&"os"));
+        assert!(paths.contains(&"net/http"));
+    }
+
+    #[test]
+    fn aliased_import() {
+        let source = r#"package main
+import myalias "github.com/pkg/errors"
+"#;
+        let result = go_imports(source);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].path, "github.com/pkg/errors");
+        assert_eq!(result[0].symbols, vec!["myalias"]);
+    }
+
+    #[test]
+    fn dot_import() {
+        let source = r#"package main
+import . "fmt"
+"#;
+        let result = go_imports(source);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].symbols, vec!["."]);
+    }
+
+    #[test]
+    fn blank_import() {
+        let source = r#"package main
+import _ "database/sql"
+"#;
+        let result = go_imports(source);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].symbols, vec!["_"]);
+    }
+
+    #[test]
+    fn empty_source_no_imports() {
+        let result = go_imports("package main");
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn malformed_no_crash() {
+        let result = go_imports("");
+        let _ = result;
+    }
+
+    // ---- Export tests ----
+
+    #[test]
+    fn go_exports_returns_empty() {
+        // Go doesn't export file-level symbols; exports are by capitalization convention
+        let source = r#"package main
+func ExportedFunc() {}
+func privateFunc() {}
+"#;
+        let result = go_exports(source);
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn go_exports_empty_source() {
+        let result = go_exports("package main");
+        assert!(result.is_empty());
+    }
+}

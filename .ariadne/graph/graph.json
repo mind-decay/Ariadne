@@ -1,71 +1,357 @@
 {
   "version": 1,
-  "project_root": "/Users/minddecay/Documents/Projects/ariadne",
-  "node_count": 29,
-  "edge_count": 27,
+  "project_root": "/Users/minddecay/Documents/Projects/Ariadne",
+  "node_count": 125,
+  "edge_count": 81,
   "nodes": {
+    "benches/algo_bench.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 181,
+      "hash": "3a1afdbac03dba49",
+      "exports": [],
+      "cluster": "benches"
+    },
+    "benches/analysis_bench.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 189,
+      "hash": "91441956d0dbd081",
+      "exports": [],
+      "cluster": "benches"
+    },
+    "benches/build_bench.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 85,
+      "hash": "5598378bd83eaad7",
+      "exports": [],
+      "cluster": "benches"
+    },
+    "benches/helpers.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 114,
+      "hash": "31447341bef9a2d4",
+      "exports": [
+        "generate_synthetic_project"
+      ],
+      "cluster": "benches"
+    },
+    "benches/mcp_bench.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 159,
+      "hash": "62f517d201bae6cc",
+      "exports": [],
+      "cluster": "benches"
+    },
+    "benches/parser_bench.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 180,
+      "hash": "bd75519c841f8760",
+      "exports": [],
+      "cluster": "benches"
+    },
+    "src/algo/blast_radius.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 133,
+      "hash": "002035f41d47e530",
+      "exports": [
+        "blast_radius"
+      ],
+      "cluster": "algo"
+    },
+    "src/algo/centrality.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 191,
+      "hash": "fd7ae0fd2d9d19e5",
+      "exports": [
+        "betweenness_centrality"
+      ],
+      "cluster": "algo"
+    },
+    "src/algo/compress.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 568,
+      "hash": "712ed3356623b08d",
+      "exports": [
+        "compress_l0",
+        "compress_l1",
+        "compress_l2"
+      ],
+      "cluster": "algo"
+    },
+    "src/algo/delta.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 216,
+      "hash": "a24e7ac29482b335",
+      "exports": [
+        "DeltaResult",
+        "compute_delta"
+      ],
+      "cluster": "algo"
+    },
+    "src/algo/louvain.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 655,
+      "hash": "10ecdfe987f0c5a2",
+      "exports": [
+        "louvain_clustering"
+      ],
+      "cluster": "algo"
+    },
+    "src/algo/mod.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 1,
+      "lines": 56,
+      "hash": "111305a7004d28ed",
+      "exports": [
+        "blast_radius",
+        "build_adjacency",
+        "centrality",
+        "compress",
+        "delta",
+        "is_architectural",
+        "louvain",
+        "pagerank",
+        "round4",
+        "scc",
+        "spectral",
+        "stats",
+        "subgraph",
+        "topo_sort"
+      ],
+      "cluster": "algo"
+    },
+    "src/algo/pagerank.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 367,
+      "hash": "6179948154e19c88",
+      "exports": [
+        "combined_importance",
+        "pagerank"
+      ],
+      "cluster": "algo"
+    },
+    "src/algo/scc.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 223,
+      "hash": "b01b6fdcf8fc9104",
+      "exports": [
+        "find_sccs"
+      ],
+      "cluster": "algo"
+    },
+    "src/algo/spectral.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 484,
+      "hash": "6813b7afa98ffc8e",
+      "exports": [
+        "SpectralPartition",
+        "SpectralResult",
+        "spectral_analysis"
+      ],
+      "cluster": "algo"
+    },
+    "src/algo/stats.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 117,
+      "hash": "1949fb6679127519",
+      "exports": [
+        "compute_stats"
+      ],
+      "cluster": "algo"
+    },
+    "src/algo/subgraph.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 181,
+      "hash": "f029ea9d1f02a9a9",
+      "exports": [
+        "extract_subgraph"
+      ],
+      "cluster": "algo"
+    },
+    "src/algo/topo_sort.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 208,
+      "hash": "3df4e2fa9bb45d29",
+      "exports": [
+        "topological_layers"
+      ],
+      "cluster": "algo"
+    },
+    "src/analysis/diff.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 599,
+      "hash": "8b7503cfa619730d",
+      "exports": [
+        "compute_structural_diff"
+      ],
+      "cluster": "algo"
+    },
+    "src/analysis/metrics.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 500,
+      "hash": "cd2d87a0205305ca",
+      "exports": [
+        "ClusterMetrics",
+        "MetricZone",
+        "compute_martin_metrics"
+      ],
+      "cluster": "algo"
+    },
+    "src/analysis/mod.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 1,
+      "lines": 3,
+      "hash": "5b964b0276193a6d",
+      "exports": [
+        "diff",
+        "metrics",
+        "smells"
+      ],
+      "cluster": "algo"
+    },
+    "src/analysis/smells.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 782,
+      "hash": "6281390a0737bbdd",
+      "exports": [
+        "detect_smells"
+      ],
+      "cluster": "algo"
+    },
     "src/cluster/mod.rs": {
       "type": "source",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 263,
-      "hash": "cfa7e30691eb334b",
+      "lines": 248,
+      "hash": "65dc03d0e964500f",
       "exports": [
         "assign_clusters"
       ],
-      "cluster": "cluster"
+      "cluster": "algo"
+    },
+    "src/detect/case_sensitivity.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 110,
+      "hash": "f09561f2f595234d",
+      "exports": [
+        "find_case_insensitive",
+        "is_case_insensitive"
+      ],
+      "cluster": "algo"
     },
     "src/detect/filetype.rs": {
       "type": "source",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 315,
-      "hash": "3da832f5b71104f7",
+      "lines": 327,
+      "hash": "94fc666e22c7c23a",
       "exports": [
         "detect_file_type"
       ],
-      "cluster": "detect"
+      "cluster": "algo"
     },
     "src/detect/layer.rs": {
       "type": "source",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 136,
-      "hash": "0b8cc8e6e6be9202",
+      "lines": 214,
+      "hash": "2f2675b5f69b32fd",
       "exports": [
         "infer_arch_layer"
       ],
-      "cluster": "detect"
+      "cluster": "algo"
     },
     "src/detect/mod.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 5,
-      "hash": "8fe3c1cec592f3ef",
+      "arch_depth": 1,
+      "lines": 9,
+      "hash": "7ca100c90da9d28a",
       "exports": [
+        "case_sensitivity",
         "detect_file_type",
+        "detect_workspace",
         "filetype",
+        "find_case_insensitive",
         "infer_arch_layer",
-        "layer"
+        "is_case_insensitive",
+        "layer",
+        "workspace"
       ],
-      "cluster": "detect"
+      "cluster": "algo"
+    },
+    "src/detect/workspace.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 576,
+      "hash": "604d63cf68ae7bef",
+      "exports": [
+        "detect_workspace"
+      ],
+      "cluster": "algo"
     },
     "src/diagnostic.rs": {
       "type": "source",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 131,
-      "hash": "342b1336fc58793d",
+      "lines": 507,
+      "hash": "c9d843fd0b2773fb",
       "exports": [
         "DiagnosticCollector",
         "DiagnosticCounts",
         "DiagnosticReport",
         "FatalError",
         "Warning",
-        "WarningCode"
+        "WarningCode",
+        "WarningFormat",
+        "format_summary",
+        "format_warnings"
       ],
-      "cluster": "root"
+      "cluster": "algo"
     },
     "src/hash.rs": {
       "type": "source",
@@ -76,106 +362,291 @@
       "exports": [
         "hash_content"
       ],
-      "cluster": "root"
+      "cluster": "algo"
     },
     "src/lib.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 8,
-      "hash": "de603c6e7e653651",
+      "arch_depth": 2,
+      "lines": 13,
+      "hash": "ccbb4ed5853b9a70",
       "exports": [
+        "algo",
+        "analysis",
         "cluster",
         "detect",
         "diagnostic",
         "hash",
+        "mcp",
         "model",
         "parser",
         "pipeline",
-        "serial"
+        "serial",
+        "views"
       ],
-      "cluster": "root"
+      "cluster": "algo"
     },
     "src/main.rs": {
       "type": "source",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 113,
-      "hash": "366675c73a8e9fd4",
+      "lines": 1160,
+      "hash": "3200270c6229a639",
       "exports": [],
-      "cluster": "root"
+      "cluster": "algo"
     },
-    "src/model/edge.rs": {
+    "src/mcp/lock.rs": {
       "type": "source",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 22,
-      "hash": "6d73a25f210e77da",
+      "lines": 146,
+      "hash": "791f79dd11f754de",
+      "exports": [
+        "LockStatus",
+        "acquire_lock",
+        "check_lock",
+        "release_lock"
+      ],
+      "cluster": "algo"
+    },
+    "src/mcp/mod.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 1,
+      "lines": 5,
+      "hash": "4630a5afaca980fc",
+      "exports": [
+        "lock",
+        "server",
+        "state",
+        "tools",
+        "watch"
+      ],
+      "cluster": "algo"
+    },
+    "src/mcp/server.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 209,
+      "hash": "1cb5ca6079fdc9a5",
+      "exports": [
+        "ServeConfig",
+        "run"
+      ],
+      "cluster": "algo"
+    },
+    "src/mcp/state.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 210,
+      "hash": "61b420d6b1ea552b",
+      "exports": [
+        "FreshnessState",
+        "GraphState",
+        "load_graph_state"
+      ],
+      "cluster": "algo"
+    },
+    "src/mcp/tools.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 709,
+      "hash": "4e01b76fe72a1445",
+      "exports": [
+        "AriadneTools",
+        "BlastRadiusParam",
+        "CentralityParam",
+        "ClusterParam",
+        "CompressedParam",
+        "DependenciesParam",
+        "FileParam",
+        "ImportanceParam",
+        "LayerParam",
+        "SmellsParam",
+        "SubgraphParam",
+        "ViewsExportParam"
+      ],
+      "cluster": "algo"
+    },
+    "src/mcp/watch.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 222,
+      "hash": "e3f8bbb74623b064",
+      "exports": [
+        "FileWatcher",
+        "should_trigger_rebuild"
+      ],
+      "cluster": "algo"
+    },
+    "src/model/compress.rs": {
+      "type": "source",
+      "layer": "data",
+      "arch_depth": 0,
+      "lines": 70,
+      "hash": "a9d7eb5a1ffd049a",
+      "exports": [
+        "CompressedEdge",
+        "CompressedGraph",
+        "CompressedNode",
+        "CompressedNodeType",
+        "CompressionLevel"
+      ],
+      "cluster": "algo"
+    },
+    "src/model/diff.rs": {
+      "type": "source",
+      "layer": "data",
+      "arch_depth": 0,
+      "lines": 53,
+      "hash": "5f5e0c66b9b5fd6d",
+      "exports": [
+        "ChangeClassification",
+        "ClusterChange",
+        "DiffSummary",
+        "LayerChange",
+        "StructuralDiff"
+      ],
+      "cluster": "algo"
+    },
+    "src/model/edge.rs": {
+      "type": "source",
+      "layer": "data",
+      "arch_depth": 0,
+      "lines": 41,
+      "hash": "7290e7a8dea141aa",
       "exports": [
         "Edge",
         "EdgeType"
       ],
-      "cluster": "model"
+      "cluster": "algo"
     },
     "src/model/graph.rs": {
       "type": "source",
-      "layer": "unknown",
+      "layer": "data",
       "arch_depth": 0,
-      "lines": 26,
-      "hash": "803ba4fe4e911b0e",
+      "lines": 28,
+      "hash": "189faf4b56a03c7b",
       "exports": [
         "Cluster",
         "ClusterMap",
         "ProjectGraph"
       ],
-      "cluster": "model"
+      "cluster": "algo"
     },
     "src/model/mod.rs": {
       "type": "source",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 9,
-      "hash": "273fde0f0d8929da",
+      "layer": "data",
+      "arch_depth": 1,
+      "lines": 23,
+      "hash": "0df6842dd9f6a27c",
       "exports": [
         "ArchLayer",
+        "ArchSmell",
         "CanonicalPath",
+        "ChangeClassification",
         "Cluster",
+        "ClusterChange",
         "ClusterId",
         "ClusterMap",
+        "CompressedEdge",
+        "CompressedGraph",
+        "CompressedNode",
+        "CompressedNodeType",
+        "CompressionLevel",
         "ContentHash",
+        "DiffSummary",
         "Edge",
         "EdgeType",
         "FileSet",
         "FileType",
+        "LayerChange",
         "Node",
         "ProjectGraph",
+        "SmellMetrics",
+        "SmellSeverity",
+        "SmellType",
+        "StatsOutput",
+        "StatsSummary",
+        "StructuralDiff",
+        "SubgraphResult",
         "Symbol",
+        "WorkspaceInfo",
+        "WorkspaceKind",
+        "WorkspaceMember",
+        "compress",
+        "diff",
         "edge",
         "graph",
         "node",
-        "types"
+        "query",
+        "smell",
+        "stats",
+        "types",
+        "workspace"
       ],
-      "cluster": "model"
+      "cluster": "algo"
     },
     "src/model/node.rs": {
       "type": "source",
-      "layer": "unknown",
+      "layer": "data",
       "arch_depth": 0,
-      "lines": 41,
-      "hash": "5e01cbf8019bdac8",
+      "lines": 69,
+      "hash": "7ac2238c7c7cdb54",
       "exports": [
         "ArchLayer",
         "FileType",
         "Node"
       ],
-      "cluster": "model"
+      "cluster": "algo"
+    },
+    "src/model/query.rs": {
+      "type": "source",
+      "layer": "data",
+      "arch_depth": 0,
+      "lines": 14,
+      "hash": "b51e836ce2427fbf",
+      "exports": [
+        "SubgraphResult"
+      ],
+      "cluster": "algo"
+    },
+    "src/model/smell.rs": {
+      "type": "source",
+      "layer": "data",
+      "arch_depth": 0,
+      "lines": 60,
+      "hash": "97175ecc8fda3dab",
+      "exports": [
+        "ArchSmell",
+        "SmellMetrics",
+        "SmellSeverity",
+        "SmellType"
+      ],
+      "cluster": "algo"
+    },
+    "src/model/stats.rs": {
+      "type": "source",
+      "layer": "data",
+      "arch_depth": 0,
+      "lines": 23,
+      "hash": "93dbcfee66b9bdc8",
+      "exports": [
+        "StatsOutput",
+        "StatsSummary"
+      ],
+      "cluster": "algo"
     },
     "src/model/types.rs": {
       "type": "source",
-      "layer": "unknown",
+      "layer": "data",
       "arch_depth": 0,
-      "lines": 186,
-      "hash": "80993087e731fecc",
+      "lines": 335,
+      "hash": "4305628715ab079d",
       "exports": [
         "CanonicalPath",
         "ClusterId",
@@ -183,139 +654,156 @@
         "FileSet",
         "Symbol"
       ],
-      "cluster": "model"
+      "cluster": "algo"
+    },
+    "src/model/workspace.rs": {
+      "type": "source",
+      "layer": "data",
+      "arch_depth": 0,
+      "lines": 51,
+      "hash": "80aba2bb71f6917b",
+      "exports": [
+        "WorkspaceInfo",
+        "WorkspaceKind",
+        "WorkspaceMember"
+      ],
+      "cluster": "algo"
     },
     "src/parser/csharp.rs": {
       "type": "source",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 242,
-      "hash": "2ac7f53f5fb09f20",
+      "lines": 244,
+      "hash": "5104f6de375590a4",
       "exports": [
         "parser",
         "resolver"
       ],
-      "cluster": "parser"
+      "cluster": "algo"
     },
     "src/parser/go.rs": {
       "type": "source",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 218,
-      "hash": "6d5018311a28cad6",
+      "lines": 219,
+      "hash": "e4739d51512fcd70",
       "exports": [
         "parser",
         "resolver"
       ],
-      "cluster": "parser"
+      "cluster": "algo"
     },
     "src/parser/java.rs": {
       "type": "source",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 231,
-      "hash": "f14fbcfafa5fb8b2",
+      "lines": 237,
+      "hash": "e48949f0f52d8ce4",
       "exports": [
         "parser",
         "resolver"
       ],
-      "cluster": "parser"
+      "cluster": "algo"
     },
     "src/parser/mod.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
+      "arch_depth": 1,
       "lines": 11,
-      "hash": "15d7798cc6395cc7",
+      "hash": "61d4dd5130c74a25",
       "exports": [
+        "ImportKind",
         "ImportResolver",
         "LanguageParser",
+        "ParseOutcome",
         "ParserRegistry",
         "RawExport",
         "RawImport",
         "registry",
         "traits"
       ],
-      "cluster": "parser"
+      "cluster": "algo"
     },
     "src/parser/python.rs": {
       "type": "source",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 504,
-      "hash": "e7b6e3c3d9dfdd3e",
+      "lines": 506,
+      "hash": "a5f8be9caa0b1f86",
       "exports": [
         "PythonParser",
         "PythonResolver"
       ],
-      "cluster": "parser"
+      "cluster": "algo"
     },
     "src/parser/registry.rs": {
       "type": "source",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 130,
-      "hash": "a451764c67dced1c",
+      "lines": 156,
+      "hash": "6bccc20484393f1f",
       "exports": [
+        "ParseOutcome",
         "ParserRegistry"
       ],
-      "cluster": "parser"
+      "cluster": "algo"
     },
     "src/parser/rust_lang.rs": {
       "type": "source",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 601,
-      "hash": "3647ade433ddbd06",
+      "lines": 597,
+      "hash": "21c5547489515be9",
       "exports": [
         "RustParser",
         "RustResolver"
       ],
-      "cluster": "parser"
+      "cluster": "algo"
     },
     "src/parser/traits.rs": {
       "type": "source",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 36,
-      "hash": "23ef2c75fe5f0d08",
+      "lines": 48,
+      "hash": "a533fc29f747ca86",
       "exports": [
+        "ImportKind",
         "ImportResolver",
         "LanguageParser",
         "RawExport",
         "RawImport"
       ],
-      "cluster": "parser"
+      "cluster": "algo"
     },
     "src/parser/typescript.rs": {
       "type": "source",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 457,
-      "hash": "b4bfcccbf12d7ce8",
+      "lines": 710,
+      "hash": "56ccb4df39eab6a6",
       "exports": [
         "TypeScriptParser",
         "TypeScriptResolver"
       ],
-      "cluster": "parser"
+      "cluster": "algo"
     },
     "src/pipeline/build.rs": {
       "type": "config",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 258,
-      "hash": "011e0721a2a41483",
+      "lines": 321,
+      "hash": "8022525d58b3c178",
       "exports": [
         "resolve_and_build"
       ],
-      "cluster": "pipeline"
+      "cluster": "algo"
     },
     "src/pipeline/mod.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 252,
-      "hash": "2e60e4e4b76a40d1",
+      "arch_depth": 1,
+      "lines": 657,
+      "hash": "1ba8bcb06018d65c",
       "exports": [
         "BuildOutput",
         "BuildPipeline",
@@ -328,81 +816,835 @@
         "FsWalker",
         "ParsedFile",
         "WalkConfig",
+        "WalkResult",
         "build",
         "read",
         "resolve",
         "walk"
       ],
-      "cluster": "pipeline"
+      "cluster": "algo"
     },
     "src/pipeline/read.rs": {
       "type": "source",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 88,
-      "hash": "71b4cb198ae88895",
+      "lines": 109,
+      "hash": "4a774c01e74e925b",
       "exports": [
         "FileContent",
         "FileReader",
         "FileSkipReason",
         "FsReader"
       ],
-      "cluster": "pipeline"
+      "cluster": "algo"
     },
     "src/pipeline/resolve.rs": {
       "type": "source",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 23,
-      "hash": "2fb4f8cc39939909",
+      "lines": 43,
+      "hash": "fcc452571ea7574f",
       "exports": [
         "resolve_import"
       ],
-      "cluster": "pipeline"
+      "cluster": "algo"
     },
     "src/pipeline/walk.rs": {
       "type": "source",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 126,
-      "hash": "ea50e20f82c10d50",
+      "lines": 194,
+      "hash": "36bb9375a46bae32",
       "exports": [
         "FileEntry",
         "FileWalker",
         "FsWalker",
-        "WalkConfig"
+        "WalkConfig",
+        "WalkResult"
       ],
-      "cluster": "pipeline"
+      "cluster": "algo"
+    },
+    "src/serial/convert.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 198,
+      "hash": "dc4471073af7049d",
+      "exports": [],
+      "cluster": "algo"
     },
     "src/serial/json.rs": {
       "type": "source",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 56,
-      "hash": "c5bf716d5f0e3d24",
+      "lines": 147,
+      "hash": "ce8fef6806206570",
       "exports": [
         "JsonSerializer"
       ],
-      "cluster": "serial"
+      "cluster": "algo"
     },
     "src/serial/mod.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 56,
-      "hash": "cb59d1c54015451c",
+      "arch_depth": 1,
+      "lines": 95,
+      "hash": "31debb81afb914b1",
       "exports": [
         "ClusterEntryOutput",
         "ClusterOutput",
+        "FileQueryOutput",
         "GraphOutput",
+        "GraphReader",
         "GraphSerializer",
         "NodeOutput",
+        "RawImportOutput",
+        "convert",
         "json"
       ],
-      "cluster": "serial"
+      "cluster": "algo"
+    },
+    "src/views/cluster.rs": {
+      "type": "source",
+      "layer": "component",
+      "arch_depth": 0,
+      "lines": 173,
+      "hash": "78cab76bb7a95ddd",
+      "exports": [
+        "generate_cluster_view"
+      ],
+      "cluster": "algo"
+    },
+    "src/views/impact.rs": {
+      "type": "source",
+      "layer": "component",
+      "arch_depth": 0,
+      "lines": 97,
+      "hash": "a45bcaa03255e8bd",
+      "exports": [
+        "generate_blast_radius_view",
+        "generate_subgraph_view"
+      ],
+      "cluster": "algo"
+    },
+    "src/views/index.rs": {
+      "type": "source",
+      "layer": "component",
+      "arch_depth": 0,
+      "lines": 101,
+      "hash": "d9de6281c9ea68f8",
+      "exports": [
+        "generate_index"
+      ],
+      "cluster": "algo"
+    },
+    "src/views/mod.rs": {
+      "type": "source",
+      "layer": "component",
+      "arch_depth": 1,
+      "lines": 55,
+      "hash": "c6a2db68b619cf00",
+      "exports": [
+        "cluster",
+        "generate_all_views",
+        "impact",
+        "index"
+      ],
+      "cluster": "algo"
+    },
+    "tests/fixtures/csharp-project/Data/UserRepository.cs": {
+      "type": "source",
+      "layer": "data",
+      "arch_depth": 0,
+      "lines": 21,
+      "hash": "7b5ad6496ad79a97",
+      "exports": [
+        "User",
+        "UserRepository"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/csharp-project/Program.cs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 15,
+      "hash": "a0ac82182cc2e4f4",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/csharp-project/Services/AuthService.cs": {
+      "type": "source",
+      "layer": "service",
+      "arch_depth": 0,
+      "lines": 19,
+      "hash": "547d81c6547511af",
+      "exports": [
+        "AuthService"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/csharp-project/Tests/AuthTests.cs": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 22,
+      "hash": "c6893062e6b25a9a",
+      "exports": [
+        "AuthTests"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/edge-cases/circular-a.ts": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 2,
+      "hash": "07038ee78ce50e31",
+      "exports": [
+        "a"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/edge-cases/circular-b.ts": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 2,
+      "hash": "f4ba34296ef0d2dd",
+      "exports": [
+        "b"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/edge-cases/deeply/nested/a/b/c/d/file.ts": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 1,
+      "hash": "b11cd6be8d4e0790",
+      "exports": [
+        "deep"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/edge-cases/empty.ts": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 0,
+      "hash": "ef46db3751d8e999",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/edge-cases/helper.ts": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 3,
+      "hash": "fec44a50fc9a73bd",
+      "exports": [
+        "helper"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/edge-cases/syntax-error.ts": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 1,
+      "lines": 2,
+      "hash": "97ac7c0b02a4254e",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/edge-cases/valid.ts": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 1,
+      "hash": "77155de97e474b67",
+      "exports": [
+        "foo"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/go-service/cmd/server/main.go": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 14,
+      "hash": "43eea1dc4de0b899",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/go-service/internal/handler/handler.go": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 17,
+      "hash": "1bbdac335472167f",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/go-service/internal/repository/repo.go": {
+      "type": "source",
+      "layer": "data",
+      "arch_depth": 0,
+      "lines": 28,
+      "hash": "301dc4a182f8533c",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/go-service/internal/service/service.go": {
+      "type": "source",
+      "layer": "service",
+      "arch_depth": 0,
+      "lines": 18,
+      "hash": "7cd70670ca8f2313",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/java-project/src/main/java/com/example/App.java": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 11,
+      "hash": "748dbf874b63dc38",
+      "exports": [
+        "App"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/java-project/src/main/java/com/example/data/UserRepo.java": {
+      "type": "source",
+      "layer": "data",
+      "arch_depth": 0,
+      "lines": 16,
+      "hash": "51774ab5a9c37ca7",
+      "exports": [
+        "UserRepo"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/java-project/src/main/java/com/example/service/AuthService.java": {
+      "type": "source",
+      "layer": "service",
+      "arch_depth": 0,
+      "lines": 15,
+      "hash": "75afbc23d6fd2a6c",
+      "exports": [
+        "AuthService"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/java-project/src/test/java/com/example/AppTest.java": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 13,
+      "hash": "6bad71e3c04fda4a",
+      "exports": [
+        "AppTest"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/mixed-project/backend/main.go": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 14,
+      "hash": "2dd7e3f4841b3ef8",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/mixed-project/frontend/src/App.tsx": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 1,
+      "lines": 17,
+      "hash": "b0975bcc8301ceee",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/mixed-project/frontend/src/components/Button.tsx": {
+      "type": "source",
+      "layer": "component",
+      "arch_depth": 0,
+      "lines": 10,
+      "hash": "a9bff872912f68be",
+      "exports": [
+        "Button"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/mixed-project/scripts/deploy.py": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 13,
+      "hash": "eb3a3e6d1dc28f35",
+      "exports": [
+        "deploy"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/python-package/src/__init__.py": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 0,
+      "hash": "ef46db3751d8e999",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/python-package/src/auth/__init__.py": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 0,
+      "hash": "ef46db3751d8e999",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/python-package/src/auth/login.py": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 1,
+      "lines": 8,
+      "hash": "215548e6407a26a0",
+      "exports": [
+        "login"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/python-package/src/main.py": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 1,
+      "lines": 12,
+      "hash": "3db5cbc56e52cb06",
+      "exports": [
+        "main"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/python-package/src/utils/__init__.py": {
+      "type": "test",
+      "layer": "util",
+      "arch_depth": 0,
+      "lines": 0,
+      "hash": "ef46db3751d8e999",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/python-package/src/utils/helpers.py": {
+      "type": "test",
+      "layer": "util",
+      "arch_depth": 0,
+      "lines": 13,
+      "hash": "d1366efd3a86f597",
+      "exports": [
+        "format_date",
+        "format_name"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/python-package/tests/conftest.py": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 0,
+      "hash": "ef46db3751d8e999",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/python-package/tests/test_auth.py": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 9,
+      "hash": "5908ec8d52090138",
+      "exports": [
+        "test_login_failure",
+        "test_login_success"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/rust-crate/src/auth/login.rs": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 12,
+      "hash": "ad821ea8a6721c14",
+      "exports": [
+        "LoginParams",
+        "login"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/rust-crate/src/auth/mod.rs": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 1,
+      "lines": 8,
+      "hash": "1d17da7224cdcf8e",
+      "exports": [
+        "auth_version",
+        "login"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/rust-crate/src/lib.rs": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 2,
+      "lines": 2,
+      "hash": "62918898bf0467d1",
+      "exports": [
+        "auth",
+        "utils"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/rust-crate/src/utils/format.rs": {
+      "type": "test",
+      "layer": "util",
+      "arch_depth": 0,
+      "lines": 7,
+      "hash": "4551ba2978df1624",
+      "exports": [
+        "format_date",
+        "format_name"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/rust-crate/src/utils/mod.rs": {
+      "type": "test",
+      "layer": "util",
+      "arch_depth": 1,
+      "lines": 1,
+      "hash": "cf529bcca47209ed",
+      "exports": [
+        "format"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/rust-crate/tests/integration.rs": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 10,
+      "hash": "9c17c7c58c2d245f",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/typescript-app/src/__tests__/login.test.ts": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 13,
+      "hash": "1ae1bfe2579832f3",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/typescript-app/src/auth/login.ts": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 1,
+      "lines": 12,
+      "hash": "5b3f09004953e37a",
+      "exports": [
+        "LoginParams",
+        "login"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/typescript-app/src/auth/register.ts": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 2,
+      "lines": 10,
+      "hash": "f7dd39564646435b",
+      "exports": [
+        "RegisterParams",
+        "register"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/typescript-app/src/index.ts": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 2,
+      "lines": 6,
+      "hash": "a05840a21b0a9426",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/typescript-app/src/types/index.d.ts": {
+      "type": "type_def",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 10,
+      "hash": "9d6ba345be9e269b",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/typescript-app/src/utils/format.ts": {
+      "type": "source",
+      "layer": "util",
+      "arch_depth": 0,
+      "lines": 7,
+      "hash": "c61d4a8596817c73",
+      "exports": [
+        "formatDate",
+        "formatName"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/workspace-project/packages/api/src/index.ts": {
+      "type": "source",
+      "layer": "api",
+      "arch_depth": 1,
+      "lines": 1,
+      "hash": "62439b5da33b845c",
+      "exports": [
+        "router"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/workspace-project/packages/api/src/router.ts": {
+      "type": "source",
+      "layer": "api",
+      "arch_depth": 0,
+      "lines": 1,
+      "hash": "533892416cd8892a",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/workspace-project/packages/auth/src/index.ts": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 1,
+      "lines": 1,
+      "hash": "7f15187abdfb70bc",
+      "exports": [
+        "login"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/workspace-project/packages/auth/src/login.ts": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 1,
+      "hash": "a5595dfb090f0463",
+      "exports": [
+        "login"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/workspace-project/packages/shared/src/format.ts": {
+      "type": "source",
+      "layer": "util",
+      "arch_depth": 0,
+      "lines": 1,
+      "hash": "2a8461dde412b756",
+      "exports": [
+        "format"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/workspace-project/packages/shared/src/index.ts": {
+      "type": "source",
+      "layer": "util",
+      "arch_depth": 1,
+      "lines": 1,
+      "hash": "6461b7259963015b",
+      "exports": [
+        "format"
+      ],
+      "cluster": "tests"
+    },
+    "tests/graph_tests.rs": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 157,
+      "hash": "32c9ec30286ce214",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/helpers.rs": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 46,
+      "hash": "d9c42087338708c4",
+      "exports": [
+        "build_and_read_graph_json",
+        "build_fixture",
+        "fixture_path"
+      ],
+      "cluster": "tests"
+    },
+    "tests/invariants.rs": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 712,
+      "hash": "2cf9e61638b93fc7",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/mcp_tests.rs": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 417,
+      "hash": "fcd5f13a69229a3f",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/pipeline_tests.rs": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 380,
+      "hash": "01b0a5169ba2cb60",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/properties.rs": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 108,
+      "hash": "0907b8e85ec7c71b",
+      "exports": [],
+      "cluster": "tests"
     }
   },
   "edges": [
+    [
+      "src/algo/mod.rs",
+      "src/algo/blast_radius.rs",
+      "imports",
+      [
+        "blast_radius"
+      ]
+    ],
+    [
+      "src/algo/mod.rs",
+      "src/algo/centrality.rs",
+      "imports",
+      [
+        "centrality"
+      ]
+    ],
+    [
+      "src/algo/mod.rs",
+      "src/algo/compress.rs",
+      "imports",
+      [
+        "compress"
+      ]
+    ],
+    [
+      "src/algo/mod.rs",
+      "src/algo/delta.rs",
+      "imports",
+      [
+        "delta"
+      ]
+    ],
+    [
+      "src/algo/mod.rs",
+      "src/algo/louvain.rs",
+      "imports",
+      [
+        "louvain"
+      ]
+    ],
+    [
+      "src/algo/mod.rs",
+      "src/algo/pagerank.rs",
+      "imports",
+      [
+        "pagerank"
+      ]
+    ],
+    [
+      "src/algo/mod.rs",
+      "src/algo/scc.rs",
+      "imports",
+      [
+        "scc"
+      ]
+    ],
+    [
+      "src/algo/mod.rs",
+      "src/algo/spectral.rs",
+      "imports",
+      [
+        "spectral"
+      ]
+    ],
+    [
+      "src/algo/mod.rs",
+      "src/algo/stats.rs",
+      "imports",
+      [
+        "stats"
+      ]
+    ],
+    [
+      "src/algo/mod.rs",
+      "src/algo/subgraph.rs",
+      "imports",
+      [
+        "subgraph"
+      ]
+    ],
+    [
+      "src/algo/mod.rs",
+      "src/algo/topo_sort.rs",
+      "imports",
+      [
+        "topo_sort"
+      ]
+    ],
+    [
+      "src/analysis/mod.rs",
+      "src/analysis/diff.rs",
+      "imports",
+      [
+        "diff"
+      ]
+    ],
+    [
+      "src/analysis/mod.rs",
+      "src/analysis/metrics.rs",
+      "imports",
+      [
+        "metrics"
+      ]
+    ],
+    [
+      "src/analysis/mod.rs",
+      "src/analysis/smells.rs",
+      "imports",
+      [
+        "smells"
+      ]
+    ],
+    [
+      "src/detect/mod.rs",
+      "src/detect/case_sensitivity.rs",
+      "imports",
+      [
+        "case_sensitivity"
+      ]
+    ],
     [
       "src/detect/mod.rs",
       "src/detect/filetype.rs",
@@ -417,6 +1659,30 @@
       "imports",
       [
         "layer"
+      ]
+    ],
+    [
+      "src/detect/mod.rs",
+      "src/detect/workspace.rs",
+      "imports",
+      [
+        "workspace"
+      ]
+    ],
+    [
+      "src/lib.rs",
+      "src/algo/mod.rs",
+      "imports",
+      [
+        "algo"
+      ]
+    ],
+    [
+      "src/lib.rs",
+      "src/analysis/mod.rs",
+      "imports",
+      [
+        "analysis"
       ]
     ],
     [
@@ -453,6 +1719,14 @@
     ],
     [
       "src/lib.rs",
+      "src/mcp/mod.rs",
+      "imports",
+      [
+        "mcp"
+      ]
+    ],
+    [
+      "src/lib.rs",
       "src/model/mod.rs",
       "imports",
       [
@@ -484,6 +1758,70 @@
       ]
     ],
     [
+      "src/lib.rs",
+      "src/views/mod.rs",
+      "imports",
+      [
+        "views"
+      ]
+    ],
+    [
+      "src/mcp/mod.rs",
+      "src/mcp/lock.rs",
+      "imports",
+      [
+        "lock"
+      ]
+    ],
+    [
+      "src/mcp/mod.rs",
+      "src/mcp/server.rs",
+      "imports",
+      [
+        "server"
+      ]
+    ],
+    [
+      "src/mcp/mod.rs",
+      "src/mcp/state.rs",
+      "imports",
+      [
+        "state"
+      ]
+    ],
+    [
+      "src/mcp/mod.rs",
+      "src/mcp/tools.rs",
+      "imports",
+      [
+        "tools"
+      ]
+    ],
+    [
+      "src/mcp/mod.rs",
+      "src/mcp/watch.rs",
+      "imports",
+      [
+        "watch"
+      ]
+    ],
+    [
+      "src/model/mod.rs",
+      "src/model/compress.rs",
+      "imports",
+      [
+        "compress"
+      ]
+    ],
+    [
+      "src/model/mod.rs",
+      "src/model/diff.rs",
+      "imports",
+      [
+        "diff"
+      ]
+    ],
+    [
       "src/model/mod.rs",
       "src/model/edge.rs",
       "imports",
@@ -509,10 +1847,42 @@
     ],
     [
       "src/model/mod.rs",
+      "src/model/query.rs",
+      "imports",
+      [
+        "query"
+      ]
+    ],
+    [
+      "src/model/mod.rs",
+      "src/model/smell.rs",
+      "imports",
+      [
+        "smell"
+      ]
+    ],
+    [
+      "src/model/mod.rs",
+      "src/model/stats.rs",
+      "imports",
+      [
+        "stats"
+      ]
+    ],
+    [
+      "src/model/mod.rs",
       "src/model/types.rs",
       "imports",
       [
         "types"
+      ]
+    ],
+    [
+      "src/model/mod.rs",
+      "src/model/workspace.rs",
+      "imports",
+      [
+        "workspace"
       ]
     ],
     [
@@ -613,10 +1983,197 @@
     ],
     [
       "src/serial/mod.rs",
+      "src/serial/convert.rs",
+      "imports",
+      [
+        "convert"
+      ]
+    ],
+    [
+      "src/serial/mod.rs",
       "src/serial/json.rs",
       "imports",
       [
         "json"
+      ]
+    ],
+    [
+      "src/views/mod.rs",
+      "src/views/cluster.rs",
+      "imports",
+      [
+        "cluster"
+      ]
+    ],
+    [
+      "src/views/mod.rs",
+      "src/views/impact.rs",
+      "imports",
+      [
+        "impact"
+      ]
+    ],
+    [
+      "src/views/mod.rs",
+      "src/views/index.rs",
+      "imports",
+      [
+        "index"
+      ]
+    ],
+    [
+      "tests/fixtures/edge-cases/circular-a.ts",
+      "tests/fixtures/edge-cases/circular-b.ts",
+      "imports",
+      [
+        "b"
+      ]
+    ],
+    [
+      "tests/fixtures/edge-cases/circular-b.ts",
+      "tests/fixtures/edge-cases/circular-a.ts",
+      "imports",
+      [
+        "a"
+      ]
+    ],
+    [
+      "tests/fixtures/edge-cases/syntax-error.ts",
+      "tests/fixtures/edge-cases/valid.ts",
+      "imports",
+      [
+        "foo"
+      ]
+    ],
+    [
+      "tests/fixtures/mixed-project/frontend/src/App.tsx",
+      "tests/fixtures/mixed-project/frontend/src/components/Button.tsx",
+      "imports",
+      [
+        "Button"
+      ]
+    ],
+    [
+      "tests/fixtures/python-package/src/auth/login.py",
+      "tests/fixtures/python-package/src/utils/helpers.py",
+      "imports",
+      [
+        "format_date"
+      ]
+    ],
+    [
+      "tests/fixtures/python-package/src/main.py",
+      "tests/fixtures/python-package/src/auth/__init__.py",
+      "imports",
+      [
+        "login"
+      ]
+    ],
+    [
+      "tests/fixtures/python-package/src/main.py",
+      "tests/fixtures/python-package/src/utils/helpers.py",
+      "imports",
+      [
+        "format_date"
+      ]
+    ],
+    [
+      "tests/fixtures/rust-crate/src/auth/mod.rs",
+      "tests/fixtures/rust-crate/src/auth/login.rs",
+      "imports",
+      [
+        "login"
+      ]
+    ],
+    [
+      "tests/fixtures/rust-crate/src/lib.rs",
+      "tests/fixtures/rust-crate/src/auth/mod.rs",
+      "imports",
+      [
+        "auth"
+      ]
+    ],
+    [
+      "tests/fixtures/rust-crate/src/lib.rs",
+      "tests/fixtures/rust-crate/src/utils/mod.rs",
+      "imports",
+      [
+        "utils"
+      ]
+    ],
+    [
+      "tests/fixtures/rust-crate/src/utils/mod.rs",
+      "tests/fixtures/rust-crate/src/utils/format.rs",
+      "imports",
+      [
+        "format"
+      ]
+    ],
+    [
+      "tests/fixtures/typescript-app/src/__tests__/login.test.ts",
+      "tests/fixtures/typescript-app/src/auth/login.ts",
+      "tests",
+      [
+        "login",
+        "LoginParams"
+      ]
+    ],
+    [
+      "tests/fixtures/typescript-app/src/auth/login.ts",
+      "tests/fixtures/typescript-app/src/utils/format.ts",
+      "imports",
+      [
+        "formatName"
+      ]
+    ],
+    [
+      "tests/fixtures/typescript-app/src/auth/register.ts",
+      "tests/fixtures/typescript-app/src/auth/login.ts",
+      "imports",
+      [
+        "login",
+        "LoginParams"
+      ]
+    ],
+    [
+      "tests/fixtures/typescript-app/src/index.ts",
+      "tests/fixtures/typescript-app/src/auth/login.ts",
+      "imports",
+      [
+        "login"
+      ]
+    ],
+    [
+      "tests/fixtures/typescript-app/src/index.ts",
+      "tests/fixtures/typescript-app/src/utils/format.ts",
+      "imports",
+      [
+        "formatDate",
+        "formatName"
+      ]
+    ],
+    [
+      "tests/fixtures/workspace-project/packages/api/src/index.ts",
+      "tests/fixtures/workspace-project/packages/api/src/router.ts",
+      "re_exports",
+      [
+        "router"
+      ]
+    ],
+    [
+      "tests/fixtures/workspace-project/packages/auth/src/index.ts",
+      "tests/fixtures/workspace-project/packages/auth/src/login.ts",
+      "re_exports",
+      [
+        "login"
+      ]
+    ],
+    [
+      "tests/fixtures/workspace-project/packages/shared/src/index.ts",
+      "tests/fixtures/workspace-project/packages/shared/src/format.ts",
+      "re_exports",
+      [
+        "format"
       ]
     ]
   ]

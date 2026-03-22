@@ -1,13 +1,13 @@
 use std::collections::BTreeMap;
 
-use crate::algo::{build_adjacency, is_architectural};
+use crate::algo::AdjacencyIndex;
 use crate::model::{CanonicalPath, ProjectGraph};
 
 /// Find all strongly connected components of size > 1 using iterative Tarjan's algorithm.
 /// Returns SCCs sorted deterministically: inner Vecs sorted lexicographically,
 /// outer Vec sorted by first element.
-pub fn find_sccs(graph: &ProjectGraph) -> Vec<Vec<CanonicalPath>> {
-    let (forward, _) = build_adjacency(&graph.edges, is_architectural);
+pub fn find_sccs(graph: &ProjectGraph, index: &AdjacencyIndex) -> Vec<Vec<CanonicalPath>> {
+    let forward = &index.forward;
 
     let nodes: Vec<&CanonicalPath> = graph.nodes.keys().collect();
     let mut index_counter: u32 = 0;
@@ -98,6 +98,7 @@ pub fn find_sccs(graph: &ProjectGraph) -> Vec<Vec<CanonicalPath>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::algo::is_architectural;
     use crate::model::*;
 
     fn make_graph(node_names: &[&str], edges: &[(&str, &str)]) -> ProjectGraph {
@@ -131,14 +132,16 @@ mod tests {
     #[test]
     fn linear_chain_no_sccs() {
         let graph = make_graph(&["a", "b", "c"], &[("a", "b"), ("b", "c")]);
-        let sccs = find_sccs(&graph);
+        let index = AdjacencyIndex::build(&graph.edges, is_architectural);
+        let sccs = find_sccs(&graph, &index);
         assert!(sccs.is_empty());
     }
 
     #[test]
     fn simple_cycle() {
         let graph = make_graph(&["a", "b"], &[("a", "b"), ("b", "a")]);
-        let sccs = find_sccs(&graph);
+        let index = AdjacencyIndex::build(&graph.edges, is_architectural);
+        let sccs = find_sccs(&graph, &index);
         assert_eq!(sccs.len(), 1);
         assert_eq!(
             sccs[0],
@@ -152,7 +155,8 @@ mod tests {
             &["a", "b", "c", "d"],
             &[("a", "b"), ("b", "a"), ("c", "d"), ("d", "c")],
         );
-        let sccs = find_sccs(&graph);
+        let index = AdjacencyIndex::build(&graph.edges, is_architectural);
+        let sccs = find_sccs(&graph, &index);
         assert_eq!(sccs.len(), 2);
         assert_eq!(
             sccs[0],
@@ -170,7 +174,8 @@ mod tests {
             &["a", "b", "c", "d"],
             &[("a", "b"), ("a", "c"), ("b", "d"), ("c", "d")],
         );
-        let sccs = find_sccs(&graph);
+        let index = AdjacencyIndex::build(&graph.edges, is_architectural);
+        let sccs = find_sccs(&graph, &index);
         assert!(sccs.is_empty());
     }
 
@@ -187,7 +192,8 @@ mod tests {
                 ("c", "b"),
             ],
         );
-        let sccs = find_sccs(&graph);
+        let index = AdjacencyIndex::build(&graph.edges, is_architectural);
+        let sccs = find_sccs(&graph, &index);
         assert_eq!(sccs.len(), 1);
         assert_eq!(sccs[0].len(), 3);
     }
@@ -198,7 +204,8 @@ mod tests {
             nodes: BTreeMap::new(),
             edges: vec![],
         };
-        let sccs = find_sccs(&graph);
+        let index = AdjacencyIndex::build(&graph.edges, is_architectural);
+        let sccs = find_sccs(&graph, &index);
         assert!(sccs.is_empty());
     }
 
@@ -217,7 +224,8 @@ mod tests {
             edge_type: EdgeType::Tests,
             symbols: vec![],
         });
-        let sccs = find_sccs(&graph);
+        let index = AdjacencyIndex::build(&graph.edges, is_architectural);
+        let sccs = find_sccs(&graph, &index);
         assert!(sccs.is_empty());
     }
 }

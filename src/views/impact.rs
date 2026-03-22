@@ -95,3 +95,120 @@ pub fn generate_subgraph_view(subgraph: &SubgraphResult) -> String {
 
     out
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::*;
+
+    #[test]
+    fn blast_radius_empty() {
+        let graph = ProjectGraph {
+            nodes: BTreeMap::new(),
+            edges: vec![],
+        };
+        let blast = BTreeMap::new();
+        let md = generate_blast_radius_view("src/x.ts", &blast, &graph);
+        assert!(md.contains("# Blast Radius: `src/x.ts`"));
+        assert!(md.contains("**Affected files:** 0"));
+    }
+
+    #[test]
+    fn blast_radius_groups_by_distance() {
+        let mut nodes = BTreeMap::new();
+        nodes.insert(
+            CanonicalPath::new("src/a.ts"),
+            Node {
+                file_type: FileType::Source,
+                layer: ArchLayer::Service,
+                arch_depth: 0,
+                lines: 10,
+                hash: ContentHash::new("a".to_string()),
+                exports: vec![],
+                cluster: ClusterId::new("src"),
+            },
+        );
+        nodes.insert(
+            CanonicalPath::new("src/b.ts"),
+            Node {
+                file_type: FileType::Source,
+                layer: ArchLayer::Util,
+                arch_depth: 0,
+                lines: 10,
+                hash: ContentHash::new("b".to_string()),
+                exports: vec![],
+                cluster: ClusterId::new("src"),
+            },
+        );
+        let graph = ProjectGraph {
+            nodes,
+            edges: vec![],
+        };
+        let mut blast = BTreeMap::new();
+        blast.insert(CanonicalPath::new("src/a.ts"), 0);
+        blast.insert(CanonicalPath::new("src/b.ts"), 1);
+        let md = generate_blast_radius_view("src/a.ts", &blast, &graph);
+        assert!(md.contains("## Source (distance 0)"));
+        assert!(md.contains("## Distance 1"));
+        assert!(md.contains("src/b.ts"));
+    }
+
+    #[test]
+    fn blast_radius_special_chars() {
+        let graph = ProjectGraph {
+            nodes: BTreeMap::new(),
+            edges: vec![],
+        };
+        let mut blast = BTreeMap::new();
+        blast.insert(CanonicalPath::new("src/special&file.ts"), 0);
+        let md = generate_blast_radius_view("src/special&file.ts", &blast, &graph);
+        assert!(md.contains("special&file.ts"));
+    }
+
+    #[test]
+    fn subgraph_view_empty() {
+        let subgraph = SubgraphResult {
+            nodes: BTreeMap::new(),
+            edges: vec![],
+            center_files: vec![CanonicalPath::new("src/x.ts")],
+            depth: 2,
+        };
+        let md = generate_subgraph_view(&subgraph);
+        assert!(md.contains("# Subgraph: src/x.ts"));
+        assert!(md.contains("**Depth:** 2"));
+        assert!(md.contains("**Nodes:** 0"));
+    }
+
+    #[test]
+    fn subgraph_view_with_nodes_and_edges() {
+        let mut nodes = BTreeMap::new();
+        nodes.insert(
+            CanonicalPath::new("src/a.ts"),
+            Node {
+                file_type: FileType::Source,
+                layer: ArchLayer::Service,
+                arch_depth: 1,
+                lines: 100,
+                hash: ContentHash::new("a".to_string()),
+                exports: vec![],
+                cluster: ClusterId::new("src"),
+            },
+        );
+        let edges = vec![Edge {
+            from: CanonicalPath::new("src/a.ts"),
+            to: CanonicalPath::new("src/b.ts"),
+            edge_type: EdgeType::Imports,
+            symbols: vec![],
+        }];
+        let subgraph = SubgraphResult {
+            nodes,
+            edges,
+            center_files: vec![CanonicalPath::new("src/a.ts")],
+            depth: 1,
+        };
+        let md = generate_subgraph_view(&subgraph);
+        assert!(md.contains("## Files"));
+        assert!(md.contains("src/a.ts"));
+        assert!(md.contains("## Edges"));
+    }
+}

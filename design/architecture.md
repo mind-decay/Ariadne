@@ -886,6 +886,32 @@ Ariadne is designed as a standalone tool. Integration points for external system
 
 Ariadne has no dependency on any specific orchestration framework.
 
+## Extension Points
+
+### Adding a New Language Parser
+
+1. Create `src/parser/<language>.rs` with two structs implementing `LanguageParser` and `ImportResolver` (D-018)
+2. `LanguageParser` requires: `language()`, `extensions()`, `tree_sitter_language()`, `extract_imports()`, `extract_exports()`
+3. `ImportResolver` requires: `resolve()` — maps raw import strings to `CanonicalPath` using `FileSet` for existence checks
+4. Add the tree-sitter grammar crate to `Cargo.toml`
+5. Register both in `ParserRegistry` (`src/parser/registry.rs`) via `register(parser, resolver)`
+6. Add the module declaration to `src/parser/mod.rs`
+7. Common helpers (`find_child_by_kind`, `strip_quotes`) are in `src/parser/helpers.rs`
+
+### Adding a New EdgeType Variant
+
+1. Add the variant to the `EdgeType` enum in `src/model/graph.rs`
+2. Implement `as_str()` for the new variant (used in serialization)
+3. Add inference logic in `src/pipeline/build.rs` — the `resolve_and_build` function classifies edges based on file types, import metadata, and naming conventions
+4. Update snapshot tests that verify edge type output
+
+### Adding a New SmellType Detector
+
+1. Add the variant to `SmellType` in `src/model/smell.rs`
+2. Implement the detection function in `src/analysis/smells.rs` — detectors receive `&ProjectGraph`, `&StatsOutput`, and `&ClusterMap`
+3. Register the detector in the smell detection entry point so it runs during analysis
+4. Each detector returns `Vec<ArchSmell>` with severity, affected paths, and explanation
+
 ## Limitations
 
 Ariadne captures **syntactic static imports only**. The following are NOT modeled:

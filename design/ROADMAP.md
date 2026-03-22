@@ -8,7 +8,7 @@ Ariadne is a standalone Rust CLI that builds structural dependency graphs from s
 
 ---
 
-## Phase 1a: MVP — Parse and Output
+## Phase 1a: MVP — Parse and Output [DONE]
 
 **Goal:** `ariadne build <path>` works. Parses a multi-language project, outputs `graph.json` + `clusters.json`. Basic error handling (skip broken files, log to stderr). No frills.
 
@@ -50,7 +50,7 @@ Ariadne is a standalone Rust CLI that builds structural dependency graphs from s
 
 ---
 
-## Phase 1b: Hardening
+## Phase 1b: Hardening [DONE]
 
 **Goal:** Production-quality error handling, full CLI, workspace support, comprehensive tests, CI/CD.
 
@@ -73,7 +73,7 @@ Ariadne is a standalone Rust CLI that builds structural dependency graphs from s
 
 ---
 
-## Phase 2a: Algorithms, Queries & Views
+## Phase 2a: Algorithms, Queries & Views [DONE]
 
 **Goal:** Graph becomes queryable — blast radius, centrality, cycles, layers, markdown views. (D-036)
 
@@ -93,7 +93,7 @@ Ariadne is a standalone Rust CLI that builds structural dependency graphs from s
 
 ---
 
-## Phase 2b: Louvain Clustering & Delta Computation
+## Phase 2b: Louvain Clustering & Delta Computation [DONE]
 
 **Goal:** Community-based clustering refinement and incremental graph updates. (D-036)
 
@@ -102,13 +102,13 @@ Ariadne is a standalone Rust CLI that builds structural dependency graphs from s
 **Deliverables:**
 
 - Louvain community detection (overrides directory-based clusters, on by default, `--no-louvain` to disable)
-- Delta computation (`ariadne update` — detects changes via content hash; no-op fast path when nothing changed, full rebuild otherwise. True incremental re-parsing deferred to Phase 3 — see D-050)
+- Delta computation (`ariadne update` — detects changes via content hash; no-op fast path when nothing changed, full rebuild otherwise. True incremental re-parsing deferred to Phase 3 — see D-050). **Deviation:** D-050 documents that `ariadne update` always does a full rebuild when changes are detected; true incremental re-parsing is deferred to Phase 3.
 
 **Testing:** Louvain correctness tests, delta round-trip tests, performance benchmarks (Louvain <200ms, delta <1s).
 
 ---
 
-## Phase 3: MCP Server & Architectural Intelligence
+## Phase 3: MCP Server & Architectural Intelligence [IN PROGRESS]
 
 **Goal:** Ariadne becomes a long-running MCP server that provides instant, queryable access to structural dependency graphs — enabling any MCP-compatible consumer (AI orchestrators, IDEs, CI tools) to get architectural insights without re-parsing the codebase.
 
@@ -185,7 +185,7 @@ Ariadne solves this by providing a pre-computed, queryable structural graph that
 
 ---
 
-### Phase 3a: MCP Server
+### Phase 3a: MCP Server [DONE]
 
 **Goal:** Ariadne runs as an MCP server, loads the graph into memory, answers queries instantly, and keeps the graph fresh automatically.
 
@@ -289,7 +289,7 @@ pub struct FreshnessState {
 
 **File ownership:** When the MCP server is running, it acquires exclusive write access to `.ariadne/graph/` via a lock file (`.ariadne/graph/.lock`). CLI `ariadne build` and `ariadne update` check for this lock and refuse to run while the server is active, with a message directing to the MCP server (D-046). The server is the sole writer — this prevents race conditions and double-write corruption.
 
-**Threading model:** `notify` crate uses OS-native file watching (kqueue on macOS, inotify on Linux) with a dedicated watcher thread. No async runtime (tokio) required. MCP JSON-RPC runs on the main thread (stdio is inherently sequential). Delta rebuild runs on a background thread, communicates via `Arc<RwLock<GraphState>>` swap. See D-047.
+**Threading model:** `notify` crate uses OS-native file watching (kqueue on macOS, inotify on Linux) with a dedicated watcher thread. No async runtime (tokio) required. MCP JSON-RPC runs on the main thread (stdio is inherently sequential). Delta rebuild runs on a background thread, communicates via `Arc<RwLock<GraphState>>` swap. See D-047. **Deviation:** D-051 documents that tokio is used for the `serve` subcommand due to `rmcp` crate requirements; all other commands remain synchronous.
 
 **CLI extension:**
 
@@ -315,7 +315,7 @@ Starts the MCP server. `--no-watch` disables fs watcher (poll-only mode).
 
 ---
 
-### Phase 3b: Architectural Intelligence
+### Phase 3b: Architectural Intelligence [PLANNED]
 
 **Goal:** Move beyond basic graph metrics into architectural analysis — detect problems, quantify design quality, track structural evolution.
 
@@ -403,7 +403,7 @@ pub struct DiffSummary {
 
 ---
 
-### Phase 3c: Advanced Graph Analytics
+### Phase 3c: Advanced Graph Analytics [PLANNED]
 
 **Goal:** Techniques from spectral graph theory and information retrieval to handle large codebases and provide deeper ranking insights.
 

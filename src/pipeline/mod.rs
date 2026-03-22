@@ -293,8 +293,9 @@ impl BuildPipeline {
 
         // Stage 6: Run algorithms (before serialization so arch_depth is correct in graph.json)
         let algo_start = Instant::now();
-        let sccs = algo::scc::find_sccs(&graph);
-        let layers = algo::topo_sort::topological_layers(&graph, &sccs);
+        let index = algo::AdjacencyIndex::build(&graph.edges, algo::is_architectural);
+        let sccs = algo::scc::find_sccs(&graph, &index);
+        let layers = algo::topo_sort::topological_layers(&graph, &sccs, &index);
 
         // Apply arch_depth from topological layers to graph nodes
         for (path, &layer) in &layers {
@@ -303,7 +304,7 @@ impl BuildPipeline {
             }
         }
 
-        let centrality = algo::centrality::betweenness_centrality(&graph);
+        let centrality = algo::centrality::betweenness_centrality(&graph, &index);
         let stats = algo::stats::compute_stats(&graph, &centrality, &sccs, &layers);
         if verbose {
             eprintln!(
@@ -425,14 +426,24 @@ impl BuildPipeline {
                     .run_with_output(root, config, output_dir, timestamp, verbose, no_louvain);
             }
             Err(FatalError::GraphCorrupted { ref reason, .. }) => {
+                let reason_str = reason.clone();
                 if verbose {
                     eprintln!(
                         "[delta]     corrupted graph: {} — falling back to full build",
-                        reason
+                        reason_str
                     );
                 }
-                return self
-                    .run_with_output(root, config, output_dir, timestamp, verbose, no_louvain);
+                let mut result =
+                    self.run_with_output(root, config, output_dir, timestamp, verbose, no_louvain)?;
+                let w011 = Warning {
+                    code: WarningCode::W011GraphCorrupted,
+                    path: CanonicalPath::new(out_dir.display().to_string()),
+                    message: format!("graph corrupted: {}, rebuilding", reason_str),
+                    detail: None,
+                };
+                result.warnings.push(w011);
+                result.counts.graph_load_warnings += 1;
+                return Ok(result);
             }
             Err(e) => return Err(e),
         };
@@ -445,7 +456,17 @@ impl BuildPipeline {
                     old_graph_output.version
                 );
             }
-            return self.run_with_output(root, config, output_dir, timestamp, verbose, no_louvain);
+            let mut result =
+                self.run_with_output(root, config, output_dir, timestamp, verbose, no_louvain)?;
+            let w010 = Warning {
+                code: WarningCode::W010GraphVersionMismatch,
+                path: CanonicalPath::new(out_dir.display().to_string()),
+                message: "graph version mismatch, rebuilding".to_string(),
+                detail: None,
+            };
+            result.warnings.push(w010);
+            result.counts.graph_load_warnings += 1;
+            return Ok(result);
         }
 
         let old_graph: ProjectGraph = match old_graph_output.try_into() {
@@ -457,8 +478,17 @@ impl BuildPipeline {
                         reason
                     );
                 }
-                return self
-                    .run_with_output(root, config, output_dir, timestamp, verbose, no_louvain);
+                let mut result =
+                    self.run_with_output(root, config, output_dir, timestamp, verbose, no_louvain)?;
+                let w011 = Warning {
+                    code: WarningCode::W011GraphCorrupted,
+                    path: CanonicalPath::new(out_dir.display().to_string()),
+                    message: format!("graph corrupted: {}, rebuilding", reason),
+                    detail: None,
+                };
+                result.warnings.push(w011);
+                result.counts.graph_load_warnings += 1;
+                return Ok(result);
             }
         };
 

@@ -46,31 +46,35 @@ fn build_synthetic_graph(node_count: usize, edge_count: usize) -> ProjectGraph {
 
 fn bench_scc(c: &mut Criterion) {
     let graph = build_synthetic_graph(3000, 8000);
+    let index = algo::AdjacencyIndex::build(&graph.edges, algo::is_architectural);
     c.bench_function("tarjan_scc_3000", |b| {
-        b.iter(|| algo::scc::find_sccs(&graph))
+        b.iter(|| algo::scc::find_sccs(&graph, &index))
     });
 }
 
 fn bench_topo_sort(c: &mut Criterion) {
     let graph = build_synthetic_graph(3000, 8000);
-    let sccs = algo::scc::find_sccs(&graph);
+    let index = algo::AdjacencyIndex::build(&graph.edges, algo::is_architectural);
+    let sccs = algo::scc::find_sccs(&graph, &index);
     c.bench_function("topo_sort_3000", |b| {
-        b.iter(|| algo::topo_sort::topological_layers(&graph, &sccs))
+        b.iter(|| algo::topo_sort::topological_layers(&graph, &sccs, &index))
     });
 }
 
 fn bench_blast_radius(c: &mut Criterion) {
     let graph = build_synthetic_graph(3000, 8000);
+    let index = algo::AdjacencyIndex::build(&graph.edges, algo::is_architectural);
     let target = graph.nodes.keys().next().unwrap().clone();
     c.bench_function("blast_radius_3000", |b| {
-        b.iter(|| algo::blast_radius::blast_radius(&graph, &target, None))
+        b.iter(|| algo::blast_radius::blast_radius(&graph, &target, None, &index))
     });
 }
 
 fn bench_centrality(c: &mut Criterion) {
     let graph = build_synthetic_graph(3000, 8000);
+    let index = algo::AdjacencyIndex::build(&graph.edges, algo::is_architectural);
     c.bench_function("brandes_centrality_3000", |b| {
-        b.iter(|| algo::centrality::betweenness_centrality(&graph))
+        b.iter(|| algo::centrality::betweenness_centrality(&graph, &index))
     });
 }
 
@@ -83,7 +87,8 @@ fn bench_pagerank(c: &mut Criterion) {
 
 fn bench_combined_importance(c: &mut Criterion) {
     let graph = build_synthetic_graph(3000, 8000);
-    let centrality = algo::centrality::betweenness_centrality(&graph);
+    let index = algo::AdjacencyIndex::build(&graph.edges, algo::is_architectural);
+    let centrality = algo::centrality::betweenness_centrality(&graph, &index);
     let centrality_str: BTreeMap<String, f64> = centrality
         .iter()
         .map(|(k, &v)| (k.as_str().to_string(), v))
@@ -127,9 +132,10 @@ fn build_synthetic_graph_with_clusters(
         clusters: clusters_map,
     };
 
-    let centrality = algo::centrality::betweenness_centrality(&graph);
-    let sccs = algo::scc::find_sccs(&graph);
-    let layers = algo::topo_sort::topological_layers(&graph, &sccs);
+    let index = algo::AdjacencyIndex::build(&graph.edges, algo::is_architectural);
+    let centrality = algo::centrality::betweenness_centrality(&graph, &index);
+    let sccs = algo::scc::find_sccs(&graph, &index);
+    let layers = algo::topo_sort::topological_layers(&graph, &sccs, &index);
     let stats = algo::stats::compute_stats(&graph, &centrality, &sccs, &layers);
 
     (graph, clusters, stats)

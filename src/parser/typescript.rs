@@ -1,5 +1,6 @@
 use crate::model::workspace::WorkspaceInfo;
 use crate::model::{CanonicalPath, FileSet};
+use crate::parser::helpers;
 use crate::parser::traits::{ImportKind, ImportResolver, LanguageParser, RawExport, RawImport};
 
 /// Parser and resolver for TypeScript and JavaScript files.
@@ -23,18 +24,6 @@ impl TypeScriptParser {
             }
         }
         Some(text)
-    }
-
-    /// Find the first descendant of a given kind.
-    fn find_child_by_kind<'a>(
-        node: &tree_sitter::Node<'a>,
-        kind: &str,
-    ) -> Option<tree_sitter::Node<'a>> {
-        let mut cursor = node.walk();
-        let result = node
-            .children(&mut cursor)
-            .find(|child| child.kind() == kind);
-        result
     }
 
     /// Extract named import symbols from an import clause.
@@ -140,11 +129,11 @@ impl LanguageParser for TypeScriptParser {
                     let is_type_only = Self::is_type_import(&node, source);
 
                     // Find the source string (the from path)
-                    if let Some(source_node) = Self::find_child_by_kind(&node, "string") {
+                    if let Some(source_node) = helpers::find_child_by_kind(&node, "string") {
                         if let Some(path) = Self::string_content(&source_node, source) {
                             // Extract symbols from import clause
                             let symbols = if let Some(clause) =
-                                Self::find_child_by_kind(&node, "import_clause")
+                                helpers::find_child_by_kind(&node, "import_clause")
                             {
                                 Self::extract_named_symbols(&clause, source)
                             } else {
@@ -227,7 +216,8 @@ impl LanguageParser for TypeScriptParser {
                         }
                         "function_declaration" | "generator_function_declaration" => {
                             // export function foo() {}
-                            if let Some(name_node) = Self::find_child_by_kind(&child, "identifier")
+                            if let Some(name_node) =
+                                helpers::find_child_by_kind(&child, "identifier")
                             {
                                 if let Ok(name) = name_node.utf8_text(source) {
                                     exported_names.push(name.to_string());
@@ -236,7 +226,7 @@ impl LanguageParser for TypeScriptParser {
                         }
                         "class_declaration" => {
                             if let Some(name_node) =
-                                Self::find_child_by_kind(&child, "type_identifier")
+                                helpers::find_child_by_kind(&child, "type_identifier")
                             {
                                 if let Ok(name) = name_node.utf8_text(source) {
                                     exported_names.push(name.to_string());
@@ -249,7 +239,7 @@ impl LanguageParser for TypeScriptParser {
                             for declarator in child.children(&mut decl_cursor) {
                                 if declarator.kind() == "variable_declarator" {
                                     if let Some(name_node) =
-                                        Self::find_child_by_kind(&declarator, "identifier")
+                                        helpers::find_child_by_kind(&declarator, "identifier")
                                     {
                                         if let Ok(name) = name_node.utf8_text(source) {
                                             exported_names.push(name.to_string());
@@ -260,7 +250,7 @@ impl LanguageParser for TypeScriptParser {
                         }
                         "interface_declaration" | "type_alias_declaration" => {
                             if let Some(name_node) =
-                                Self::find_child_by_kind(&child, "type_identifier")
+                                helpers::find_child_by_kind(&child, "type_identifier")
                             {
                                 if let Ok(name) = name_node.utf8_text(source) {
                                     exported_names.push(name.to_string());
@@ -268,7 +258,8 @@ impl LanguageParser for TypeScriptParser {
                             }
                         }
                         "enum_declaration" => {
-                            if let Some(name_node) = Self::find_child_by_kind(&child, "identifier")
+                            if let Some(name_node) =
+                                helpers::find_child_by_kind(&child, "identifier")
                             {
                                 if let Ok(name) = name_node.utf8_text(source) {
                                     exported_names.push(name.to_string());
@@ -323,9 +314,9 @@ impl TypeScriptParser {
             match current.kind() {
                 "call_expression" => {
                     // Check if it's require('...')
-                    if let Some(func) = Self::find_child_by_kind(&current, "identifier") {
+                    if let Some(func) = helpers::find_child_by_kind(&current, "identifier") {
                         if func.utf8_text(source).ok() == Some("require") {
-                            if let Some(args) = Self::find_child_by_kind(&current, "arguments") {
+                            if let Some(args) = helpers::find_child_by_kind(&current, "arguments") {
                                 let mut args_cursor = args.walk();
                                 for arg in args.children(&mut args_cursor) {
                                     if arg.kind() == "string" {
@@ -343,9 +334,9 @@ impl TypeScriptParser {
                         }
                     }
                     // Check if it's import('...')  — dynamic import
-                    if let Some(func) = Self::find_child_by_kind(&current, "import") {
+                    if let Some(func) = helpers::find_child_by_kind(&current, "import") {
                         let _ = func; // just checking existence
-                        if let Some(args) = Self::find_child_by_kind(&current, "arguments") {
+                        if let Some(args) = helpers::find_child_by_kind(&current, "arguments") {
                             let mut args_cursor = args.walk();
                             for arg in args.children(&mut args_cursor) {
                                 if arg.kind() == "string" {
@@ -549,8 +540,141 @@ impl ImportResolver for TypeScriptResolver {
 mod tests {
     use super::*;
     use crate::model::workspace::{WorkspaceKind, WorkspaceMember};
-    use crate::parser::traits::ImportKind;
+    use crate::parser::traits::{ImportKind, LanguageParser};
     use std::path::PathBuf;
+
+    fn parse_ts(source: &str) -> tree_sitter::Tree {
+        let mut parser = tree_sitter::Parser::new();
+        parser
+            .set_language(&tree_sitter::Language::from(
+                tree_sitter_typescript::LANGUAGE_TYPESCRIPT,
+            ))
+            .unwrap();
+        parser.parse(source, None).unwrap()
+    }
+
+    fn ts_imports(source: &str) -> Vec<RawImport> {
+        let tree = parse_ts(source);
+        TypeScriptParser::new().extract_imports(&tree, source.as_bytes())
+    }
+
+    fn ts_exports(source: &str) -> Vec<RawExport> {
+        let tree = parse_ts(source);
+        TypeScriptParser::new().extract_exports(&tree, source.as_bytes())
+    }
+
+    // ---- Import tests ----
+
+    #[test]
+    fn ts_import_named() {
+        let result = ts_imports("import { foo, bar } from './mod';");
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].path, "./mod");
+        assert!(result[0].symbols.contains(&"foo".to_string()));
+        assert!(result[0].symbols.contains(&"bar".to_string()));
+    }
+
+    #[test]
+    fn ts_import_default() {
+        let result = ts_imports("import React from 'react';");
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].path, "react");
+        assert!(result[0].symbols.contains(&"React".to_string()));
+    }
+
+    #[test]
+    fn ts_import_namespace() {
+        let result = ts_imports("import * as utils from './utils';");
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].path, "./utils");
+        assert!(result[0].symbols.iter().any(|s| s.contains("utils")));
+    }
+
+    #[test]
+    fn ts_import_side_effect() {
+        let result = ts_imports("import './side-effect';");
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].path, "./side-effect");
+        assert!(result[0].symbols.is_empty());
+    }
+
+    #[test]
+    fn ts_require_call() {
+        let result = ts_imports("const fs = require('fs');");
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].path, "fs");
+    }
+
+    #[test]
+    fn ts_import_type_only() {
+        let result = ts_imports("import type { Foo } from './types';");
+        assert_eq!(result.len(), 1);
+        assert!(result[0].is_type_only);
+        assert_eq!(result[0].path, "./types");
+    }
+
+    #[test]
+    fn ts_empty_source_no_imports() {
+        let result = ts_imports("");
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn ts_malformed_no_crash() {
+        let result = ts_imports("import from;");
+        let _ = result; // Should not panic
+    }
+
+    // ---- Export tests ----
+
+    #[test]
+    fn ts_export_named() {
+        let result = ts_exports("export { foo, bar };");
+        assert_eq!(result.len(), 2);
+        let names: Vec<&str> = result.iter().map(|e| e.name.as_str()).collect();
+        assert!(names.contains(&"foo"));
+        assert!(names.contains(&"bar"));
+        assert!(!result[0].is_re_export);
+    }
+
+    #[test]
+    fn ts_export_re_export() {
+        let result = ts_exports("export { foo } from './other';");
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].name, "foo");
+        assert!(result[0].is_re_export);
+        assert_eq!(result[0].source.as_deref(), Some("./other"));
+    }
+
+    #[test]
+    fn ts_export_star() {
+        let result = ts_exports("export * from './barrel';");
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].name, "*");
+        assert!(result[0].is_re_export);
+    }
+
+    #[test]
+    fn ts_export_function() {
+        let result = ts_exports("export function hello() {}");
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].name, "hello");
+    }
+
+    #[test]
+    fn ts_export_default() {
+        let result = ts_exports("export default function main() {}");
+        assert!(result
+            .iter()
+            .any(|e| e.name == "default" || e.name == "main"));
+    }
+
+    #[test]
+    fn ts_export_const() {
+        let result = ts_exports("export const FOO = 42;");
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].name, "FOO");
+    }
 
     fn make_import(path: &str) -> RawImport {
         RawImport {

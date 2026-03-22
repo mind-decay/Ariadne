@@ -161,11 +161,6 @@ impl FileSet {
         Self(BTreeSet::new())
     }
 
-    #[allow(clippy::should_implement_trait)]
-    pub fn from_iter(iter: impl IntoIterator<Item = CanonicalPath>) -> Self {
-        Self(iter.into_iter().collect())
-    }
-
     pub fn contains(&self, path: &CanonicalPath) -> bool {
         self.0.contains(path)
     }
@@ -186,6 +181,12 @@ impl FileSet {
 impl Default for FileSet {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl FromIterator<CanonicalPath> for FileSet {
+    fn from_iter<I: IntoIterator<Item = CanonicalPath>>(iter: I) -> Self {
+        Self(iter.into_iter().collect())
     }
 }
 

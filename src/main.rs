@@ -607,7 +607,8 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
         } => {
             let graph = load_graph(&reader, &graph_dir)?;
             let path = CanonicalPath::new(file);
-            let result = algo::blast_radius::blast_radius(&graph, &path, depth);
+            let index = algo::AdjacencyIndex::build(&graph.edges, algo::is_architectural);
+            let result = algo::blast_radius::blast_radius(&graph, &path, depth, &index);
 
             if format == "json" {
                 let json_result: std::collections::BTreeMap<String, u32> = result

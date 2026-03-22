@@ -1,40 +1,50 @@
 {
   "clusters": {
-    "cluster": {
+    "algo": {
       "files": [
-        "src/cluster/mod.rs"
-      ],
-      "file_count": 1,
-      "internal_edges": 0,
-      "external_edges": 1,
-      "cohesion": 0.0
-    },
-    "detect": {
-      "files": [
+        "src/algo/blast_radius.rs",
+        "src/algo/centrality.rs",
+        "src/algo/compress.rs",
+        "src/algo/delta.rs",
+        "src/algo/louvain.rs",
+        "src/algo/mod.rs",
+        "src/algo/pagerank.rs",
+        "src/algo/scc.rs",
+        "src/algo/spectral.rs",
+        "src/algo/stats.rs",
+        "src/algo/subgraph.rs",
+        "src/algo/topo_sort.rs",
+        "src/analysis/diff.rs",
+        "src/analysis/metrics.rs",
+        "src/analysis/mod.rs",
+        "src/analysis/smells.rs",
+        "src/cluster/mod.rs",
+        "src/detect/case_sensitivity.rs",
         "src/detect/filetype.rs",
         "src/detect/layer.rs",
-        "src/detect/mod.rs"
-      ],
-      "file_count": 3,
-      "internal_edges": 2,
-      "external_edges": 1,
-      "cohesion": 0.6667
-    },
-    "model": {
-      "files": [
+        "src/detect/mod.rs",
+        "src/detect/workspace.rs",
+        "src/diagnostic.rs",
+        "src/hash.rs",
+        "src/lib.rs",
+        "src/main.rs",
+        "src/mcp/lock.rs",
+        "src/mcp/mod.rs",
+        "src/mcp/server.rs",
+        "src/mcp/state.rs",
+        "src/mcp/tools.rs",
+        "src/mcp/watch.rs",
+        "src/model/compress.rs",
+        "src/model/diff.rs",
         "src/model/edge.rs",
         "src/model/graph.rs",
         "src/model/mod.rs",
         "src/model/node.rs",
-        "src/model/types.rs"
-      ],
-      "file_count": 5,
-      "internal_edges": 4,
-      "external_edges": 1,
-      "cohesion": 0.8
-    },
-    "parser": {
-      "files": [
+        "src/model/query.rs",
+        "src/model/smell.rs",
+        "src/model/stats.rs",
+        "src/model/types.rs",
+        "src/model/workspace.rs",
         "src/parser/csharp.rs",
         "src/parser/go.rs",
         "src/parser/java.rs",
@@ -43,47 +53,101 @@
         "src/parser/registry.rs",
         "src/parser/rust_lang.rs",
         "src/parser/traits.rs",
-        "src/parser/typescript.rs"
-      ],
-      "file_count": 9,
-      "internal_edges": 8,
-      "external_edges": 1,
-      "cohesion": 0.8889
-    },
-    "pipeline": {
-      "files": [
+        "src/parser/typescript.rs",
         "src/pipeline/build.rs",
         "src/pipeline/mod.rs",
         "src/pipeline/read.rs",
         "src/pipeline/resolve.rs",
-        "src/pipeline/walk.rs"
-      ],
-      "file_count": 5,
-      "internal_edges": 4,
-      "external_edges": 1,
-      "cohesion": 0.8
-    },
-    "root": {
-      "files": [
-        "src/diagnostic.rs",
-        "src/hash.rs",
-        "src/lib.rs",
-        "src/main.rs"
-      ],
-      "file_count": 4,
-      "internal_edges": 2,
-      "external_edges": 6,
-      "cohesion": 0.25
-    },
-    "serial": {
-      "files": [
+        "src/pipeline/walk.rs",
+        "src/serial/convert.rs",
         "src/serial/json.rs",
-        "src/serial/mod.rs"
+        "src/serial/mod.rs",
+        "src/views/cluster.rs",
+        "src/views/impact.rs",
+        "src/views/index.rs",
+        "src/views/mod.rs"
       ],
-      "file_count": 2,
-      "internal_edges": 1,
-      "external_edges": 1,
-      "cohesion": 0.5
+      "file_count": 64,
+      "internal_edges": 62,
+      "external_edges": 0,
+      "cohesion": 1.0
+    },
+    "benches": {
+      "files": [
+        "benches/algo_bench.rs",
+        "benches/analysis_bench.rs",
+        "benches/build_bench.rs",
+        "benches/helpers.rs",
+        "benches/mcp_bench.rs",
+        "benches/parser_bench.rs"
+      ],
+      "file_count": 6,
+      "internal_edges": 0,
+      "external_edges": 0,
+      "cohesion": 1.0
+    },
+    "tests": {
+      "files": [
+        "tests/fixtures/csharp-project/Data/UserRepository.cs",
+        "tests/fixtures/csharp-project/Program.cs",
+        "tests/fixtures/csharp-project/Services/AuthService.cs",
+        "tests/fixtures/csharp-project/Tests/AuthTests.cs",
+        "tests/fixtures/edge-cases/circular-a.ts",
+        "tests/fixtures/edge-cases/circular-b.ts",
+        "tests/fixtures/edge-cases/deeply/nested/a/b/c/d/file.ts",
+        "tests/fixtures/edge-cases/empty.ts",
+        "tests/fixtures/edge-cases/helper.ts",
+        "tests/fixtures/edge-cases/syntax-error.ts",
+        "tests/fixtures/edge-cases/valid.ts",
+        "tests/fixtures/go-service/cmd/server/main.go",
+        "tests/fixtures/go-service/internal/handler/handler.go",
+        "tests/fixtures/go-service/internal/repository/repo.go",
+        "tests/fixtures/go-service/internal/service/service.go",
+        "tests/fixtures/java-project/src/main/java/com/example/App.java",
+        "tests/fixtures/java-project/src/main/java/com/example/data/UserRepo.java",
+        "tests/fixtures/java-project/src/main/java/com/example/service/AuthService.java",
+        "tests/fixtures/java-project/src/test/java/com/example/AppTest.java",
+        "tests/fixtures/mixed-project/backend/main.go",
+        "tests/fixtures/mixed-project/frontend/src/App.tsx",
+        "tests/fixtures/mixed-project/frontend/src/components/Button.tsx",
+        "tests/fixtures/mixed-project/scripts/deploy.py",
+        "tests/fixtures/python-package/src/__init__.py",
+        "tests/fixtures/python-package/src/auth/__init__.py",
+        "tests/fixtures/python-package/src/auth/login.py",
+        "tests/fixtures/python-package/src/main.py",
+        "tests/fixtures/python-package/src/utils/__init__.py",
+        "tests/fixtures/python-package/src/utils/helpers.py",
+        "tests/fixtures/python-package/tests/conftest.py",
+        "tests/fixtures/python-package/tests/test_auth.py",
+        "tests/fixtures/rust-crate/src/auth/login.rs",
+        "tests/fixtures/rust-crate/src/auth/mod.rs",
+        "tests/fixtures/rust-crate/src/lib.rs",
+        "tests/fixtures/rust-crate/src/utils/format.rs",
+        "tests/fixtures/rust-crate/src/utils/mod.rs",
+        "tests/fixtures/rust-crate/tests/integration.rs",
+        "tests/fixtures/typescript-app/src/__tests__/login.test.ts",
+        "tests/fixtures/typescript-app/src/auth/login.ts",
+        "tests/fixtures/typescript-app/src/auth/register.ts",
+        "tests/fixtures/typescript-app/src/index.ts",
+        "tests/fixtures/typescript-app/src/types/index.d.ts",
+        "tests/fixtures/typescript-app/src/utils/format.ts",
+        "tests/fixtures/workspace-project/packages/api/src/index.ts",
+        "tests/fixtures/workspace-project/packages/api/src/router.ts",
+        "tests/fixtures/workspace-project/packages/auth/src/index.ts",
+        "tests/fixtures/workspace-project/packages/auth/src/login.ts",
+        "tests/fixtures/workspace-project/packages/shared/src/format.ts",
+        "tests/fixtures/workspace-project/packages/shared/src/index.ts",
+        "tests/graph_tests.rs",
+        "tests/helpers.rs",
+        "tests/invariants.rs",
+        "tests/mcp_tests.rs",
+        "tests/pipeline_tests.rs",
+        "tests/properties.rs"
+      ],
+      "file_count": 55,
+      "internal_edges": 19,
+      "external_edges": 0,
+      "cohesion": 1.0
     }
   }
 }

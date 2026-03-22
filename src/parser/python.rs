@@ -1,5 +1,6 @@
 use crate::model::workspace::WorkspaceInfo;
 use crate::model::{CanonicalPath, FileSet};
+use crate::parser::helpers;
 use crate::parser::traits::{ImportKind, ImportResolver, LanguageParser, RawExport, RawImport};
 
 /// Parser and resolver for Python files (.py, .pyi).
@@ -26,18 +27,6 @@ impl PythonParser {
             }
         }
         Some(text)
-    }
-
-    /// Find the first child of a given kind.
-    fn find_child_by_kind<'a>(
-        node: &tree_sitter::Node<'a>,
-        kind: &str,
-    ) -> Option<tree_sitter::Node<'a>> {
-        let mut cursor = node.walk();
-        let result = node
-            .children(&mut cursor)
-            .find(|child| child.kind() == kind);
-        result
     }
 
     /// Count the number of leading dots in a relative import.
@@ -70,7 +59,7 @@ impl PythonParser {
             }
             if child.kind() == "relative_import" {
                 // Get the dotted_name within the relative_import
-                if let Some(dotted) = Self::find_child_by_kind(&child, "dotted_name") {
+                if let Some(dotted) = helpers::find_child_by_kind(&child, "dotted_name") {
                     return dotted.utf8_text(source).ok().map(|s| s.to_string());
                 }
                 // Just dots, no module name (e.g., `from . import foo`)
@@ -100,8 +89,8 @@ impl PythonParser {
                     }
                 }
                 "aliased_import" => {
-                    if let Some(name_node) = Self::find_child_by_kind(&child, "dotted_name")
-                        .or_else(|| Self::find_child_by_kind(&child, "identifier"))
+                    if let Some(name_node) = helpers::find_child_by_kind(&child, "dotted_name")
+                        .or_else(|| helpers::find_child_by_kind(&child, "identifier"))
                     {
                         if let Ok(name) = name_node.utf8_text(source) {
                             names.push(name.to_string());
@@ -162,7 +151,7 @@ impl LanguageParser for PythonParser {
                             }
                             "aliased_import" => {
                                 if let Some(name_node) =
-                                    Self::find_child_by_kind(&child, "dotted_name")
+                                    helpers::find_child_by_kind(&child, "dotted_name")
                                 {
                                     if let Ok(name) = name_node.utf8_text(source) {
                                         if !Self::is_future_import(name) {
@@ -236,7 +225,7 @@ impl LanguageParser for PythonParser {
         for node in root.children(&mut cursor) {
             // __all__ = ['foo', 'bar']
             if node.kind() == "expression_statement" {
-                if let Some(assignment) = Self::find_child_by_kind(&node, "assignment") {
+                if let Some(assignment) = helpers::find_child_by_kind(&node, "assignment") {
                     let mut assign_cursor = assignment.walk();
                     let children: Vec<_> = assignment.children(&mut assign_cursor).collect();
 
@@ -278,14 +267,15 @@ impl LanguageParser for PythonParser {
                     "function_definition" | "decorated_definition" => {
                         let def_node = if node.kind() == "decorated_definition" {
                             // Get the actual definition inside the decorator
-                            Self::find_child_by_kind(&node, "function_definition")
-                                .or_else(|| Self::find_child_by_kind(&node, "class_definition"))
+                            helpers::find_child_by_kind(&node, "function_definition")
+                                .or_else(|| helpers::find_child_by_kind(&node, "class_definition"))
                         } else {
                             Some(node)
                         };
 
                         if let Some(def) = def_node {
-                            if let Some(name_node) = Self::find_child_by_kind(&def, "identifier") {
+                            if let Some(name_node) = helpers::find_child_by_kind(&def, "identifier")
+                            {
                                 if let Ok(name) = name_node.utf8_text(source) {
                                     if !name.starts_with('_') {
                                         exports.push(RawExport {
@@ -299,7 +289,7 @@ impl LanguageParser for PythonParser {
                         }
                     }
                     "class_definition" => {
-                        if let Some(name_node) = Self::find_child_by_kind(&node, "identifier") {
+                        if let Some(name_node) = helpers::find_child_by_kind(&node, "identifier") {
                             if let Ok(name) = name_node.utf8_text(source) {
                                 if !name.starts_with('_') {
                                     exports.push(RawExport {
@@ -346,7 +336,7 @@ impl PythonParser {
         }
 
         // Find the block and extract imports from it
-        if let Some(block) = Self::find_child_by_kind(node, "block") {
+        if let Some(block) = helpers::find_child_by_kind(node, "block") {
             let mut block_cursor = block.walk();
             for stmt in block.children(&mut block_cursor) {
                 match stmt.kind() {
@@ -365,7 +355,7 @@ impl PythonParser {
                             }
                             if child.kind() == "aliased_import" {
                                 if let Some(name_node) =
-                                    Self::find_child_by_kind(&child, "dotted_name")
+                                    helpers::find_child_by_kind(&child, "dotted_name")
                                 {
                                     if let Ok(name) = name_node.utf8_text(source) {
                                         imports.push(RawImport {
@@ -502,5 +492,175 @@ impl PythonResolver {
         }
 
         None
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::parser::traits::LanguageParser;
+
+    fn parse(source: &str) -> tree_sitter::Tree {
+        let mut parser = tree_sitter::Parser::new();
+        parser
+            .set_language(&tree_sitter::Language::from(tree_sitter_python::LANGUAGE))
+            .unwrap();
+        parser.parse(source, None).unwrap()
+    }
+
+    fn imports(source: &str) -> Vec<RawImport> {
+        let tree = parse(source);
+        PythonParser::new().extract_imports(&tree, source.as_bytes())
+    }
+
+    fn exports(source: &str) -> Vec<RawExport> {
+        let tree = parse(source);
+        PythonParser::new().extract_exports(&tree, source.as_bytes())
+    }
+
+    // ---- Import tests ----
+
+    #[test]
+    fn import_simple_module() {
+        let result = imports("import os");
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].path, "os");
+        assert!(result[0].symbols.is_empty());
+        assert!(!result[0].is_type_only);
+    }
+
+    #[test]
+    fn import_dotted_module() {
+        let result = imports("import os.path");
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].path, "os.path");
+    }
+
+    #[test]
+    fn from_import_symbols() {
+        let result = imports("from os import path, getcwd");
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].path, "os");
+        assert_eq!(result[0].symbols, vec!["path", "getcwd"]);
+    }
+
+    #[test]
+    fn from_relative_import_single_dot() {
+        let result = imports("from . import utils");
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].path, ".");
+        assert_eq!(result[0].symbols, vec!["utils"]);
+    }
+
+    #[test]
+    fn from_relative_import_double_dot() {
+        let result = imports("from ..pkg import helper");
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].path, "..pkg");
+        assert_eq!(result[0].symbols, vec!["helper"]);
+    }
+
+    #[test]
+    fn from_import_wildcard() {
+        let result = imports("from pkg import *");
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].path, "pkg");
+        assert_eq!(result[0].symbols, vec!["*"]);
+    }
+
+    #[test]
+    fn import_aliased() {
+        let result = imports("import numpy as np");
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].path, "numpy");
+    }
+
+    #[test]
+    fn type_checking_imports() {
+        let source = r#"
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    import some_module
+    from other import Foo
+"#;
+        let result = imports(source);
+        // The top-level `from typing import TYPE_CHECKING` counts as one
+        // Plus 2 type-only imports inside the block
+        let type_only: Vec<_> = result.iter().filter(|i| i.is_type_only).collect();
+        assert_eq!(type_only.len(), 2);
+        assert!(type_only.iter().any(|i| i.path == "some_module"));
+        assert!(type_only.iter().any(|i| i.path == "other"));
+    }
+
+    #[test]
+    fn future_import_skipped() {
+        let result = imports("from __future__ import annotations");
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn empty_source_no_imports() {
+        let result = imports("");
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn malformed_source_no_crash() {
+        let result = imports("from import");
+        // Should not panic; result may be empty or partial
+        let _ = result;
+    }
+
+    // ---- Export tests ----
+
+    #[test]
+    fn exports_all_list() {
+        let source = r#"__all__ = ['foo', 'bar']"#;
+        let result = exports(source);
+        assert_eq!(result.len(), 2);
+        assert!(result.iter().any(|e| e.name == "foo"));
+        assert!(result.iter().any(|e| e.name == "bar"));
+    }
+
+    #[test]
+    fn exports_public_functions_and_classes() {
+        let source = r#"
+def public_func():
+    pass
+
+def _private_func():
+    pass
+
+class MyClass:
+    pass
+
+class _Internal:
+    pass
+"#;
+        let result = exports(source);
+        let names: Vec<&str> = result.iter().map(|e| e.name.as_str()).collect();
+        assert!(names.contains(&"public_func"));
+        assert!(names.contains(&"MyClass"));
+        assert!(!names.contains(&"_private_func"));
+        assert!(!names.contains(&"_Internal"));
+    }
+
+    #[test]
+    fn exports_all_overrides_fallback() {
+        let source = r#"
+__all__ = ['only_this']
+
+def public_func():
+    pass
+"#;
+        let result = exports(source);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].name, "only_this");
+    }
+
+    #[test]
+    fn exports_empty_source() {
+        let result = exports("");
+        assert!(result.is_empty());
     }
 }

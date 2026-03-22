@@ -1,11 +1,14 @@
 use std::collections::{BTreeMap, VecDeque};
 
-use crate::algo::{build_adjacency, is_architectural, round4};
+use crate::algo::{round4, AdjacencyIndex};
 use crate::model::{CanonicalPath, ProjectGraph};
 
 /// Compute betweenness centrality using Brandes algorithm.
 /// Returns normalized values in [0.0, 1.0], rounded to 4 decimal places.
-pub fn betweenness_centrality(graph: &ProjectGraph) -> BTreeMap<CanonicalPath, f64> {
+pub fn betweenness_centrality(
+    graph: &ProjectGraph,
+    index: &AdjacencyIndex,
+) -> BTreeMap<CanonicalPath, f64> {
     let nodes: Vec<&CanonicalPath> = graph.nodes.keys().collect();
     let n = nodes.len();
 
@@ -21,7 +24,7 @@ pub fn betweenness_centrality(graph: &ProjectGraph) -> BTreeMap<CanonicalPath, f
             .collect();
     }
 
-    let (forward, _) = build_adjacency(&graph.edges, is_architectural);
+    let forward = &index.forward;
 
     // Brandes algorithm
     for &source in &nodes {
@@ -92,6 +95,7 @@ pub fn betweenness_centrality(graph: &ProjectGraph) -> BTreeMap<CanonicalPath, f
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::algo::is_architectural;
     use crate::model::*;
 
     fn make_graph(node_names: &[&str], edges: &[(&str, &str)]) -> ProjectGraph {
@@ -129,7 +133,8 @@ mod tests {
             &["a", "b", "c", "d", "e"],
             &[("a", "c"), ("b", "c"), ("d", "c"), ("c", "e")],
         );
-        let bc = betweenness_centrality(&graph);
+        let index = AdjacencyIndex::build(&graph.edges, is_architectural);
+        let bc = betweenness_centrality(&graph, &index);
         let c_val = bc[&CanonicalPath::new("c")];
         for name in &["a", "b", "d", "e"] {
             assert!(c_val >= bc[&CanonicalPath::new(*name)]);
@@ -140,7 +145,8 @@ mod tests {
     fn linear_chain_middle_highest() {
         // A→B→C→D: B and C should have higher centrality
         let graph = make_graph(&["a", "b", "c", "d"], &[("a", "b"), ("b", "c"), ("c", "d")]);
-        let bc = betweenness_centrality(&graph);
+        let index = AdjacencyIndex::build(&graph.edges, is_architectural);
+        let bc = betweenness_centrality(&graph, &index);
         let b_val = bc[&CanonicalPath::new("b")];
         let c_val = bc[&CanonicalPath::new("c")];
         let a_val = bc[&CanonicalPath::new("a")];
@@ -155,7 +161,8 @@ mod tests {
             &["a", "b", "c", "d"],
             &[("a", "b"), ("b", "c"), ("c", "d"), ("a", "c")],
         );
-        let bc = betweenness_centrality(&graph);
+        let index = AdjacencyIndex::build(&graph.edges, is_architectural);
+        let bc = betweenness_centrality(&graph, &index);
         for &v in bc.values() {
             assert!(v >= 0.0);
             assert!(v <= 1.0);
@@ -165,7 +172,8 @@ mod tests {
     #[test]
     fn fewer_than_3_nodes() {
         let graph = make_graph(&["a", "b"], &[("a", "b")]);
-        let bc = betweenness_centrality(&graph);
+        let index = AdjacencyIndex::build(&graph.edges, is_architectural);
+        let bc = betweenness_centrality(&graph, &index);
         for &v in bc.values() {
             assert_eq!(v, 0.0);
         }
@@ -184,8 +192,9 @@ mod tests {
                 ("b", "d"),
             ],
         );
-        let bc1 = betweenness_centrality(&graph);
-        let bc2 = betweenness_centrality(&graph);
+        let index = AdjacencyIndex::build(&graph.edges, is_architectural);
+        let bc1 = betweenness_centrality(&graph, &index);
+        let bc2 = betweenness_centrality(&graph, &index);
         assert_eq!(bc1, bc2);
     }
 }

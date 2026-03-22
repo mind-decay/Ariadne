@@ -52,7 +52,7 @@ impl GraphReader for JsonSerializer {
 
     fn read_clusters(&self, dir: &Path) -> Result<ClusterOutput, FatalError> {
         let path = dir.join("clusters.json");
-        let file = fs::File::open(&path).map_err(|_| FatalError::GraphNotFound {
+        let file = fs::File::open(&path).map_err(|_| FatalError::ClustersNotFound {
             path: dir.to_path_buf(),
         })?;
         let reader = BufReader::new(file);

@@ -175,29 +175,27 @@ fn start_poll_fallback(
                 continue; // Already rebuilding
             }
 
-            // Check if any files changed by comparing node count / hashes
-            // For simplicity, do a full rebuild and let the pipeline's delta logic
-            // handle the no-op case
+            // Use incremental update with delta detection — only rebuilds
+            // when file content hashes have actually changed
             let config = WalkConfig::default();
-            match pipeline.run_with_output(
+            let reader = JsonSerializer;
+            match pipeline.update(
                 &project_root,
                 config,
+                &reader,
                 Some(&output_dir),
                 false,
                 false,
                 false,
             ) {
-                Ok(_) => {
-                    let reader = JsonSerializer;
-                    match load_graph_state(&output_dir, &reader) {
-                        Ok(new_state) => {
-                            state.store(Arc::new(new_state));
-                        }
-                        Err(e) => {
-                            eprintln!("[ariadne] Poll rebuild: failed to reload state: {}", e);
-                        }
+                Ok(_) => match load_graph_state(&output_dir, &reader) {
+                    Ok(new_state) => {
+                        state.store(Arc::new(new_state));
                     }
-                }
+                    Err(e) => {
+                        eprintln!("[ariadne] Poll rebuild: failed to reload state: {}", e);
+                    }
+                },
                 Err(e) => {
                     eprintln!("[ariadne] Poll rebuild failed: {}", e);
                 }

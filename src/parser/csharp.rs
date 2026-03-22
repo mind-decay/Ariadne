@@ -242,3 +242,135 @@ pub(crate) fn parser() -> Box<dyn LanguageParser> {
 pub(crate) fn resolver() -> Box<dyn ImportResolver> {
     Box::new(CSharpResolver)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::parser::traits::LanguageParser;
+
+    fn parse(source: &str) -> tree_sitter::Tree {
+        let mut parser = tree_sitter::Parser::new();
+        parser
+            .set_language(&tree_sitter::Language::from(tree_sitter_c_sharp::LANGUAGE))
+            .unwrap();
+        parser.parse(source, None).unwrap()
+    }
+
+    fn cs_imports(source: &str) -> Vec<RawImport> {
+        let tree = parse(source);
+        CSharpParser.extract_imports(&tree, source.as_bytes())
+    }
+
+    fn cs_exports(source: &str) -> Vec<RawExport> {
+        let tree = parse(source);
+        CSharpParser.extract_exports(&tree, source.as_bytes())
+    }
+
+    // ---- Import tests ----
+
+    #[test]
+    fn using_namespace() {
+        let source = "using System.Collections.Generic;";
+        let result = cs_imports(source);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].path, "System.Collections.Generic");
+        assert!(result[0].symbols.is_empty());
+    }
+
+    #[test]
+    fn using_static() {
+        let source = "using static System.Math;";
+        let result = cs_imports(source);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].path, "System.Math");
+        assert!(result[0].symbols.contains(&"static".to_string()));
+    }
+
+    #[test]
+    fn using_alias() {
+        let source = "using MyList = System.Collections.Generic.List<int>;";
+        let result = cs_imports(source);
+        assert_eq!(result.len(), 1);
+        // The alias name should be in symbols, the namespace in path
+        assert!(result[0].symbols.contains(&"MyList".to_string()));
+    }
+
+    #[test]
+    fn multiple_usings() {
+        let source = r#"
+using System;
+using System.IO;
+using System.Linq;
+"#;
+        let result = cs_imports(source);
+        assert_eq!(result.len(), 3);
+    }
+
+    #[test]
+    fn using_inside_namespace() {
+        let source = r#"
+namespace MyApp {
+    using System.Linq;
+    public class Foo {}
+}
+"#;
+        let result = cs_imports(source);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].path, "System.Linq");
+    }
+
+    #[test]
+    fn empty_source_no_imports() {
+        let result = cs_imports("");
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn malformed_no_crash() {
+        let result = cs_imports("using ;");
+        let _ = result;
+    }
+
+    // ---- Export tests ----
+
+    #[test]
+    fn public_class_exported() {
+        let source = r#"
+namespace MyApp {
+    public class MyService {}
+}
+"#;
+        let result = cs_exports(source);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].name, "MyService");
+    }
+
+    #[test]
+    fn public_interface_exported() {
+        let source = r#"
+namespace MyApp {
+    public interface IRepository {}
+}
+"#;
+        let result = cs_exports(source);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].name, "IRepository");
+    }
+
+    #[test]
+    fn internal_class_not_exported() {
+        let source = r#"
+namespace MyApp {
+    class InternalClass {}
+}
+"#;
+        let result = cs_exports(source);
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn empty_source_no_exports() {
+        let result = cs_exports("");
+        assert!(result.is_empty());
+    }
+}

@@ -48,9 +48,10 @@ fn build_synthetic_state(node_count: usize, edge_count: usize) -> GraphState {
 
     let graph = ProjectGraph { nodes, edges };
 
-    let sccs = algo::scc::find_sccs(&graph);
-    let layers = algo::topo_sort::topological_layers(&graph, &sccs);
-    let centrality = algo::centrality::betweenness_centrality(&graph);
+    let index = algo::AdjacencyIndex::build(&graph.edges, algo::is_architectural);
+    let sccs = algo::scc::find_sccs(&graph, &index);
+    let layers = algo::topo_sort::topological_layers(&graph, &sccs, &index);
+    let centrality = algo::centrality::betweenness_centrality(&graph, &index);
     let stats = algo::stats::compute_stats(&graph, &centrality, &sccs, &layers);
 
     let mut cluster_map = BTreeMap::new();
@@ -114,7 +115,8 @@ fn bench_mcp_blast_radius(c: &mut Criterion) {
     let target = state.graph.nodes.keys().next().unwrap().clone();
 
     c.bench_function("mcp_blast_radius_3000", |b| {
-        b.iter(|| algo::blast_radius::blast_radius(&state.graph, &target, None))
+        let index = algo::AdjacencyIndex::build(&state.graph.edges, algo::is_architectural);
+        b.iter(|| algo::blast_radius::blast_radius(&state.graph, &target, None, &index))
     });
 }
 

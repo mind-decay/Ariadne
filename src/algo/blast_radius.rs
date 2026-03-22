@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, VecDeque};
 
-use crate::algo::{build_adjacency, is_architectural};
+use crate::algo::AdjacencyIndex;
 use crate::model::{CanonicalPath, ProjectGraph};
 
 /// Compute blast radius via reverse BFS from the given file.
@@ -10,6 +10,7 @@ pub fn blast_radius(
     graph: &ProjectGraph,
     file: &CanonicalPath,
     max_depth: Option<u32>,
+    index: &AdjacencyIndex,
 ) -> BTreeMap<CanonicalPath, u32> {
     let mut result = BTreeMap::new();
 
@@ -17,7 +18,7 @@ pub fn blast_radius(
         return result;
     }
 
-    let (_, reverse) = build_adjacency(&graph.edges, is_architectural);
+    let reverse = &index.reverse;
 
     let mut queue = VecDeque::new();
     result.insert(file.clone(), 0);
@@ -46,6 +47,7 @@ pub fn blast_radius(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::algo::is_architectural;
     use crate::model::*;
 
     fn make_graph(node_names: &[&str], edges: &[(&str, &str)]) -> ProjectGraph {
@@ -80,7 +82,8 @@ mod tests {
     fn linear_chain() {
         // A→B→C: blast_radius(C) = {C:0, B:1, A:2}
         let graph = make_graph(&["a", "b", "c"], &[("a", "b"), ("b", "c")]);
-        let result = blast_radius(&graph, &CanonicalPath::new("c"), None);
+        let index = AdjacencyIndex::build(&graph.edges, is_architectural);
+        let result = blast_radius(&graph, &CanonicalPath::new("c"), None, &index);
         assert_eq!(result[&CanonicalPath::new("c")], 0);
         assert_eq!(result[&CanonicalPath::new("b")], 1);
         assert_eq!(result[&CanonicalPath::new("a")], 2);
@@ -89,7 +92,8 @@ mod tests {
     #[test]
     fn with_depth_limit() {
         let graph = make_graph(&["a", "b", "c"], &[("a", "b"), ("b", "c")]);
-        let result = blast_radius(&graph, &CanonicalPath::new("c"), Some(1));
+        let index = AdjacencyIndex::build(&graph.edges, is_architectural);
+        let result = blast_radius(&graph, &CanonicalPath::new("c"), Some(1), &index);
         assert_eq!(result.len(), 2);
         assert_eq!(result[&CanonicalPath::new("c")], 0);
         assert_eq!(result[&CanonicalPath::new("b")], 1);
@@ -99,7 +103,8 @@ mod tests {
     #[test]
     fn disconnected_node() {
         let graph = make_graph(&["a", "b"], &[]);
-        let result = blast_radius(&graph, &CanonicalPath::new("a"), None);
+        let index = AdjacencyIndex::build(&graph.edges, is_architectural);
+        let result = blast_radius(&graph, &CanonicalPath::new("a"), None, &index);
         assert_eq!(result.len(), 1);
         assert_eq!(result[&CanonicalPath::new("a")], 0);
     }
@@ -107,7 +112,8 @@ mod tests {
     #[test]
     fn nonexistent_file() {
         let graph = make_graph(&["a"], &[]);
-        let result = blast_radius(&graph, &CanonicalPath::new("z"), None);
+        let index = AdjacencyIndex::build(&graph.edges, is_architectural);
+        let result = blast_radius(&graph, &CanonicalPath::new("z"), None, &index);
         assert!(result.is_empty());
     }
 
@@ -127,7 +133,8 @@ mod tests {
             edge_type: EdgeType::ReExports,
             symbols: vec![],
         });
-        let result = blast_radius(&graph, &CanonicalPath::new("c"), None);
+        let index = AdjacencyIndex::build(&graph.edges, is_architectural);
+        let result = blast_radius(&graph, &CanonicalPath::new("c"), None, &index);
         assert_eq!(result.len(), 3);
     }
 }

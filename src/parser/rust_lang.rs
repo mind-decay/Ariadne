@@ -1,5 +1,6 @@
 use crate::model::workspace::WorkspaceInfo;
 use crate::model::{CanonicalPath, FileSet};
+use crate::parser::helpers;
 use crate::parser::traits::{ImportKind, ImportResolver, LanguageParser, RawExport, RawImport};
 
 /// Parser and resolver for Rust source files (.rs).
@@ -8,18 +9,6 @@ pub(crate) struct RustParser;
 impl RustParser {
     pub fn new() -> Self {
         Self
-    }
-
-    /// Find the first child of a given kind.
-    fn find_child_by_kind<'a>(
-        node: &tree_sitter::Node<'a>,
-        kind: &str,
-    ) -> Option<tree_sitter::Node<'a>> {
-        let mut cursor = node.walk();
-        let result = node
-            .children(&mut cursor)
-            .find(|child| child.kind() == kind);
-        result
     }
 
     /// Extract path segments from a scoped_identifier or use path.
@@ -34,11 +23,11 @@ impl RustParser {
         match node.kind() {
             "scoped_identifier" | "scoped_type_identifier" => {
                 // Has a path (left) and a name (right)
-                if let Some(path) = Self::find_child_by_kind(node, "scoped_identifier")
-                    .or_else(|| Self::find_child_by_kind(node, "identifier"))
-                    .or_else(|| Self::find_child_by_kind(node, "crate"))
-                    .or_else(|| Self::find_child_by_kind(node, "super"))
-                    .or_else(|| Self::find_child_by_kind(node, "self"))
+                if let Some(path) = helpers::find_child_by_kind(node, "scoped_identifier")
+                    .or_else(|| helpers::find_child_by_kind(node, "identifier"))
+                    .or_else(|| helpers::find_child_by_kind(node, "crate"))
+                    .or_else(|| helpers::find_child_by_kind(node, "super"))
+                    .or_else(|| helpers::find_child_by_kind(node, "self"))
                 {
                     Self::collect_path_segments(&path, source, segments);
                 }
@@ -110,7 +99,8 @@ impl RustParser {
                             }
                             "use_as_clause" => {
                                 // use crate::{foo as bar}
-                                if let Some(orig) = Self::find_child_by_kind(&item, "identifier") {
+                                if let Some(orig) = helpers::find_child_by_kind(&item, "identifier")
+                                {
                                     let segments = Self::extract_path_segments(&orig, source);
                                     if !segments.is_empty() {
                                         let symbol = segments.last().cloned().unwrap_or_default();
@@ -132,9 +122,10 @@ impl RustParser {
                 "use_wildcard" => {
                     // use crate::foo::*
                     // Get the path part
-                    if let Some(path_node) = Self::find_child_by_kind(&child, "scoped_identifier")
-                        .or_else(|| Self::find_child_by_kind(&child, "identifier"))
-                        .or_else(|| Self::find_child_by_kind(&child, "crate"))
+                    if let Some(path_node) =
+                        helpers::find_child_by_kind(&child, "scoped_identifier")
+                            .or_else(|| helpers::find_child_by_kind(&child, "identifier"))
+                            .or_else(|| helpers::find_child_by_kind(&child, "crate"))
                     {
                         let segments = Self::extract_path_segments(&path_node, source);
                         results.push((segments, vec!["*".to_string()]));
@@ -199,9 +190,9 @@ impl RustParser {
                                 results.push((full_path, vec![symbol]));
                             }
                             "use_as_clause" => {
-                                if let Some(orig) = Self::find_child_by_kind(&item, "identifier")
+                                if let Some(orig) = helpers::find_child_by_kind(&item, "identifier")
                                     .or_else(|| {
-                                        Self::find_child_by_kind(&item, "scoped_identifier")
+                                        helpers::find_child_by_kind(&item, "scoped_identifier")
                                     })
                                 {
                                     let sub_segments = Self::extract_path_segments(&orig, source);
@@ -282,13 +273,13 @@ impl LanguageParser for RustParser {
                 // mod auth; — module declaration (treated as import)
                 "mod_item" => {
                     // Check that it's a declaration (no body block)
-                    let has_body = Self::find_child_by_kind(&node, "declaration_list").is_some();
+                    let has_body = helpers::find_child_by_kind(&node, "declaration_list").is_some();
                     if has_body {
                         // Inline module definition, not a file import
                         continue;
                     }
 
-                    if let Some(name_node) = Self::find_child_by_kind(&node, "identifier") {
+                    if let Some(name_node) = helpers::find_child_by_kind(&node, "identifier") {
                         if let Ok(name) = name_node.utf8_text(source) {
                             // mod declarations are imports to the module file
                             imports.push(RawImport {
@@ -326,7 +317,7 @@ impl LanguageParser for RustParser {
 
             match node.kind() {
                 "function_item" => {
-                    if let Some(name_node) = Self::find_child_by_kind(&node, "identifier") {
+                    if let Some(name_node) = helpers::find_child_by_kind(&node, "identifier") {
                         if let Ok(name) = name_node.utf8_text(source) {
                             exports.push(RawExport {
                                 name: name.to_string(),
@@ -337,7 +328,7 @@ impl LanguageParser for RustParser {
                     }
                 }
                 "struct_item" => {
-                    if let Some(name_node) = Self::find_child_by_kind(&node, "type_identifier") {
+                    if let Some(name_node) = helpers::find_child_by_kind(&node, "type_identifier") {
                         if let Ok(name) = name_node.utf8_text(source) {
                             exports.push(RawExport {
                                 name: name.to_string(),
@@ -348,7 +339,7 @@ impl LanguageParser for RustParser {
                     }
                 }
                 "enum_item" => {
-                    if let Some(name_node) = Self::find_child_by_kind(&node, "type_identifier") {
+                    if let Some(name_node) = helpers::find_child_by_kind(&node, "type_identifier") {
                         if let Ok(name) = name_node.utf8_text(source) {
                             exports.push(RawExport {
                                 name: name.to_string(),
@@ -359,7 +350,7 @@ impl LanguageParser for RustParser {
                     }
                 }
                 "trait_item" => {
-                    if let Some(name_node) = Self::find_child_by_kind(&node, "type_identifier") {
+                    if let Some(name_node) = helpers::find_child_by_kind(&node, "type_identifier") {
                         if let Ok(name) = name_node.utf8_text(source) {
                             exports.push(RawExport {
                                 name: name.to_string(),
@@ -370,7 +361,7 @@ impl LanguageParser for RustParser {
                     }
                 }
                 "type_item" => {
-                    if let Some(name_node) = Self::find_child_by_kind(&node, "type_identifier") {
+                    if let Some(name_node) = helpers::find_child_by_kind(&node, "type_identifier") {
                         if let Ok(name) = name_node.utf8_text(source) {
                             exports.push(RawExport {
                                 name: name.to_string(),
@@ -381,7 +372,7 @@ impl LanguageParser for RustParser {
                     }
                 }
                 "const_item" | "static_item" => {
-                    if let Some(name_node) = Self::find_child_by_kind(&node, "identifier") {
+                    if let Some(name_node) = helpers::find_child_by_kind(&node, "identifier") {
                         if let Ok(name) = name_node.utf8_text(source) {
                             exports.push(RawExport {
                                 name: name.to_string(),
@@ -392,7 +383,7 @@ impl LanguageParser for RustParser {
                     }
                 }
                 "mod_item" => {
-                    if let Some(name_node) = Self::find_child_by_kind(&node, "identifier") {
+                    if let Some(name_node) = helpers::find_child_by_kind(&node, "identifier") {
                         if let Ok(name) = name_node.utf8_text(source) {
                             exports.push(RawExport {
                                 name: name.to_string(),
@@ -593,5 +584,162 @@ impl RustResolver {
         }
 
         None
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::parser::traits::LanguageParser;
+
+    fn parse(source: &str) -> tree_sitter::Tree {
+        let mut parser = tree_sitter::Parser::new();
+        parser
+            .set_language(&tree_sitter::Language::from(tree_sitter_rust::LANGUAGE))
+            .unwrap();
+        parser.parse(source, None).unwrap()
+    }
+
+    fn rust_imports(source: &str) -> Vec<RawImport> {
+        let tree = parse(source);
+        RustParser::new().extract_imports(&tree, source.as_bytes())
+    }
+
+    fn rust_exports(source: &str) -> Vec<RawExport> {
+        let tree = parse(source);
+        RustParser::new().extract_exports(&tree, source.as_bytes())
+    }
+
+    // ---- Import tests ----
+
+    #[test]
+    fn use_crate_grouped() {
+        // use crate::{foo, bar} uses scoped_use_list which extracts crate prefix
+        let result = rust_imports("use crate::{auth, utils};");
+        assert!(
+            result.len() >= 1,
+            "grouped crate imports should be found: {:?}",
+            result
+        );
+        // All returned imports should have crate:: prefix
+        for imp in &result {
+            assert!(
+                imp.path.contains("crate"),
+                "path should contain crate: {}",
+                imp.path
+            );
+        }
+    }
+
+    #[test]
+    fn use_self_module() {
+        let result = rust_imports("use self::helpers;");
+        // self:: imports use scoped_identifier path extraction
+        let _ = result; // Should not panic
+    }
+
+    #[test]
+    fn use_nested_grouped() {
+        // Nested grouped use: crate::{model::{Node, Edge}}
+        let result = rust_imports("use crate::{model::{Node, Edge}};");
+        assert!(
+            result.len() >= 2,
+            "nested grouped use should produce at least 2 imports: {:?}",
+            result
+        );
+    }
+
+    #[test]
+    fn multiple_use_declarations() {
+        let source = r#"
+mod auth;
+mod config;
+use crate::{auth, config};
+"#;
+        let result = rust_imports(source);
+        // 2 mod declarations + at least 2 from grouped use
+        let mod_decls: Vec<_> = result
+            .iter()
+            .filter(|i| i.kind == ImportKind::ModDeclaration)
+            .collect();
+        assert_eq!(mod_decls.len(), 2);
+    }
+
+    #[test]
+    fn mod_declaration_import() {
+        let result = rust_imports("mod auth;");
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].path, "auth");
+        assert_eq!(result[0].kind, ImportKind::ModDeclaration);
+    }
+
+    #[test]
+    fn inline_mod_not_import() {
+        let result = rust_imports("mod inline { fn foo() {} }");
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn use_std_skipped() {
+        let result = rust_imports("use std::collections::HashMap;");
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn use_external_crate_skipped() {
+        let result = rust_imports("use serde::Serialize;");
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn empty_source_no_imports() {
+        let result = rust_imports("");
+        assert!(result.is_empty());
+    }
+
+    // ---- Export tests ----
+
+    #[test]
+    fn pub_function_exported() {
+        let result = rust_exports("pub fn my_func() {}");
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].name, "my_func");
+        assert!(!result[0].is_re_export);
+    }
+
+    #[test]
+    fn pub_struct_exported() {
+        let result = rust_exports("pub struct MyStruct {}");
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].name, "MyStruct");
+    }
+
+    #[test]
+    fn pub_enum_exported() {
+        let result = rust_exports("pub enum Color { Red, Blue }");
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].name, "Color");
+    }
+
+    #[test]
+    fn pub_use_re_export() {
+        let result = rust_exports("pub use crate::model::Graph;");
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].name, "Graph");
+        assert!(result[0].is_re_export);
+        assert!(result[0].source.is_some());
+    }
+
+    #[test]
+    fn private_items_not_exported() {
+        let result = rust_exports("fn private_fn() {}\nstruct PrivStruct {}");
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn pub_crate_is_exported() {
+        let result = rust_exports("pub(crate) fn internal() {}");
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].name, "internal");
     }
 }

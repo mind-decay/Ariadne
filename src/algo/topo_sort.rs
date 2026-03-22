@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
-use crate::algo::{build_adjacency, is_architectural};
+use crate::algo::AdjacencyIndex;
 use crate::model::{CanonicalPath, ProjectGraph};
 
 /// Compute topological layers after SCC contraction.
@@ -10,8 +10,9 @@ use crate::model::{CanonicalPath, ProjectGraph};
 pub fn topological_layers(
     graph: &ProjectGraph,
     sccs: &[Vec<CanonicalPath>],
+    index: &AdjacencyIndex,
 ) -> BTreeMap<CanonicalPath, u32> {
-    let (forward, _) = build_adjacency(&graph.edges, is_architectural);
+    let forward = &index.forward;
 
     // Build SCC membership: file → scc_index
     let mut scc_membership: BTreeMap<&CanonicalPath, usize> = BTreeMap::new();
@@ -114,6 +115,7 @@ pub fn topological_layers(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::algo::is_architectural;
     use crate::algo::scc::find_sccs;
     use crate::model::*;
 
@@ -149,8 +151,9 @@ mod tests {
     fn linear_chain() {
         // A→B→C: A=2, B=1, C=0
         let graph = make_graph(&["a", "b", "c"], &[("a", "b"), ("b", "c")]);
-        let sccs = find_sccs(&graph);
-        let layers = topological_layers(&graph, &sccs);
+        let index = AdjacencyIndex::build(&graph.edges, is_architectural);
+        let sccs = find_sccs(&graph, &index);
+        let layers = topological_layers(&graph, &sccs, &index);
         assert_eq!(layers[&CanonicalPath::new("a")], 2);
         assert_eq!(layers[&CanonicalPath::new("b")], 1);
         assert_eq!(layers[&CanonicalPath::new("c")], 0);
@@ -164,8 +167,9 @@ mod tests {
             &["a", "b", "c", "d"],
             &[("a", "b"), ("a", "c"), ("b", "d"), ("c", "d")],
         );
-        let sccs = find_sccs(&graph);
-        let layers = topological_layers(&graph, &sccs);
+        let index = AdjacencyIndex::build(&graph.edges, is_architectural);
+        let sccs = find_sccs(&graph, &index);
+        let layers = topological_layers(&graph, &sccs, &index);
         assert_eq!(layers[&CanonicalPath::new("a")], 2);
         assert_eq!(layers[&CanonicalPath::new("b")], 1);
         assert_eq!(layers[&CanonicalPath::new("c")], 1);
@@ -177,8 +181,9 @@ mod tests {
         // A→B→A (cycle), B→C
         // SCC={A,B} shares a layer. C=0, {A,B}=1
         let graph = make_graph(&["a", "b", "c"], &[("a", "b"), ("b", "a"), ("b", "c")]);
-        let sccs = find_sccs(&graph);
-        let layers = topological_layers(&graph, &sccs);
+        let index = AdjacencyIndex::build(&graph.edges, is_architectural);
+        let sccs = find_sccs(&graph, &index);
+        let layers = topological_layers(&graph, &sccs, &index);
         assert_eq!(
             layers[&CanonicalPath::new("a")],
             layers[&CanonicalPath::new("b")]
@@ -190,8 +195,9 @@ mod tests {
     #[test]
     fn single_node() {
         let graph = make_graph(&["a"], &[]);
-        let sccs = find_sccs(&graph);
-        let layers = topological_layers(&graph, &sccs);
+        let index = AdjacencyIndex::build(&graph.edges, is_architectural);
+        let sccs = find_sccs(&graph, &index);
+        let layers = topological_layers(&graph, &sccs, &index);
         assert_eq!(layers[&CanonicalPath::new("a")], 0);
     }
 
@@ -201,8 +207,9 @@ mod tests {
             nodes: BTreeMap::new(),
             edges: vec![],
         };
-        let sccs = find_sccs(&graph);
-        let layers = topological_layers(&graph, &sccs);
+        let index = AdjacencyIndex::build(&graph.edges, is_architectural);
+        let sccs = find_sccs(&graph, &index);
+        let layers = topological_layers(&graph, &sccs, &index);
         assert!(layers.is_empty());
     }
 }

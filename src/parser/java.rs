@@ -235,3 +235,125 @@ pub(crate) fn parser() -> Box<dyn LanguageParser> {
 pub(crate) fn resolver() -> Box<dyn ImportResolver> {
     Box::new(JavaResolver)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::parser::traits::LanguageParser;
+
+    fn parse(source: &str) -> tree_sitter::Tree {
+        let mut parser = tree_sitter::Parser::new();
+        parser
+            .set_language(&tree_sitter::Language::from(tree_sitter_java::LANGUAGE))
+            .unwrap();
+        parser.parse(source, None).unwrap()
+    }
+
+    fn java_imports(source: &str) -> Vec<RawImport> {
+        let tree = parse(source);
+        JavaParser.extract_imports(&tree, source.as_bytes())
+    }
+
+    fn java_exports(source: &str) -> Vec<RawExport> {
+        let tree = parse(source);
+        JavaParser.extract_exports(&tree, source.as_bytes())
+    }
+
+    // ---- Import tests ----
+
+    #[test]
+    fn import_single_class() {
+        let source = "import com.example.MyClass;";
+        let result = java_imports(source);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].path, "com.example.MyClass");
+        assert!(result[0].symbols.is_empty());
+    }
+
+    #[test]
+    fn import_wildcard() {
+        let source = "import com.example.*;";
+        let result = java_imports(source);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].path, "com.example.*");
+    }
+
+    #[test]
+    fn import_static() {
+        let source = "import static org.junit.Assert.assertEquals;";
+        let result = java_imports(source);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].path, "org.junit.Assert.assertEquals");
+        assert!(result[0].symbols.contains(&"static".to_string()));
+    }
+
+    #[test]
+    fn import_multiple() {
+        let source = r#"
+import java.util.List;
+import java.util.Map;
+import java.io.File;
+"#;
+        let result = java_imports(source);
+        assert_eq!(result.len(), 3);
+    }
+
+    #[test]
+    fn import_static_wildcard() {
+        let source = "import static com.example.Constants.*;";
+        let result = java_imports(source);
+        assert_eq!(result.len(), 1);
+        assert!(result[0].symbols.contains(&"static".to_string()));
+    }
+
+    #[test]
+    fn empty_source_no_imports() {
+        let result = java_imports("");
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn malformed_no_crash() {
+        let result = java_imports("import ;");
+        let _ = result;
+    }
+
+    // ---- Export tests ----
+
+    #[test]
+    fn public_class_exported() {
+        let source = "public class MyService {}";
+        let result = java_exports(source);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].name, "MyService");
+    }
+
+    #[test]
+    fn public_interface_exported() {
+        let source = "public interface Dao {}";
+        let result = java_exports(source);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].name, "Dao");
+    }
+
+    #[test]
+    fn package_private_class_not_exported() {
+        let source = "class Internal {}";
+        let result = java_exports(source);
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn public_enum_exported() {
+        let source = "public enum Status { ACTIVE, INACTIVE }";
+        let result = java_exports(source);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].name, "Status");
+    }
+
+    #[test]
+    fn empty_source_no_exports() {
+        let result = java_exports("");
+        assert!(result.is_empty());
+    }
+}

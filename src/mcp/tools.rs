@@ -240,7 +240,8 @@ impl AriadneTools {
     fn blast_radius(&self, Parameters(params): Parameters<BlastRadiusParam>) -> String {
         let state = self.state.load();
         let cp = CanonicalPath::new(&params.path);
-        let result = algo::blast_radius::blast_radius(&state.graph, &cp, params.depth);
+        let index = algo::AdjacencyIndex::build(&state.graph.edges, algo::is_architectural);
+        let result = algo::blast_radius::blast_radius(&state.graph, &cp, params.depth, &index);
 
         let json_result: BTreeMap<String, u32> = result
             .iter()

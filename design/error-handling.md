@@ -29,6 +29,7 @@ These prevent any useful work. The binary exits with code 1 and a clear error me
 | `E011: LockFileHeld` | Another ariadne server is running (lock held) | Exit 1 |
 | `E012: McpProtocolError` | MCP protocol-level error during serving | Exit 1 |
 | `E013: InvalidArgument` | Invalid CLI argument value | Exit 1 |
+| `E014: ClustersNotFound` | `ariadne query cluster` or `ariadne update` when clusters.json doesn't exist | `error: clusters not found in {path}. Run 'ariadne build' first.` |
 
 ### Recoverable Errors (exit code 0, file skipped, warning emitted)
 
@@ -98,6 +99,8 @@ pub enum FatalError {
     McpProtocolError { reason: String },
     #[error("E013: invalid argument: {reason}")]
     InvalidArgument { reason: String },
+    #[error("E014: clusters not found in {path}. Run 'ariadne build' first.")]
+    ClustersNotFound { path: PathBuf },
 }
 ```
 
