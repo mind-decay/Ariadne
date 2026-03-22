@@ -182,6 +182,7 @@ mod state_tests {
             Node {
                 file_type: FileType::Source,
                 layer: ArchLayer::Service,
+                fsd_layer: None,
                 arch_depth: 1,
                 lines: 100,
                 hash: ContentHash::new("abc123".to_string()),
@@ -194,6 +195,7 @@ mod state_tests {
             Node {
                 file_type: FileType::Source,
                 layer: ArchLayer::Service,
+                fsd_layer: None,
                 arch_depth: 0,
                 lines: 50,
                 hash: ContentHash::new("def456".to_string()),

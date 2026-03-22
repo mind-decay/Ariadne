@@ -19,6 +19,7 @@ pub fn resolve_and_build(
     diagnostics: &DiagnosticCollector,
     workspace: Option<&WorkspaceInfo>,
     case_insensitive: bool,
+    is_fsd: bool,
 ) -> ProjectGraph {
     // 1. Build FileSet from successfully-read files
     let file_set = FileSet::from_iter(file_contents.iter().map(|fc| fc.path.clone()));
@@ -28,13 +29,14 @@ pub fn resolve_and_build(
 
     for fc in file_contents {
         let file_type = detect_file_type(&fc.path);
-        let layer = infer_arch_layer(&fc.path);
+        let (layer, fsd_layer) = infer_arch_layer(&fc.path, is_fsd);
 
         nodes.insert(
             fc.path.clone(),
             Node {
                 file_type,
                 layer,
+                fsd_layer,
                 arch_depth: 0, // D-025: placeholder, computed in Phase 2
                 lines: fc.lines,
                 hash: fc.hash.clone(),

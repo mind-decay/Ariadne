@@ -121,6 +121,7 @@ mod tests {
             Node {
                 file_type: FileType::Source,
                 layer: ArchLayer::Service,
+                fsd_layer: None,
                 arch_depth: 0,
                 lines: 10,
                 hash: ContentHash::new("a".to_string()),
@@ -133,6 +134,7 @@ mod tests {
             Node {
                 file_type: FileType::Source,
                 layer: ArchLayer::Util,
+                fsd_layer: None,
                 arch_depth: 0,
                 lines: 10,
                 hash: ContentHash::new("b".to_string()),
@@ -187,6 +189,7 @@ mod tests {
             Node {
                 file_type: FileType::Source,
                 layer: ArchLayer::Service,
+                fsd_layer: None,
                 arch_depth: 1,
                 lines: 100,
                 hash: ContentHash::new("a".to_string()),

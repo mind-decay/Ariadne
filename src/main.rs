@@ -730,6 +730,7 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
                             .map(|s| s.as_str().to_string())
                             .collect(),
                         cluster: node.cluster.as_str().to_string(),
+                        fsd_layer: node.fsd_layer.map(|l| l.as_str().to_string()),
                     },
                     incoming_edges: graph
                         .edges

@@ -33,6 +33,8 @@ pub struct NodeOutput {
     pub hash: String,
     pub exports: Vec<String>,
     pub cluster: String,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub fsd_layer: Option<String>,
 }
 
 /// Output model for clusters.json.

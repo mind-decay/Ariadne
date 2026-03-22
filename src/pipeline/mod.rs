@@ -10,7 +10,7 @@ use rayon::prelude::*;
 
 use crate::algo;
 use crate::cluster::assign_clusters;
-use crate::detect::{detect_workspace, is_case_insensitive};
+use crate::detect::{detect_fsd_project, detect_workspace, is_case_insensitive};
 use crate::diagnostic::{DiagnosticCollector, DiagnosticCounts, FatalError, Warning, WarningCode};
 use crate::model::*;
 use crate::parser::{ParseOutcome, ParserRegistry, RawExport, RawImport};
@@ -220,6 +220,9 @@ impl BuildPipeline {
         let workspace_relative = workspace_info.as_ref().map(|ws| ws.relativize(&abs_root));
         // Detect case sensitivity once per build (F3 fix)
         let case_insensitive = is_case_insensitive(&abs_root);
+        // Detect FSD project structure for layer classification
+        let all_paths: Vec<CanonicalPath> = file_contents.iter().map(|fc| fc.path.clone()).collect();
+        let is_fsd = detect_fsd_project(&all_paths);
         let mut graph = build::resolve_and_build(
             &parsed_files,
             &file_contents,
@@ -227,6 +230,7 @@ impl BuildPipeline {
             &diagnostics,
             workspace_relative.as_ref(),
             case_insensitive,
+            is_fsd,
         );
         if verbose {
             eprintln!(
@@ -581,6 +585,7 @@ fn project_graph_to_output(graph: &ProjectGraph, project_root: &Path) -> GraphOu
                     .map(|s| s.as_str().to_string())
                     .collect(),
                 cluster: node.cluster.as_str().to_string(),
+                fsd_layer: node.fsd_layer.map(|l| l.as_str().to_string()),
             },
         );
     }

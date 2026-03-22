@@ -1,19 +1,113 @@
-use crate::model::{ArchLayer, CanonicalPath};
+use crate::model::{ArchLayer, CanonicalPath, FsdLayer};
 
-/// Infer the architectural layer from directory segments in the path.
-/// First matching segment wins; matching is case-insensitive.
-pub fn infer_arch_layer(path: &CanonicalPath) -> ArchLayer {
-    let path_str = path.as_str();
+/// Detect whether a project uses Feature-Sliced Design.
+/// Uses a 2-of-3 heuristic: if at least 2 of {features, entities, shared}
+/// appear as top-level or src/-level directory segments, classify as FSD.
+pub fn detect_fsd_project(paths: &[CanonicalPath]) -> bool {
+    let mut found_features = false;
+    let mut found_entities = false;
+    let mut found_shared = false;
 
-    // Check each directory segment (exclude the filename itself)
-    for segment in directory_segments(path_str) {
-        let lower = segment.to_ascii_lowercase();
-        if let Some(layer) = match_layer(&lower) {
-            return layer;
+    for path in paths {
+        let segments: Vec<&str> = path.as_str().split('/').collect();
+        for (i, segment) in segments.iter().enumerate() {
+            let lower = segment.to_ascii_lowercase();
+            // Qualifies only at position 0 (root-level) or position 1 after "src"
+            let qualifies = i == 0
+                || (i == 1 && segments[0].eq_ignore_ascii_case("src"));
+            if !qualifies {
+                continue;
+            }
+            match lower.as_str() {
+                "features" => found_features = true,
+                "entities" => found_entities = true,
+                "shared" => found_shared = true,
+                _ => {}
+            }
+        }
+        // Early exit if we already found 2
+        let count = found_features as u8 + found_entities as u8 + found_shared as u8;
+        if count >= 2 {
+            return true;
         }
     }
 
-    ArchLayer::Unknown
+    let count = found_features as u8 + found_entities as u8 + found_shared as u8;
+    count >= 2
+}
+
+/// Infer the architectural layer from directory segments in the path.
+///
+/// When `is_fsd` is false, uses first-matching-segment strategy (original behavior).
+/// When `is_fsd` is true, uses two-pass FSD classification:
+///   1. Outermost-first scan for FSD layer segment
+///   2. Innermost-first scan of remaining segments for ArchLayer
+pub fn infer_arch_layer(path: &CanonicalPath, is_fsd: bool) -> (ArchLayer, Option<FsdLayer>) {
+    let path_str = path.as_str();
+
+    if !is_fsd {
+        // Original first-match behavior
+        for segment in directory_segments(path_str) {
+            let lower = segment.to_ascii_lowercase();
+            if let Some(layer) = match_layer(&lower) {
+                return (layer, None);
+            }
+        }
+        return (ArchLayer::Unknown, None);
+    }
+
+    // FSD mode: two-pass classification
+    let segments: Vec<&str> = directory_segments(path_str).collect();
+
+    // Pass 1: Find the outermost FSD layer segment
+    let mut fsd_index = None;
+    let mut fsd_layer = None;
+    for (i, segment) in segments.iter().enumerate() {
+        let lower = segment.to_ascii_lowercase();
+        if let Some(fl) = match_fsd_layer(&lower) {
+            fsd_index = Some(i);
+            fsd_layer = Some(fl);
+            break;
+        }
+    }
+
+    match (fsd_index, fsd_layer) {
+        (Some(idx), Some(fl)) => {
+            // Pass 2: Scan segments AFTER the FSD layer, innermost-first (right-to-left)
+            let after_fsd = &segments[idx + 1..];
+            for segment in after_fsd.iter().rev() {
+                let lower = segment.to_ascii_lowercase();
+                if let Some(arch) = match_layer(&lower) {
+                    return (arch, Some(fl));
+                }
+            }
+            (ArchLayer::Unknown, Some(fl))
+        }
+        _ => {
+            // No FSD layer found, fall back to first-match
+            for segment in &segments {
+                let lower = segment.to_ascii_lowercase();
+                if let Some(layer) = match_layer(&lower) {
+                    return (layer, None);
+                }
+            }
+            (ArchLayer::Unknown, None)
+        }
+    }
+}
+
+/// Match a segment to an FSD layer name (case-insensitive).
+fn match_fsd_layer(segment: &str) -> Option<FsdLayer> {
+    match segment.to_ascii_lowercase().as_str() {
+        "app" => Some(FsdLayer::App),
+        "processes" => Some(FsdLayer::Processes),
+        "pages" => Some(FsdLayer::Pages),
+        "widgets" => Some(FsdLayer::Widgets),
+        "features" => Some(FsdLayer::Features),
+        "entities" => Some(FsdLayer::Entities),
+        "shared" => Some(FsdLayer::Shared),
+        _ => None,
+    }
 }
 
 /// Extract directory segments from a path (everything except the last component).
@@ -64,7 +158,8 @@ mod tests {
     use super::*;
 
     fn layer(path: &str) -> ArchLayer {
-        infer_arch_layer(&CanonicalPath::new(path))
+        let (arch, _fsd) = infer_arch_layer(&CanonicalPath::new(path), false);
+        arch
     }
 
     #[test]
@@ -210,5 +305,245 @@ mod tests {
     fn first_match_wins() {
         // api comes before utils in the path — api wins
         assert_eq!(layer("src/api/utils/helper.ts"), ArchLayer::Api);
+    }
+
+    // ── FSD helpers ──────────────────────────────────────────────────
+
+    fn fsd_layer(path: &str) -> (ArchLayer, Option<FsdLayer>) {
+        infer_arch_layer(&CanonicalPath::new(path), true)
+    }
+
+    fn paths(strs: &[&str]) -> Vec<CanonicalPath> {
+        strs.iter().map(|s| CanonicalPath::new(*s)).collect()
+    }
+
+    // ── 1. FSD Detection Tests ──────────────────────────────────────
+
+    #[test]
+    fn detect_fsd_features_and_entities() {
+        assert!(detect_fsd_project(&paths(&["features/a.ts", "entities/b.ts"])));
+    }
+
+    #[test]
+    fn detect_fsd_features_and_shared() {
+        assert!(detect_fsd_project(&paths(&["features/a.ts", "shared/b.ts"])));
+    }
+
+    #[test]
+    fn detect_fsd_entities_and_shared() {
+        assert!(detect_fsd_project(&paths(&["entities/a.ts", "shared/b.ts"])));
+    }
+
+    #[test]
+    fn detect_fsd_all_three() {
+        assert!(detect_fsd_project(&paths(&[
+            "features/a.ts",
+            "entities/b.ts",
+            "shared/c.ts"
+        ])));
+    }
+
+    #[test]
+    fn detect_fsd_only_one() {
+        assert!(!detect_fsd_project(&paths(&[
+            "features/a.ts",
+            "src/utils/b.ts"
+        ])));
+    }
+
+    #[test]
+    fn detect_fsd_none() {
+        assert!(!detect_fsd_project(&paths(&[
+            "src/api/a.ts",
+            "src/utils/b.ts"
+        ])));
+    }
+
+    #[test]
+    fn detect_fsd_empty() {
+        assert!(!detect_fsd_project(&paths(&[])));
+    }
+
+    #[test]
+    fn detect_fsd_under_src() {
+        assert!(detect_fsd_project(&paths(&[
+            "src/features/a.ts",
+            "src/entities/b.ts"
+        ])));
+    }
+
+    #[test]
+    fn detect_fsd_deep_nested_not_counted() {
+        // Only root-level or src/-level counts
+        assert!(!detect_fsd_project(&paths(&[
+            "lib/features/a.ts",
+            "lib/entities/b.ts"
+        ])));
+    }
+
+    // ── 2. FSD Layer Inference Tests ────────────────────────────────
+
+    #[test]
+    fn fsd_features_with_ui() {
+        assert_eq!(
+            fsd_layer("features/auth/ui/Button.tsx"),
+            (ArchLayer::Component, Some(FsdLayer::Features))
+        );
+    }
+
+    #[test]
+    fn fsd_features_with_api() {
+        assert_eq!(
+            fsd_layer("features/auth/api/login.ts"),
+            (ArchLayer::Api, Some(FsdLayer::Features))
+        );
+    }
+
+    #[test]
+    fn fsd_features_with_model() {
+        assert_eq!(
+            fsd_layer("features/auth/model/User.ts"),
+            (ArchLayer::Data, Some(FsdLayer::Features))
+        );
+    }
+
+    #[test]
+    fn fsd_entities_with_model() {
+        assert_eq!(
+            fsd_layer("entities/user/model/types.ts"),
+            (ArchLayer::Data, Some(FsdLayer::Entities))
+        );
+    }
+
+    #[test]
+    fn fsd_shared_with_lib() {
+        assert_eq!(
+            fsd_layer("shared/lib/utils.ts"),
+            (ArchLayer::Util, Some(FsdLayer::Shared))
+        );
+    }
+
+    #[test]
+    fn fsd_shared_with_ui() {
+        assert_eq!(
+            fsd_layer("shared/ui/Button.tsx"),
+            (ArchLayer::Component, Some(FsdLayer::Shared))
+        );
+    }
+
+    #[test]
+    fn fsd_shared_with_config() {
+        assert_eq!(
+            fsd_layer("shared/config/env.ts"),
+            (ArchLayer::Config, Some(FsdLayer::Shared))
+        );
+    }
+
+    #[test]
+    fn fsd_pages_with_ui() {
+        assert_eq!(
+            fsd_layer("pages/home/ui/Page.tsx"),
+            (ArchLayer::Component, Some(FsdLayer::Pages))
+        );
+    }
+
+    #[test]
+    fn fsd_widgets_with_ui() {
+        assert_eq!(
+            fsd_layer("widgets/header/ui/Header.tsx"),
+            (ArchLayer::Component, Some(FsdLayer::Widgets))
+        );
+    }
+
+    #[test]
+    fn fsd_app_no_inner() {
+        assert_eq!(
+            fsd_layer("app/main.ts"),
+            (ArchLayer::Unknown, Some(FsdLayer::App))
+        );
+    }
+
+    #[test]
+    fn fsd_processes_with_model() {
+        assert_eq!(
+            fsd_layer("processes/auth/model/state.ts"),
+            (ArchLayer::Data, Some(FsdLayer::Processes))
+        );
+    }
+
+    #[test]
+    fn fsd_barrel_file() {
+        assert_eq!(
+            fsd_layer("features/auth/index.ts"),
+            (ArchLayer::Unknown, Some(FsdLayer::Features))
+        );
+    }
+
+    #[test]
+    fn fsd_no_fsd_segment() {
+        // Path has no FSD layer segment, falls back to first-match
+        assert_eq!(
+            fsd_layer("src/utils/format.ts"),
+            (ArchLayer::Util, None)
+        );
+    }
+
+    #[test]
+    fn fsd_nested_fsd_outermost() {
+        // Outermost FSD layer wins; inner "entities" is matched as ArchLayer::Data
+        assert_eq!(
+            fsd_layer("features/auth/entities/user.ts"),
+            (ArchLayer::Data, Some(FsdLayer::Features))
+        );
+    }
+
+    #[test]
+    fn fsd_with_src_prefix() {
+        assert_eq!(
+            fsd_layer("src/features/auth/api/login.ts"),
+            (ArchLayer::Api, Some(FsdLayer::Features))
+        );
+    }
+
+    // ── 3. Non-FSD Backward Compatibility ───────────────────────────
+
+    #[test]
+    fn non_fsd_api_unchanged() {
+        assert_eq!(
+            infer_arch_layer(&CanonicalPath::new("src/api/auth.ts"), false),
+            (ArchLayer::Api, None)
+        );
+    }
+
+    #[test]
+    fn non_fsd_entities_is_data() {
+        assert_eq!(
+            infer_arch_layer(&CanonicalPath::new("src/entities/user.ts"), false),
+            (ArchLayer::Data, None)
+        );
+    }
+
+    #[test]
+    fn non_fsd_shared_is_util() {
+        assert_eq!(
+            infer_arch_layer(&CanonicalPath::new("src/shared/utils.ts"), false),
+            (ArchLayer::Util, None)
+        );
+    }
+
+    // ── 4. Edge Cases ───────────────────────────────────────────────
+
+    #[test]
+    fn ec04_case_insensitive() {
+        // FSD layer and inner segment matching should be case-insensitive
+        let (arch, fsd) = fsd_layer("Features/auth/UI/login.ts");
+        assert_eq!(fsd, Some(FsdLayer::Features));
+        assert_eq!(arch, ArchLayer::Component);
+    }
+
+    #[test]
+    fn ec07_no_dir_segments() {
+        // A bare filename has no directory segments, so no layer
+        assert_eq!(fsd_layer("main.ts"), (ArchLayer::Unknown, None));
     }
 }

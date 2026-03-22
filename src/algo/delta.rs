@@ -78,6 +78,7 @@ mod tests {
         Node {
             file_type: FileType::Source,
             layer: ArchLayer::Unknown,
+            fsd_layer: None,
             arch_depth: 0,
             lines: 10,
             hash: ContentHash::new(hash.to_string()),

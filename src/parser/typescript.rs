@@ -575,18 +575,8 @@ mod tests {
         TypeScriptParser::new().extract_imports(&tree, source.as_bytes())
     }
 
-    fn tsx_imports(source: &str) -> Vec<RawImport> {
-        let tree = parse_tsx(source);
-        TypeScriptParser::new().extract_imports(&tree, source.as_bytes())
-    }
-
     fn ts_exports(source: &str) -> Vec<RawExport> {
         let tree = parse_ts(source);
-        TypeScriptParser::new().extract_exports(&tree, source.as_bytes())
-    }
-
-    fn tsx_exports(source: &str) -> Vec<RawExport> {
-        let tree = parse_tsx(source);
         TypeScriptParser::new().extract_exports(&tree, source.as_bytes())
     }
 

@@ -90,6 +90,7 @@ fn bench_clustering_3000(c: &mut Criterion) {
             Node {
                 file_type: FileType::Source,
                 layer: ArchLayer::Unknown,
+                fsd_layer: None,
                 arch_depth: 0,
                 lines: 50,
                 hash: ContentHash::new(format!("{:016x}", i)),
@@ -132,6 +133,7 @@ fn bench_serialization_3000(c: &mut Criterion) {
             NodeOutput {
                 file_type: "source".to_string(),
                 layer: "unknown".to_string(),
+                fsd_layer: None,
                 arch_depth: 0,
                 lines: 50,
                 hash: format!("{:016x}", i),

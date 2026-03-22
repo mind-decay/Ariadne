@@ -317,6 +317,7 @@ mod tests {
         Node {
             file_type: FileType::Source,
             layer: ArchLayer::Unknown,
+            fsd_layer: None,
             arch_depth: depth,
             lines: 50,
             hash: ContentHash::new("0000000000000000".to_string()),

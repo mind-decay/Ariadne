@@ -15,7 +15,7 @@ pub use compress::{
 pub use diff::{ChangeClassification, ClusterChange, DiffSummary, LayerChange, StructuralDiff};
 pub use edge::{Edge, EdgeType};
 pub use graph::{Cluster, ClusterMap, ProjectGraph};
-pub use node::{ArchLayer, FileType, Node};
+pub use node::{ArchLayer, FileType, FsdLayer, Node};
 pub use query::SubgraphResult;
 pub use smell::{ArchSmell, SmellMetrics, SmellSeverity, SmellType};
 pub use stats::{StatsOutput, StatsSummary};

@@ -25,6 +25,7 @@ impl TryFrom<GraphOutput> for ProjectGraph {
                 Node {
                     file_type,
                     layer,
+                    fsd_layer: parse_fsd_layer(&node_output.fsd_layer)?,
                     arch_depth: node_output.arch_depth,
                     lines: node_output.lines,
                     hash: ContentHash::new(node_output.hash),
@@ -98,6 +99,20 @@ fn parse_arch_layer(s: &str) -> Result<ArchLayer, String> {
     }
 }
 
+fn parse_fsd_layer(s: &Option<String>) -> Result<Option<FsdLayer>, String> {
+    match s.as_deref() {
+        None => Ok(None),
+        Some("app") => Ok(Some(FsdLayer::App)),
+        Some("processes") => Ok(Some(FsdLayer::Processes)),
+        Some("pages") => Ok(Some(FsdLayer::Pages)),
+        Some("widgets") => Ok(Some(FsdLayer::Widgets)),
+        Some("features") => Ok(Some(FsdLayer::Features)),
+        Some("entities") => Ok(Some(FsdLayer::Entities)),
+        Some("shared") => Ok(Some(FsdLayer::Shared)),
+        Some(other) => Err(format!("unknown FSD layer: {}", other)),
+    }
+}
+
 fn parse_edge_type(s: &str) -> Result<EdgeType, String> {
     match s {
         "imports" => Ok(EdgeType::Imports),
@@ -131,6 +146,7 @@ mod tests {
                         hash: "abc123".to_string(),
                         exports: vec!["foo".to_string()],
                         cluster: "src".to_string(),
+                        fsd_layer: None,
                     },
                 ),
                 (
@@ -143,6 +159,7 @@ mod tests {
                         hash: "def456".to_string(),
                         exports: vec![],
                         cluster: "src".to_string(),
+                        fsd_layer: None,
                     },
                 ),
             ]),

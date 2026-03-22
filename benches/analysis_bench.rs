@@ -24,6 +24,7 @@ fn build_synthetic_graph(node_count: usize, edge_count: usize) -> ProjectGraph {
                     FileType::Source
                 },
                 layer: ArchLayer::Unknown,
+                fsd_layer: None,
                 arch_depth: (i % 5) as u32,
                 lines: 50 + (i % 500) as u32,
                 hash: ContentHash::new(format!("{:016x}", i)),
@@ -148,6 +149,7 @@ fn bench_structural_diff(c: &mut Criterion) {
             Node {
                 file_type: FileType::Source,
                 layer: ArchLayer::Unknown,
+                fsd_layer: None,
                 arch_depth: (i % 5) as u32,
                 lines: 100,
                 hash: ContentHash::new(format!("{:016x}", i)),

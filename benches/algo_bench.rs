@@ -17,6 +17,7 @@ fn build_synthetic_graph(node_count: usize, edge_count: usize) -> ProjectGraph {
             Node {
                 file_type: FileType::Source,
                 layer: ArchLayer::Unknown,
+                fsd_layer: None,
                 arch_depth: 0,
                 lines: 100,
                 hash: ContentHash::new(format!("{:016x}", i)),
