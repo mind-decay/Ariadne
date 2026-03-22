@@ -41,6 +41,7 @@ trait LanguageParser: Send + Sync {
     fn language(&self) -> &str;
     fn extensions(&self) -> &[&str];
     fn tree_sitter_language(&self) -> tree_sitter::Language;
+    fn tree_sitter_language_for_ext(&self, ext: &str) -> tree_sitter::Language; // default: delegates to tree_sitter_language()
     fn extract_imports(&self, tree: &Tree, source: &[u8]) -> Vec<RawImport>;
     fn extract_exports(&self, tree: &Tree, source: &[u8]) -> Vec<RawExport>;
 }
@@ -891,7 +892,7 @@ Ariadne has no dependency on any specific orchestration framework.
 ### Adding a New Language Parser
 
 1. Create `src/parser/<language>.rs` with two structs implementing `LanguageParser` and `ImportResolver` (D-018)
-2. `LanguageParser` requires: `language()`, `extensions()`, `tree_sitter_language()`, `extract_imports()`, `extract_exports()`
+2. `LanguageParser` requires: `language()`, `extensions()`, `tree_sitter_language()`, `extract_imports()`, `extract_exports()`. Override `tree_sitter_language_for_ext()` if one parser covers multiple grammars (e.g. TypeScript uses `LANGUAGE_TSX` for `.tsx`/`.jsx` extensions)
 3. `ImportResolver` requires: `resolve()` — maps raw import strings to `CanonicalPath` using `FileSet` for existence checks
 4. Add the tree-sitter grammar crate to `Cargo.toml`
 5. Register both in `ParserRegistry` (`src/parser/registry.rs`) via `register(parser, resolver)`

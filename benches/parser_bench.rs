@@ -20,7 +20,7 @@ fn bench_parse_typescript(c: &mut Criterion) {
 
     c.bench_function("parse_typescript_50_imports", |b| {
         b.iter(|| {
-            registry.parse_source(&bytes, parser).unwrap();
+            registry.parse_source(&bytes, parser, "ts").unwrap();
         });
     });
 }
@@ -39,7 +39,7 @@ fn bench_parse_go(c: &mut Criterion) {
 
     c.bench_function("parse_go_30_imports", |b| {
         b.iter(|| {
-            registry.parse_source(&bytes, parser).unwrap();
+            registry.parse_source(&bytes, parser, "go").unwrap();
         });
     });
 }
@@ -58,7 +58,7 @@ fn bench_parse_python(c: &mut Criterion) {
 
     c.bench_function("parse_python_40_imports", |b| {
         b.iter(|| {
-            registry.parse_source(&bytes, parser).unwrap();
+            registry.parse_source(&bytes, parser, "py").unwrap();
         });
     });
 }

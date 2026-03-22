@@ -32,6 +32,11 @@ pub trait LanguageParser: Send + Sync {
     fn language(&self) -> &str;
     fn extensions(&self) -> &[&str];
     fn tree_sitter_language(&self) -> tree_sitter::Language;
+    /// Return the tree-sitter grammar for a specific file extension.
+    /// Override when a single parser covers multiple grammars (e.g. TS vs TSX).
+    fn tree_sitter_language_for_ext(&self, _ext: &str) -> tree_sitter::Language {
+        self.tree_sitter_language()
+    }
     fn extract_imports(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Vec<RawImport>;
     fn extract_exports(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Vec<RawExport>;
 }

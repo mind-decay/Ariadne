@@ -85,10 +85,11 @@ impl ParserRegistry {
         &self,
         source: &[u8],
         parser: &dyn LanguageParser,
+        extension: &str,
     ) -> Result<ParseOutcome, String> {
         let mut ts_parser = tree_sitter::Parser::new();
         ts_parser
-            .set_language(&parser.tree_sitter_language())
+            .set_language(&parser.tree_sitter_language_for_ext(extension))
             .map_err(|e| format!("grammar version mismatch for {}: {}", parser.language(), e))?;
 
         let tree = match ts_parser.parse(source, None) {
@@ -129,7 +130,7 @@ impl ParserRegistry {
     /// Used by the freshness engine for lightweight import change detection.
     pub fn reparse_imports(&self, extension: &str, source: &[u8]) -> Option<Vec<RawImport>> {
         let parser = self.parser_for(extension)?;
-        let ts_lang = parser.tree_sitter_language();
+        let ts_lang = parser.tree_sitter_language_for_ext(extension);
         let mut ts_parser = tree_sitter::Parser::new();
         ts_parser.set_language(&ts_lang).ok()?;
         let tree = ts_parser.parse(source, None)?;

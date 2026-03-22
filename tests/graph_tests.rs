@@ -69,6 +69,153 @@ fn workspace_project() {
     );
 }
 
+/// TSX components fixture — verifies that JSX syntax parses without W001/W007 warnings
+/// and that imports/exports are correctly extracted through the full pipeline.
+///
+/// Covers:
+///   Bug #1: implicit JSX return in arrow functions (=> <JSX> and => (<JSX>) on one line)
+///   Bug #2: {{ }} in JSX prop + text/expression content on same line
+///   Generic arrow functions: <T,>(props) => <JSX>
+///   JSX fragments: <>...</> and inline fragments
+///   JSX spread attributes: <Comp {...props} />
+///   Conditional rendering: && and ternary in JSX
+///   .map with arrow returning JSX inside JSX expression
+///   Anonymous default export: export default () => <JSX>
+///   Multiline and inline callback props
+///   .jsx extension (not just .tsx)
+#[test]
+fn tsx_components() {
+    let output = helpers::build_fixture("tsx-components");
+
+    // 11 files: App.tsx + 7 .tsx components + 1 .jsx component
+    // (Header, Card, StyledBox, GenericBox, Fragment, SpreadProps, Conditional, DefaultAnon, Callback, LegacyButton)
+    assert_eq!(
+        output.file_count, 11,
+        "expected 11 file nodes, got {}",
+        output.file_count
+    );
+
+    // No W001 (parse failed) or W007 (partial parse) warnings
+    let parse_warnings: Vec<_> = output
+        .warnings
+        .iter()
+        .filter(|w| {
+            w.code == WarningCode::W001ParseFailed || w.code == WarningCode::W007PartialParse
+        })
+        .collect();
+    assert!(
+        parse_warnings.is_empty(),
+        "TSX/JSX files should parse without W001/W007 warnings, got: {:?}",
+        parse_warnings
+    );
+
+    // App.tsx imports from 10 component files
+    assert!(
+        output.edge_count >= 10,
+        "expected at least 10 edges (App -> each component), got {}",
+        output.edge_count
+    );
+
+    // Read graph.json for detailed checks
+    let json_str = std::fs::read_to_string(&output.graph_path).expect("read graph.json");
+    let graph: serde_json::Value = serde_json::from_str(&json_str).expect("parse JSON");
+    let nodes = graph["nodes"]
+        .as_object()
+        .expect("nodes should be an object");
+    let node_keys: HashSet<&str> = nodes.keys().map(|k| k.as_str()).collect();
+
+    // All fixture files should appear as nodes
+    let expected_files = [
+        "App.tsx",
+        "Header.tsx",
+        "Card.tsx",
+        "StyledBox.tsx",
+        "GenericBox.tsx",
+        "Fragment.tsx",
+        "SpreadProps.tsx",
+        "Conditional.tsx",
+        "DefaultAnon.tsx",
+        "Callback.tsx",
+        "LegacyButton.jsx",
+    ];
+    for file in &expected_files {
+        assert!(
+            node_keys.iter().any(|k| k.contains(file)),
+            "{} should be a node; found: {:?}",
+            file,
+            node_keys
+        );
+    }
+
+    // Verify edges: App.tsx -> each component file
+    let edges = graph["edges"].as_array().expect("edges should be an array");
+    let edge_targets = [
+        "Header", "Card", "StyledBox", "GenericBox", "Fragment",
+        "SpreadProps", "Conditional", "DefaultAnon", "Callback", "LegacyButton",
+    ];
+    for target in &edge_targets {
+        let has_edge = edges.iter().any(|e| {
+            let arr = e.as_array().unwrap();
+            let from = arr[0].as_str().unwrap_or("");
+            let to = arr[1].as_str().unwrap_or("");
+            from.contains("App.tsx") && to.contains(target)
+        });
+        assert!(
+            has_edge,
+            "expected edge from App.tsx to {}; edges: {:?}",
+            target, edges
+        );
+    }
+
+    // Verify exports were correctly extracted from each component
+    let expected_exports: &[(&str, &[&str])] = &[
+        // Bug #1a: implicit JSX return inline
+        ("Header.tsx", &["Header"]),
+        // Bug #1b: parens JSX return inline
+        ("Card.tsx", &["Card"]),
+        // Bug #2: {{ }} with text/expression
+        ("StyledBox.tsx", &["StyledBox", "StyledExpr"]),
+        // Generic arrow: <T,>(...) => <JSX>
+        ("GenericBox.tsx", &["GenericBox", "Pair"]),
+        // JSX fragments
+        ("Fragment.tsx", &["Fragment", "InlineFragment"]),
+        // JSX spread attributes
+        ("SpreadProps.tsx", &["SpreadProps", "MixedSpread"]),
+        // Conditional, ternary, .map
+        ("Conditional.tsx", &["Conditional", "Ternary", "List", "IndexedList"]),
+        // Anonymous default export
+        ("DefaultAnon.tsx", &["default"]),
+        // Callback props
+        ("Callback.tsx", &["Callback", "InlineCallback"]),
+        // .jsx extension
+        ("LegacyButton.jsx", &["LegacyButton", "LegacyIcon"]),
+    ];
+
+    for (file, exports) in expected_exports {
+        let file_node = nodes
+            .iter()
+            .find(|(k, _)| k.contains(file));
+        assert!(
+            file_node.is_some(),
+            "{} should be in graph nodes",
+            file
+        );
+        let (_, node_val) = file_node.unwrap();
+        let actual_exports = node_val["exports"]
+            .as_array()
+            .unwrap_or_else(|| panic!("{} should have exports array", file));
+        for exp in *exports {
+            assert!(
+                actual_exports.iter().any(|e| e.as_str() == Some(exp)),
+                "{} should export '{}'; actual exports: {:?}",
+                file,
+                exp,
+                actual_exports
+            );
+        }
+    }
+}
+
 /// All edge-case checks in a single test to avoid concurrent writes to the same fixture.
 #[test]
 fn edge_cases() {

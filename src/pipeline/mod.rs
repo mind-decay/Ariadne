@@ -161,7 +161,7 @@ impl BuildPipeline {
                 let extension = fc.path.extension().unwrap_or("");
                 let parser = self.registry.parser_for(extension)?;
 
-                match self.registry.parse_source(&fc.bytes, parser) {
+                match self.registry.parse_source(&fc.bytes, parser, extension) {
                     Ok(ParseOutcome::Ok(imports, exports)) => Some(ParsedFile {
                         path: fc.path.clone(),
                         imports,

@@ -372,6 +372,17 @@ fn reparse_imports_returns_imports_for_known_extension() {
 }
 
 #[test]
+fn reparse_imports_tsx_with_jsx_syntax() {
+    let pipeline = make_pipeline();
+    let source = b"import React from 'react';\nexport const A = () => <div style={{ color: 'red' }}>text</div>;\n";
+    let result = pipeline.reparse_imports("tsx", source);
+    assert!(result.is_some(), "reparse_imports should work for tsx extension");
+    let imports = result.unwrap();
+    assert_eq!(imports.len(), 1);
+    assert_eq!(imports[0].path, "react");
+}
+
+#[test]
 fn reparse_imports_returns_none_for_unknown_extension() {
     let pipeline = make_pipeline();
     let source = b"some random content";

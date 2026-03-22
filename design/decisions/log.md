@@ -221,7 +221,7 @@ Ariadne has **zero knowledge of any specific consumer**. No Moira-specific forma
 **Status:** Accepted
 **Supersedes:** Partially updates D-002 (removes `resolve_import_path` from `LanguageParser`).
 **Context:** D-002 defined `LanguageParser` with 6 methods including `resolve_import_path`. Parsing and import resolution are different responsibilities: parsing extracts raw import strings from AST (language syntax knowledge), resolution maps those strings to canonical file paths (filesystem knowledge, workspace config, tsconfig paths). Combining them in one trait violates SRP and makes it impossible to swap resolution strategies independently (e.g., workspace-aware resolution in Phase 1b).
-**Decision:** Split into two traits. `LanguageParser` (5 methods): `language`, `extensions`, `tree_sitter_language`, `extract_imports`, `extract_exports`. `ImportResolver` (1 method): `resolve(import, from_file, known_files) -> Option<CanonicalPath>`. Both traits require `Send + Sync`. A single struct can implement both traits. Parsers return `RawImport`/`RawExport` (unresolved), resolution produces `ResolvedImport` (with `CanonicalPath`).
+**Decision:** Split into two traits. `LanguageParser` (6 methods): `language`, `extensions`, `tree_sitter_language`, `tree_sitter_language_for_ext` (default impl, override when one parser covers multiple grammars — e.g. TS vs TSX), `extract_imports`, `extract_exports`. `ImportResolver` (1 method): `resolve(import, from_file, known_files) -> Option<CanonicalPath>`. Both traits require `Send + Sync`. A single struct can implement both traits. Parsers return `RawImport`/`RawExport` (unresolved), resolution produces `ResolvedImport` (with `CanonicalPath`).
 **Alternatives rejected:**
 - Keep resolve in LanguageParser — SRP violation, can't swap resolution strategy without touching parsers
 - Standalone resolve functions (no trait) — loses polymorphism, can't have language-specific resolution behind a uniform interface
@@ -809,3 +809,14 @@ Applies to: Brandes centrality (Phase 2), Louvain modularity (Phase 2b), PageRan
 **Context:** Spec proposed using `sprs` crate for Lanczos iteration. Decision gate: evaluate dependency cost.
 **Decision:** Implemented spectral analysis using hand-rolled power iteration with deflation on the graph Laplacian. No external dependency needed — the Laplacian matrix-vector product is computed directly from adjacency lists. This avoids binary size increase and dependency management complexity. Deterministic via fixed initial vector and BTreeMap iteration order.
 **Affects:** `src/algo/spectral.rs`, `Cargo.toml` (no new dependency).
+
+## D-065: Extension-Aware Grammar Selection for TSX/JSX
+
+**Date:** 2026-03-22
+**Status:** Accepted
+**Context:** `TypeScriptParser` used `LANGUAGE_TYPESCRIPT` grammar for all extensions including `.tsx`/`.jsx`. The TypeScript grammar doesn't parse JSX syntax — `tree-sitter-typescript` ships a separate `LANGUAGE_TSX` grammar for that. This caused W001 (full parse failure) on inline JSX arrow returns and W007 (partial parse) on `{{ }}` JSX props with adjacent text content.
+**Decision:** Added `tree_sitter_language_for_ext(ext: &str)` method to `LanguageParser` trait with a default implementation delegating to `tree_sitter_language()`. `TypeScriptParser` overrides it to return `LANGUAGE_TSX` for `.tsx`/`.jsx` extensions. `ParserRegistry::parse_source()` and `reparse_imports()` now pass the file extension through to select the correct grammar.
+**Alternatives rejected:**
+- Separate `TsxParser` struct — duplicates all extraction logic, only the grammar differs
+- Always use `LANGUAGE_TSX` — TSX grammar accepts non-JSX TypeScript but may have different performance/behavior characteristics
+**Affects:** `src/parser/traits.rs`, `src/parser/typescript.rs`, `src/parser/registry.rs`, `src/pipeline/mod.rs`. Updates D-018 (6 methods on LanguageParser, not 5).

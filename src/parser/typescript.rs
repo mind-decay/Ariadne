@@ -113,6 +113,13 @@ impl LanguageParser for TypeScriptParser {
         tree_sitter::Language::from(tree_sitter_typescript::LANGUAGE_TYPESCRIPT)
     }
 
+    fn tree_sitter_language_for_ext(&self, ext: &str) -> tree_sitter::Language {
+        match ext {
+            "tsx" | "jsx" => tree_sitter::Language::from(tree_sitter_typescript::LANGUAGE_TSX),
+            _ => tree_sitter::Language::from(tree_sitter_typescript::LANGUAGE_TYPESCRIPT),
+        }
+    }
+
     fn extract_imports(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Vec<RawImport> {
         let mut imports = Vec::new();
         let root = tree.root_node();
@@ -553,13 +560,33 @@ mod tests {
         parser.parse(source, None).unwrap()
     }
 
+    fn parse_tsx(source: &str) -> tree_sitter::Tree {
+        let mut parser = tree_sitter::Parser::new();
+        parser
+            .set_language(&tree_sitter::Language::from(
+                tree_sitter_typescript::LANGUAGE_TSX,
+            ))
+            .unwrap();
+        parser.parse(source, None).unwrap()
+    }
+
     fn ts_imports(source: &str) -> Vec<RawImport> {
         let tree = parse_ts(source);
         TypeScriptParser::new().extract_imports(&tree, source.as_bytes())
     }
 
+    fn tsx_imports(source: &str) -> Vec<RawImport> {
+        let tree = parse_tsx(source);
+        TypeScriptParser::new().extract_imports(&tree, source.as_bytes())
+    }
+
     fn ts_exports(source: &str) -> Vec<RawExport> {
         let tree = parse_ts(source);
+        TypeScriptParser::new().extract_exports(&tree, source.as_bytes())
+    }
+
+    fn tsx_exports(source: &str) -> Vec<RawExport> {
+        let tree = parse_tsx(source);
         TypeScriptParser::new().extract_exports(&tree, source.as_bytes())
     }
 
@@ -830,5 +857,273 @@ mod tests {
 
         let result = resolver.resolve(&import, &from, &files, Some(&ws));
         assert_eq!(result.unwrap().as_str(), "packages/auth/helpers/index.ts");
+    }
+
+    // ---- TSX-specific tests (requires LANGUAGE_TSX grammar) ----
+
+    #[test]
+    fn tsx_implicit_jsx_return_inline() {
+        // Bug #1: arrow function with implicit JSX return on same line
+        let source = r#"
+import React from 'react';
+export const A = () => <div>hello</div>;
+"#;
+        let tree = parse_tsx(source);
+        let root = tree.root_node();
+        // Should parse without ERROR nodes
+        assert!(!root.has_error(), "TSX implicit JSX return should parse cleanly");
+        let exports = TypeScriptParser::new().extract_exports(&tree, source.as_bytes());
+        assert!(exports.iter().any(|e| e.name == "A"));
+    }
+
+    #[test]
+    fn tsx_implicit_jsx_return_parens_inline() {
+        // Bug #1 variant: => (<JSX>) on one line
+        let source = r#"
+import React from 'react';
+export const A = () => (<div>hello</div>);
+"#;
+        let tree = parse_tsx(source);
+        let root = tree.root_node();
+        assert!(!root.has_error(), "TSX parens JSX return should parse cleanly");
+        let exports = TypeScriptParser::new().extract_exports(&tree, source.as_bytes());
+        assert!(exports.iter().any(|e| e.name == "A"));
+    }
+
+    #[test]
+    fn tsx_double_braces_with_text_content() {
+        // Bug #2: {{ }} in JSX prop + text content on same line
+        let source = r#"
+import React from 'react';
+export const A = () => <div style={{ color: 'red' }}>text</div>;
+"#;
+        let tree = parse_tsx(source);
+        let root = tree.root_node();
+        assert!(!root.has_error(), "TSX double braces with text should parse cleanly");
+        let imports = TypeScriptParser::new().extract_imports(&tree, source.as_bytes());
+        assert_eq!(imports.len(), 1);
+        assert_eq!(imports[0].path, "react");
+    }
+
+    #[test]
+    fn tsx_double_braces_with_expression_content() {
+        // Bug #2 variant: {{ }} + {expression} on same line
+        let source = r#"
+import React from 'react';
+export const A = () => <div style={{ color: 'red' }}>{42}</div>;
+"#;
+        let tree = parse_tsx(source);
+        let root = tree.root_node();
+        assert!(!root.has_error(), "TSX double braces with expression should parse cleanly");
+        let imports = TypeScriptParser::new().extract_imports(&tree, source.as_bytes());
+        assert_eq!(imports.len(), 1);
+    }
+
+    #[test]
+    fn tsx_language_for_ext() {
+        let parser = TypeScriptParser::new();
+        // TSX/JSX extensions should get the TSX grammar
+        let tsx_lang = parser.tree_sitter_language_for_ext("tsx");
+        let jsx_lang = parser.tree_sitter_language_for_ext("jsx");
+        let ts_lang = parser.tree_sitter_language_for_ext("ts");
+        // TSX and JSX should use same grammar, different from TS
+        assert_eq!(tsx_lang, jsx_lang);
+        assert_ne!(ts_lang, tsx_lang);
+    }
+
+    // ---- Generic arrow functions ----
+
+    #[test]
+    fn tsx_generic_arrow_trailing_comma() {
+        // <T,> disambiguates from JSX in TSX files
+        let source = r#"
+import React from 'react';
+export const Box = <T,>(props: { value: T }) => <div>{String(props.value)}</div>;
+"#;
+        let tree = parse_tsx(source);
+        assert!(!tree.root_node().has_error(), "generic <T,> arrow should parse cleanly");
+        let exports = TypeScriptParser::new().extract_exports(&tree, source.as_bytes());
+        assert!(exports.iter().any(|e| e.name == "Box"));
+    }
+
+    #[test]
+    fn tsx_generic_multiple_params() {
+        let source = r#"
+import React from 'react';
+export const Pair = <A, B>({ a, b }: { a: A; b: B }) => <span>{String(a)}</span>;
+"#;
+        let tree = parse_tsx(source);
+        assert!(!tree.root_node().has_error(), "generic <A, B> arrow should parse cleanly");
+        let exports = TypeScriptParser::new().extract_exports(&tree, source.as_bytes());
+        assert!(exports.iter().any(|e| e.name == "Pair"));
+    }
+
+    // ---- JSX fragments ----
+
+    #[test]
+    fn tsx_fragment() {
+        let source = r#"
+import React from 'react';
+export const Frag = () => (<><span>a</span><span>b</span></>);
+"#;
+        let tree = parse_tsx(source);
+        assert!(!tree.root_node().has_error(), "JSX fragment should parse cleanly");
+        let exports = TypeScriptParser::new().extract_exports(&tree, source.as_bytes());
+        assert!(exports.iter().any(|e| e.name == "Frag"));
+    }
+
+    #[test]
+    fn tsx_inline_fragment() {
+        let source = r#"
+import React from 'react';
+export const F = () => <><span>x</span></>;
+"#;
+        let tree = parse_tsx(source);
+        assert!(!tree.root_node().has_error(), "inline fragment should parse cleanly");
+    }
+
+    // ---- JSX spread attributes ----
+
+    #[test]
+    fn tsx_spread_props() {
+        let source = r#"
+import React from 'react';
+export const S = (props: any) => <div {...props}>spread</div>;
+"#;
+        let tree = parse_tsx(source);
+        assert!(!tree.root_node().has_error(), "spread props should parse cleanly");
+        let exports = TypeScriptParser::new().extract_exports(&tree, source.as_bytes());
+        assert!(exports.iter().any(|e| e.name == "S"));
+    }
+
+    #[test]
+    fn tsx_spread_with_inline_style() {
+        let source = r#"
+import React from 'react';
+export const M = (p: any) => <div {...p} style={{ margin: 0 }}>mixed</div>;
+"#;
+        let tree = parse_tsx(source);
+        assert!(!tree.root_node().has_error(), "spread + inline style should parse cleanly");
+    }
+
+    // ---- Conditional rendering ----
+
+    #[test]
+    fn tsx_conditional_and() {
+        let source = r#"
+import React from 'react';
+export const C = ({ show }: { show: boolean }) => <div>{show && <span>yes</span>}</div>;
+"#;
+        let tree = parse_tsx(source);
+        assert!(!tree.root_node().has_error(), "conditional && should parse cleanly");
+    }
+
+    #[test]
+    fn tsx_ternary() {
+        let source = r#"
+import React from 'react';
+export const T = ({ ok }: { ok: boolean }) => <div>{ok ? <span>y</span> : <span>n</span>}</div>;
+"#;
+        let tree = parse_tsx(source);
+        assert!(!tree.root_node().has_error(), "ternary in JSX should parse cleanly");
+    }
+
+    // ---- .map with arrow returning JSX ----
+
+    #[test]
+    fn tsx_map_arrow_jsx() {
+        let source = r#"
+import React from 'react';
+export const L = ({ items }: { items: string[] }) => (
+  <ul>{items.map(item => <li key={item}>{item}</li>)}</ul>
+);
+"#;
+        let tree = parse_tsx(source);
+        assert!(!tree.root_node().has_error(), "map with arrow JSX should parse cleanly");
+        let exports = TypeScriptParser::new().extract_exports(&tree, source.as_bytes());
+        assert!(exports.iter().any(|e| e.name == "L"));
+    }
+
+    #[test]
+    fn tsx_map_with_index_and_inline_style() {
+        let source = r#"
+import React from 'react';
+export const IL = ({ items }: { items: string[] }) => (
+  <ol>
+    {items.map((item, i) => (
+      <li key={i} style={{ fontWeight: i === 0 ? 'bold' : 'normal' }}>{item}</li>
+    ))}
+  </ol>
+);
+"#;
+        let tree = parse_tsx(source);
+        assert!(!tree.root_node().has_error(), "map with index + inline style should parse cleanly");
+    }
+
+    // ---- Anonymous default export ----
+
+    #[test]
+    fn tsx_anonymous_default_export() {
+        let source = r#"
+import React from 'react';
+export default () => <div>anonymous</div>;
+"#;
+        let tree = parse_tsx(source);
+        assert!(!tree.root_node().has_error(), "anonymous default export should parse cleanly");
+        let exports = TypeScriptParser::new().extract_exports(&tree, source.as_bytes());
+        assert!(
+            exports.iter().any(|e| e.name == "default"),
+            "should have default export; got: {:?}",
+            exports.iter().map(|e| &e.name).collect::<Vec<_>>()
+        );
+    }
+
+    // ---- Callback props ----
+
+    #[test]
+    fn tsx_multiline_callback_prop() {
+        let source = r#"
+import React from 'react';
+export const CB = () => (
+  <button
+    onClick={() => {
+      console.log('clicked');
+    }}
+  >
+    click
+  </button>
+);
+"#;
+        let tree = parse_tsx(source);
+        assert!(!tree.root_node().has_error(), "multiline callback prop should parse cleanly");
+    }
+
+    #[test]
+    fn tsx_inline_callback_prop() {
+        let source = r#"
+import React from 'react';
+export const ICB = () => <button onClick={() => console.log('hi')}>go</button>;
+"#;
+        let tree = parse_tsx(source);
+        assert!(!tree.root_node().has_error(), "inline callback prop should parse cleanly");
+    }
+
+    // ---- .jsx extension via reparse ----
+
+    #[test]
+    fn jsx_extension_parses_with_tsx_grammar() {
+        let source = r#"
+import React from 'react';
+export const Btn = ({ label }) => <button style={{ padding: '8px' }}>{label}</button>;
+"#;
+        // Simulate .jsx going through tree_sitter_language_for_ext
+        let parser = TypeScriptParser::new();
+        let lang = parser.tree_sitter_language_for_ext("jsx");
+        let mut ts_parser = tree_sitter::Parser::new();
+        ts_parser.set_language(&lang).unwrap();
+        let tree = ts_parser.parse(source, None).unwrap();
+        assert!(!tree.root_node().has_error(), ".jsx file should parse cleanly with TSX grammar");
+        let exports = parser.extract_exports(&tree, source.as_bytes());
+        assert!(exports.iter().any(|e| e.name == "Btn"));
     }
 }
