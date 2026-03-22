@@ -2,8 +2,8 @@
 .vscode/
 .worktrees/
 
-.claude
-.ariadne
+.claude/
+.ariadne/
 
 # Moira orchestration state (per-developer)
 .claude/moira/state/tasks/
