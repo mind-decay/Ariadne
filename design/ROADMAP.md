@@ -108,7 +108,7 @@ Ariadne is a standalone Rust CLI that builds structural dependency graphs from s
 
 ---
 
-## Phase 3: MCP Server & Architectural Intelligence [IN PROGRESS]
+## Phase 3: MCP Server & Architectural Intelligence [DONE]
 
 **Goal:** Ariadne becomes a long-running MCP server that provides instant, queryable access to structural dependency graphs — enabling any MCP-compatible consumer (AI orchestrators, IDEs, CI tools) to get architectural insights without re-parsing the codebase.
 
@@ -315,7 +315,7 @@ Starts the MCP server. `--no-watch` disables fs watcher (poll-only mode).
 
 ---
 
-### Phase 3b: Architectural Intelligence [PLANNED]
+### Phase 3b: Architectural Intelligence [DONE]
 
 **Goal:** Move beyond basic graph metrics into architectural analysis — detect problems, quantify design quality, track structural evolution.
 
