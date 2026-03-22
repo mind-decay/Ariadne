@@ -399,19 +399,20 @@ Dependency rules: `model/` depends on nothing. `parser/` depends on `model/` onl
 ## D-031: Feature-Sliced Design (FSD) Architecture Support
 
 **Date:** 2026-03-18
-**Status:** Deferred (post-Phase 2)
-**Context:** FSD is a frontend architectural methodology with layer hierarchy: app → processes → pages → widgets → features → entities → shared. Each slice has internal segments (ui/, model/, api/, lib/). Current `infer_arch_layer()` uses first-matching-segment strategy, which fails for FSD: `features/auth/ui/Button.tsx` maps to Unknown (stops at `features/`) instead of Component (from `ui/`).
-**Decision:** Defer FSD-specific support to post-Phase 2. Current layer detection handles ~3 of 7 FSD layers (shared→Util, pages→Component, widgets→Component) and most inner segments (ui/, api/, lib/, config/). Graphs, edges, and clusters work correctly — only `layer` field is affected.
-**What FSD support requires:**
-1. New ArchLayer variants or a secondary classification system for FSD layers (features, entities, processes, app)
-2. Context-aware matching strategy — FSD needs innermost-segment matching (ui/, model/, api/) rather than first-match, or a two-level scheme: FSD-layer (from outer segment) + functional-layer (from inner segment)
-3. Optional FSD detection heuristic (presence of `features/` + `entities/` + `shared/` at root level)
-4. Addition of `"model"` (singular) to Data layer matching (currently only `"models"`)
+**Status:** Accepted (implemented 2026-03-22)
+**Context:** FSD is a frontend architectural methodology with layer hierarchy: app → processes → pages → widgets → features → entities → shared. Each slice has internal segments (ui/, model/, api/, lib/). Current `infer_arch_layer()` uses first-matching-segment strategy, which loses FSD layer context for files like `features/auth/index.ts` (no inner segment → Unknown).
+**Decision:** Implement two-level FSD classification with automatic project detection:
+1. New `FsdLayer` enum (App, Processes, Pages, Widgets, Features, Entities, Shared) + `fsd_layer: Option<FsdLayer>` on Node — secondary classification system, keeping ArchLayer generic
+2. Two-pass matching when FSD detected: outer segment → FsdLayer, innermost inner segment → ArchLayer (e.g., `features/auth/ui/Button.tsx` → FsdLayer::Features + ArchLayer::Component)
+3. 2-of-3 detection heuristic: if at least 2 of {features/, entities/, shared/} exist at root or src/ level → FSD project
+4. `"model"` singular was already present in Data layer matching — no action needed
 **Alternatives rejected:**
-- Adding FSD segments to existing ArchLayer now — would pollute the generic layer model with framework-specific semantics without proper Phase 2 algorithms to use them
-- Changing first-match to last-match globally — breaks non-FSD projects where outermost segment is the correct layer
-**Reasoning:** FSD support is best done alongside Phase 2's architectural algorithms (depth computation, layer violation detection) which will provide the infrastructure to properly model layered architectures. The graph itself is architecture-agnostic — only the classification metadata needs extension.
-**Affects:** detect/layer.rs, model/node.rs (ArchLayer enum), future architecture.md update.
+- Extending ArchLayer with FSD variants — pollutes generic enum with framework-specific semantics (7+ new variants)
+- Metadata map on Node — loses type safety, no compile-time exhaustiveness
+- Always last-match globally — breaks non-FSD projects where outermost segment is correct
+- Single directory trigger for detection — too many false positives (BDD `features/`, common `shared/`)
+**Reasoning:** Flat optional field on Node follows existing patterns and preserves backward compatibility via `skip_serializing_if = "Option::is_none"`. Non-FSD projects produce byte-identical output. Detection heuristic follows the workspace detection pattern (structural indicators from file paths).
+**Affects:** detect/layer.rs, model/node.rs (FsdLayer enum, Node.fsd_layer), pipeline/build.rs, serial/mod.rs, serial/convert.rs, pipeline/mod.rs.
 
 ## D-032: GraphReader Trait — Separate from GraphSerializer
 

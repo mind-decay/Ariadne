@@ -612,7 +612,7 @@ src/
 - Tier 2/3 language parsers
 - Config file (.ariadne.toml)
 - Plugin system for external parsers
-- Feature-Sliced Design (FSD) architecture support (D-031)
+- ~~Feature-Sliced Design (FSD) architecture support (D-031)~~ ✅ Implemented 2026-03-22
 - `ariadne self-update`
 - Package manager distribution (brew, nix, AUR)
 - Git history integration (co-change analysis, temporal coupling)

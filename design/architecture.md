@@ -115,6 +115,7 @@ Used by the pipeline and algorithms. Optimized for programmatic use with newtype
 Node {
     file_type: FileType,       // source | test | config | style | asset | type_def
     layer: ArchLayer,          // api | service | data | util | component | hook | config | unknown
+    fsd_layer: Option<FsdLayer>, // FSD classification: app|processes|pages|widgets|features|entities|shared (D-031)
     arch_depth: u32,           // topological depth via topo sort after SCC contraction (0 = leaf/foundation)
     lines: u32,                // line count
     hash: ContentHash,         // content hash for delta detection (D-013)
@@ -354,7 +355,7 @@ This is the most complex stage. Its responsibilities are:
 
 1. Build `FileSet` from successfully-read files (for resolution existence checks)
 2. For each `ParsedFile`, call `detect/filetype.rs` → `FileType`
-3. For each `ParsedFile`, call `detect/layer.rs` → `ArchLayer`
+3. For each `ParsedFile`, call `detect/layer.rs` → `(ArchLayer, Option<FsdLayer>)` (FSD two-pass when detected, D-031)
 4. For each `RawImport`, call `ImportResolver::resolve` → `Option<CanonicalPath>`
 5. Classify edges: `tests` (if source is test file targeting source/typedef), `re_exports` (if from `RawExport.is_re_export`), `type_imports` (if `is_type_only`), else `imports`
 6. Apply naming-convention test edge inference (see Edge Type Inference above)
@@ -387,7 +388,7 @@ src/
 ├── model/               # Leaf module — depends on NOTHING
 │   ├── mod.rs           # Re-exports
 │   ├── types.rs         # Newtypes: CanonicalPath, ContentHash, ClusterId, Symbol, FileSet
-│   ├── node.rs          # Node, FileType, ArchLayer
+│   ├── node.rs          # Node, FileType, ArchLayer, FsdLayer (D-031)
 │   ├── edge.rs          # Edge, EdgeType
 │   ├── graph.rs         # ProjectGraph (BTreeMap<CanonicalPath, Node> + Vec<Edge>)
 │   ├── query.rs         # SubgraphResult
@@ -412,7 +413,7 @@ src/
 ├── detect/              # Depends on model/ only
 │   ├── mod.rs           # Re-exports
 │   ├── filetype.rs      # FileType detection from path/extension
-│   └── layer.rs         # ArchLayer inference from directory names
+│   └── layer.rs         # ArchLayer inference from directory names + FSD detection/classification (D-031)
 ├── cluster/             # Depends on model/ only
 │   └── mod.rs           # Directory-based clustering: assign_clusters() + compute_cohesion()
 ├── serial/              # Depends on model/ only
