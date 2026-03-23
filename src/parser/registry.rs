@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use super::csharp;
 use super::go;
 use super::java;
+use super::markdown;
 use super::python::{PythonParser, PythonResolver};
 use super::rust_lang::{RustParser, RustResolver};
 use super::traits::{ImportResolver, LanguageParser, RawExport, RawImport};
@@ -74,6 +75,7 @@ impl ParserRegistry {
         registry.register(go::parser(), go::resolver());
         registry.register(csharp::parser(), csharp::resolver());
         registry.register(java::parser(), java::resolver());
+        registry.register(markdown::parser(), markdown::resolver());
         registry
     }
 

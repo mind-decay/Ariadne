@@ -25,6 +25,11 @@ pub fn detect_file_type(path: &CanonicalPath) -> FileType {
         return FileType::Style;
     }
 
+    // Priority 4.5 — Documentation files (D-066)
+    if let Some("md") = path.extension() {
+        return FileType::Doc;
+    }
+
     // Priority 5 — Asset extensions
     if is_asset_file(filename, path.extension()) {
         return FileType::Asset;
@@ -289,6 +294,14 @@ mod tests {
         assert_eq!(ft("src/app.css"), FileType::Style);
         assert_eq!(ft("src/theme.scss"), FileType::Style);
         assert_eq!(ft("src/old.less"), FileType::Style);
+    }
+
+    // Priority 4.5 — Doc files
+    #[test]
+    fn doc_files() {
+        assert_eq!(ft("README.md"), FileType::Doc);
+        assert_eq!(ft("docs/guide.md"), FileType::Doc);
+        assert_eq!(ft("CHANGELOG.md"), FileType::Doc);
     }
 
     // Priority 5 — Asset files

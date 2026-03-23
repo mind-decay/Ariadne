@@ -2,6 +2,7 @@ mod csharp;
 mod go;
 pub(crate) mod helpers;
 mod java;
+mod markdown;
 mod python;
 pub mod registry;
 mod rust_lang;

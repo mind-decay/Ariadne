@@ -8,6 +8,8 @@ pub enum ImportKind {
     Regular,
     /// Rust `mod` declaration — path is the module name, not a filesystem path
     ModDeclaration,
+    /// Markdown link reference — path is a relative file link
+    Link,
 }
 
 /// Raw import extracted from AST (unresolved).

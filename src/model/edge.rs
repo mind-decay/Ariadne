@@ -10,6 +10,7 @@ pub enum EdgeType {
     Tests,
     ReExports,
     TypeImports,
+    References,
 }
 
 impl EdgeType {
@@ -19,6 +20,7 @@ impl EdgeType {
             Self::Tests => "tests",
             Self::ReExports => "re_exports",
             Self::TypeImports => "type_imports",
+            Self::References => "references",
         }
     }
 }

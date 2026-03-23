@@ -821,3 +821,43 @@ Applies to: Brandes centrality (Phase 2), Louvain modularity (Phase 2b), PageRan
 - Separate `TsxParser` struct — duplicates all extraction logic, only the grammar differs
 - Always use `LANGUAGE_TSX` — TSX grammar accepts non-JSX TypeScript but may have different performance/behavior characteristics
 **Affects:** `src/parser/traits.rs`, `src/parser/typescript.rs`, `src/parser/registry.rs`, `src/pipeline/mod.rs`. Updates D-018 (6 methods on LanguageParser, not 5).
+
+---
+
+## D-066: FileType::Doc for Markdown Files
+
+**Date:** 2026-03-23
+**Status:** Accepted
+**Context:** Markdown files contain cross-references to other project files via links. Need a FileType variant to classify `.md` files distinctly from Source/Asset.
+**Decision:** Add `FileType::Doc` variant. Serializes as `"doc"`. Detection at Priority 4.5 (between Style and Asset). Extension match: `.md`.
+**Affects:** `src/model/node.rs`, `src/detect/filetype.rs`.
+
+---
+
+## D-067: tree-sitter-md for Markdown Parsing
+
+**Date:** 2026-03-23
+**Status:** Accepted
+**Context:** Need AST-based parsing for Markdown to reliably extract link references. tree-sitter-md 0.3 compatible with tree-sitter 0.24.
+**Decision:** Add `tree-sitter-md = "0.3"` dependency. Use block grammar (`LANGUAGE`) only — inline grammar not needed for link extraction. Inline links extracted via pattern matching on `inline` node text.
+**Affects:** `Cargo.toml`, `src/parser/markdown.rs`.
+
+---
+
+## D-068: ImportKind::Link for Markdown References
+
+**Date:** 2026-03-23
+**Status:** Accepted
+**Context:** Markdown link references are semantically different from code imports. Need a distinct ImportKind to classify them.
+**Decision:** Add `ImportKind::Link` variant. Used in `RawImport.kind` when extracting markdown links.
+**Affects:** `src/parser/traits.rs`, `src/parser/markdown.rs`.
+
+---
+
+## D-069: EdgeType::References for Non-Architectural Links
+
+**Date:** 2026-03-23
+**Status:** Accepted
+**Context:** Markdown cross-references are informational, not architectural dependencies. They should appear in the graph but not influence architectural analysis.
+**Decision:** Add `EdgeType::References` variant. `is_architectural()` returns `false` for this type. Serializes as `"references"`.
+**Affects:** `src/model/edge.rs`, pipeline edge construction.

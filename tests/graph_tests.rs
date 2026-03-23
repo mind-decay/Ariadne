@@ -216,6 +216,14 @@ fn tsx_components() {
     }
 }
 
+#[test]
+fn markdown_docs() {
+    let output = helpers::build_fixture("markdown-docs");
+    assert!(output.file_count > 0, "should have markdown file nodes");
+    assert!(output.edge_count > 0, "should have link edges");
+    assert!(output.cluster_count > 0, "should have at least one cluster");
+}
+
 /// All edge-case checks in a single test to avoid concurrent writes to the same fixture.
 #[test]
 fn edge_cases() {

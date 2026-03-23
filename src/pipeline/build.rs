@@ -89,6 +89,7 @@ pub fn resolve_and_build(
                 source_file_type,
                 nodes.get(&resolved).map(|n| n.file_type),
                 import.is_type_only,
+                &import.kind,
             );
 
             let symbols: Vec<Symbol> = import.symbols.iter().map(Symbol::new).collect();
@@ -155,7 +156,13 @@ fn classify_edge_type(
     source_type: Option<FileType>,
     target_type: Option<FileType>,
     is_type_only: bool,
+    import_kind: &ImportKind,
 ) -> EdgeType {
+    // Markdown link references → references edge (D-069)
+    if matches!(import_kind, ImportKind::Link) {
+        return EdgeType::References;
+    }
+
     // Test file importing source/typedef → tests edge
     if source_type == Some(FileType::Test)
         && matches!(

@@ -81,6 +81,7 @@ fn parse_file_type(s: &str) -> Result<FileType, String> {
         "style" => Ok(FileType::Style),
         "asset" => Ok(FileType::Asset),
         "type_def" => Ok(FileType::TypeDef),
+        "doc" => Ok(FileType::Doc),
         other => Err(format!("unknown file type: {}", other)),
     }
 }
@@ -119,6 +120,7 @@ fn parse_edge_type(s: &str) -> Result<EdgeType, String> {
         "tests" => Ok(EdgeType::Tests),
         "re_exports" => Ok(EdgeType::ReExports),
         "type_imports" => Ok(EdgeType::TypeImports),
+        "references" => Ok(EdgeType::References),
         other => Err(format!("unknown edge type: {}", other)),
     }
 }

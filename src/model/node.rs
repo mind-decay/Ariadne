@@ -12,6 +12,7 @@ pub enum FileType {
     Style,
     Asset,
     TypeDef,
+    Doc,
 }
 
 impl FileType {
@@ -23,6 +24,7 @@ impl FileType {
             Self::Style => "style",
             Self::Asset => "asset",
             Self::TypeDef => "type_def",
+            Self::Doc => "doc",
         }
     }
 }
