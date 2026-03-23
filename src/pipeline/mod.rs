@@ -78,9 +78,10 @@ impl BuildPipeline {
     }
 
     pub fn run(&self, root: &Path, config: WalkConfig) -> Result<BuildOutput, FatalError> {
-        self.run_with_output(root, config, None, false, false, false)
+        self.run_with_output(root, config, None, false, false, false, None, None)
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn run_with_output(
         &self,
         root: &Path,
@@ -89,6 +90,8 @@ impl BuildPipeline {
         timestamp: bool,
         verbose: bool,
         no_louvain: bool,
+        rust_crate_name: Option<&str>,
+        louvain_resolution: Option<f64>,
     ) -> Result<BuildOutput, FatalError> {
         let diagnostics = DiagnosticCollector::new();
         let abs_root = std::fs::canonicalize(root).map_err(|_| FatalError::ProjectNotFound {
@@ -231,6 +234,7 @@ impl BuildPipeline {
             workspace_relative.as_ref(),
             case_insensitive,
             is_fsd,
+            rust_crate_name,
         );
         if verbose {
             eprintln!(
@@ -264,7 +268,9 @@ impl BuildPipeline {
         if !no_louvain {
             let louvain_start = Instant::now();
             let dir_cluster_count = cluster_map.clusters.len();
-            let (refined, converged) = algo::louvain::louvain_clustering(&graph, &cluster_map);
+            let gamma = louvain_resolution.unwrap_or(1.0);
+            let (refined, converged) =
+                algo::louvain::louvain_clustering_with_resolution(&graph, &cluster_map, gamma);
             if !converged {
                 diagnostics.warn(Warning {
                     code: WarningCode::W012AlgorithmFailed,
@@ -274,7 +280,19 @@ impl BuildPipeline {
                     detail: None,
                 });
             }
-            cluster_map = refined;
+
+            // Guard: if Louvain reduced clusters below 50% of directory-based count,
+            // the codebase is too tightly connected for Louvain to be useful.
+            // Keep directory-based clusters which preserve navigable structure.
+            let louvain_count = refined.clusters.len();
+            if louvain_count * 2 >= dir_cluster_count {
+                cluster_map = refined;
+            } else if verbose {
+                eprintln!(
+                    "[louvain]   Louvain reduced {} → {} clusters (below 50%), keeping directory-based",
+                    dir_cluster_count, louvain_count,
+                );
+            }
 
             // Re-apply cluster assignments to nodes after Louvain
             for (cluster_id, cluster) in &cluster_map.clusters {
@@ -404,6 +422,7 @@ impl BuildPipeline {
     /// Incremental re-parse of only changed files is deferred to Phase 3.
     /// Views are NOT regenerated (per spec D9).
     #[allow(clippy::too_many_arguments)]
+    #[allow(clippy::too_many_arguments)]
     pub fn update(
         &self,
         root: &Path,
@@ -413,6 +432,8 @@ impl BuildPipeline {
         timestamp: bool,
         verbose: bool,
         no_louvain: bool,
+        rust_crate_name: Option<&str>,
+        louvain_resolution: Option<f64>,
     ) -> Result<BuildOutput, FatalError> {
         let out_dir = match output_dir {
             Some(dir) => dir.to_path_buf(),
@@ -427,7 +448,7 @@ impl BuildPipeline {
                     eprintln!("[delta]     no prior graph — falling back to full build");
                 }
                 return self
-                    .run_with_output(root, config, output_dir, timestamp, verbose, no_louvain);
+                    .run_with_output(root, config, output_dir, timestamp, verbose, no_louvain, rust_crate_name, louvain_resolution);
             }
             Err(FatalError::GraphCorrupted { ref reason, .. }) => {
                 let reason_str = reason.clone();
@@ -438,7 +459,7 @@ impl BuildPipeline {
                     );
                 }
                 let mut result =
-                    self.run_with_output(root, config, output_dir, timestamp, verbose, no_louvain)?;
+                    self.run_with_output(root, config, output_dir, timestamp, verbose, no_louvain, rust_crate_name, louvain_resolution)?;
                 let w011 = Warning {
                     code: WarningCode::W011GraphCorrupted,
                     path: CanonicalPath::new(out_dir.display().to_string()),
@@ -461,7 +482,7 @@ impl BuildPipeline {
                 );
             }
             let mut result =
-                self.run_with_output(root, config, output_dir, timestamp, verbose, no_louvain)?;
+                self.run_with_output(root, config, output_dir, timestamp, verbose, no_louvain, rust_crate_name, louvain_resolution)?;
             let w010 = Warning {
                 code: WarningCode::W010GraphVersionMismatch,
                 path: CanonicalPath::new(out_dir.display().to_string()),
@@ -483,7 +504,7 @@ impl BuildPipeline {
                     );
                 }
                 let mut result =
-                    self.run_with_output(root, config, output_dir, timestamp, verbose, no_louvain)?;
+                    self.run_with_output(root, config, output_dir, timestamp, verbose, no_louvain, rust_crate_name, louvain_resolution)?;
                 let w011 = Warning {
                     code: WarningCode::W011GraphCorrupted,
                     path: CanonicalPath::new(out_dir.display().to_string()),
@@ -563,7 +584,7 @@ impl BuildPipeline {
         // Any changes detected — do a full rebuild for correctness.
         // The delta detection itself is the optimization: we skip the rebuild
         // entirely when nothing changed.
-        self.run_with_output(root, config, output_dir, timestamp, verbose, no_louvain)
+        self.run_with_output(root, config, output_dir, timestamp, verbose, no_louvain, rust_crate_name, louvain_resolution)
     }
 }
 

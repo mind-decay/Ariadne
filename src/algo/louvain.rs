@@ -21,6 +21,19 @@ pub fn louvain_clustering(
     graph: &ProjectGraph,
     initial_clusters: &ClusterMap,
 ) -> (ClusterMap, bool) {
+    louvain_clustering_with_resolution(graph, initial_clusters, 1.0)
+}
+
+/// Louvain clustering with a configurable resolution parameter (gamma).
+///
+/// - gamma = 1.0: standard modularity (default)
+/// - gamma > 1.0: penalizes merging more → finer-grained communities
+/// - gamma < 1.0: encourages merging → coarser communities
+pub fn louvain_clustering_with_resolution(
+    graph: &ProjectGraph,
+    initial_clusters: &ClusterMap,
+    resolution: f64,
+) -> (ClusterMap, bool) {
     // Edge cases: empty graph, single file, no edges → return unchanged
     if graph.nodes.len() <= 1 {
         return (initial_clusters.clone(), true);
@@ -119,6 +132,7 @@ pub fn louvain_clustering(
             w_m,
             MAX_INNER_ITERATIONS,
             CONVERGENCE_THRESHOLD,
+            resolution,
         );
 
         if !phase1_moved {
@@ -217,6 +231,7 @@ fn local_moves(
     m: f64,
     max_iterations: u32,
     _convergence_threshold: f64,
+    resolution: f64,
 ) -> bool {
     let mut any_moved = false;
 
@@ -241,7 +256,7 @@ fn local_moves(
             }
 
             let ki_in = neighbor_communities.get(&ci).copied().unwrap_or(0.0);
-            let remove_cost = ki_in - sigma_tot[ci] * ki / (2.0 * m);
+            let remove_cost = ki_in - resolution * sigma_tot[ci] * ki / (2.0 * m);
 
             let mut best_community = ci;
             let mut best_gain = 0.0;
@@ -250,7 +265,7 @@ fn local_moves(
                 if cj == ci {
                     continue;
                 }
-                let gain = (kj_in - sigma_tot[cj] * ki / (2.0 * m)) - remove_cost;
+                let gain = (kj_in - resolution * sigma_tot[cj] * ki / (2.0 * m)) - remove_cost;
                 if gain > best_gain {
                     best_gain = gain;
                     best_community = cj;

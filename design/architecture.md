@@ -488,13 +488,16 @@ Cluster {
 
 ### Language-Specific Resolution Notes
 
-**Rust module paths:** Rust `use` statements reference module paths (`crate::auth::login`), not filesystem paths. The Rust `ImportResolver` handles this by:
+**Rust module paths:** Rust `use` statements reference module paths (`crate::auth::login`), not filesystem paths. The Rust parser and resolver handle this in two stages:
 
-1. `extract_imports` converts `use crate::auth::login` to `RawImport { path: "src/auth/login", ... }` — the parser pre-maps module paths to filesystem paths using Rust's module conventions (`crate::` → `src/`, `mod.rs` / `<name>.rs` lookup)
-2. The resolver then uses standard `FileSet` existence checks on the pre-mapped path
-3. `mod` declarations are treated as imports: `mod auth;` → `RawImport { path: "src/auth/mod" or "src/auth", ... }` with extension probing
+1. **Parsing:** `extract_imports` preserves the Rust path as-is in `RawImport.path` (e.g. `"crate::model::CanonicalPath"`). `mod` declarations produce `ImportKind::ModDeclaration` with just the module name.
+2. **Resolution:** `RustResolver.resolve()` maps the path to filesystem:
+   - `crate::` prefix → `src/` directory, then probes `<path>.rs` or `<path>/mod.rs`
+   - `super::`/`self::` → relative to current file's module position
+   - Walk-back probing (D-071): if exact path fails (e.g. `src/model/CanonicalPath.rs` doesn't exist because `CanonicalPath` is a type, not a module), trims the last segment and retries until a file is found (`src/model/mod.rs`)
+3. **Crate name detection (D-072):** The pipeline reads `Cargo.toml` to detect the crate's own name (e.g. `ariadne-graph` → `ariadne_graph`). Imports using the crate name (`use ariadne_graph::foo`) are rewritten to `crate::foo` before resolution, so `main.rs` self-references resolve correctly.
 
-This keeps the `ImportResolver` trait interface uniform — all resolvers work with filesystem-path-like strings by the time `resolve()` is called.
+`mod` declarations are treated as imports: `mod auth;` → probes `auth.rs` or `auth/mod.rs` relative to the declaring file.
 
 **`ParserRegistry::lookup` on unknown extension:** Returns `Option<(&dyn LanguageParser, &dyn ImportResolver)>`. Files with no matching parser are silently skipped during parsing (no node created, no warning — they are not source files from Ariadne's perspective).
 
@@ -807,12 +810,16 @@ Generated on-demand via `ariadne query subgraph` or `ariadne query blast-radius`
 
 ```rust
 ariadne build <project-root> [--output <dir>]              (Phase 1a)
+    [--no-louvain] [--resolution <gamma>]                  (Phase 2b)
     Parse project, build full graph -> graph.json, clusters.json
+    --no-louvain: disable Louvain, use directory-based clusters only
+    --resolution: Louvain gamma parameter (default 1.0, higher = finer clusters)
 
 ariadne info                                               (Phase 1a)
     Version, supported languages, build info
 
 ariadne update <project-root> [--output <dir>]             (Phase 2)
+    [--no-louvain] [--resolution <gamma>]
     Incremental update via delta computation
 
 ariadne query blast-radius <file> [--depth N] [--format json|md]  (Phase 2)

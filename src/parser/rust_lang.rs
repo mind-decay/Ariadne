@@ -4,11 +4,20 @@ use crate::parser::helpers;
 use crate::parser::traits::{ImportKind, ImportResolver, LanguageParser, RawExport, RawImport};
 
 /// Parser and resolver for Rust source files (.rs).
-pub(crate) struct RustParser;
+pub(crate) struct RustParser {
+    /// The crate's own name (e.g. "ariadne_graph"), so we don't skip
+    /// `use ariadne_graph::foo` as an external import.
+    crate_name: Option<String>,
+}
 
 impl RustParser {
-    pub fn new() -> Self {
-        Self
+    #[cfg(test)]
+    fn new() -> Self {
+        Self::with_crate_name(None)
+    }
+
+    pub fn with_crate_name(crate_name: Option<String>) -> Self {
+        Self { crate_name }
     }
 
     /// Extract path segments from a scoped_identifier or use path.
@@ -24,10 +33,10 @@ impl RustParser {
             "scoped_identifier" | "scoped_type_identifier" => {
                 // Has a path (left) and a name (right)
                 if let Some(path) = helpers::find_child_by_kind(node, "scoped_identifier")
-                    .or_else(|| helpers::find_child_by_kind(node, "identifier"))
                     .or_else(|| helpers::find_child_by_kind(node, "crate"))
                     .or_else(|| helpers::find_child_by_kind(node, "super"))
                     .or_else(|| helpers::find_child_by_kind(node, "self"))
+                    .or_else(|| helpers::find_child_by_kind(node, "identifier"))
                 {
                     Self::collect_path_segments(&path, source, segments);
                 }
@@ -212,14 +221,22 @@ impl RustParser {
     }
 
     /// Check if path segments represent a standard library or external crate import to skip.
-    fn is_skip_import(segments: &[String]) -> bool {
+    fn is_skip_import(&self, segments: &[String]) -> bool {
         if segments.is_empty() {
             return true;
         }
         match segments[0].as_str() {
             "std" | "core" | "alloc" => true,
             "crate" | "super" | "self" => false,
-            _ => true, // External crate — skip
+            first => {
+                // Don't skip if it matches this crate's own name
+                if let Some(ref name) = self.crate_name {
+                    if first == name {
+                        return false;
+                    }
+                }
+                true // External crate — skip
+            }
         }
     }
 }
@@ -252,7 +269,7 @@ impl LanguageParser for RustParser {
                     let paths = Self::extract_use_paths(&node, source);
 
                     for (segments, symbols) in paths {
-                        if Self::is_skip_import(&segments) {
+                        if self.is_skip_import(&segments) {
                             continue;
                         }
 
@@ -525,7 +542,7 @@ impl ImportResolver for RustResolver {
             }
         };
 
-        Self::probe_rust_path(&fs_path, known_files)
+        Self::probe_rust_path_with_walkback(&fs_path, known_files)
     }
 }
 
@@ -581,6 +598,27 @@ impl RustResolver {
         let mod_candidate = CanonicalPath::new(format!("{}/mod.rs", base));
         if known_files.contains(&mod_candidate) {
             return Some(mod_candidate);
+        }
+
+        None
+    }
+
+    /// Probe with walk-back: when the full path doesn't resolve (e.g. `src/model/CanonicalPath`
+    /// because `CanonicalPath` is a symbol, not a file), trim the last segment and retry.
+    /// This resolves `use crate::model::SomeType` → `src/model/mod.rs`.
+    fn probe_rust_path_with_walkback(base: &str, known_files: &FileSet) -> Option<CanonicalPath> {
+        // First, try the exact path
+        if let Some(found) = Self::probe_rust_path(base, known_files) {
+            return Some(found);
+        }
+
+        // Walk back: trim the last segment (likely a symbol name) and retry
+        let mut path = base;
+        while let Some(slash_pos) = path.rfind('/') {
+            path = &path[..slash_pos];
+            if let Some(found) = Self::probe_rust_path(path, known_files) {
+                return Some(found);
+            }
         }
 
         None
@@ -741,5 +779,35 @@ use crate::{auth, config};
         let result = rust_exports("pub(crate) fn internal() {}");
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].name, "internal");
+    }
+
+    #[test]
+    fn use_crate_scoped_imports_resolved() {
+        let result = rust_imports("use crate::model::{CanonicalPath, FileSet};");
+        assert_eq!(result.len(), 2, "should extract 2 imports: {:?}", result);
+        assert_eq!(result[0].path, "crate::model::CanonicalPath");
+        assert_eq!(result[1].path, "crate::model::FileSet");
+        assert_eq!(result[0].kind, ImportKind::Regular);
+    }
+
+    #[test]
+    fn use_crate_single_import() {
+        let result = rust_imports("use crate::diagnostic::DiagnosticCollector;");
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].path, "crate::diagnostic::DiagnosticCollector");
+    }
+
+    #[test]
+    fn use_crate_wildcard() {
+        let result = rust_imports("use crate::model::*;");
+        assert_eq!(result.len(), 1);
+        assert!(result[0].path.contains("crate::model"), "path should contain crate::model: {}", result[0].path);
+    }
+
+    #[test]
+    fn use_super_import() {
+        let result = rust_imports("use super::utils::format;");
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].path, "super::utils::format");
     }
 }

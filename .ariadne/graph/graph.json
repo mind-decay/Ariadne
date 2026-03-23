@@ -1,33 +1,51 @@
 {
   "version": 1,
-  "project_root": "/Users/minddecay/Documents/Projects/Ariadne",
-  "node_count": 125,
-  "edge_count": 81,
+  "project_root": ".",
+  "node_count": 177,
+  "edge_count": 253,
   "nodes": {
+    "CLAUDE.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 119,
+      "hash": "d3aa37bfd408cba4",
+      "exports": [],
+      "cluster": "root"
+    },
+    "README.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 312,
+      "hash": "1d5868a983e20d35",
+      "exports": [],
+      "cluster": "root"
+    },
     "benches/algo_bench.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 181,
-      "hash": "3a1afdbac03dba49",
+      "arch_depth": 4,
+      "lines": 188,
+      "hash": "d56ed93746d20a1a",
       "exports": [],
       "cluster": "benches"
     },
     "benches/analysis_bench.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 189,
-      "hash": "91441956d0dbd081",
+      "arch_depth": 7,
+      "lines": 192,
+      "hash": "a14037c493398ada",
       "exports": [],
       "cluster": "benches"
     },
     "benches/build_bench.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 85,
-      "hash": "5598378bd83eaad7",
+      "arch_depth": 7,
+      "lines": 91,
+      "hash": "7e5b22eae627cfdc",
       "exports": [],
       "cluster": "benches"
     },
@@ -45,27 +63,324 @@
     "benches/mcp_bench.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 159,
-      "hash": "62f517d201bae6cc",
+      "arch_depth": 6,
+      "lines": 162,
+      "hash": "4b84c88d4c523938",
       "exports": [],
       "cluster": "benches"
     },
     "benches/parser_bench.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 180,
-      "hash": "bd75519c841f8760",
+      "arch_depth": 5,
+      "lines": 182,
+      "hash": "20476c21d9de1dd9",
       "exports": [],
       "cluster": "benches"
+    },
+    "design/ROADMAP.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 621,
+      "hash": "8ac49f0c21050871",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/architecture.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 931,
+      "hash": "42f45453a39e2f7b",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/decisions/log.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 863,
+      "hash": "64df7e8892764ec2",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/determinism.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 160,
+      "hash": "991037c58ac3ee38",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/distribution.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 221,
+      "hash": "a59a991bb3dfbd68",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/error-handling.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 412,
+      "hash": "2b2668cee8e8c262",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/path-resolution.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 274,
+      "hash": "b83455998d6a8e0f",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/performance.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 248,
+      "hash": "3d9ab9f3e8fb999d",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/reports/archive/2026-03-17-doc-audit.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 283,
+      "hash": "dfc0230070e02040",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/reports/archive/2026-03-18-architecture-review.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 149,
+      "hash": "cd97cb67f7f205f9",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/reports/archive/2026-03-18-v2-architecture-review.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 283,
+      "hash": "272c564d78a5e990",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/reports/archive/2026-03-19-architecture-review.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 188,
+      "hash": "cd1aadfbeb8f3c18",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/reports/archive/2026-03-19-v2-architecture-review.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 232,
+      "hash": "a4980195bded9cd9",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/reports/archive/2026-03-22-architectural-review.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 437,
+      "hash": "69cc4f8eb3092aa7",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/specs/archive/2026-03-17-phase1-core-cli.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 692,
+      "hash": "8a2b1f3e7c017bf4",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/specs/archive/2026-03-17-phase1-implementation-plan.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 486,
+      "hash": "38df0e0098e66c1c",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/specs/archive/2026-03-17-phase1a-implementation-plan.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 315,
+      "hash": "8d5479905f8f0173",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/specs/archive/2026-03-17-phase1a-mvp.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 214,
+      "hash": "0a78af45ae8b1766",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/specs/archive/2026-03-18-phase1b-hardening.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 318,
+      "hash": "5c62bf686a013036",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/specs/archive/2026-03-18-phase1b-implementation-plan.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 559,
+      "hash": "1aafb7817968647d",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/specs/archive/2026-03-18-phase2-algorithms-queries-views.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 566,
+      "hash": "f4fd6d4707e966ef",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/specs/archive/2026-03-18-phase2a-implementation-plan.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 499,
+      "hash": "28489c1d2e852d19",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/specs/archive/2026-03-18-review-fixes-plan.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 991,
+      "hash": "1fc4ef971b61ac77",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/specs/archive/2026-03-19-phase2b-implementation-plan.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 319,
+      "hash": "6f718d04b5f559ff",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/specs/archive/2026-03-19-phase3-mcp-server-architectural-intelligence.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 593,
+      "hash": "0666265d0d43b876",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/specs/archive/2026-03-19-phase3a-implementation-plan.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 1049,
+      "hash": "9991b8dd71439288",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/specs/archive/2026-03-19-phase3a-mcp-server.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 516,
+      "hash": "214401b63da7b336",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/specs/archive/2026-03-19-phase3b-architectural-intelligence.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 470,
+      "hash": "170e5f227f093b7b",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/specs/archive/2026-03-19-phase3b-implementation-plan.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 639,
+      "hash": "a7fba56b03a710c1",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/specs/archive/2026-03-19-phase3c-advanced-graph-analytics.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 469,
+      "hash": "db6dc9b756151254",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/specs/archive/2026-03-19-phase3c-implementation-plan.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 637,
+      "hash": "f0bfa1ba7fdd643d",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/testing.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 428,
+      "hash": "0f8eed7f34f944ac",
+      "exports": [],
+      "cluster": "design"
+    },
+    "docs/superpowers/plans/2026-03-19-architecture-review-fixes.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 516,
+      "hash": "be0b1216e35e92cf",
+      "exports": [],
+      "cluster": "docs"
     },
     "src/algo/blast_radius.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 133,
-      "hash": "002035f41d47e530",
+      "arch_depth": 3,
+      "lines": 141,
+      "hash": "e129eacd732aa8dd",
       "exports": [
         "blast_radius"
       ],
@@ -74,9 +389,9 @@
     "src/algo/centrality.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 191,
-      "hash": "fd7ae0fd2d9d19e5",
+      "arch_depth": 3,
+      "lines": 201,
+      "hash": "438bac682bcbe1dc",
       "exports": [
         "betweenness_centrality"
       ],
@@ -85,9 +400,9 @@
     "src/algo/compress.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 568,
-      "hash": "712ed3356623b08d",
+      "arch_depth": 2,
+      "lines": 569,
+      "hash": "cf1377475f0dca1b",
       "exports": [
         "compress_l0",
         "compress_l1",
@@ -98,9 +413,9 @@
     "src/algo/delta.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 216,
-      "hash": "a24e7ac29482b335",
+      "arch_depth": 2,
+      "lines": 217,
+      "hash": "fc9dc0a1bfd23507",
       "exports": [
         "DeltaResult",
         "compute_delta"
@@ -110,23 +425,24 @@
     "src/algo/louvain.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 655,
-      "hash": "10ecdfe987f0c5a2",
+      "arch_depth": 2,
+      "lines": 671,
+      "hash": "4dfb4168999918bd",
       "exports": [
-        "louvain_clustering"
+        "louvain_clustering",
+        "louvain_clustering_with_resolution"
       ],
       "cluster": "algo"
     },
     "src/algo/mod.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 1,
-      "lines": 56,
-      "hash": "111305a7004d28ed",
+      "arch_depth": 3,
+      "lines": 64,
+      "hash": "c0ddccb70e2092e5",
       "exports": [
+        "AdjacencyIndex",
         "blast_radius",
-        "build_adjacency",
         "centrality",
         "compress",
         "delta",
@@ -145,9 +461,9 @@
     "src/algo/pagerank.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 367,
-      "hash": "6179948154e19c88",
+      "arch_depth": 3,
+      "lines": 368,
+      "hash": "2686a2cffb5dd298",
       "exports": [
         "combined_importance",
         "pagerank"
@@ -157,9 +473,9 @@
     "src/algo/scc.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 223,
-      "hash": "b01b6fdcf8fc9104",
+      "arch_depth": 3,
+      "lines": 232,
+      "hash": "25fe881ffb895299",
       "exports": [
         "find_sccs"
       ],
@@ -168,9 +484,9 @@
     "src/algo/spectral.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 484,
-      "hash": "6813b7afa98ffc8e",
+      "arch_depth": 3,
+      "lines": 485,
+      "hash": "135fa45cd5973e9a",
       "exports": [
         "SpectralPartition",
         "SpectralResult",
@@ -181,7 +497,7 @@
     "src/algo/stats.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
+      "arch_depth": 3,
       "lines": 117,
       "hash": "1949fb6679127519",
       "exports": [
@@ -192,9 +508,9 @@
     "src/algo/subgraph.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 181,
-      "hash": "f029ea9d1f02a9a9",
+      "arch_depth": 2,
+      "lines": 182,
+      "hash": "a718f397a6fd4554",
       "exports": [
         "extract_subgraph"
       ],
@@ -203,9 +519,9 @@
     "src/algo/topo_sort.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 208,
-      "hash": "3df4e2fa9bb45d29",
+      "arch_depth": 3,
+      "lines": 216,
+      "hash": "3c29f68ffa1a6331",
       "exports": [
         "topological_layers"
       ],
@@ -214,31 +530,31 @@
     "src/analysis/diff.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 599,
-      "hash": "8b7503cfa619730d",
+      "arch_depth": 6,
+      "lines": 600,
+      "hash": "f306294dc491f922",
       "exports": [
         "compute_structural_diff"
       ],
-      "cluster": "algo"
+      "cluster": "analysis"
     },
     "src/analysis/metrics.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 500,
-      "hash": "cd2d87a0205305ca",
+      "arch_depth": 4,
+      "lines": 501,
+      "hash": "ce4b5a734e2c1133",
       "exports": [
         "ClusterMetrics",
         "MetricZone",
         "compute_martin_metrics"
       ],
-      "cluster": "algo"
+      "cluster": "analysis"
     },
     "src/analysis/mod.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 1,
+      "arch_depth": 7,
       "lines": 3,
       "hash": "5b964b0276193a6d",
       "exports": [
@@ -246,73 +562,76 @@
         "metrics",
         "smells"
       ],
-      "cluster": "algo"
+      "cluster": "analysis"
     },
     "src/analysis/smells.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 782,
-      "hash": "6281390a0737bbdd",
+      "arch_depth": 5,
+      "lines": 781,
+      "hash": "96e9ecb2cb3db911",
       "exports": [
         "detect_smells"
       ],
-      "cluster": "algo"
+      "cluster": "analysis"
     },
     "src/cluster/mod.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 248,
-      "hash": "65dc03d0e964500f",
+      "arch_depth": 2,
+      "lines": 249,
+      "hash": "9fb49e2812c4d94f",
       "exports": [
         "assign_clusters"
       ],
-      "cluster": "algo"
+      "cluster": "cluster"
     },
     "src/detect/case_sensitivity.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
+      "arch_depth": 1,
       "lines": 110,
       "hash": "f09561f2f595234d",
       "exports": [
         "find_case_insensitive",
         "is_case_insensitive"
       ],
-      "cluster": "algo"
+      "cluster": "detect"
     },
     "src/detect/filetype.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 327,
-      "hash": "94fc666e22c7c23a",
+      "arch_depth": 2,
+      "lines": 340,
+      "hash": "56072bb486910f86",
       "exports": [
         "detect_file_type"
       ],
-      "cluster": "algo"
+      "cluster": "detect"
     },
     "src/detect/layer.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 214,
-      "hash": "2f2675b5f69b32fd",
+      "arch_depth": 2,
+      "lines": 549,
+      "hash": "5eea6a4e58e428fa",
       "exports": [
+        "detect_fsd_project",
         "infer_arch_layer"
       ],
-      "cluster": "algo"
+      "cluster": "detect"
     },
     "src/detect/mod.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 1,
+      "arch_depth": 4,
       "lines": 9,
-      "hash": "7ca100c90da9d28a",
+      "hash": "309470664e32e76d",
       "exports": [
         "case_sensitivity",
         "detect_file_type",
+        "detect_fsd_project",
+        "detect_rust_crate_name",
         "detect_workspace",
         "filetype",
         "find_case_insensitive",
@@ -321,25 +640,26 @@
         "layer",
         "workspace"
       ],
-      "cluster": "algo"
+      "cluster": "detect"
     },
     "src/detect/workspace.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 576,
-      "hash": "604d63cf68ae7bef",
+      "arch_depth": 3,
+      "lines": 616,
+      "hash": "b8f44a60efbe548b",
       "exports": [
+        "detect_rust_crate_name",
         "detect_workspace"
       ],
-      "cluster": "algo"
+      "cluster": "detect"
     },
     "src/diagnostic.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 507,
-      "hash": "c9d843fd0b2773fb",
+      "arch_depth": 2,
+      "lines": 509,
+      "hash": "535bdfafa67073ca",
       "exports": [
         "DiagnosticCollector",
         "DiagnosticCounts",
@@ -351,23 +671,23 @@
         "format_summary",
         "format_warnings"
       ],
-      "cluster": "algo"
+      "cluster": "root"
     },
     "src/hash.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
+      "arch_depth": 2,
       "lines": 7,
       "hash": "669bae155608bc2d",
       "exports": [
         "hash_content"
       ],
-      "cluster": "algo"
+      "cluster": "root"
     },
     "src/lib.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 2,
+      "arch_depth": 10,
       "lines": 13,
       "hash": "ccbb4ed5853b9a70",
       "exports": [
@@ -384,21 +704,21 @@
         "serial",
         "views"
       ],
-      "cluster": "algo"
+      "cluster": "root"
     },
     "src/main.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 1160,
-      "hash": "3200270c6229a639",
+      "arch_depth": 7,
+      "lines": 1188,
+      "hash": "735b905a51053e08",
       "exports": [],
-      "cluster": "algo"
+      "cluster": "root"
     },
     "src/mcp/lock.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
+      "arch_depth": 3,
       "lines": 146,
       "hash": "791f79dd11f754de",
       "exports": [
@@ -407,12 +727,12 @@
         "check_lock",
         "release_lock"
       ],
-      "cluster": "algo"
+      "cluster": "mcp"
     },
     "src/mcp/mod.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 1,
+      "arch_depth": 9,
       "lines": 5,
       "hash": "4630a5afaca980fc",
       "exports": [
@@ -422,24 +742,24 @@
         "tools",
         "watch"
       ],
-      "cluster": "algo"
+      "cluster": "mcp"
     },
     "src/mcp/server.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 209,
-      "hash": "1cb5ca6079fdc9a5",
+      "arch_depth": 8,
+      "lines": 212,
+      "hash": "3e572ae7f253a3d7",
       "exports": [
         "ServeConfig",
         "run"
       ],
-      "cluster": "algo"
+      "cluster": "mcp"
     },
     "src/mcp/state.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
+      "arch_depth": 5,
       "lines": 210,
       "hash": "61b420d6b1ea552b",
       "exports": [
@@ -447,14 +767,14 @@
         "GraphState",
         "load_graph_state"
       ],
-      "cluster": "algo"
+      "cluster": "mcp"
     },
     "src/mcp/tools.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 709,
-      "hash": "4e01b76fe72a1445",
+      "arch_depth": 6,
+      "lines": 710,
+      "hash": "6499a9a79de1d323",
       "exports": [
         "AriadneTools",
         "BlastRadiusParam",
@@ -469,19 +789,19 @@
         "SubgraphParam",
         "ViewsExportParam"
       ],
-      "cluster": "algo"
+      "cluster": "mcp"
     },
     "src/mcp/watch.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 222,
-      "hash": "e3f8bbb74623b064",
+      "arch_depth": 7,
+      "lines": 224,
+      "hash": "350b518ad22f4ba4",
       "exports": [
         "FileWatcher",
         "should_trigger_rebuild"
       ],
-      "cluster": "algo"
+      "cluster": "mcp"
     },
     "src/model/compress.rs": {
       "type": "source",
@@ -496,7 +816,7 @@
         "CompressedNodeType",
         "CompressionLevel"
       ],
-      "cluster": "algo"
+      "cluster": "model"
     },
     "src/model/diff.rs": {
       "type": "source",
@@ -511,19 +831,19 @@
         "LayerChange",
         "StructuralDiff"
       ],
-      "cluster": "algo"
+      "cluster": "model"
     },
     "src/model/edge.rs": {
       "type": "source",
       "layer": "data",
       "arch_depth": 0,
-      "lines": 41,
-      "hash": "7290e7a8dea141aa",
+      "lines": 43,
+      "hash": "3d7f20f90e9661b6",
       "exports": [
         "Edge",
         "EdgeType"
       ],
-      "cluster": "algo"
+      "cluster": "model"
     },
     "src/model/graph.rs": {
       "type": "source",
@@ -536,14 +856,14 @@
         "ClusterMap",
         "ProjectGraph"
       ],
-      "cluster": "algo"
+      "cluster": "model"
     },
     "src/model/mod.rs": {
       "type": "source",
       "layer": "data",
       "arch_depth": 1,
       "lines": 23,
-      "hash": "0df6842dd9f6a27c",
+      "hash": "2255a2a5381ed185",
       "exports": [
         "ArchLayer",
         "ArchSmell",
@@ -564,6 +884,7 @@
         "EdgeType",
         "FileSet",
         "FileType",
+        "FsdLayer",
         "LayerChange",
         "Node",
         "ProjectGraph",
@@ -589,20 +910,21 @@
         "types",
         "workspace"
       ],
-      "cluster": "algo"
+      "cluster": "model"
     },
     "src/model/node.rs": {
       "type": "source",
       "layer": "data",
       "arch_depth": 0,
-      "lines": 69,
-      "hash": "7ac2238c7c7cdb54",
+      "lines": 99,
+      "hash": "2882a31ae5889e16",
       "exports": [
         "ArchLayer",
         "FileType",
+        "FsdLayer",
         "Node"
       ],
-      "cluster": "algo"
+      "cluster": "model"
     },
     "src/model/query.rs": {
       "type": "source",
@@ -613,7 +935,7 @@
       "exports": [
         "SubgraphResult"
       ],
-      "cluster": "algo"
+      "cluster": "model"
     },
     "src/model/smell.rs": {
       "type": "source",
@@ -627,7 +949,7 @@
         "SmellSeverity",
         "SmellType"
       ],
-      "cluster": "algo"
+      "cluster": "model"
     },
     "src/model/stats.rs": {
       "type": "source",
@@ -639,14 +961,14 @@
         "StatsOutput",
         "StatsSummary"
       ],
-      "cluster": "algo"
+      "cluster": "model"
     },
     "src/model/types.rs": {
       "type": "source",
       "layer": "data",
       "arch_depth": 0,
-      "lines": 335,
-      "hash": "4305628715ab079d",
+      "lines": 336,
+      "hash": "059c27a11793f306",
       "exports": [
         "CanonicalPath",
         "ClusterId",
@@ -654,7 +976,7 @@
         "FileSet",
         "Symbol"
       ],
-      "cluster": "algo"
+      "cluster": "model"
     },
     "src/model/workspace.rs": {
       "type": "source",
@@ -667,50 +989,74 @@
         "WorkspaceKind",
         "WorkspaceMember"
       ],
-      "cluster": "algo"
+      "cluster": "model"
     },
     "src/parser/csharp.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 244,
-      "hash": "5104f6de375590a4",
+      "arch_depth": 3,
+      "lines": 376,
+      "hash": "ac25206849442c6e",
       "exports": [
         "parser",
         "resolver"
       ],
-      "cluster": "algo"
+      "cluster": "parser"
     },
     "src/parser/go.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 219,
-      "hash": "e4739d51512fcd70",
+      "arch_depth": 3,
+      "lines": 335,
+      "hash": "22445c5d143ce58c",
       "exports": [
         "parser",
         "resolver"
       ],
-      "cluster": "algo"
+      "cluster": "parser"
+    },
+    "src/parser/helpers.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 67,
+      "hash": "8f861782c59b5a74",
+      "exports": [
+        "find_child_by_kind",
+        "strip_quotes"
+      ],
+      "cluster": "parser"
     },
     "src/parser/java.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 237,
-      "hash": "e48949f0f52d8ce4",
+      "arch_depth": 3,
+      "lines": 359,
+      "hash": "0740c405aaea0888",
       "exports": [
         "parser",
         "resolver"
       ],
-      "cluster": "algo"
+      "cluster": "parser"
+    },
+    "src/parser/markdown.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 3,
+      "lines": 498,
+      "hash": "bb850814e761d7b4",
+      "exports": [
+        "parser",
+        "resolver"
+      ],
+      "cluster": "parser"
     },
     "src/parser/mod.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 1,
-      "lines": 11,
-      "hash": "61d4dd5130c74a25",
+      "arch_depth": 4,
+      "lines": 13,
+      "hash": "617cb9ed8cf932a4",
       "exports": [
         "ImportKind",
         "ImportResolver",
@@ -719,53 +1065,54 @@
         "ParserRegistry",
         "RawExport",
         "RawImport",
+        "helpers",
         "registry",
         "traits"
       ],
-      "cluster": "algo"
+      "cluster": "parser"
     },
     "src/parser/python.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 506,
-      "hash": "a5f8be9caa0b1f86",
+      "arch_depth": 3,
+      "lines": 666,
+      "hash": "6f23c7971b0ccfcb",
       "exports": [
         "PythonParser",
         "PythonResolver"
       ],
-      "cluster": "algo"
+      "cluster": "parser"
     },
     "src/parser/registry.rs": {
       "type": "source",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 156,
-      "hash": "6bccc20484393f1f",
+      "lines": 167,
+      "hash": "e5290f9322da27d8",
       "exports": [
         "ParseOutcome",
         "ParserRegistry"
       ],
-      "cluster": "algo"
+      "cluster": "parser"
     },
     "src/parser/rust_lang.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 597,
-      "hash": "21c5547489515be9",
+      "arch_depth": 3,
+      "lines": 813,
+      "hash": "df60dff06fd372e1",
       "exports": [
         "RustParser",
         "RustResolver"
       ],
-      "cluster": "algo"
+      "cluster": "parser"
     },
     "src/parser/traits.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 48,
-      "hash": "a533fc29f747ca86",
+      "arch_depth": 2,
+      "lines": 55,
+      "hash": "e906e6daebf5039c",
       "exports": [
         "ImportKind",
         "ImportResolver",
@@ -773,37 +1120,37 @@
         "RawExport",
         "RawImport"
       ],
-      "cluster": "algo"
+      "cluster": "parser"
     },
     "src/parser/typescript.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 710,
-      "hash": "56ccb4df39eab6a6",
+      "arch_depth": 3,
+      "lines": 1119,
+      "hash": "1d94c4e24d09c789",
       "exports": [
         "TypeScriptParser",
         "TypeScriptResolver"
       ],
-      "cluster": "algo"
+      "cluster": "parser"
     },
     "src/pipeline/build.rs": {
       "type": "config",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 321,
-      "hash": "8022525d58b3c178",
+      "arch_depth": 5,
+      "lines": 356,
+      "hash": "feb7fe572ffaf1f5",
       "exports": [
         "resolve_and_build"
       ],
-      "cluster": "algo"
+      "cluster": "pipeline"
     },
     "src/pipeline/mod.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 1,
-      "lines": 657,
-      "hash": "1ba8bcb06018d65c",
+      "arch_depth": 6,
+      "lines": 713,
+      "hash": "920c795838e26c39",
       "exports": [
         "BuildOutput",
         "BuildPipeline",
@@ -822,12 +1169,12 @@
         "resolve",
         "walk"
       ],
-      "cluster": "algo"
+      "cluster": "pipeline"
     },
     "src/pipeline/read.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
+      "arch_depth": 3,
       "lines": 109,
       "hash": "4a774c01e74e925b",
       "exports": [
@@ -836,23 +1183,23 @@
         "FileSkipReason",
         "FsReader"
       ],
-      "cluster": "algo"
+      "cluster": "pipeline"
     },
     "src/pipeline/resolve.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
+      "arch_depth": 5,
       "lines": 43,
       "hash": "fcc452571ea7574f",
       "exports": [
         "resolve_import"
       ],
-      "cluster": "algo"
+      "cluster": "pipeline"
     },
     "src/pipeline/walk.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
+      "arch_depth": 3,
       "lines": 194,
       "hash": "36bb9375a46bae32",
       "exports": [
@@ -862,34 +1209,34 @@
         "WalkConfig",
         "WalkResult"
       ],
-      "cluster": "algo"
+      "cluster": "pipeline"
     },
     "src/serial/convert.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 198,
-      "hash": "dc4471073af7049d",
+      "arch_depth": 2,
+      "lines": 217,
+      "hash": "10e2105491132921",
       "exports": [],
-      "cluster": "algo"
+      "cluster": "serial"
     },
     "src/serial/json.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
+      "arch_depth": 3,
       "lines": 147,
-      "hash": "ce8fef6806206570",
+      "hash": "2da8862e73e715f2",
       "exports": [
         "JsonSerializer"
       ],
-      "cluster": "algo"
+      "cluster": "serial"
     },
     "src/serial/mod.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 1,
-      "lines": 95,
-      "hash": "31debb81afb914b1",
+      "arch_depth": 4,
+      "lines": 97,
+      "hash": "2f21a46b94d23723",
       "exports": [
         "ClusterEntryOutput",
         "ClusterOutput",
@@ -902,55 +1249,55 @@
         "convert",
         "json"
       ],
-      "cluster": "algo"
+      "cluster": "serial"
     },
     "src/views/cluster.rs": {
       "type": "source",
       "layer": "component",
-      "arch_depth": 0,
-      "lines": 173,
-      "hash": "78cab76bb7a95ddd",
+      "arch_depth": 2,
+      "lines": 274,
+      "hash": "494fd4d0aec5a49a",
       "exports": [
         "generate_cluster_view"
       ],
-      "cluster": "algo"
+      "cluster": "views"
     },
     "src/views/impact.rs": {
       "type": "source",
       "layer": "component",
-      "arch_depth": 0,
-      "lines": 97,
-      "hash": "a45bcaa03255e8bd",
+      "arch_depth": 2,
+      "lines": 217,
+      "hash": "bdaa10f357eb9c23",
       "exports": [
         "generate_blast_radius_view",
         "generate_subgraph_view"
       ],
-      "cluster": "algo"
+      "cluster": "views"
     },
     "src/views/index.rs": {
       "type": "source",
       "layer": "component",
-      "arch_depth": 0,
-      "lines": 101,
-      "hash": "d9de6281c9ea68f8",
+      "arch_depth": 2,
+      "lines": 303,
+      "hash": "7599071553cde3e4",
       "exports": [
         "generate_index"
       ],
-      "cluster": "algo"
+      "cluster": "views"
     },
     "src/views/mod.rs": {
       "type": "source",
       "layer": "component",
-      "arch_depth": 1,
-      "lines": 55,
-      "hash": "c6a2db68b619cf00",
+      "arch_depth": 3,
+      "lines": 95,
+      "hash": "443a544a16a2cdfb",
       "exports": [
         "cluster",
         "generate_all_views",
         "impact",
         "index"
       ],
-      "cluster": "algo"
+      "cluster": "views"
     },
     "tests/fixtures/csharp-project/Data/UserRepository.cs": {
       "type": "source",
@@ -1148,6 +1495,42 @@
       ],
       "cluster": "tests"
     },
+    "tests/fixtures/markdown-docs/README.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 7,
+      "hash": "3f515db88db527f6",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/markdown-docs/docs/api.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 5,
+      "hash": "51bcaaad14ef9b7e",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/markdown-docs/docs/guide.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 5,
+      "hash": "d6631643755e651e",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/mixed-project/README.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 0,
+      "hash": "0a7c58dd4af4bdc4",
+      "exports": [],
+      "cluster": "tests"
+    },
     "tests/fixtures/mixed-project/backend/main.go": {
       "type": "source",
       "layer": "unknown",
@@ -1163,7 +1546,9 @@
       "arch_depth": 1,
       "lines": 17,
       "hash": "b0975bcc8301ceee",
-      "exports": [],
+      "exports": [
+        "default"
+      ],
       "cluster": "tests"
     },
     "tests/fixtures/mixed-project/frontend/src/components/Button.tsx": {
@@ -1338,6 +1723,136 @@
       "exports": [],
       "cluster": "tests"
     },
+    "tests/fixtures/tsx-components/App.tsx": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 1,
+      "lines": 29,
+      "hash": "f5bd26b2e121f77e",
+      "exports": [
+        "default"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/tsx-components/components/Callback.tsx": {
+      "type": "source",
+      "layer": "component",
+      "arch_depth": 0,
+      "lines": 19,
+      "hash": "82f0d249c2f0689f",
+      "exports": [
+        "Callback",
+        "InlineCallback"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/tsx-components/components/Card.tsx": {
+      "type": "source",
+      "layer": "component",
+      "arch_depth": 0,
+      "lines": 8,
+      "hash": "56bc8026bbfc513b",
+      "exports": [
+        "Card"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/tsx-components/components/Conditional.tsx": {
+      "type": "source",
+      "layer": "component",
+      "arch_depth": 0,
+      "lines": 32,
+      "hash": "103d880e86a15d4b",
+      "exports": [
+        "Conditional",
+        "IndexedList",
+        "List",
+        "Ternary"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/tsx-components/components/DefaultAnon.tsx": {
+      "type": "source",
+      "layer": "component",
+      "arch_depth": 0,
+      "lines": 4,
+      "hash": "15fb2c8a60a4ecac",
+      "exports": [
+        "default"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/tsx-components/components/Fragment.tsx": {
+      "type": "source",
+      "layer": "component",
+      "arch_depth": 0,
+      "lines": 12,
+      "hash": "a057bc7dda3beb19",
+      "exports": [
+        "Fragment",
+        "InlineFragment"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/tsx-components/components/GenericBox.tsx": {
+      "type": "source",
+      "layer": "component",
+      "arch_depth": 0,
+      "lines": 14,
+      "hash": "ddb26840e4801846",
+      "exports": [
+        "GenericBox",
+        "Pair"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/tsx-components/components/Header.tsx": {
+      "type": "source",
+      "layer": "component",
+      "arch_depth": 0,
+      "lines": 8,
+      "hash": "d1224b8b0652664e",
+      "exports": [
+        "Header"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/tsx-components/components/LegacyButton.jsx": {
+      "type": "source",
+      "layer": "component",
+      "arch_depth": 0,
+      "lines": 6,
+      "hash": "372072c3f4f42b2f",
+      "exports": [
+        "LegacyButton",
+        "LegacyIcon"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/tsx-components/components/SpreadProps.tsx": {
+      "type": "source",
+      "layer": "component",
+      "arch_depth": 0,
+      "lines": 14,
+      "hash": "f4ecf85db1330caa",
+      "exports": [
+        "MixedSpread",
+        "SpreadProps"
+      ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/tsx-components/components/StyledBox.tsx": {
+      "type": "source",
+      "layer": "component",
+      "arch_depth": 0,
+      "lines": 7,
+      "hash": "90f8bcdf20a16293",
+      "exports": [
+        "StyledBox",
+        "StyledExpr"
+      ],
+      "cluster": "tests"
+    },
     "tests/fixtures/typescript-app/src/__tests__/login.test.ts": {
       "type": "test",
       "layer": "unknown",
@@ -1469,8 +1984,8 @@
       "type": "test",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 157,
-      "hash": "32c9ec30286ce214",
+      "lines": 312,
+      "hash": "110cccc8cf248d41",
       "exports": [],
       "cluster": "tests"
     },
@@ -1478,8 +1993,8 @@
       "type": "test",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 46,
-      "hash": "d9c42087338708c4",
+      "lines": 48,
+      "hash": "36c8008649cba2dd",
       "exports": [
         "build_and_read_graph_json",
         "build_fixture",
@@ -1500,8 +2015,8 @@
       "type": "test",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 417,
-      "hash": "fcd5f13a69229a3f",
+      "lines": 419,
+      "hash": "f2e91b6f93d1c0ca",
       "exports": [],
       "cluster": "tests"
     },
@@ -1509,8 +2024,8 @@
       "type": "test",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 380,
-      "hash": "01b0a5169ba2cb60",
+      "lines": 397,
+      "hash": "674c214b8b1dac24",
       "exports": [],
       "cluster": "tests"
     },
@@ -1525,6 +2040,203 @@
     }
   },
   "edges": [
+    [
+      "benches/algo_bench.rs",
+      "src/algo/mod.rs",
+      "imports",
+      [
+        "algo"
+      ]
+    ],
+    [
+      "benches/algo_bench.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "*"
+      ]
+    ],
+    [
+      "benches/analysis_bench.rs",
+      "src/algo/mod.rs",
+      "imports",
+      [
+        "algo"
+      ]
+    ],
+    [
+      "benches/analysis_bench.rs",
+      "src/analysis/diff.rs",
+      "imports",
+      [
+        "compute_structural_diff"
+      ]
+    ],
+    [
+      "benches/analysis_bench.rs",
+      "src/analysis/metrics.rs",
+      "imports",
+      [
+        "compute_martin_metrics"
+      ]
+    ],
+    [
+      "benches/analysis_bench.rs",
+      "src/analysis/smells.rs",
+      "imports",
+      [
+        "detect_smells"
+      ]
+    ],
+    [
+      "benches/analysis_bench.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "*"
+      ]
+    ],
+    [
+      "benches/build_bench.rs",
+      "src/parser/mod.rs",
+      "imports",
+      [
+        "ParserRegistry"
+      ]
+    ],
+    [
+      "benches/build_bench.rs",
+      "src/pipeline/mod.rs",
+      "imports",
+      [
+        "BuildPipeline",
+        "FsReader",
+        "FsWalker",
+        "WalkConfig"
+      ]
+    ],
+    [
+      "benches/build_bench.rs",
+      "src/serial/json.rs",
+      "imports",
+      [
+        "JsonSerializer"
+      ]
+    ],
+    [
+      "benches/mcp_bench.rs",
+      "src/algo/mod.rs",
+      "imports",
+      [
+        "algo"
+      ]
+    ],
+    [
+      "benches/mcp_bench.rs",
+      "src/mcp/state.rs",
+      "imports",
+      [
+        "GraphState"
+      ]
+    ],
+    [
+      "benches/mcp_bench.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "*"
+      ]
+    ],
+    [
+      "benches/parser_bench.rs",
+      "src/hash.rs",
+      "imports",
+      [
+        "hash_content"
+      ]
+    ],
+    [
+      "benches/parser_bench.rs",
+      "src/parser/mod.rs",
+      "imports",
+      [
+        "ParserRegistry"
+      ]
+    ],
+    [
+      "src/algo/blast_radius.rs",
+      "src/algo/mod.rs",
+      "imports",
+      [
+        "AdjacencyIndex"
+      ]
+    ],
+    [
+      "src/algo/blast_radius.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath",
+        "ProjectGraph"
+      ]
+    ],
+    [
+      "src/algo/centrality.rs",
+      "src/algo/mod.rs",
+      "imports",
+      [
+        "AdjacencyIndex",
+        "round4"
+      ]
+    ],
+    [
+      "src/algo/centrality.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath",
+        "ProjectGraph"
+      ]
+    ],
+    [
+      "src/algo/compress.rs",
+      "src/model/compress.rs",
+      "imports",
+      [
+        "*"
+      ]
+    ],
+    [
+      "src/algo/compress.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "*"
+      ]
+    ],
+    [
+      "src/algo/delta.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath",
+        "ContentHash",
+        "Node"
+      ]
+    ],
+    [
+      "src/algo/louvain.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath",
+        "Cluster",
+        "ClusterId",
+        "ClusterMap",
+        "Edge",
+        "ProjectGraph"
+      ]
+    ],
     [
       "src/algo/mod.rs",
       "src/algo/blast_radius.rs",
@@ -1614,6 +2326,164 @@
       ]
     ],
     [
+      "src/algo/mod.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath",
+        "Edge"
+      ]
+    ],
+    [
+      "src/algo/pagerank.rs",
+      "src/algo/mod.rs",
+      "imports",
+      [
+        "round4"
+      ]
+    ],
+    [
+      "src/algo/pagerank.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath",
+        "Edge",
+        "EdgeType",
+        "ProjectGraph"
+      ]
+    ],
+    [
+      "src/algo/scc.rs",
+      "src/algo/mod.rs",
+      "imports",
+      [
+        "AdjacencyIndex"
+      ]
+    ],
+    [
+      "src/algo/scc.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath",
+        "ProjectGraph"
+      ]
+    ],
+    [
+      "src/algo/spectral.rs",
+      "src/algo/mod.rs",
+      "imports",
+      [
+        "round4"
+      ]
+    ],
+    [
+      "src/algo/spectral.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath",
+        "ProjectGraph"
+      ]
+    ],
+    [
+      "src/algo/stats.rs",
+      "src/algo/mod.rs",
+      "imports",
+      [
+        "is_architectural"
+      ]
+    ],
+    [
+      "src/algo/stats.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath",
+        "FileType",
+        "ProjectGraph",
+        "StatsOutput",
+        "StatsSummary"
+      ]
+    ],
+    [
+      "src/algo/subgraph.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath",
+        "Edge",
+        "ProjectGraph",
+        "SubgraphResult"
+      ]
+    ],
+    [
+      "src/algo/topo_sort.rs",
+      "src/algo/mod.rs",
+      "imports",
+      [
+        "AdjacencyIndex"
+      ]
+    ],
+    [
+      "src/algo/topo_sort.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath",
+        "ProjectGraph"
+      ]
+    ],
+    [
+      "src/analysis/diff.rs",
+      "src/algo/mod.rs",
+      "imports",
+      [
+        "round4"
+      ]
+    ],
+    [
+      "src/analysis/diff.rs",
+      "src/analysis/metrics.rs",
+      "imports",
+      [
+        "ClusterMetrics"
+      ]
+    ],
+    [
+      "src/analysis/diff.rs",
+      "src/analysis/smells.rs",
+      "imports",
+      [
+        "detect_smells"
+      ]
+    ],
+    [
+      "src/analysis/diff.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "*"
+      ]
+    ],
+    [
+      "src/analysis/metrics.rs",
+      "src/algo/mod.rs",
+      "imports",
+      [
+        "round4"
+      ]
+    ],
+    [
+      "src/analysis/metrics.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "*"
+      ]
+    ],
+    [
       "src/analysis/mod.rs",
       "src/analysis/diff.rs",
       "imports",
@@ -1635,6 +2505,70 @@
       "imports",
       [
         "smells"
+      ]
+    ],
+    [
+      "src/analysis/smells.rs",
+      "src/algo/mod.rs",
+      "imports",
+      [
+        "algo"
+      ]
+    ],
+    [
+      "src/analysis/smells.rs",
+      "src/analysis/metrics.rs",
+      "imports",
+      [
+        "ClusterMetrics"
+      ]
+    ],
+    [
+      "src/analysis/smells.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "*"
+      ]
+    ],
+    [
+      "src/cluster/mod.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath",
+        "Cluster",
+        "ClusterId",
+        "ClusterMap",
+        "ProjectGraph"
+      ]
+    ],
+    [
+      "src/detect/case_sensitivity.rs",
+      "src/model/types.rs",
+      "imports",
+      [
+        "CanonicalPath",
+        "FileSet"
+      ]
+    ],
+    [
+      "src/detect/filetype.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath",
+        "FileType"
+      ]
+    ],
+    [
+      "src/detect/layer.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "ArchLayer",
+        "CanonicalPath",
+        "FsdLayer"
       ]
     ],
     [
@@ -1667,6 +2601,50 @@
       "imports",
       [
         "workspace"
+      ]
+    ],
+    [
+      "src/detect/workspace.rs",
+      "src/diagnostic.rs",
+      "imports",
+      [
+        "DiagnosticCollector",
+        "Warning",
+        "WarningCode"
+      ]
+    ],
+    [
+      "src/detect/workspace.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath"
+      ]
+    ],
+    [
+      "src/detect/workspace.rs",
+      "src/model/workspace.rs",
+      "imports",
+      [
+        "WorkspaceInfo",
+        "WorkspaceKind",
+        "WorkspaceMember"
+      ]
+    ],
+    [
+      "src/diagnostic.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath"
+      ]
+    ],
+    [
+      "src/hash.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "ContentHash"
       ]
     ],
     [
@@ -1766,6 +2744,80 @@
       ]
     ],
     [
+      "src/main.rs",
+      "src/algo/mod.rs",
+      "imports",
+      [
+        "algo"
+      ]
+    ],
+    [
+      "src/main.rs",
+      "src/diagnostic.rs",
+      "imports",
+      [
+        "DiagnosticReport",
+        "FatalError",
+        "WarningFormat",
+        "format_summary",
+        "format_warnings"
+      ]
+    ],
+    [
+      "src/main.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath",
+        "ClusterMap",
+        "ProjectGraph",
+        "StatsOutput"
+      ]
+    ],
+    [
+      "src/main.rs",
+      "src/parser/mod.rs",
+      "imports",
+      [
+        "ParserRegistry"
+      ]
+    ],
+    [
+      "src/main.rs",
+      "src/pipeline/mod.rs",
+      "imports",
+      [
+        "BuildPipeline",
+        "FsReader",
+        "FsWalker",
+        "WalkConfig"
+      ]
+    ],
+    [
+      "src/main.rs",
+      "src/serial/json.rs",
+      "imports",
+      [
+        "JsonSerializer"
+      ]
+    ],
+    [
+      "src/main.rs",
+      "src/serial/mod.rs",
+      "imports",
+      [
+        "GraphReader"
+      ]
+    ],
+    [
+      "src/mcp/lock.rs",
+      "src/diagnostic.rs",
+      "imports",
+      [
+        "FatalError"
+      ]
+    ],
+    [
       "src/mcp/mod.rs",
       "src/mcp/lock.rs",
       "imports",
@@ -1803,6 +2855,204 @@
       "imports",
       [
         "watch"
+      ]
+    ],
+    [
+      "src/mcp/server.rs",
+      "src/diagnostic.rs",
+      "imports",
+      [
+        "FatalError"
+      ]
+    ],
+    [
+      "src/mcp/server.rs",
+      "src/mcp/lock.rs",
+      "imports",
+      [
+        "acquire_lock",
+        "release_lock"
+      ]
+    ],
+    [
+      "src/mcp/server.rs",
+      "src/mcp/state.rs",
+      "imports",
+      [
+        "GraphState",
+        "load_graph_state"
+      ]
+    ],
+    [
+      "src/mcp/server.rs",
+      "src/mcp/tools.rs",
+      "imports",
+      [
+        "AriadneTools"
+      ]
+    ],
+    [
+      "src/mcp/server.rs",
+      "src/mcp/watch.rs",
+      "imports",
+      [
+        "FileWatcher"
+      ]
+    ],
+    [
+      "src/mcp/server.rs",
+      "src/parser/mod.rs",
+      "imports",
+      [
+        "ParserRegistry"
+      ]
+    ],
+    [
+      "src/mcp/server.rs",
+      "src/pipeline/mod.rs",
+      "imports",
+      [
+        "BuildPipeline",
+        "WalkConfig"
+      ]
+    ],
+    [
+      "src/mcp/server.rs",
+      "src/serial/json.rs",
+      "imports",
+      [
+        "JsonSerializer"
+      ]
+    ],
+    [
+      "src/mcp/state.rs",
+      "src/algo/compress.rs",
+      "imports",
+      [
+        "compress"
+      ]
+    ],
+    [
+      "src/mcp/state.rs",
+      "src/algo/pagerank.rs",
+      "imports",
+      [
+        "pagerank"
+      ]
+    ],
+    [
+      "src/mcp/state.rs",
+      "src/algo/spectral.rs",
+      "imports",
+      [
+        "spectral"
+      ]
+    ],
+    [
+      "src/mcp/state.rs",
+      "src/analysis/metrics.rs",
+      "imports",
+      [
+        "ClusterMetrics",
+        "compute_martin_metrics"
+      ]
+    ],
+    [
+      "src/mcp/state.rs",
+      "src/diagnostic.rs",
+      "imports",
+      [
+        "FatalError"
+      ]
+    ],
+    [
+      "src/mcp/state.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "*"
+      ]
+    ],
+    [
+      "src/mcp/state.rs",
+      "src/serial/mod.rs",
+      "imports",
+      [
+        "RawImportOutput"
+      ]
+    ],
+    [
+      "src/mcp/tools.rs",
+      "src/algo/mod.rs",
+      "imports",
+      [
+        "algo"
+      ]
+    ],
+    [
+      "src/mcp/tools.rs",
+      "src/analysis/smells.rs",
+      "imports",
+      [
+        "detect_smells"
+      ]
+    ],
+    [
+      "src/mcp/tools.rs",
+      "src/mcp/state.rs",
+      "imports",
+      [
+        "GraphState"
+      ]
+    ],
+    [
+      "src/mcp/tools.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath"
+      ]
+    ],
+    [
+      "src/mcp/watch.rs",
+      "src/analysis/diff.rs",
+      "imports",
+      [
+        "compute_structural_diff"
+      ]
+    ],
+    [
+      "src/mcp/watch.rs",
+      "src/diagnostic.rs",
+      "imports",
+      [
+        "FatalError"
+      ]
+    ],
+    [
+      "src/mcp/watch.rs",
+      "src/mcp/state.rs",
+      "imports",
+      [
+        "GraphState",
+        "load_graph_state"
+      ]
+    ],
+    [
+      "src/mcp/watch.rs",
+      "src/pipeline/mod.rs",
+      "imports",
+      [
+        "BuildPipeline",
+        "WalkConfig"
+      ]
+    ],
+    [
+      "src/mcp/watch.rs",
+      "src/serial/json.rs",
+      "imports",
+      [
+        "JsonSerializer"
       ]
     ],
     [
@@ -1886,6 +3136,122 @@
       ]
     ],
     [
+      "src/parser/csharp.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath",
+        "FileSet"
+      ]
+    ],
+    [
+      "src/parser/csharp.rs",
+      "src/model/workspace.rs",
+      "imports",
+      [
+        "WorkspaceInfo"
+      ]
+    ],
+    [
+      "src/parser/csharp.rs",
+      "src/parser/traits.rs",
+      "imports",
+      [
+        "ImportKind",
+        "ImportResolver",
+        "LanguageParser",
+        "RawExport",
+        "RawImport"
+      ]
+    ],
+    [
+      "src/parser/go.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath",
+        "FileSet"
+      ]
+    ],
+    [
+      "src/parser/go.rs",
+      "src/model/workspace.rs",
+      "imports",
+      [
+        "WorkspaceInfo"
+      ]
+    ],
+    [
+      "src/parser/go.rs",
+      "src/parser/traits.rs",
+      "imports",
+      [
+        "ImportKind",
+        "ImportResolver",
+        "LanguageParser",
+        "RawExport",
+        "RawImport"
+      ]
+    ],
+    [
+      "src/parser/java.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath",
+        "FileSet"
+      ]
+    ],
+    [
+      "src/parser/java.rs",
+      "src/model/workspace.rs",
+      "imports",
+      [
+        "WorkspaceInfo"
+      ]
+    ],
+    [
+      "src/parser/java.rs",
+      "src/parser/traits.rs",
+      "imports",
+      [
+        "ImportKind",
+        "ImportResolver",
+        "LanguageParser",
+        "RawExport",
+        "RawImport"
+      ]
+    ],
+    [
+      "src/parser/markdown.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath",
+        "FileSet"
+      ]
+    ],
+    [
+      "src/parser/markdown.rs",
+      "src/model/workspace.rs",
+      "imports",
+      [
+        "WorkspaceInfo"
+      ]
+    ],
+    [
+      "src/parser/markdown.rs",
+      "src/parser/traits.rs",
+      "imports",
+      [
+        "ImportKind",
+        "ImportResolver",
+        "LanguageParser",
+        "RawExport",
+        "RawImport"
+      ]
+    ],
+    [
       "src/parser/mod.rs",
       "src/parser/csharp.rs",
       "imports",
@@ -1903,10 +3269,26 @@
     ],
     [
       "src/parser/mod.rs",
+      "src/parser/helpers.rs",
+      "imports",
+      [
+        "helpers"
+      ]
+    ],
+    [
+      "src/parser/mod.rs",
       "src/parser/java.rs",
       "imports",
       [
         "java"
+      ]
+    ],
+    [
+      "src/parser/mod.rs",
+      "src/parser/markdown.rs",
+      "imports",
+      [
+        "markdown"
       ]
     ],
     [
@@ -1950,6 +3332,233 @@
       ]
     ],
     [
+      "src/parser/python.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath",
+        "FileSet"
+      ]
+    ],
+    [
+      "src/parser/python.rs",
+      "src/model/workspace.rs",
+      "imports",
+      [
+        "WorkspaceInfo"
+      ]
+    ],
+    [
+      "src/parser/python.rs",
+      "src/parser/helpers.rs",
+      "imports",
+      [
+        "helpers"
+      ]
+    ],
+    [
+      "src/parser/python.rs",
+      "src/parser/traits.rs",
+      "imports",
+      [
+        "ImportKind",
+        "ImportResolver",
+        "LanguageParser",
+        "RawExport",
+        "RawImport"
+      ]
+    ],
+    [
+      "src/parser/rust_lang.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath",
+        "FileSet"
+      ]
+    ],
+    [
+      "src/parser/rust_lang.rs",
+      "src/model/workspace.rs",
+      "imports",
+      [
+        "WorkspaceInfo"
+      ]
+    ],
+    [
+      "src/parser/rust_lang.rs",
+      "src/parser/helpers.rs",
+      "imports",
+      [
+        "helpers"
+      ]
+    ],
+    [
+      "src/parser/rust_lang.rs",
+      "src/parser/traits.rs",
+      "imports",
+      [
+        "ImportKind",
+        "ImportResolver",
+        "LanguageParser",
+        "RawExport",
+        "RawImport"
+      ]
+    ],
+    [
+      "src/parser/traits.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath",
+        "FileSet"
+      ]
+    ],
+    [
+      "src/parser/traits.rs",
+      "src/model/workspace.rs",
+      "imports",
+      [
+        "WorkspaceInfo"
+      ]
+    ],
+    [
+      "src/parser/typescript.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath",
+        "FileSet"
+      ]
+    ],
+    [
+      "src/parser/typescript.rs",
+      "src/model/workspace.rs",
+      "imports",
+      [
+        "WorkspaceInfo"
+      ]
+    ],
+    [
+      "src/parser/typescript.rs",
+      "src/parser/helpers.rs",
+      "imports",
+      [
+        "helpers"
+      ]
+    ],
+    [
+      "src/parser/typescript.rs",
+      "src/parser/traits.rs",
+      "imports",
+      [
+        "ImportKind",
+        "ImportResolver",
+        "LanguageParser",
+        "RawExport",
+        "RawImport"
+      ]
+    ],
+    [
+      "src/pipeline/build.rs",
+      "src/detect/mod.rs",
+      "imports",
+      [
+        "detect_file_type",
+        "infer_arch_layer"
+      ]
+    ],
+    [
+      "src/pipeline/build.rs",
+      "src/diagnostic.rs",
+      "imports",
+      [
+        "DiagnosticCollector"
+      ]
+    ],
+    [
+      "src/pipeline/build.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "*"
+      ]
+    ],
+    [
+      "src/pipeline/build.rs",
+      "src/model/workspace.rs",
+      "imports",
+      [
+        "WorkspaceInfo"
+      ]
+    ],
+    [
+      "src/pipeline/build.rs",
+      "src/parser/mod.rs",
+      "imports",
+      [
+        "ImportKind",
+        "ParserRegistry"
+      ]
+    ],
+    [
+      "src/pipeline/mod.rs",
+      "src/algo/mod.rs",
+      "imports",
+      [
+        "algo"
+      ]
+    ],
+    [
+      "src/pipeline/mod.rs",
+      "src/cluster/mod.rs",
+      "imports",
+      [
+        "assign_clusters"
+      ]
+    ],
+    [
+      "src/pipeline/mod.rs",
+      "src/detect/mod.rs",
+      "imports",
+      [
+        "detect_fsd_project",
+        "detect_workspace",
+        "is_case_insensitive"
+      ]
+    ],
+    [
+      "src/pipeline/mod.rs",
+      "src/diagnostic.rs",
+      "imports",
+      [
+        "DiagnosticCollector",
+        "DiagnosticCounts",
+        "FatalError",
+        "Warning",
+        "WarningCode"
+      ]
+    ],
+    [
+      "src/pipeline/mod.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "*"
+      ]
+    ],
+    [
+      "src/pipeline/mod.rs",
+      "src/parser/mod.rs",
+      "imports",
+      [
+        "ParseOutcome",
+        "ParserRegistry",
+        "RawExport",
+        "RawImport"
+      ]
+    ],
+    [
       "src/pipeline/mod.rs",
       "src/pipeline/build.rs",
       "imports",
@@ -1982,6 +3591,137 @@
       ]
     ],
     [
+      "src/pipeline/mod.rs",
+      "src/serial/mod.rs",
+      "imports",
+      [
+        "ClusterEntryOutput",
+        "ClusterOutput",
+        "GraphOutput",
+        "GraphReader",
+        "GraphSerializer",
+        "NodeOutput",
+        "RawImportOutput"
+      ]
+    ],
+    [
+      "src/pipeline/read.rs",
+      "src/hash.rs",
+      "imports",
+      [
+        "hash_content"
+      ]
+    ],
+    [
+      "src/pipeline/read.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath",
+        "ContentHash"
+      ]
+    ],
+    [
+      "src/pipeline/resolve.rs",
+      "src/detect/mod.rs",
+      "imports",
+      [
+        "find_case_insensitive"
+      ]
+    ],
+    [
+      "src/pipeline/resolve.rs",
+      "src/diagnostic.rs",
+      "imports",
+      [
+        "DiagnosticCollector"
+      ]
+    ],
+    [
+      "src/pipeline/resolve.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath",
+        "FileSet"
+      ]
+    ],
+    [
+      "src/pipeline/resolve.rs",
+      "src/model/workspace.rs",
+      "imports",
+      [
+        "WorkspaceInfo"
+      ]
+    ],
+    [
+      "src/pipeline/resolve.rs",
+      "src/parser/mod.rs",
+      "imports",
+      [
+        "ImportResolver",
+        "RawImport"
+      ]
+    ],
+    [
+      "src/pipeline/walk.rs",
+      "src/diagnostic.rs",
+      "imports",
+      [
+        "FatalError",
+        "Warning",
+        "WarningCode"
+      ]
+    ],
+    [
+      "src/pipeline/walk.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath"
+      ]
+    ],
+    [
+      "src/serial/convert.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "*"
+      ]
+    ],
+    [
+      "src/serial/json.rs",
+      "src/diagnostic.rs",
+      "imports",
+      [
+        "FatalError"
+      ]
+    ],
+    [
+      "src/serial/json.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "StatsOutput"
+      ]
+    ],
+    [
+      "src/serial/mod.rs",
+      "src/diagnostic.rs",
+      "imports",
+      [
+        "FatalError"
+      ]
+    ],
+    [
+      "src/serial/mod.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "StatsOutput"
+      ]
+    ],
+    [
       "src/serial/mod.rs",
       "src/serial/convert.rs",
       "imports",
@@ -1995,6 +3735,54 @@
       "imports",
       [
         "json"
+      ]
+    ],
+    [
+      "src/views/cluster.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "EdgeType",
+        "ProjectGraph",
+        "StatsOutput"
+      ]
+    ],
+    [
+      "src/views/impact.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath",
+        "ProjectGraph",
+        "SubgraphResult"
+      ]
+    ],
+    [
+      "src/views/index.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "ClusterMap",
+        "ProjectGraph",
+        "StatsOutput"
+      ]
+    ],
+    [
+      "src/views/mod.rs",
+      "src/diagnostic.rs",
+      "imports",
+      [
+        "FatalError"
+      ]
+    ],
+    [
+      "src/views/mod.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "ClusterMap",
+        "ProjectGraph",
+        "StatsOutput"
       ]
     ],
     [
@@ -2044,6 +3832,36 @@
       [
         "foo"
       ]
+    ],
+    [
+      "tests/fixtures/markdown-docs/README.md",
+      "tests/fixtures/markdown-docs/docs/api.md",
+      "references",
+      []
+    ],
+    [
+      "tests/fixtures/markdown-docs/README.md",
+      "tests/fixtures/markdown-docs/docs/guide.md",
+      "references",
+      []
+    ],
+    [
+      "tests/fixtures/markdown-docs/docs/api.md",
+      "tests/fixtures/markdown-docs/docs/guide.md",
+      "references",
+      []
+    ],
+    [
+      "tests/fixtures/markdown-docs/docs/guide.md",
+      "tests/fixtures/markdown-docs/README.md",
+      "references",
+      []
+    ],
+    [
+      "tests/fixtures/markdown-docs/docs/guide.md",
+      "tests/fixtures/markdown-docs/docs/api.md",
+      "references",
+      []
     ],
     [
       "tests/fixtures/mixed-project/frontend/src/App.tsx",
@@ -2107,6 +3925,87 @@
       "imports",
       [
         "format"
+      ]
+    ],
+    [
+      "tests/fixtures/tsx-components/App.tsx",
+      "tests/fixtures/tsx-components/components/Callback.tsx",
+      "imports",
+      [
+        "Callback"
+      ]
+    ],
+    [
+      "tests/fixtures/tsx-components/App.tsx",
+      "tests/fixtures/tsx-components/components/Card.tsx",
+      "imports",
+      [
+        "Card"
+      ]
+    ],
+    [
+      "tests/fixtures/tsx-components/App.tsx",
+      "tests/fixtures/tsx-components/components/Conditional.tsx",
+      "imports",
+      [
+        "Conditional",
+        "List"
+      ]
+    ],
+    [
+      "tests/fixtures/tsx-components/App.tsx",
+      "tests/fixtures/tsx-components/components/DefaultAnon.tsx",
+      "imports",
+      [
+        "DefaultAnon"
+      ]
+    ],
+    [
+      "tests/fixtures/tsx-components/App.tsx",
+      "tests/fixtures/tsx-components/components/Fragment.tsx",
+      "imports",
+      [
+        "Fragment"
+      ]
+    ],
+    [
+      "tests/fixtures/tsx-components/App.tsx",
+      "tests/fixtures/tsx-components/components/GenericBox.tsx",
+      "imports",
+      [
+        "GenericBox"
+      ]
+    ],
+    [
+      "tests/fixtures/tsx-components/App.tsx",
+      "tests/fixtures/tsx-components/components/Header.tsx",
+      "imports",
+      [
+        "Header"
+      ]
+    ],
+    [
+      "tests/fixtures/tsx-components/App.tsx",
+      "tests/fixtures/tsx-components/components/LegacyButton.jsx",
+      "imports",
+      [
+        "LegacyButton"
+      ]
+    ],
+    [
+      "tests/fixtures/tsx-components/App.tsx",
+      "tests/fixtures/tsx-components/components/SpreadProps.tsx",
+      "imports",
+      [
+        "SpreadProps"
+      ]
+    ],
+    [
+      "tests/fixtures/tsx-components/App.tsx",
+      "tests/fixtures/tsx-components/components/StyledBox.tsx",
+      "imports",
+      [
+        "StyledBox"
       ]
     ],
     [
@@ -2174,6 +4073,121 @@
       "re_exports",
       [
         "format"
+      ]
+    ],
+    [
+      "tests/graph_tests.rs",
+      "src/diagnostic.rs",
+      "tests",
+      [
+        "WarningCode"
+      ]
+    ],
+    [
+      "tests/helpers.rs",
+      "src/parser/mod.rs",
+      "tests",
+      [
+        "ParserRegistry"
+      ]
+    ],
+    [
+      "tests/helpers.rs",
+      "src/pipeline/mod.rs",
+      "tests",
+      [
+        "BuildOutput",
+        "BuildPipeline",
+        "FsReader",
+        "FsWalker",
+        "WalkConfig"
+      ]
+    ],
+    [
+      "tests/helpers.rs",
+      "src/serial/json.rs",
+      "tests",
+      [
+        "JsonSerializer"
+      ]
+    ],
+    [
+      "tests/pipeline_tests.rs",
+      "src/diagnostic.rs",
+      "tests",
+      [
+        "DiagnosticCollector",
+        "Warning",
+        "WarningCode"
+      ]
+    ],
+    [
+      "tests/pipeline_tests.rs",
+      "src/model/mod.rs",
+      "tests",
+      [
+        "CanonicalPath"
+      ]
+    ],
+    [
+      "tests/pipeline_tests.rs",
+      "src/parser/mod.rs",
+      "tests",
+      [
+        "ParserRegistry"
+      ]
+    ],
+    [
+      "tests/pipeline_tests.rs",
+      "src/pipeline/mod.rs",
+      "tests",
+      [
+        "BuildPipeline",
+        "FileWalker",
+        "FsReader",
+        "FsWalker",
+        "WalkConfig"
+      ]
+    ],
+    [
+      "tests/pipeline_tests.rs",
+      "src/serial/json.rs",
+      "tests",
+      [
+        "JsonSerializer"
+      ]
+    ],
+    [
+      "tests/pipeline_tests.rs",
+      "src/serial/mod.rs",
+      "tests",
+      [
+        "GraphReader",
+        "RawImportOutput"
+      ]
+    ],
+    [
+      "tests/properties.rs",
+      "src/diagnostic.rs",
+      "tests",
+      [
+        "WarningCode"
+      ]
+    ],
+    [
+      "tests/properties.rs",
+      "src/hash.rs",
+      "tests",
+      [
+        "hash_content"
+      ]
+    ],
+    [
+      "tests/properties.rs",
+      "src/model/mod.rs",
+      "tests",
+      [
+        "CanonicalPath"
       ]
     ]
   ]

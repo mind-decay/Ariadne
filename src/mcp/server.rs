@@ -47,6 +47,8 @@ pub async fn run(config: ServeConfig) -> Result<(), FatalError> {
                 false,
                 false,
                 false,
+                None,
+                None,
             )?;
             load_graph_state(&config.output_dir, &JsonSerializer)?
         }
@@ -60,7 +62,8 @@ pub async fn run(config: ServeConfig) -> Result<(), FatalError> {
     // 4. Start file watcher or poll fallback
     let _watcher = if config.watch_enabled {
         let pipeline = config.pipeline.clone();
-        let registry = ParserRegistry::with_tier1();
+        let rust_crate_name = crate::detect::detect_rust_crate_name(&config.project_root);
+        let registry = ParserRegistry::with_tier1_config(rust_crate_name);
         let known_extensions: HashSet<String> = registry
             .supported_extensions()
             .into_iter()
@@ -187,6 +190,8 @@ fn start_poll_fallback(
                 false,
                 false,
                 false,
+                None,
+                None,
             ) {
                 Ok(_) => match load_graph_state(&output_dir, &reader) {
                     Ok(new_state) => {

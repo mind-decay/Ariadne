@@ -30,6 +30,8 @@ fn bench_build_100(c: &mut Criterion) {
                     false,
                     false,
                     false,
+                    None,
+                    None,
                 )
                 .unwrap();
         });
@@ -51,6 +53,8 @@ fn bench_build_1000(c: &mut Criterion) {
                     false,
                     false,
                     false,
+                    None,
+                    None,
                 )
                 .unwrap();
         });
@@ -74,6 +78,8 @@ fn bench_build_3000(c: &mut Criterion) {
                     false,
                     false,
                     false,
+                    None,
+                    None,
                 )
                 .unwrap();
         });

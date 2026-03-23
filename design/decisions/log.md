@@ -468,7 +468,7 @@ Full dependency table:
 **Decision:** Bundled policy decisions for Phase 2 algorithms:
 1. **Edge type filtering:** All algorithms (SCC, centrality, BFS, topo sort) use `imports` + `re_exports` + `type_imports`, excluding `tests` edges. Tests are not architectural dependencies. **Exception:** subgraph extraction (`extract_subgraph`) includes ALL edge types including `tests` — tests are relevant for scoped development views and impact reports. This exception applies only to subgraph, not to blast radius or other algorithms.
 2. **Centrality normalization:** Brandes raw BC divided by `(V-1)(V-2)` for directed graphs → values in [0.0, 1.0]. Bottleneck threshold 0.7 applies to normalized values. Rounded to 4 decimal places (same as cohesion in Phase 1).
-3. **Louvain parameters:** 100 iteration limit, ΔQ < 1e-6 convergence threshold. Directed graph converted to undirected weights (edge count between two nodes, ignoring direction). Cluster naming: directory-based name of plurality of files; lexicographic tie-break.
+3. **Louvain parameters:** 100 iteration limit, ΔQ < 1e-6 convergence threshold. Directed graph converted to undirected weights (edge count between two nodes, ignoring direction). Cluster naming: directory-based name of plurality of files; lexicographic tie-break. **Updated:** Resolution parameter (gamma) added via D-074; directory retention guard via D-073.
 4. **Orphan definition:** `source` or `test` file with zero incoming edges AND zero outgoing `imports`/`type_imports`/`re_exports` edges. Config, style, asset files are excluded (they naturally have no import edges).
 5. **Build scope:** `ariadne build` always produces stats.json (runs all algorithms). ~720ms overhead on 3000-file project. Avoids "forgot --stats" UX problem.
 6. **Louvain default:** On by default. `--no-louvain` flag to disable. No existing consumers means no breaking change.
@@ -861,3 +861,62 @@ Applies to: Brandes centrality (Phase 2), Louvain modularity (Phase 2b), PageRan
 **Context:** Markdown cross-references are informational, not architectural dependencies. They should appear in the graph but not influence architectural analysis.
 **Decision:** Add `EdgeType::References` variant. `is_architectural()` returns `false` for this type. Serializes as `"references"`.
 **Affects:** `src/model/edge.rs`, pipeline edge construction.
+
+---
+
+## D-070: Rust Parser — `collect_path_segments` Priority Fix
+
+**Date:** 2026-03-23
+**Status:** Accepted
+**Context:** All `use crate::` imports were silently dropped during Rust parsing. Root cause: in `collect_path_segments`, the or_else chain checked `find_child_by_kind("identifier")` before `find_child_by_kind("crate")`. For `scoped_identifier "crate::model"` (children: `crate`, `::`, `identifier "model"`), the `identifier` match fired first, `crate` was never found, producing segments `["model", "model"]` which `is_skip_import` classified as an external crate.
+**Decision:** Reorder the or_else chain to check `crate`/`super`/`self` before `identifier`. This ensures Rust keyword nodes are matched before generic identifiers.
+**Affects:** `src/parser/rust_lang.rs` — `collect_path_segments`.
+
+---
+
+## D-071: Rust Resolver — Walk-Back Path Probing
+
+**Date:** 2026-03-23
+**Status:** Accepted
+**Context:** `use crate::model::CanonicalPath` resolves to fs path `src/model/CanonicalPath`. But `CanonicalPath` is a type exported from `src/model/mod.rs`, not a file. The resolver tried `src/model/CanonicalPath.rs` and `src/model/CanonicalPath/mod.rs`, both non-existent, and returned None.
+**Decision:** Add `probe_rust_path_with_walkback`: after exact probe fails, trim the last path segment (likely a symbol name) and retry, repeating until a file is found or segments are exhausted. For `src/model/CanonicalPath` → trims to `src/model` → finds `src/model/mod.rs`.
+**Affects:** `src/parser/rust_lang.rs` — `RustResolver`.
+
+---
+
+## D-072: Rust Crate Name Detection for Self-Referencing Imports
+
+**Date:** 2026-03-23
+**Status:** Accepted
+**Context:** `src/main.rs` uses `use ariadne_graph::foo` (the crate's own name from Cargo.toml), not `use crate::foo`. The parser treated `ariadne_graph` as an external crate and skipped these imports, leaving `main.rs` as an orphan node with zero edges.
+**Decision:** Three-part fix:
+1. `detect_rust_crate_name(root)` reads Cargo.toml `[package] name`, replaces `-` with `_` (Rust convention).
+2. `RustParser::with_crate_name(name)` stores the crate name; `is_skip_import` treats it as internal (like `crate`/`super`/`self`).
+3. Pipeline rewrites matching imports before resolution: `ariadne_graph::foo` → `crate::foo`.
+**Alternatives rejected:**
+- Modifying the `LanguageParser` trait to accept crate name — too invasive, changes all language parsers.
+- Removing `is_skip_import` entirely — would count all external crate imports as "unresolved", inflating diagnostics.
+**Affects:** `src/detect/workspace.rs`, `src/parser/rust_lang.rs`, `src/parser/registry.rs`, `src/pipeline/build.rs`, `src/main.rs`.
+
+---
+
+## D-073: Louvain Guard — Directory Cluster Retention
+
+**Date:** 2026-03-23
+**Status:** Accepted
+**Context:** Louvain community detection on hub-heavy codebases (Rust mod.rs pattern, lib.rs fan-out) merges all src/ directories into a single mega-cluster. This is mathematically correct (modularity maximization) but unhelpful for navigation — loses the directory-level structure that developers use.
+**Decision:** After Louvain runs, compare result cluster count to directory-based count. If Louvain produced fewer than 50% of the directory clusters, discard Louvain results and keep directory-based clusters. This preserves navigable structure while still using Louvain when it genuinely finds better communities.
+**Alternatives rejected:**
+- Changing Louvain default to `--no-louvain` — throws away Louvain for all codebases, even those where it helps.
+- High default gamma (resolution parameter) — doesn't help; even gamma=50 fails to split hub-connected clusters.
+**Affects:** `src/pipeline/mod.rs` (Stage 5b).
+
+---
+
+## D-074: Louvain Resolution Parameter (Gamma)
+
+**Date:** 2026-03-23
+**Status:** Accepted
+**Context:** Standard Louvain uses gamma=1.0 in the modularity formula. Higher gamma penalizes merging more, producing finer-grained communities. Different codebases benefit from different values.
+**Decision:** Add `--resolution <gamma>` CLI flag for `build` and `update` commands. Default: 1.0 (standard modularity). Threaded through pipeline to `louvain_clustering_with_resolution()`. Formula: `Q = (1/2m) * Σ [A_ij - γ * k_i*k_j/(2m)] * δ(c_i, c_j)`.
+**Affects:** `src/algo/louvain.rs`, `src/pipeline/mod.rs`, `src/main.rs` (CLI).

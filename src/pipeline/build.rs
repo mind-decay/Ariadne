@@ -20,6 +20,7 @@ pub fn resolve_and_build(
     workspace: Option<&WorkspaceInfo>,
     case_insensitive: bool,
     is_fsd: bool,
+    rust_crate_name: Option<&str>,
 ) -> ProjectGraph {
     // 1. Build FileSet from successfully-read files
     let file_set = FileSet::from_iter(file_contents.iter().map(|fc| fc.path.clone()));
@@ -71,8 +72,33 @@ pub fn resolve_and_build(
 
         // Process regular imports
         for import in &pf.imports {
+            // Rewrite crate-name imports (e.g. `use ariadne_graph::foo` → `crate::foo`)
+            let rewritten;
+            let import_ref = if let Some(crate_name) = rust_crate_name {
+                if let Some(rest) = import.path.strip_prefix(crate_name) {
+                    let new_path = if let Some(suffix) = rest.strip_prefix("::") {
+                        format!("crate::{}", suffix)
+                    } else if rest.is_empty() {
+                        "crate".to_string()
+                    } else {
+                        import.path.clone() // not a match (e.g. `ariadne_graphx::`)
+                    };
+                    rewritten = crate::parser::RawImport {
+                        path: new_path,
+                        symbols: import.symbols.clone(),
+                        is_type_only: import.is_type_only,
+                        kind: import.kind.clone(),
+                    };
+                    &rewritten
+                } else {
+                    import
+                }
+            } else {
+                import
+            };
+
             let resolved = match resolve_import(
-                import,
+                import_ref,
                 &pf.path,
                 &file_set,
                 resolver,

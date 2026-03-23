@@ -56,6 +56,10 @@ enum Commands {
         /// Disable Louvain clustering (use directory-based clusters only)
         #[arg(long)]
         no_louvain: bool,
+        /// Louvain resolution parameter (gamma). Higher values produce more fine-grained clusters.
+        /// Default: 1.0 (standard modularity). Try 1.5-2.0 for hub-heavy codebases.
+        #[arg(long)]
+        resolution: Option<f64>,
     },
     /// Show version and supported languages
     Info,
@@ -113,6 +117,9 @@ enum Commands {
         /// Disable Louvain clustering
         #[arg(long)]
         no_louvain: bool,
+        /// Louvain resolution parameter (gamma)
+        #[arg(long)]
+        resolution: Option<f64>,
     },
 }
 
@@ -296,6 +303,7 @@ fn main() {
             max_file_size,
             max_files,
             no_louvain,
+            resolution,
         } => run_build(
             &path,
             output.as_deref(),
@@ -306,6 +314,7 @@ fn main() {
             max_file_size,
             max_files,
             no_louvain,
+            resolution,
         ),
         Commands::Info => {
             run_info();
@@ -322,10 +331,11 @@ fn main() {
         } => {
             let abs_project = std::fs::canonicalize(&project).unwrap_or(project);
             let output_dir = output.unwrap_or_else(|| abs_project.join(".ariadne").join("graph"));
+            let rust_crate_name = ariadne_graph::detect::detect_rust_crate_name(&abs_project);
             let pipeline = std::sync::Arc::new(BuildPipeline::new(
                 Box::new(FsWalker::new()),
                 Box::new(FsReader::new()),
-                ParserRegistry::with_tier1(),
+                ParserRegistry::with_tier1_config(rust_crate_name),
                 Box::new(JsonSerializer),
             ));
             let config = ariadne_graph::mcp::server::ServeConfig {
@@ -355,6 +365,7 @@ fn main() {
             max_file_size,
             max_files,
             no_louvain,
+            resolution,
         } => run_update(
             &path,
             output.as_deref(),
@@ -365,6 +376,7 @@ fn main() {
             max_file_size,
             max_files,
             no_louvain,
+            resolution,
         ),
     };
 
@@ -387,6 +399,7 @@ fn check_server_lock(output_dir: &std::path::Path) -> Result<(), FatalError> {
 }
 
 #[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments)]
 fn run_build(
     path: &std::path::Path,
     output: Option<&std::path::Path>,
@@ -397,6 +410,7 @@ fn run_build(
     max_file_size: u64,
     max_files: usize,
     no_louvain: bool,
+    resolution: Option<f64>,
 ) -> Result<(), FatalError> {
     // Check if MCP server is running
     #[cfg(feature = "serve")]
@@ -414,10 +428,11 @@ fn run_build(
         _ => WarningFormat::Human,
     };
 
+    let rust_crate_name = ariadne_graph::detect::detect_rust_crate_name(path);
     let pipeline = BuildPipeline::new(
         Box::new(FsWalker::new()),
         Box::new(FsReader::new()),
-        ParserRegistry::with_tier1(),
+        ParserRegistry::with_tier1_config(rust_crate_name.clone()),
         Box::new(JsonSerializer),
     );
 
@@ -427,8 +442,16 @@ fn run_build(
         ..WalkConfig::default()
     };
 
-    let build_output =
-        pipeline.run_with_output(path, config, output, timestamp, verbose, no_louvain)?;
+    let build_output = pipeline.run_with_output(
+        path,
+        config,
+        output,
+        timestamp,
+        verbose,
+        no_louvain,
+        rust_crate_name.as_deref(),
+        resolution,
+    )?;
     let elapsed = start.elapsed();
     let report = DiagnosticReport {
         warnings: build_output.warnings,
@@ -469,6 +492,7 @@ fn run_update(
     max_file_size: u64,
     max_files: usize,
     no_louvain: bool,
+    resolution: Option<f64>,
 ) -> Result<(), FatalError> {
     // Check if MCP server is running
     #[cfg(feature = "serve")]
@@ -486,10 +510,11 @@ fn run_update(
         _ => WarningFormat::Human,
     };
 
+    let rust_crate_name = ariadne_graph::detect::detect_rust_crate_name(path);
     let pipeline = BuildPipeline::new(
         Box::new(FsWalker::new()),
         Box::new(FsReader::new()),
-        ParserRegistry::with_tier1(),
+        ParserRegistry::with_tier1_config(rust_crate_name.clone()),
         Box::new(JsonSerializer),
     );
 
@@ -503,6 +528,7 @@ fn run_update(
 
     let build_output = pipeline.update(
         path, config, &reader, output, timestamp, verbose, no_louvain,
+        rust_crate_name.as_deref(), resolution,
     )?;
     let elapsed = start.elapsed();
     let report = DiagnosticReport {

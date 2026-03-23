@@ -321,6 +321,38 @@ fn resolve_entry_point(member_dir: &Path, pkg_json: &serde_json::Value) -> std::
     member_dir.join("src/index.ts")
 }
 
+/// Detect the Rust crate name from Cargo.toml in the project root.
+/// Returns the crate name with dashes replaced by underscores (as Rust normalizes it).
+/// Returns `None` if no Cargo.toml exists or the name field cannot be parsed.
+pub fn detect_rust_crate_name(root: &Path) -> Option<String> {
+    let cargo_toml = root.join("Cargo.toml");
+    let contents = std::fs::read_to_string(cargo_toml).ok()?;
+
+    // Simple line-based parsing — avoid adding a TOML dependency.
+    // Look for `name = "..."` in the [package] section.
+    let mut in_package = false;
+    for line in contents.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with('[') {
+            in_package = trimmed == "[package]";
+            continue;
+        }
+        if in_package {
+            if let Some(rest) = trimmed.strip_prefix("name") {
+                let rest = rest.trim_start();
+                if let Some(rest) = rest.strip_prefix('=') {
+                    let rest = rest.trim();
+                    let name = rest.trim_matches('"').trim_matches('\'');
+                    if !name.is_empty() {
+                        return Some(name.replace('-', "_"));
+                    }
+                }
+            }
+        }
+    }
+    None
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -572,5 +604,13 @@ mod tests {
         let yaml = "packages:\n  - 'pkg/*'\nother:\n  - 'ignored'\n";
         let patterns = parse_pnpm_workspace_yaml(yaml);
         assert_eq!(patterns, vec!["pkg/*"]);
+    }
+
+    #[test]
+    fn detect_rust_crate_name_found() {
+        // Uses the actual Cargo.toml of this project
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+        let name = super::detect_rust_crate_name(root);
+        assert_eq!(name, Some("ariadne_graph".to_string()));
     }
 }

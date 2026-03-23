@@ -13,64 +13,24 @@
         "src/algo/spectral.rs",
         "src/algo/stats.rs",
         "src/algo/subgraph.rs",
-        "src/algo/topo_sort.rs",
+        "src/algo/topo_sort.rs"
+      ],
+      "file_count": 12,
+      "internal_edges": 18,
+      "external_edges": 26,
+      "cohesion": 0.4091
+    },
+    "analysis": {
+      "files": [
         "src/analysis/diff.rs",
         "src/analysis/metrics.rs",
         "src/analysis/mod.rs",
-        "src/analysis/smells.rs",
-        "src/cluster/mod.rs",
-        "src/detect/case_sensitivity.rs",
-        "src/detect/filetype.rs",
-        "src/detect/layer.rs",
-        "src/detect/mod.rs",
-        "src/detect/workspace.rs",
-        "src/diagnostic.rs",
-        "src/hash.rs",
-        "src/lib.rs",
-        "src/main.rs",
-        "src/mcp/lock.rs",
-        "src/mcp/mod.rs",
-        "src/mcp/server.rs",
-        "src/mcp/state.rs",
-        "src/mcp/tools.rs",
-        "src/mcp/watch.rs",
-        "src/model/compress.rs",
-        "src/model/diff.rs",
-        "src/model/edge.rs",
-        "src/model/graph.rs",
-        "src/model/mod.rs",
-        "src/model/node.rs",
-        "src/model/query.rs",
-        "src/model/smell.rs",
-        "src/model/stats.rs",
-        "src/model/types.rs",
-        "src/model/workspace.rs",
-        "src/parser/csharp.rs",
-        "src/parser/go.rs",
-        "src/parser/java.rs",
-        "src/parser/mod.rs",
-        "src/parser/python.rs",
-        "src/parser/registry.rs",
-        "src/parser/rust_lang.rs",
-        "src/parser/traits.rs",
-        "src/parser/typescript.rs",
-        "src/pipeline/build.rs",
-        "src/pipeline/mod.rs",
-        "src/pipeline/read.rs",
-        "src/pipeline/resolve.rs",
-        "src/pipeline/walk.rs",
-        "src/serial/convert.rs",
-        "src/serial/json.rs",
-        "src/serial/mod.rs",
-        "src/views/cluster.rs",
-        "src/views/impact.rs",
-        "src/views/index.rs",
-        "src/views/mod.rs"
+        "src/analysis/smells.rs"
       ],
-      "file_count": 64,
-      "internal_edges": 62,
-      "external_edges": 0,
-      "cohesion": 1.0
+      "file_count": 4,
+      "internal_edges": 6,
+      "external_edges": 13,
+      "cohesion": 0.3158
     },
     "benches": {
       "files": [
@@ -83,8 +43,169 @@
       ],
       "file_count": 6,
       "internal_edges": 0,
+      "external_edges": 15,
+      "cohesion": 0.0
+    },
+    "cluster": {
+      "files": [
+        "src/cluster/mod.rs"
+      ],
+      "file_count": 1,
+      "internal_edges": 0,
+      "external_edges": 3,
+      "cohesion": 0.0
+    },
+    "design": {
+      "files": [
+        "design/ROADMAP.md",
+        "design/architecture.md",
+        "design/decisions/log.md",
+        "design/determinism.md",
+        "design/distribution.md",
+        "design/error-handling.md",
+        "design/path-resolution.md",
+        "design/performance.md",
+        "design/reports/archive/2026-03-17-doc-audit.md",
+        "design/reports/archive/2026-03-18-architecture-review.md",
+        "design/reports/archive/2026-03-18-v2-architecture-review.md",
+        "design/reports/archive/2026-03-19-architecture-review.md",
+        "design/reports/archive/2026-03-19-v2-architecture-review.md",
+        "design/reports/archive/2026-03-22-architectural-review.md",
+        "design/specs/archive/2026-03-17-phase1-core-cli.md",
+        "design/specs/archive/2026-03-17-phase1-implementation-plan.md",
+        "design/specs/archive/2026-03-17-phase1a-implementation-plan.md",
+        "design/specs/archive/2026-03-17-phase1a-mvp.md",
+        "design/specs/archive/2026-03-18-phase1b-hardening.md",
+        "design/specs/archive/2026-03-18-phase1b-implementation-plan.md",
+        "design/specs/archive/2026-03-18-phase2-algorithms-queries-views.md",
+        "design/specs/archive/2026-03-18-phase2a-implementation-plan.md",
+        "design/specs/archive/2026-03-18-review-fixes-plan.md",
+        "design/specs/archive/2026-03-19-phase2b-implementation-plan.md",
+        "design/specs/archive/2026-03-19-phase3-mcp-server-architectural-intelligence.md",
+        "design/specs/archive/2026-03-19-phase3a-implementation-plan.md",
+        "design/specs/archive/2026-03-19-phase3a-mcp-server.md",
+        "design/specs/archive/2026-03-19-phase3b-architectural-intelligence.md",
+        "design/specs/archive/2026-03-19-phase3b-implementation-plan.md",
+        "design/specs/archive/2026-03-19-phase3c-advanced-graph-analytics.md",
+        "design/specs/archive/2026-03-19-phase3c-implementation-plan.md",
+        "design/testing.md"
+      ],
+      "file_count": 32,
+      "internal_edges": 0,
       "external_edges": 0,
       "cohesion": 1.0
+    },
+    "detect": {
+      "files": [
+        "src/detect/case_sensitivity.rs",
+        "src/detect/filetype.rs",
+        "src/detect/layer.rs",
+        "src/detect/mod.rs",
+        "src/detect/workspace.rs"
+      ],
+      "file_count": 5,
+      "internal_edges": 4,
+      "external_edges": 10,
+      "cohesion": 0.2857
+    },
+    "docs": {
+      "files": [
+        "docs/superpowers/plans/2026-03-19-architecture-review-fixes.md"
+      ],
+      "file_count": 1,
+      "internal_edges": 0,
+      "external_edges": 0,
+      "cohesion": 1.0
+    },
+    "mcp": {
+      "files": [
+        "src/mcp/lock.rs",
+        "src/mcp/mod.rs",
+        "src/mcp/server.rs",
+        "src/mcp/state.rs",
+        "src/mcp/tools.rs",
+        "src/mcp/watch.rs"
+      ],
+      "file_count": 6,
+      "internal_edges": 11,
+      "external_edges": 21,
+      "cohesion": 0.3438
+    },
+    "model": {
+      "files": [
+        "src/model/compress.rs",
+        "src/model/diff.rs",
+        "src/model/edge.rs",
+        "src/model/graph.rs",
+        "src/model/mod.rs",
+        "src/model/node.rs",
+        "src/model/query.rs",
+        "src/model/smell.rs",
+        "src/model/stats.rs",
+        "src/model/types.rs",
+        "src/model/workspace.rs"
+      ],
+      "file_count": 11,
+      "internal_edges": 10,
+      "external_edges": 63,
+      "cohesion": 0.137
+    },
+    "parser": {
+      "files": [
+        "src/parser/csharp.rs",
+        "src/parser/go.rs",
+        "src/parser/helpers.rs",
+        "src/parser/java.rs",
+        "src/parser/markdown.rs",
+        "src/parser/mod.rs",
+        "src/parser/python.rs",
+        "src/parser/registry.rs",
+        "src/parser/rust_lang.rs",
+        "src/parser/traits.rs",
+        "src/parser/typescript.rs"
+      ],
+      "file_count": 11,
+      "internal_edges": 20,
+      "external_edges": 26,
+      "cohesion": 0.4348
+    },
+    "pipeline": {
+      "files": [
+        "src/pipeline/build.rs",
+        "src/pipeline/mod.rs",
+        "src/pipeline/read.rs",
+        "src/pipeline/resolve.rs",
+        "src/pipeline/walk.rs"
+      ],
+      "file_count": 5,
+      "internal_edges": 4,
+      "external_edges": 28,
+      "cohesion": 0.125
+    },
+    "root": {
+      "files": [
+        "CLAUDE.md",
+        "README.md",
+        "src/diagnostic.rs",
+        "src/hash.rs",
+        "src/lib.rs",
+        "src/main.rs"
+      ],
+      "file_count": 6,
+      "internal_edges": 3,
+      "external_edges": 36,
+      "cohesion": 0.0769
+    },
+    "serial": {
+      "files": [
+        "src/serial/convert.rs",
+        "src/serial/json.rs",
+        "src/serial/mod.rs"
+      ],
+      "file_count": 3,
+      "internal_edges": 2,
+      "external_edges": 16,
+      "cohesion": 0.1111
     },
     "tests": {
       "files": [
@@ -107,6 +228,10 @@
         "tests/fixtures/java-project/src/main/java/com/example/data/UserRepo.java",
         "tests/fixtures/java-project/src/main/java/com/example/service/AuthService.java",
         "tests/fixtures/java-project/src/test/java/com/example/AppTest.java",
+        "tests/fixtures/markdown-docs/README.md",
+        "tests/fixtures/markdown-docs/docs/api.md",
+        "tests/fixtures/markdown-docs/docs/guide.md",
+        "tests/fixtures/mixed-project/README.md",
         "tests/fixtures/mixed-project/backend/main.go",
         "tests/fixtures/mixed-project/frontend/src/App.tsx",
         "tests/fixtures/mixed-project/frontend/src/components/Button.tsx",
@@ -125,6 +250,17 @@
         "tests/fixtures/rust-crate/src/utils/format.rs",
         "tests/fixtures/rust-crate/src/utils/mod.rs",
         "tests/fixtures/rust-crate/tests/integration.rs",
+        "tests/fixtures/tsx-components/App.tsx",
+        "tests/fixtures/tsx-components/components/Callback.tsx",
+        "tests/fixtures/tsx-components/components/Card.tsx",
+        "tests/fixtures/tsx-components/components/Conditional.tsx",
+        "tests/fixtures/tsx-components/components/DefaultAnon.tsx",
+        "tests/fixtures/tsx-components/components/Fragment.tsx",
+        "tests/fixtures/tsx-components/components/GenericBox.tsx",
+        "tests/fixtures/tsx-components/components/Header.tsx",
+        "tests/fixtures/tsx-components/components/LegacyButton.jsx",
+        "tests/fixtures/tsx-components/components/SpreadProps.tsx",
+        "tests/fixtures/tsx-components/components/StyledBox.tsx",
         "tests/fixtures/typescript-app/src/__tests__/login.test.ts",
         "tests/fixtures/typescript-app/src/auth/login.ts",
         "tests/fixtures/typescript-app/src/auth/register.ts",
@@ -144,10 +280,22 @@
         "tests/pipeline_tests.rs",
         "tests/properties.rs"
       ],
-      "file_count": 55,
-      "internal_edges": 19,
-      "external_edges": 0,
-      "cohesion": 1.0
+      "file_count": 70,
+      "internal_edges": 34,
+      "external_edges": 13,
+      "cohesion": 0.7234
+    },
+    "views": {
+      "files": [
+        "src/views/cluster.rs",
+        "src/views/impact.rs",
+        "src/views/index.rs",
+        "src/views/mod.rs"
+      ],
+      "file_count": 4,
+      "internal_edges": 3,
+      "external_edges": 6,
+      "cohesion": 0.3333
     }
   }
 }

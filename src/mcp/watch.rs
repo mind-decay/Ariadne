@@ -98,6 +98,8 @@ impl FileWatcher {
                                 false,
                                 false,
                                 false,
+                                None,
+                                None,
                             ) {
                                 Ok(_) => {
                                     // Reload state from disk

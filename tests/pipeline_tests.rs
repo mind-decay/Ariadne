@@ -216,6 +216,8 @@ fn timestamp_false_omits_generated_field() {
             false,
             false,
             false,
+            None,
+            None,
         )
         .expect("build should succeed");
 
@@ -243,6 +245,8 @@ fn timestamp_true_adds_generated_field() {
             true,
             false,
             false,
+            None,
+            None,
         )
         .expect("build should succeed");
 
@@ -288,7 +292,7 @@ fn walk_config_respects_max_files() {
 
     // The pipeline might still succeed if it finds at least 1 parseable file,
     // or fail with E004 if the 1 file isn't parseable. Either is valid.
-    let _result = pipeline.run_with_output(&path, config, Some(output_path), false, false, false);
+    let _result = pipeline.run_with_output(&path, config, Some(output_path), false, false, false, None, None);
     // We just verify it doesn't panic
 }
 
@@ -343,6 +347,8 @@ fn pipeline_produces_raw_imports_json() {
             false,
             false,
             false,
+            None,
+            None,
         )
         .expect("build should succeed");
 

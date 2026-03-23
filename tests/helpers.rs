@@ -32,6 +32,8 @@ pub fn build_fixture(name: &str) -> BuildOutput {
             false,
             false,
             false,
+            None,
+            None,
         )
         .unwrap_or_else(|e| panic!("build failed for fixture '{}': {}", name, e))
 }

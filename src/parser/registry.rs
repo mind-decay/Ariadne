@@ -61,8 +61,13 @@ impl ParserRegistry {
 
     /// Create a registry with all Tier 1 language parsers registered.
     pub fn with_tier1() -> Self {
+        Self::with_tier1_config(None)
+    }
+
+    /// Create a registry with all Tier 1 parsers, with optional Rust crate name
+    /// for resolving `use <crate_name>::` imports as internal.
+    pub fn with_tier1_config(rust_crate_name: Option<String>) -> Self {
         let mut registry = Self::new();
-        // Chunk 4: TypeScript/JavaScript, Python, Rust
         registry.register(
             Box::new(TypeScriptParser::new()),
             Box::new(TypeScriptResolver::new()),
@@ -71,7 +76,10 @@ impl ParserRegistry {
             Box::new(PythonParser::new()),
             Box::new(PythonResolver::new()),
         );
-        registry.register(Box::new(RustParser::new()), Box::new(RustResolver::new()));
+        registry.register(
+            Box::new(RustParser::with_crate_name(rust_crate_name)),
+            Box::new(RustResolver::new()),
+        );
         registry.register(go::parser(), go::resolver());
         registry.register(csharp::parser(), csharp::resolver());
         registry.register(java::parser(), java::resolver());
