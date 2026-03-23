@@ -3,7 +3,7 @@ mod helpers;
 use criterion::{criterion_group, criterion_main, Criterion};
 
 use ariadne_graph::parser::ParserRegistry;
-use ariadne_graph::pipeline::{BuildPipeline, FsReader, FsWalker, WalkConfig};
+use ariadne_graph::pipeline::{BuildOptions, BuildPipeline, FsReader, FsWalker, WalkConfig};
 use ariadne_graph::serial::json::JsonSerializer;
 
 fn make_pipeline() -> BuildPipeline {
@@ -23,15 +23,10 @@ fn bench_build_100(c: &mut Criterion) {
         b.iter(|| {
             let output_dir = tempfile::tempdir().unwrap();
             pipeline
-                .run_with_output(
+                .run_with_options(
                     project.path(),
                     WalkConfig::default(),
-                    Some(output_dir.path()),
-                    false,
-                    false,
-                    false,
-                    None,
-                    None,
+                    &BuildOptions { output_dir: Some(output_dir.path()), ..Default::default() },
                 )
                 .unwrap();
         });
@@ -46,15 +41,10 @@ fn bench_build_1000(c: &mut Criterion) {
         b.iter(|| {
             let output_dir = tempfile::tempdir().unwrap();
             pipeline
-                .run_with_output(
+                .run_with_options(
                     project.path(),
                     WalkConfig::default(),
-                    Some(output_dir.path()),
-                    false,
-                    false,
-                    false,
-                    None,
-                    None,
+                    &BuildOptions { output_dir: Some(output_dir.path()), ..Default::default() },
                 )
                 .unwrap();
         });
@@ -71,15 +61,10 @@ fn bench_build_3000(c: &mut Criterion) {
         b.iter(|| {
             let output_dir = tempfile::tempdir().unwrap();
             pipeline
-                .run_with_output(
+                .run_with_options(
                     project.path(),
                     WalkConfig::default(),
-                    Some(output_dir.path()),
-                    false,
-                    false,
-                    false,
-                    None,
-                    None,
+                    &BuildOptions { output_dir: Some(output_dir.path()), ..Default::default() },
                 )
                 .unwrap();
         });

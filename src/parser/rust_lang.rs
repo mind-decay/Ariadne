@@ -655,7 +655,7 @@ mod tests {
         // use crate::{foo, bar} uses scoped_use_list which extracts crate prefix
         let result = rust_imports("use crate::{auth, utils};");
         assert!(
-            result.len() >= 1,
+            !result.is_empty(),
             "grouped crate imports should be found: {:?}",
             result
         );

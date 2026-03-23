@@ -399,7 +399,6 @@ fn check_server_lock(output_dir: &std::path::Path) -> Result<(), FatalError> {
 }
 
 #[allow(clippy::too_many_arguments)]
-#[allow(clippy::too_many_arguments)]
 fn run_build(
     path: &std::path::Path,
     output: Option<&std::path::Path>,
@@ -442,16 +441,15 @@ fn run_build(
         ..WalkConfig::default()
     };
 
-    let build_output = pipeline.run_with_output(
-        path,
-        config,
-        output,
+    let build_opts = ariadne_graph::pipeline::BuildOptions {
+        output_dir: output,
         timestamp,
         verbose,
         no_louvain,
-        rust_crate_name.as_deref(),
-        resolution,
-    )?;
+        rust_crate_name: rust_crate_name.as_deref(),
+        louvain_resolution: resolution,
+    };
+    let build_output = pipeline.run_with_options(path, config, &build_opts)?;
     let elapsed = start.elapsed();
     let report = DiagnosticReport {
         warnings: build_output.warnings,
@@ -526,10 +524,15 @@ fn run_update(
         ..WalkConfig::default()
     };
 
-    let build_output = pipeline.update(
-        path, config, &reader, output, timestamp, verbose, no_louvain,
-        rust_crate_name.as_deref(), resolution,
-    )?;
+    let build_opts = ariadne_graph::pipeline::BuildOptions {
+        output_dir: output,
+        timestamp,
+        verbose,
+        no_louvain,
+        rust_crate_name: rust_crate_name.as_deref(),
+        louvain_resolution: resolution,
+    };
+    let build_output = pipeline.update(path, config, &reader, &build_opts)?;
     let elapsed = start.elapsed();
     let report = DiagnosticReport {
         warnings: build_output.warnings,

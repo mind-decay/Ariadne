@@ -25,15 +25,13 @@ pub fn build_fixture(name: &str) -> BuildOutput {
         Box::new(JsonSerializer),
     );
     pipeline
-        .run_with_output(
+        .run_with_options(
             &path,
             WalkConfig::default(),
-            Some(&output_path),
-            false,
-            false,
-            false,
-            None,
-            None,
+            &ariadne_graph::pipeline::BuildOptions {
+                output_dir: Some(&output_path),
+                ..Default::default()
+            },
         )
         .unwrap_or_else(|e| panic!("build failed for fixture '{}': {}", name, e))
 }

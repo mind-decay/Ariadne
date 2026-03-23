@@ -14,7 +14,7 @@ use crate::mcp::state::{load_graph_state, GraphState};
 use crate::mcp::tools::AriadneTools;
 use crate::mcp::watch::FileWatcher;
 use crate::parser::ParserRegistry;
-use crate::pipeline::{BuildPipeline, WalkConfig};
+use crate::pipeline::{BuildOptions, BuildPipeline, WalkConfig};
 use crate::serial::json::JsonSerializer;
 
 pub struct ServeConfig {
@@ -40,15 +40,13 @@ pub async fn run(config: ServeConfig) -> Result<(), FatalError> {
                 "[ariadne] No graph found in {}. Running initial build...",
                 config.output_dir.display()
             );
-            config.pipeline.run_with_output(
+            config.pipeline.run_with_options(
                 &config.project_root,
                 WalkConfig::default(),
-                Some(&config.output_dir),
-                false,
-                false,
-                false,
-                None,
-                None,
+                &BuildOptions {
+                    output_dir: Some(&config.output_dir),
+                    ..BuildOptions::default()
+                },
             )?;
             load_graph_state(&config.output_dir, &JsonSerializer)?
         }
@@ -186,12 +184,10 @@ fn start_poll_fallback(
                 &project_root,
                 config,
                 &reader,
-                Some(&output_dir),
-                false,
-                false,
-                false,
-                None,
-                None,
+                &BuildOptions {
+                    output_dir: Some(&output_dir),
+                    ..BuildOptions::default()
+                },
             ) {
                 Ok(_) => match load_graph_state(&output_dir, &reader) {
                     Ok(new_state) => {

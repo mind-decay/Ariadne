@@ -43,6 +43,17 @@ pub struct BuildOutput {
     pub counts: DiagnosticCounts,
 }
 
+/// Options that control a build or update run.
+#[derive(Clone, Debug, Default)]
+pub struct BuildOptions<'a> {
+    pub output_dir: Option<&'a Path>,
+    pub timestamp: bool,
+    pub verbose: bool,
+    pub no_louvain: bool,
+    pub rust_crate_name: Option<&'a str>,
+    pub louvain_resolution: Option<f64>,
+}
+
 /// The build pipeline — orchestrates walk → read → parse → resolve → cluster → serialize.
 pub struct BuildPipeline {
     walker: Box<dyn FileWalker>,
@@ -78,21 +89,21 @@ impl BuildPipeline {
     }
 
     pub fn run(&self, root: &Path, config: WalkConfig) -> Result<BuildOutput, FatalError> {
-        self.run_with_output(root, config, None, false, false, false, None, None)
+        self.run_with_options(root, config, &BuildOptions::default())
     }
 
-    #[allow(clippy::too_many_arguments)]
-    pub fn run_with_output(
+    pub fn run_with_options(
         &self,
         root: &Path,
         config: WalkConfig,
-        output_dir: Option<&Path>,
-        timestamp: bool,
-        verbose: bool,
-        no_louvain: bool,
-        rust_crate_name: Option<&str>,
-        louvain_resolution: Option<f64>,
+        opts: &BuildOptions,
     ) -> Result<BuildOutput, FatalError> {
+        let output_dir = opts.output_dir;
+        let timestamp = opts.timestamp;
+        let verbose = opts.verbose;
+        let no_louvain = opts.no_louvain;
+        let rust_crate_name = opts.rust_crate_name;
+        let louvain_resolution = opts.louvain_resolution;
         let diagnostics = DiagnosticCollector::new();
         let abs_root = std::fs::canonicalize(root).map_err(|_| FatalError::ProjectNotFound {
             path: root.to_path_buf(),
@@ -226,15 +237,18 @@ impl BuildPipeline {
         // Detect FSD project structure for layer classification
         let all_paths: Vec<CanonicalPath> = file_contents.iter().map(|fc| fc.path.clone()).collect();
         let is_fsd = detect_fsd_project(&all_paths);
+        let resolve_opts = build::ResolveOptions {
+            workspace: workspace_relative.as_ref(),
+            case_insensitive,
+            is_fsd,
+            rust_crate_name,
+        };
         let mut graph = build::resolve_and_build(
             &parsed_files,
             &file_contents,
             &self.registry,
             &diagnostics,
-            workspace_relative.as_ref(),
-            case_insensitive,
-            is_fsd,
-            rust_crate_name,
+            &resolve_opts,
         );
         if verbose {
             eprintln!(
@@ -421,21 +435,15 @@ impl BuildPipeline {
     /// (algorithms are fast; correctness over optimization).
     /// Incremental re-parse of only changed files is deferred to Phase 3.
     /// Views are NOT regenerated (per spec D9).
-    #[allow(clippy::too_many_arguments)]
-    #[allow(clippy::too_many_arguments)]
     pub fn update(
         &self,
         root: &Path,
         config: WalkConfig,
         reader: &dyn GraphReader,
-        output_dir: Option<&Path>,
-        timestamp: bool,
-        verbose: bool,
-        no_louvain: bool,
-        rust_crate_name: Option<&str>,
-        louvain_resolution: Option<f64>,
+        opts: &BuildOptions,
     ) -> Result<BuildOutput, FatalError> {
-        let out_dir = match output_dir {
+        let verbose = opts.verbose;
+        let out_dir = match opts.output_dir {
             Some(dir) => dir.to_path_buf(),
             None => root.join(".ariadne").join("graph"),
         };
@@ -448,7 +456,7 @@ impl BuildPipeline {
                     eprintln!("[delta]     no prior graph — falling back to full build");
                 }
                 return self
-                    .run_with_output(root, config, output_dir, timestamp, verbose, no_louvain, rust_crate_name, louvain_resolution);
+                    .run_with_options(root, config, opts);
             }
             Err(FatalError::GraphCorrupted { ref reason, .. }) => {
                 let reason_str = reason.clone();
@@ -459,7 +467,7 @@ impl BuildPipeline {
                     );
                 }
                 let mut result =
-                    self.run_with_output(root, config, output_dir, timestamp, verbose, no_louvain, rust_crate_name, louvain_resolution)?;
+                    self.run_with_options(root, config, opts)?;
                 let w011 = Warning {
                     code: WarningCode::W011GraphCorrupted,
                     path: CanonicalPath::new(out_dir.display().to_string()),
@@ -482,7 +490,7 @@ impl BuildPipeline {
                 );
             }
             let mut result =
-                self.run_with_output(root, config, output_dir, timestamp, verbose, no_louvain, rust_crate_name, louvain_resolution)?;
+                self.run_with_options(root, config, opts)?;
             let w010 = Warning {
                 code: WarningCode::W010GraphVersionMismatch,
                 path: CanonicalPath::new(out_dir.display().to_string()),
@@ -504,7 +512,7 @@ impl BuildPipeline {
                     );
                 }
                 let mut result =
-                    self.run_with_output(root, config, output_dir, timestamp, verbose, no_louvain, rust_crate_name, louvain_resolution)?;
+                    self.run_with_options(root, config, opts)?;
                 let w011 = Warning {
                     code: WarningCode::W011GraphCorrupted,
                     path: CanonicalPath::new(out_dir.display().to_string()),
@@ -584,7 +592,7 @@ impl BuildPipeline {
         // Any changes detected — do a full rebuild for correctness.
         // The delta detection itself is the optimization: we skip the rebuild
         // entirely when nothing changed.
-        self.run_with_output(root, config, output_dir, timestamp, verbose, no_louvain, rust_crate_name, louvain_resolution)
+        self.run_with_options(root, config, opts)
     }
 }
 

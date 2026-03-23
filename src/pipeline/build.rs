@@ -10,6 +10,14 @@ use super::read::FileContent;
 use super::resolve::resolve_import;
 use super::ParsedFile;
 
+/// Options for the resolve stage.
+pub struct ResolveOptions<'a> {
+    pub workspace: Option<&'a WorkspaceInfo>,
+    pub case_insensitive: bool,
+    pub is_fsd: bool,
+    pub rust_crate_name: Option<&'a str>,
+}
+
 /// Build a ProjectGraph from parsed files.
 /// This is the resolve_and_build stage per architecture.md.
 pub fn resolve_and_build(
@@ -17,11 +25,12 @@ pub fn resolve_and_build(
     file_contents: &[FileContent],
     registry: &ParserRegistry,
     diagnostics: &DiagnosticCollector,
-    workspace: Option<&WorkspaceInfo>,
-    case_insensitive: bool,
-    is_fsd: bool,
-    rust_crate_name: Option<&str>,
+    resolve_opts: &ResolveOptions,
 ) -> ProjectGraph {
+    let workspace = resolve_opts.workspace;
+    let case_insensitive = resolve_opts.case_insensitive;
+    let is_fsd = resolve_opts.is_fsd;
+    let rust_crate_name = resolve_opts.rust_crate_name;
     // 1. Build FileSet from successfully-read files
     let file_set = FileSet::from_iter(file_contents.iter().map(|fc| fc.path.clone()));
 

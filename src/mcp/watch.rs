@@ -11,7 +11,7 @@ use notify_debouncer_full::{new_debouncer, DebounceEventResult, Debouncer, Recom
 use crate::analysis::diff::compute_structural_diff;
 use crate::diagnostic::FatalError;
 use crate::mcp::state::{load_graph_state, GraphState};
-use crate::pipeline::{BuildPipeline, WalkConfig};
+use crate::pipeline::{BuildOptions, BuildPipeline, WalkConfig};
 use crate::serial::json::JsonSerializer;
 
 /// File watcher configuration and state.
@@ -91,15 +91,13 @@ impl FileWatcher {
                             eprintln!("[ariadne] File changes detected, rebuilding...");
 
                             let config = WalkConfig::default();
-                            match pipeline.run_with_output(
+                            match pipeline.run_with_options(
                                 &project_root,
                                 config,
-                                Some(&output_dir),
-                                false,
-                                false,
-                                false,
-                                None,
-                                None,
+                                &BuildOptions {
+                                    output_dir: Some(&output_dir),
+                                    ..BuildOptions::default()
+                                },
                             ) {
                                 Ok(_) => {
                                     // Reload state from disk

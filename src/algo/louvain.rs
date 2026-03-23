@@ -223,6 +223,7 @@ pub fn louvain_clustering_with_resolution(
 }
 
 /// Phase 1: Local moves. Returns true if any node was moved.
+#[allow(clippy::too_many_arguments)]
 fn local_moves(
     n: usize,
     neighbors: &[Vec<(usize, f64)>],

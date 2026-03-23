@@ -3,7 +3,7 @@ mod helpers;
 use ariadne_graph::diagnostic::{DiagnosticCollector, Warning, WarningCode};
 use ariadne_graph::model::CanonicalPath;
 use ariadne_graph::parser::ParserRegistry;
-use ariadne_graph::pipeline::{BuildPipeline, FileWalker, FsReader, FsWalker, WalkConfig};
+use ariadne_graph::pipeline::{BuildOptions, BuildPipeline, FileWalker, FsReader, FsWalker, WalkConfig};
 use ariadne_graph::serial::json::JsonSerializer;
 use ariadne_graph::serial::{GraphReader, RawImportOutput};
 
@@ -209,15 +209,10 @@ fn timestamp_false_omits_generated_field() {
     let pipeline = make_pipeline();
 
     pipeline
-        .run_with_output(
+        .run_with_options(
             &path,
             WalkConfig::default(),
-            Some(output_path),
-            false,
-            false,
-            false,
-            None,
-            None,
+            &BuildOptions { output_dir: Some(output_path), ..Default::default() },
         )
         .expect("build should succeed");
 
@@ -238,15 +233,10 @@ fn timestamp_true_adds_generated_field() {
     let pipeline = make_pipeline();
 
     pipeline
-        .run_with_output(
+        .run_with_options(
             &path,
             WalkConfig::default(),
-            Some(output_path),
-            true,
-            false,
-            false,
-            None,
-            None,
+            &BuildOptions { output_dir: Some(output_path), timestamp: true, ..Default::default() },
         )
         .expect("build should succeed");
 
@@ -292,7 +282,7 @@ fn walk_config_respects_max_files() {
 
     // The pipeline might still succeed if it finds at least 1 parseable file,
     // or fail with E004 if the 1 file isn't parseable. Either is valid.
-    let _result = pipeline.run_with_output(&path, config, Some(output_path), false, false, false, None, None);
+    let _result = pipeline.run_with_options(&path, config, &BuildOptions { output_dir: Some(output_path), ..Default::default() });
     // We just verify it doesn't panic
 }
 
@@ -340,15 +330,10 @@ fn pipeline_produces_raw_imports_json() {
     let pipeline = make_pipeline();
 
     pipeline
-        .run_with_output(
+        .run_with_options(
             &path,
             WalkConfig::default(),
-            Some(output_dir.path()),
-            false,
-            false,
-            false,
-            None,
-            None,
+            &BuildOptions { output_dir: Some(output_dir.path()), ..Default::default() },
         )
         .expect("build should succeed");
 
