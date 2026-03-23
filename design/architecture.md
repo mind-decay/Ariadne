@@ -73,6 +73,8 @@ Parsers are registered in a `ParserRegistry` — adding a new language = impleme
 | C#                      | `using`, `using static`                                              | Low        |
 | Java                    | `import`, `import static`                                            | Low        |
 | Markdown                | `[text](path)`, `![alt](path)`, `[ref]: path` (link references)     | Low        |
+| JSON                    | Data files — no dependencies                                         | None       |
+| YAML                    | Data files — no dependencies                                         | None       |
 
 **TypeScript/JavaScript resolution (Phase 1a):**
 
@@ -114,7 +116,7 @@ Used by the pipeline and algorithms. Optimized for programmatic use with newtype
 
 ```rust
 Node {
-    file_type: FileType,       // source | test | config | style | asset | type_def
+    file_type: FileType,       // source | test | config | style | asset | type_def | doc | data
     layer: ArchLayer,          // api | service | data | util | component | hook | config | unknown
     fsd_layer: Option<FsdLayer>, // FSD classification: app|processes|pages|widgets|features|entities|shared (D-031)
     arch_depth: u32,           // topological depth via topo sort after SCC contraction (0 = leaf/foundation)
@@ -224,8 +226,10 @@ BuildOutput {
 - `test` — test files (detected by path pattern or naming convention)
 - `config` — configuration files (tsconfig, webpack, etc.)
 - `style` — CSS/SCSS/styled-components
-- `asset` — static assets (images, fonts, JSON data)
+- `asset` — static assets (images, fonts)
 - `type_def` — type definition files (.d.ts, .pyi)
+- `doc` — documentation files (.md) (D-066)
+- `data` — structured data files (.json, .yaml, .yml) — no dependencies (D-075)
 
 **Edge types** (`EdgeType` enum, `Copy + Ord`):
 
@@ -244,7 +248,8 @@ Detection uses **per-language pattern tables**, not a single generic list. Filen
 | 2        | Test file patterns (per-language) | See table below                                                                    | `test`     |
 | 3        | Type definition extensions        | `.d.ts`, `.d.mts`, `.pyi`                                                          | `type_def` |
 | 4        | Style extensions                  | `.css`, `.scss`, `.sass`, `.less`, `.styled.*`                                     | `style`    |
-| 5        | Asset extensions                  | `.png`, `.jpg`, `.svg`, `.woff`, `.json` (if not caught by rule 1)                 | `asset`    |
+| 4.75     | Data file extensions              | `.json`, `.yaml`, `.yml` (if not caught by rule 1)                                 | `data`     |
+| 5        | Asset extensions                  | `.png`, `.jpg`, `.svg`, `.woff`                                                    | `asset`    |
 | 6        | Default                           | Everything else with a recognized parser extension                                 | `source`   |
 
 **Per-language test patterns:**
@@ -930,7 +935,7 @@ Ariadne captures **syntactic static imports only**. The following are NOT modele
 - **Dependency injection** — dependencies wired at runtime via DI containers are invisible to static analysis.
 - **Build tool transforms** — Webpack aliases, Babel module resolution, custom path mapping beyond tsconfig. Only standard language import semantics are supported.
 - **Cross-language imports** — Go does not import TypeScript, etc. Each language's imports resolve within its own ecosystem.
-- **JSON/data file imports** — `import config from './config.json'` (common in TypeScript) produces no edge because no JSON parser exists. The JSON file is not a node.
+- **JSON/YAML data file imports** — `import config from './config.json'` (common in TypeScript) produces an edge to the JSON file node, but the JSON/YAML file itself has no outgoing edges (no-dependency semantics). JSON and YAML files are classified as `FileType::Data` (D-075).
 - **Markdown link semantics** — Markdown edges (`EdgeType::References`) are non-architectural: they appear in the graph but are excluded from SCC, centrality, and layer violation analysis. Only local relative links are extracted; external URLs, fragments, and links inside code blocks are filtered.
 - **Conditional/platform imports** — imports guarded by `#ifdef`, build flags, or runtime platform checks are all extracted regardless of the condition.
 - **Macro-generated imports** — Rust `macro_rules!` or procedural macros that generate `use` statements are invisible to tree-sitter.

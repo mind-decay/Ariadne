@@ -82,6 +82,7 @@ fn parse_file_type(s: &str) -> Result<FileType, String> {
         "asset" => Ok(FileType::Asset),
         "type_def" => Ok(FileType::TypeDef),
         "doc" => Ok(FileType::Doc),
+        "data" => Ok(FileType::Data),
         other => Err(format!("unknown file type: {}", other)),
     }
 }

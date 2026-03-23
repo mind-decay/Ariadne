@@ -18,6 +18,7 @@ Ariadne is a standalone Rust CLI that builds structural dependency graphs from s
 - Core data model (BTreeMap for determinism — D-006)
 - Tree-sitter integration with partial parse handling
 - 6 Tier 1 language parsers (TS/JS, Go, Python, Rust, C#, Java)
+- JSON and YAML data file parsers (no-dependency semantics, `FileType::Data`) (D-075, D-076)
 - File type detection + architectural layer inference
 - xxHash64 content hashing
 - Directory-based clustering

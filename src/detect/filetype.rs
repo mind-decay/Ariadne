@@ -30,6 +30,11 @@ pub fn detect_file_type(path: &CanonicalPath) -> FileType {
         return FileType::Doc;
     }
 
+    // Priority 4.75 — Data files (D-075)
+    if let Some("json" | "yaml" | "yml") = path.extension() {
+        return FileType::Data;
+    }
+
     // Priority 5 — Asset extensions
     if is_asset_file(filename, path.extension()) {
         return FileType::Asset;
@@ -201,9 +206,6 @@ fn is_asset_file(_filename: &str, ext: Option<&str>) -> bool {
                 | "woff2"
                 | "ttf"
                 | "eot"
-                | "json"
-                | "yaml"
-                | "yml"
         ),
         // Files without extensions that weren't caught earlier are not assets
         None => false,
@@ -309,9 +311,22 @@ mod tests {
     fn asset_files() {
         assert_eq!(ft("public/logo.png"), FileType::Asset);
         assert_eq!(ft("assets/font.woff2"), FileType::Asset);
-        assert_eq!(ft("data/config.yaml"), FileType::Asset);
-        // json not caught by config → asset
-        assert_eq!(ft("data/schema.json"), FileType::Asset);
+    }
+
+    // Priority 4.75 — Data files (D-075)
+    #[test]
+    fn data_files() {
+        assert_eq!(ft("data/config.yaml"), FileType::Data);
+        assert_eq!(ft("data/schema.json"), FileType::Data);
+        assert_eq!(ft("data/values.yml"), FileType::Data);
+    }
+
+    #[test]
+    fn config_beats_data() {
+        // Config filenames at priority 1 still win over data at priority 4.75
+        assert_eq!(ft("package.json"), FileType::Config);
+        assert_eq!(ft("docker-compose.yml"), FileType::Config);
+        assert_eq!(ft("docker-compose.yaml"), FileType::Config);
     }
 
     // Priority 6 — Source (default)

@@ -920,3 +920,19 @@ Applies to: Brandes centrality (Phase 2), Louvain modularity (Phase 2b), PageRan
 **Context:** Standard Louvain uses gamma=1.0 in the modularity formula. Higher gamma penalizes merging more, producing finer-grained communities. Different codebases benefit from different values.
 **Decision:** Add `--resolution <gamma>` CLI flag for `build` and `update` commands. Default: 1.0 (standard modularity). Threaded through pipeline to `louvain_clustering_with_resolution()`. Formula: `Q = (1/2m) * Σ [A_ij - γ * k_i*k_j/(2m)] * δ(c_i, c_j)`.
 **Affects:** `src/algo/louvain.rs`, `src/pipeline/mod.rs`, `src/main.rs` (CLI).
+
+## D-075: FileType::Data Variant for Structured Data Files
+
+**Date:** 2026-03-24
+**Status:** Accepted
+**Context:** JSON and YAML files were previously classified as `FileType::Asset`, lumping them with binary assets like images and fonts. Structured data files are semantically distinct — they are parseable text files that other source files may import.
+**Decision:** Add `FileType::Data` variant (appended after `Doc` to minimize Ord impact). Detection priority 4.75 — between Doc (4.5) and Asset (5). Config filenames (e.g., `package.json`, `docker-compose.yml`) remain `FileType::Config` at priority 1. Removed `json`, `yaml`, `yml` from `is_asset_file()`.
+**Affects:** `src/model/node.rs`, `src/detect/filetype.rs`, `src/serial/convert.rs`.
+
+## D-076: JSON and YAML Tree-Sitter Parsers with No-Dependency Semantics
+
+**Date:** 2026-03-24
+**Status:** Accepted
+**Context:** JSON and YAML files should appear as nodes in the dependency graph so that edges from source files importing them are visible. However, JSON/YAML files themselves have no import/export semantics.
+**Decision:** Add `json_lang.rs` and `yaml.rs` no-op parsers following the `markdown.rs` pattern. Both return empty import/export vectors. No new `ImportKind` or `EdgeType` variants. Registered in `with_tier1_config()`. Dependencies: `tree-sitter-json = "0.24"`, `tree-sitter-yaml = "0.7"`. `json_lang.rs` naming follows `rust_lang.rs` precedent for disambiguation.
+**Affects:** `src/parser/json_lang.rs` (new), `src/parser/yaml.rs` (new), `src/parser/mod.rs`, `src/parser/registry.rs`, `Cargo.toml`.

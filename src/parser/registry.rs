@@ -3,11 +3,13 @@ use std::collections::HashMap;
 use super::csharp;
 use super::go;
 use super::java;
+use super::json_lang;
 use super::markdown;
 use super::python::{PythonParser, PythonResolver};
 use super::rust_lang::{RustParser, RustResolver};
 use super::traits::{ImportResolver, LanguageParser, RawExport, RawImport};
 use super::typescript::{TypeScriptParser, TypeScriptResolver};
+use super::yaml;
 
 /// Result of parsing a source file.
 pub enum ParseOutcome {
@@ -84,6 +86,8 @@ impl ParserRegistry {
         registry.register(csharp::parser(), csharp::resolver());
         registry.register(java::parser(), java::resolver());
         registry.register(markdown::parser(), markdown::resolver());
+        registry.register(json_lang::parser(), json_lang::resolver());
+        registry.register(yaml::parser(), yaml::resolver());
         registry
     }
 

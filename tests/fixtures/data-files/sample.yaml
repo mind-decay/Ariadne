@@ -1,0 +1,11 @@
+name: test
+version: "1.0"
+items:
+  - 1
+  - 2
+  - 3
+nested:
+  key: value
+  list:
+    - alpha
+    - beta
