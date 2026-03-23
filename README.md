@@ -141,8 +141,9 @@ When release binaries are available, grab the latest for your platform from [Git
 | Rust | `.rs` | tree-sitter-rust |
 | C# | `.cs` | tree-sitter-c-sharp |
 | Java | `.java` | tree-sitter-java |
+| Markdown | `.md` | tree-sitter-md |
 
-Each parser extracts imports, exports, re-exports, and type-only imports where the language supports them. Broken files are skipped with a warning — never a crash.
+Each parser extracts imports, exports, re-exports, and type-only imports where the language supports them. Markdown files extract local link references as non-architectural edges. Broken files are skipped with a warning — never a crash.
 
 ---
 

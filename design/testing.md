@@ -59,6 +59,7 @@ tests/
 | Rust | use crate::, use super::, use self::, mod declaration, extern crate skip, std:: skip, pub items, pub use re-export |
 | C# | using, using static, aliased using, global using, public class/interface export |
 | Java | class import, wildcard import, static import, static wildcard import, public class/interface/enum/record export |
+| Markdown | inline link, image link, reference-style link, external URL filtered, fragment-only filtered, link in code block filtered, empty file, dedup, fragment stripping |
 
 **Total: ~50 snapshot tests** for L1.
 

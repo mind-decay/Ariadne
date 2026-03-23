@@ -19,7 +19,7 @@ These prevent any useful work. The binary exits with code 1 and a clear error me
 | `E001: ProjectNotFound`   | Project root path doesn't exist                        | `error: project root not found: {path}`                                                      |
 | `E002: NotADirectory`     | Project root is a file, not directory                  | `error: not a directory: {path}`                                                             |
 | `E003: OutputNotWritable` | Can't create or write to output directory              | `error: cannot write to output directory: {path}: {reason}`                                  |
-| `E004: NoParseableFiles`  | Walk found zero files with recognized extensions       | `error: no parseable files found in {path} (supported: .ts, .js, .go, .py, .rs, .cs, .java)` |
+| `E004: NoParseableFiles`  | Walk found zero files with recognized extensions       | `error: no parseable files found in {path} (supported: .ts, .js, .go, .py, .rs, .cs, .java, .md)` |
 | `E005: WalkFailed`        | Directory walk failed completely (permissions on root) | `error: cannot read project directory: {path}: {reason}`                                     |
 | `E006: GraphNotFound`     | `ariadne query` or `ariadne update` when graph.json doesn't exist (Phase 2) | `error: graph not found in {path}. Run 'ariadne build' first.`                              |
 | `E007: StatsNotFound`     | `ariadne query stats/layers/cycles` when stats.json doesn't exist (Phase 2) | `error: stats not found in {path}. Run 'ariadne build' first.`                              |

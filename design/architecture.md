@@ -72,6 +72,7 @@ Parsers are registered in a `ParserRegistry` — adding a new language = impleme
 | Rust                    | `use`, `mod`, `extern crate`                                         | Medium     |
 | C#                      | `using`, `using static`                                              | Low        |
 | Java                    | `import`, `import static`                                            | Low        |
+| Markdown                | `[text](path)`, `![alt](path)`, `[ref]: path` (link references)     | Low        |
 
 **TypeScript/JavaScript resolution (Phase 1a):**
 
@@ -923,6 +924,7 @@ Ariadne captures **syntactic static imports only**. The following are NOT modele
 - **Build tool transforms** — Webpack aliases, Babel module resolution, custom path mapping beyond tsconfig. Only standard language import semantics are supported.
 - **Cross-language imports** — Go does not import TypeScript, etc. Each language's imports resolve within its own ecosystem.
 - **JSON/data file imports** — `import config from './config.json'` (common in TypeScript) produces no edge because no JSON parser exists. The JSON file is not a node.
+- **Markdown link semantics** — Markdown edges (`EdgeType::References`) are non-architectural: they appear in the graph but are excluded from SCC, centrality, and layer violation analysis. Only local relative links are extracted; external URLs, fragments, and links inside code blocks are filtered.
 - **Conditional/platform imports** — imports guarded by `#ifdef`, build flags, or runtime platform checks are all extracted regardless of the condition.
 - **Macro-generated imports** — Rust `macro_rules!` or procedural macros that generate `use` statements are invisible to tree-sitter.
 
