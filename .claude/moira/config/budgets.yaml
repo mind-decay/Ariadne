@@ -1,0 +1,26 @@
+# Context Budget Configuration
+# Per-agent allocations in tokens. Adjust based on project complexity.
+# Hard rule: never load an agent beyond 70% capacity (30% safety margin).
+
+agent_budgets:
+  classifier: 20000
+  explorer: 140000
+  analyst: 80000
+  architect: 100000
+  planner: 70000
+  implementer: 120000
+  reviewer: 100000
+  tester: 90000
+  reflector: 80000
+  auditor: 140000
+
+# Maximum safe load percentage (30% safety margin = 70% max)
+max_load_percent: 70
+
+# Orchestrator context capacity (approximate)
+orchestrator_capacity: 200000
+
+# MCP call budget estimates (tokens per call, approximate)
+mcp_estimates:
+  context7_query: 14000
+  default_call: 5000

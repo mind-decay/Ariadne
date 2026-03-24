@@ -1,0 +1,19 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/moira/hooks/guard.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash ~/.claude/moira/hooks/budget-track.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
