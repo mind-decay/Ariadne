@@ -1,5 +1,15 @@
 {
   "clusters": {
+    ".github": {
+      "files": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/release.yml"
+      ],
+      "file_count": 2,
+      "internal_edges": 0,
+      "external_edges": 0,
+      "cohesion": 1.0
+    },
     "algo": {
       "files": [
         "src/algo/blast_radius.rs",
@@ -17,8 +27,8 @@
       ],
       "file_count": 12,
       "internal_edges": 18,
-      "external_edges": 26,
-      "cohesion": 0.4091
+      "external_edges": 22,
+      "cohesion": 0.45
     },
     "analysis": {
       "files": [
@@ -29,8 +39,8 @@
       ],
       "file_count": 4,
       "internal_edges": 6,
-      "external_edges": 13,
-      "cohesion": 0.3158
+      "external_edges": 10,
+      "cohesion": 0.375
     },
     "benches": {
       "files": [
@@ -43,8 +53,8 @@
       ],
       "file_count": 6,
       "internal_edges": 0,
-      "external_edges": 15,
-      "cohesion": 0.0
+      "external_edges": 0,
+      "cohesion": 1.0
     },
     "cluster": {
       "files": [
@@ -65,6 +75,7 @@
         "design/error-handling.md",
         "design/path-resolution.md",
         "design/performance.md",
+        "design/reports/2026-03-23-moira-violations.md",
         "design/reports/archive/2026-03-17-doc-audit.md",
         "design/reports/archive/2026-03-18-architecture-review.md",
         "design/reports/archive/2026-03-18-v2-architecture-review.md",
@@ -90,7 +101,7 @@
         "design/specs/archive/2026-03-19-phase3c-implementation-plan.md",
         "design/testing.md"
       ],
-      "file_count": 32,
+      "file_count": 33,
       "internal_edges": 0,
       "external_edges": 0,
       "cohesion": 1.0
@@ -128,8 +139,8 @@
       ],
       "file_count": 6,
       "internal_edges": 11,
-      "external_edges": 21,
-      "cohesion": 0.3438
+      "external_edges": 20,
+      "cohesion": 0.3548
     },
     "model": {
       "files": [
@@ -147,8 +158,8 @@
       ],
       "file_count": 11,
       "internal_edges": 10,
-      "external_edges": 63,
-      "cohesion": 0.137
+      "external_edges": 61,
+      "cohesion": 0.1408
     },
     "parser": {
       "files": [
@@ -156,18 +167,20 @@
         "src/parser/go.rs",
         "src/parser/helpers.rs",
         "src/parser/java.rs",
+        "src/parser/json_lang.rs",
         "src/parser/markdown.rs",
         "src/parser/mod.rs",
         "src/parser/python.rs",
         "src/parser/registry.rs",
         "src/parser/rust_lang.rs",
         "src/parser/traits.rs",
-        "src/parser/typescript.rs"
+        "src/parser/typescript.rs",
+        "src/parser/yaml.rs"
       ],
-      "file_count": 11,
-      "internal_edges": 20,
-      "external_edges": 26,
-      "cohesion": 0.4348
+      "file_count": 13,
+      "internal_edges": 24,
+      "external_edges": 25,
+      "cohesion": 0.4898
     },
     "pipeline": {
       "files": [
@@ -179,11 +192,12 @@
       ],
       "file_count": 5,
       "internal_edges": 4,
-      "external_edges": 28,
-      "cohesion": 0.125
+      "external_edges": 24,
+      "cohesion": 0.1429
     },
     "root": {
       "files": [
+        ".mcp.json",
         "CLAUDE.md",
         "README.md",
         "src/diagnostic.rs",
@@ -191,10 +205,10 @@
         "src/lib.rs",
         "src/main.rs"
       ],
-      "file_count": 6,
-      "internal_edges": 3,
-      "external_edges": 36,
-      "cohesion": 0.0769
+      "file_count": 7,
+      "internal_edges": 2,
+      "external_edges": 25,
+      "cohesion": 0.0741
     },
     "serial": {
       "files": [
@@ -204,8 +218,8 @@
       ],
       "file_count": 3,
       "internal_edges": 2,
-      "external_edges": 16,
-      "cohesion": 0.1111
+      "external_edges": 10,
+      "cohesion": 0.1667
     },
     "tests": {
       "files": [
@@ -213,10 +227,17 @@
         "tests/fixtures/csharp-project/Program.cs",
         "tests/fixtures/csharp-project/Services/AuthService.cs",
         "tests/fixtures/csharp-project/Tests/AuthTests.cs",
+        "tests/fixtures/data-files/malformed.json",
+        "tests/fixtures/data-files/malformed.yaml",
+        "tests/fixtures/data-files/sample.json",
+        "tests/fixtures/data-files/sample.yaml",
+        "tests/fixtures/data-files/sample.yml",
         "tests/fixtures/edge-cases/circular-a.ts",
         "tests/fixtures/edge-cases/circular-b.ts",
         "tests/fixtures/edge-cases/deeply/nested/a/b/c/d/file.ts",
         "tests/fixtures/edge-cases/empty.ts",
+        "tests/fixtures/edge-cases/graph/clusters.json",
+        "tests/fixtures/edge-cases/graph/graph.json",
         "tests/fixtures/edge-cases/helper.ts",
         "tests/fixtures/edge-cases/syntax-error.ts",
         "tests/fixtures/edge-cases/valid.ts",
@@ -233,6 +254,7 @@
         "tests/fixtures/markdown-docs/docs/guide.md",
         "tests/fixtures/mixed-project/README.md",
         "tests/fixtures/mixed-project/backend/main.go",
+        "tests/fixtures/mixed-project/frontend/package.json",
         "tests/fixtures/mixed-project/frontend/src/App.tsx",
         "tests/fixtures/mixed-project/frontend/src/components/Button.tsx",
         "tests/fixtures/mixed-project/scripts/deploy.py",
@@ -261,16 +283,22 @@
         "tests/fixtures/tsx-components/components/LegacyButton.jsx",
         "tests/fixtures/tsx-components/components/SpreadProps.tsx",
         "tests/fixtures/tsx-components/components/StyledBox.tsx",
+        "tests/fixtures/typescript-app/package.json",
         "tests/fixtures/typescript-app/src/__tests__/login.test.ts",
         "tests/fixtures/typescript-app/src/auth/login.ts",
         "tests/fixtures/typescript-app/src/auth/register.ts",
         "tests/fixtures/typescript-app/src/index.ts",
         "tests/fixtures/typescript-app/src/types/index.d.ts",
         "tests/fixtures/typescript-app/src/utils/format.ts",
+        "tests/fixtures/typescript-app/tsconfig.json",
+        "tests/fixtures/workspace-project/package.json",
+        "tests/fixtures/workspace-project/packages/api/package.json",
         "tests/fixtures/workspace-project/packages/api/src/index.ts",
         "tests/fixtures/workspace-project/packages/api/src/router.ts",
+        "tests/fixtures/workspace-project/packages/auth/package.json",
         "tests/fixtures/workspace-project/packages/auth/src/index.ts",
         "tests/fixtures/workspace-project/packages/auth/src/login.ts",
+        "tests/fixtures/workspace-project/packages/shared/package.json",
         "tests/fixtures/workspace-project/packages/shared/src/format.ts",
         "tests/fixtures/workspace-project/packages/shared/src/index.ts",
         "tests/graph_tests.rs",
@@ -280,10 +308,10 @@
         "tests/pipeline_tests.rs",
         "tests/properties.rs"
       ],
-      "file_count": 70,
+      "file_count": 84,
       "internal_edges": 34,
-      "external_edges": 13,
-      "cohesion": 0.7234
+      "external_edges": 0,
+      "cohesion": 1.0
     },
     "views": {
       "files": [

@@ -10,9 +10,9 @@ Named after Ariadne of Greek mythology, who gave Theseus the thread to navigate 
 
 ## Critical Files — Read Before ANY Work
 
-1. `design/ROADMAP.md` — implementation phases and build order
+1. `design/ROADMAP.md` — implementation phases (1a-3c done), evolution plan (phases 4-10), Moira integration notes
 2. `design/architecture.md` — full system design (data model, parsers, CLI, formats)
-3. `design/decisions/log.md` — architectural decisions (D-001 through D-025)
+3. `design/decisions/log.md` — architectural decisions (D-001 through D-076)
 4. `design/path-resolution.md` — path normalization, case sensitivity, monorepo support
 5. `design/determinism.md` — byte-identical output strategy
 6. `design/error-handling.md` — error taxonomy (E001-E005, W001-W009), fault tolerance
@@ -82,7 +82,7 @@ All commands write reports to `design/reports/{date}-{type}.md`. Previous report
 
 Format: `ariadne(<scope>): <description>`
 
-Scopes: core, parser, pipeline, graph, detect, serial, cli, ci, test, design
+Scopes: core, parser, pipeline, graph, detect, serial, cli, ci, test, design, mcp, analysis, algo, temporal, semantic
 
 Examples:
 - `ariadne(core): implement data model types`
@@ -96,7 +96,7 @@ ariadne/
 ├── design/              # Design documents (source of truth)
 │   ├── ROADMAP.md       # Implementation phases
 │   ├── architecture.md  # Full system design
-│   ├── decisions/       # Decision log (D-001 through D-049)
+│   ├── decisions/       # Decision log (D-001 through D-076, planned D-077 through D-090)
 │   ├── specs/           # Phase specs and plans
 │   └── reports/         # Architecture reviews, audit reports
 ├── src/                 # Rust source
@@ -109,7 +109,11 @@ ariadne/
 │   ├── cluster/         # Directory-based clustering
 │   ├── algo/            # Graph algorithms: SCC, BFS, centrality, topo sort, subgraph (D-033) [Phase 2a]
 │   ├── views/           # Markdown view generation: L0 index, L1 cluster, L2 impact (D-033) [Phase 2a]
+│   ├── analysis/        # Martin metrics, smell detection, structural diff (D-048) [Phase 3b]
+│   ├── mcp/             # MCP server, tools, state management (D-045) [Phase 3a]
 │   ├── serial/          # GraphSerializer + GraphReader traits, output types, JSON impl (D-022, D-032)
+│   ├── temporal/         # Git history engine: churn, co-change, hotspots [Phase 7, planned]
+│   ├── semantic/         # Boundary extraction: HTTP routes, events, DI [Phase 8, planned]
 │   ├── diagnostic.rs    # FatalError, Warning, DiagnosticCollector (D-021)
 │   └── hash.rs          # xxHash64 → ContentHash
 ├── tests/               # Integration tests, fixtures, snapshots

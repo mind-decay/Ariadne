@@ -1,15 +1,42 @@
 {
   "version": 1,
-  "project_root": ".",
-  "node_count": 177,
-  "edge_count": 253,
+  "project_root": "/Users/minddecay/Documents/Projects/Ariadne",
+  "node_count": 197,
+  "edge_count": 226,
   "nodes": {
+    ".github/workflows/ci.yml": {
+      "type": "data",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 47,
+      "hash": "a872c79129dc1053",
+      "exports": [],
+      "cluster": ".github"
+    },
+    ".github/workflows/release.yml": {
+      "type": "data",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 119,
+      "hash": "cf1443b7f09de31a",
+      "exports": [],
+      "cluster": ".github"
+    },
+    ".mcp.json": {
+      "type": "data",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 12,
+      "hash": "0048c064df15be58",
+      "exports": [],
+      "cluster": "root"
+    },
     "CLAUDE.md": {
       "type": "doc",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 119,
-      "hash": "d3aa37bfd408cba4",
+      "lines": 123,
+      "hash": "2157cb52ceecefd2",
       "exports": [],
       "cluster": "root"
     },
@@ -25,7 +52,7 @@
     "benches/algo_bench.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 4,
+      "arch_depth": 0,
       "lines": 188,
       "hash": "d56ed93746d20a1a",
       "exports": [],
@@ -34,7 +61,7 @@
     "benches/analysis_bench.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 7,
+      "arch_depth": 0,
       "lines": 192,
       "hash": "a14037c493398ada",
       "exports": [],
@@ -43,9 +70,9 @@
     "benches/build_bench.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 7,
-      "lines": 91,
-      "hash": "7e5b22eae627cfdc",
+      "arch_depth": 0,
+      "lines": 76,
+      "hash": "303184474b961ba8",
       "exports": [],
       "cluster": "benches"
     },
@@ -63,7 +90,7 @@
     "benches/mcp_bench.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 6,
+      "arch_depth": 0,
       "lines": 162,
       "hash": "4b84c88d4c523938",
       "exports": [],
@@ -72,7 +99,7 @@
     "benches/parser_bench.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 5,
+      "arch_depth": 0,
       "lines": 182,
       "hash": "20476c21d9de1dd9",
       "exports": [],
@@ -82,8 +109,8 @@
       "type": "doc",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 621,
-      "hash": "8ac49f0c21050871",
+      "lines": 1863,
+      "hash": "d7e7c74335a5af2e",
       "exports": [],
       "cluster": "design"
     },
@@ -91,8 +118,8 @@
       "type": "doc",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 931,
-      "hash": "42f45453a39e2f7b",
+      "lines": 943,
+      "hash": "e44ebd6dd982c373",
       "exports": [],
       "cluster": "design"
     },
@@ -100,8 +127,8 @@
       "type": "doc",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 863,
-      "hash": "64df7e8892764ec2",
+      "lines": 938,
+      "hash": "341a7417f7e4693c",
       "exports": [],
       "cluster": "design"
     },
@@ -128,7 +155,7 @@
       "layer": "unknown",
       "arch_depth": 0,
       "lines": 412,
-      "hash": "2b2668cee8e8c262",
+      "hash": "87b93a24539f1186",
       "exports": [],
       "cluster": "design"
     },
@@ -147,6 +174,15 @@
       "arch_depth": 0,
       "lines": 248,
       "hash": "3d9ab9f3e8fb999d",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/reports/2026-03-23-moira-violations.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 117,
+      "hash": "5383633453a2ffa7",
       "exports": [],
       "cluster": "design"
     },
@@ -426,8 +462,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 2,
-      "lines": 671,
-      "hash": "4dfb4168999918bd",
+      "lines": 672,
+      "hash": "9ce79ef4e158d633",
       "exports": [
         "louvain_clustering",
         "louvain_clustering_with_resolution"
@@ -602,8 +638,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 2,
-      "lines": 340,
-      "hash": "56072bb486910f86",
+      "lines": 355,
+      "hash": "86db11e03c5c9870",
       "exports": [
         "detect_file_type"
       ],
@@ -709,9 +745,9 @@
     "src/main.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 7,
-      "lines": 1188,
-      "hash": "735b905a51053e08",
+      "arch_depth": 0,
+      "lines": 1191,
+      "hash": "6f12a6a3108c9892",
       "exports": [],
       "cluster": "root"
     },
@@ -748,8 +784,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 8,
-      "lines": 212,
-      "hash": "3e572ae7f253a3d7",
+      "lines": 208,
+      "hash": "71a6b56b955ec047",
       "exports": [
         "ServeConfig",
         "run"
@@ -795,8 +831,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 7,
-      "lines": 224,
-      "hash": "350b518ad22f4ba4",
+      "lines": 222,
+      "hash": "4be0359047cb4305",
       "exports": [
         "FileWatcher",
         "should_trigger_rebuild"
@@ -916,8 +952,8 @@
       "type": "source",
       "layer": "data",
       "arch_depth": 0,
-      "lines": 99,
-      "hash": "2882a31ae5889e16",
+      "lines": 101,
+      "hash": "0819c2a661882b3a",
       "exports": [
         "ArchLayer",
         "FileType",
@@ -1039,6 +1075,18 @@
       ],
       "cluster": "parser"
     },
+    "src/parser/json_lang.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 3,
+      "lines": 117,
+      "hash": "3495412322cbb35c",
+      "exports": [
+        "parser",
+        "resolver"
+      ],
+      "cluster": "parser"
+    },
     "src/parser/markdown.rs": {
       "type": "source",
       "layer": "unknown",
@@ -1055,8 +1103,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 4,
-      "lines": 13,
-      "hash": "617cb9ed8cf932a4",
+      "lines": 15,
+      "hash": "edcb0c24dc80b71f",
       "exports": [
         "ImportKind",
         "ImportResolver",
@@ -1087,8 +1135,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 167,
-      "hash": "e5290f9322da27d8",
+      "lines": 171,
+      "hash": "91d1ed33c38cc3b2",
       "exports": [
         "ParseOutcome",
         "ParserRegistry"
@@ -1100,7 +1148,7 @@
       "layer": "unknown",
       "arch_depth": 3,
       "lines": 813,
-      "hash": "df60dff06fd372e1",
+      "hash": "1a5a3ef9a0749c99",
       "exports": [
         "RustParser",
         "RustResolver"
@@ -1134,13 +1182,26 @@
       ],
       "cluster": "parser"
     },
+    "src/parser/yaml.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 3,
+      "lines": 110,
+      "hash": "418aeb5ef352393c",
+      "exports": [
+        "parser",
+        "resolver"
+      ],
+      "cluster": "parser"
+    },
     "src/pipeline/build.rs": {
       "type": "config",
       "layer": "unknown",
       "arch_depth": 5,
-      "lines": 356,
-      "hash": "feb7fe572ffaf1f5",
+      "lines": 365,
+      "hash": "8841791934b124f0",
       "exports": [
+        "ResolveOptions",
         "resolve_and_build"
       ],
       "cluster": "pipeline"
@@ -1149,9 +1210,10 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 6,
-      "lines": 713,
-      "hash": "920c795838e26c39",
+      "lines": 721,
+      "hash": "34532d74204c851f",
       "exports": [
+        "BuildOptions",
         "BuildOutput",
         "BuildPipeline",
         "FileContent",
@@ -1215,8 +1277,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 2,
-      "lines": 217,
-      "hash": "10e2105491132921",
+      "lines": 218,
+      "hash": "d334563cdb6f2dd1",
       "exports": [],
       "cluster": "serial"
     },
@@ -1342,6 +1404,51 @@
       ],
       "cluster": "tests"
     },
+    "tests/fixtures/data-files/malformed.json": {
+      "type": "data",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 1,
+      "hash": "9485cb32d0ea50d2",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/data-files/malformed.yaml": {
+      "type": "data",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 4,
+      "hash": "434a5f122941c942",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/data-files/sample.json": {
+      "type": "data",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 1,
+      "hash": "355d46e94d9ed541",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/data-files/sample.yaml": {
+      "type": "data",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 11,
+      "hash": "736ee0b32aa1edf4",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/data-files/sample.yml": {
+      "type": "data",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 5,
+      "hash": "27bbbc14921d2ace",
+      "exports": [],
+      "cluster": "tests"
+    },
     "tests/fixtures/edge-cases/circular-a.ts": {
       "type": "source",
       "layer": "unknown",
@@ -1381,6 +1488,24 @@
       "arch_depth": 0,
       "lines": 0,
       "hash": "ef46db3751d8e999",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/edge-cases/graph/clusters.json": {
+      "type": "data",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 26,
+      "hash": "e918a645571686ac",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/edge-cases/graph/graph.json": {
+      "type": "data",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 106,
+      "hash": "9a40c441d382dad6",
       "exports": [],
       "cluster": "tests"
     },
@@ -1537,6 +1662,15 @@
       "arch_depth": 0,
       "lines": 14,
       "hash": "2dd7e3f4841b3ef8",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/mixed-project/frontend/package.json": {
+      "type": "config",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 0,
+      "hash": "f6255b748b9e1edd",
       "exports": [],
       "cluster": "tests"
     },
@@ -1853,6 +1987,15 @@
       ],
       "cluster": "tests"
     },
+    "tests/fixtures/typescript-app/package.json": {
+      "type": "config",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 0,
+      "hash": "3d8535c45e495600",
+      "exports": [],
+      "cluster": "tests"
+    },
     "tests/fixtures/typescript-app/src/__tests__/login.test.ts": {
       "type": "test",
       "layer": "unknown",
@@ -1916,6 +2059,33 @@
       ],
       "cluster": "tests"
     },
+    "tests/fixtures/typescript-app/tsconfig.json": {
+      "type": "config",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 0,
+      "hash": "6311eb8e5854a9b6",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/workspace-project/package.json": {
+      "type": "config",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 1,
+      "hash": "4daee4dbec35e249",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/workspace-project/packages/api/package.json": {
+      "type": "config",
+      "layer": "api",
+      "arch_depth": 0,
+      "lines": 1,
+      "hash": "dad98d7302ae0225",
+      "exports": [],
+      "cluster": "tests"
+    },
     "tests/fixtures/workspace-project/packages/api/src/index.ts": {
       "type": "source",
       "layer": "api",
@@ -1933,6 +2103,15 @@
       "arch_depth": 0,
       "lines": 1,
       "hash": "533892416cd8892a",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/workspace-project/packages/auth/package.json": {
+      "type": "config",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 1,
+      "hash": "da38956121715d1c",
       "exports": [],
       "cluster": "tests"
     },
@@ -1956,6 +2135,15 @@
       "exports": [
         "login"
       ],
+      "cluster": "tests"
+    },
+    "tests/fixtures/workspace-project/packages/shared/package.json": {
+      "type": "config",
+      "layer": "util",
+      "arch_depth": 0,
+      "lines": 1,
+      "hash": "f1a97861f892e184",
+      "exports": [],
       "cluster": "tests"
     },
     "tests/fixtures/workspace-project/packages/shared/src/format.ts": {
@@ -1993,8 +2181,8 @@
       "type": "test",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 48,
-      "hash": "36c8008649cba2dd",
+      "lines": 46,
+      "hash": "0027421002abff9a",
       "exports": [
         "build_and_read_graph_json",
         "build_fixture",
@@ -2024,8 +2212,8 @@
       "type": "test",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 397,
-      "hash": "674c214b8b1dac24",
+      "lines": 382,
+      "hash": "39269fe1c667a2a5",
       "exports": [],
       "cluster": "tests"
     },
@@ -2040,129 +2228,6 @@
     }
   },
   "edges": [
-    [
-      "benches/algo_bench.rs",
-      "src/algo/mod.rs",
-      "imports",
-      [
-        "algo"
-      ]
-    ],
-    [
-      "benches/algo_bench.rs",
-      "src/model/mod.rs",
-      "imports",
-      [
-        "*"
-      ]
-    ],
-    [
-      "benches/analysis_bench.rs",
-      "src/algo/mod.rs",
-      "imports",
-      [
-        "algo"
-      ]
-    ],
-    [
-      "benches/analysis_bench.rs",
-      "src/analysis/diff.rs",
-      "imports",
-      [
-        "compute_structural_diff"
-      ]
-    ],
-    [
-      "benches/analysis_bench.rs",
-      "src/analysis/metrics.rs",
-      "imports",
-      [
-        "compute_martin_metrics"
-      ]
-    ],
-    [
-      "benches/analysis_bench.rs",
-      "src/analysis/smells.rs",
-      "imports",
-      [
-        "detect_smells"
-      ]
-    ],
-    [
-      "benches/analysis_bench.rs",
-      "src/model/mod.rs",
-      "imports",
-      [
-        "*"
-      ]
-    ],
-    [
-      "benches/build_bench.rs",
-      "src/parser/mod.rs",
-      "imports",
-      [
-        "ParserRegistry"
-      ]
-    ],
-    [
-      "benches/build_bench.rs",
-      "src/pipeline/mod.rs",
-      "imports",
-      [
-        "BuildPipeline",
-        "FsReader",
-        "FsWalker",
-        "WalkConfig"
-      ]
-    ],
-    [
-      "benches/build_bench.rs",
-      "src/serial/json.rs",
-      "imports",
-      [
-        "JsonSerializer"
-      ]
-    ],
-    [
-      "benches/mcp_bench.rs",
-      "src/algo/mod.rs",
-      "imports",
-      [
-        "algo"
-      ]
-    ],
-    [
-      "benches/mcp_bench.rs",
-      "src/mcp/state.rs",
-      "imports",
-      [
-        "GraphState"
-      ]
-    ],
-    [
-      "benches/mcp_bench.rs",
-      "src/model/mod.rs",
-      "imports",
-      [
-        "*"
-      ]
-    ],
-    [
-      "benches/parser_bench.rs",
-      "src/hash.rs",
-      "imports",
-      [
-        "hash_content"
-      ]
-    ],
-    [
-      "benches/parser_bench.rs",
-      "src/parser/mod.rs",
-      "imports",
-      [
-        "ParserRegistry"
-      ]
-    ],
     [
       "src/algo/blast_radius.rs",
       "src/algo/mod.rs",
@@ -2744,72 +2809,6 @@
       ]
     ],
     [
-      "src/main.rs",
-      "src/algo/mod.rs",
-      "imports",
-      [
-        "algo"
-      ]
-    ],
-    [
-      "src/main.rs",
-      "src/diagnostic.rs",
-      "imports",
-      [
-        "DiagnosticReport",
-        "FatalError",
-        "WarningFormat",
-        "format_summary",
-        "format_warnings"
-      ]
-    ],
-    [
-      "src/main.rs",
-      "src/model/mod.rs",
-      "imports",
-      [
-        "CanonicalPath",
-        "ClusterMap",
-        "ProjectGraph",
-        "StatsOutput"
-      ]
-    ],
-    [
-      "src/main.rs",
-      "src/parser/mod.rs",
-      "imports",
-      [
-        "ParserRegistry"
-      ]
-    ],
-    [
-      "src/main.rs",
-      "src/pipeline/mod.rs",
-      "imports",
-      [
-        "BuildPipeline",
-        "FsReader",
-        "FsWalker",
-        "WalkConfig"
-      ]
-    ],
-    [
-      "src/main.rs",
-      "src/serial/json.rs",
-      "imports",
-      [
-        "JsonSerializer"
-      ]
-    ],
-    [
-      "src/main.rs",
-      "src/serial/mod.rs",
-      "imports",
-      [
-        "GraphReader"
-      ]
-    ],
-    [
       "src/mcp/lock.rs",
       "src/diagnostic.rs",
       "imports",
@@ -2912,6 +2911,7 @@
       "src/pipeline/mod.rs",
       "imports",
       [
+        "BuildOptions",
         "BuildPipeline",
         "WalkConfig"
       ]
@@ -3043,6 +3043,7 @@
       "src/pipeline/mod.rs",
       "imports",
       [
+        "BuildOptions",
         "BuildPipeline",
         "WalkConfig"
       ]
@@ -3223,6 +3224,34 @@
       ]
     ],
     [
+      "src/parser/json_lang.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath",
+        "FileSet"
+      ]
+    ],
+    [
+      "src/parser/json_lang.rs",
+      "src/model/workspace.rs",
+      "imports",
+      [
+        "WorkspaceInfo"
+      ]
+    ],
+    [
+      "src/parser/json_lang.rs",
+      "src/parser/traits.rs",
+      "imports",
+      [
+        "ImportResolver",
+        "LanguageParser",
+        "RawExport",
+        "RawImport"
+      ]
+    ],
+    [
       "src/parser/markdown.rs",
       "src/model/mod.rs",
       "imports",
@@ -3285,6 +3314,14 @@
     ],
     [
       "src/parser/mod.rs",
+      "src/parser/json_lang.rs",
+      "imports",
+      [
+        "json_lang"
+      ]
+    ],
+    [
+      "src/parser/mod.rs",
       "src/parser/markdown.rs",
       "imports",
       [
@@ -3332,6 +3369,14 @@
       ]
     ],
     [
+      "src/parser/mod.rs",
+      "src/parser/yaml.rs",
+      "imports",
+      [
+        "yaml"
+      ]
+    ],
+    [
       "src/parser/python.rs",
       "src/model/mod.rs",
       "imports",
@@ -3453,6 +3498,34 @@
       "imports",
       [
         "ImportKind",
+        "ImportResolver",
+        "LanguageParser",
+        "RawExport",
+        "RawImport"
+      ]
+    ],
+    [
+      "src/parser/yaml.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath",
+        "FileSet"
+      ]
+    ],
+    [
+      "src/parser/yaml.rs",
+      "src/model/workspace.rs",
+      "imports",
+      [
+        "WorkspaceInfo"
+      ]
+    ],
+    [
+      "src/parser/yaml.rs",
+      "src/parser/traits.rs",
+      "imports",
+      [
         "ImportResolver",
         "LanguageParser",
         "RawExport",
@@ -4073,121 +4146,6 @@
       "re_exports",
       [
         "format"
-      ]
-    ],
-    [
-      "tests/graph_tests.rs",
-      "src/diagnostic.rs",
-      "tests",
-      [
-        "WarningCode"
-      ]
-    ],
-    [
-      "tests/helpers.rs",
-      "src/parser/mod.rs",
-      "tests",
-      [
-        "ParserRegistry"
-      ]
-    ],
-    [
-      "tests/helpers.rs",
-      "src/pipeline/mod.rs",
-      "tests",
-      [
-        "BuildOutput",
-        "BuildPipeline",
-        "FsReader",
-        "FsWalker",
-        "WalkConfig"
-      ]
-    ],
-    [
-      "tests/helpers.rs",
-      "src/serial/json.rs",
-      "tests",
-      [
-        "JsonSerializer"
-      ]
-    ],
-    [
-      "tests/pipeline_tests.rs",
-      "src/diagnostic.rs",
-      "tests",
-      [
-        "DiagnosticCollector",
-        "Warning",
-        "WarningCode"
-      ]
-    ],
-    [
-      "tests/pipeline_tests.rs",
-      "src/model/mod.rs",
-      "tests",
-      [
-        "CanonicalPath"
-      ]
-    ],
-    [
-      "tests/pipeline_tests.rs",
-      "src/parser/mod.rs",
-      "tests",
-      [
-        "ParserRegistry"
-      ]
-    ],
-    [
-      "tests/pipeline_tests.rs",
-      "src/pipeline/mod.rs",
-      "tests",
-      [
-        "BuildPipeline",
-        "FileWalker",
-        "FsReader",
-        "FsWalker",
-        "WalkConfig"
-      ]
-    ],
-    [
-      "tests/pipeline_tests.rs",
-      "src/serial/json.rs",
-      "tests",
-      [
-        "JsonSerializer"
-      ]
-    ],
-    [
-      "tests/pipeline_tests.rs",
-      "src/serial/mod.rs",
-      "tests",
-      [
-        "GraphReader",
-        "RawImportOutput"
-      ]
-    ],
-    [
-      "tests/properties.rs",
-      "src/diagnostic.rs",
-      "tests",
-      [
-        "WarningCode"
-      ]
-    ],
-    [
-      "tests/properties.rs",
-      "src/hash.rs",
-      "tests",
-      [
-        "hash_content"
-      ]
-    ],
-    [
-      "tests/properties.rs",
-      "src/model/mod.rs",
-      "tests",
-      [
-        "CanonicalPath"
       ]
     ]
   ]
