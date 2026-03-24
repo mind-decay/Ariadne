@@ -6,6 +6,8 @@ pub mod node;
 pub mod query;
 pub mod smell;
 pub mod stats;
+pub mod symbol;
+pub mod symbol_index;
 pub mod types;
 pub mod workspace;
 
@@ -20,4 +22,6 @@ pub use query::SubgraphResult;
 pub use smell::{ArchSmell, SmellMetrics, SmellSeverity, SmellType};
 pub use stats::{StatsOutput, StatsSummary};
 pub use types::{CanonicalPath, ClusterId, ContentHash, FileSet, Symbol};
+pub use symbol::{LineSpan, SymbolDef, SymbolKind, Visibility};
+pub use symbol_index::{SymbolIndex, SymbolLocation, SymbolUsage, UsageKind};
 pub use workspace::{WorkspaceInfo, WorkspaceKind, WorkspaceMember};

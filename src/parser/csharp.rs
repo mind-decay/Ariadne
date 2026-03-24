@@ -1,9 +1,11 @@
+use crate::model::symbol::{LineSpan, SymbolDef, SymbolKind, Visibility};
 use crate::model::workspace::WorkspaceInfo;
 use crate::model::{CanonicalPath, FileSet};
+use crate::parser::symbols::SymbolExtractor;
 use crate::parser::traits::{ImportKind, ImportResolver, LanguageParser, RawExport, RawImport};
 
 /// C# language parser.
-struct CSharpParser;
+pub(crate) struct CSharpParser;
 
 impl LanguageParser for CSharpParser {
     fn language(&self) -> &str {
@@ -194,6 +196,208 @@ fn find_declaration_name(node: &tree_sitter::Node, source: &[u8]) -> Option<Stri
     None
 }
 
+impl SymbolExtractor for CSharpParser {
+    fn extract_symbols(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Vec<SymbolDef> {
+        let mut symbols = Vec::new();
+        let root = tree.root_node();
+        extract_csharp_symbols_from_node(&root, source, &mut symbols, None);
+        symbols
+    }
+}
+
+/// Recursively extract symbol definitions from a C# AST node.
+fn extract_csharp_symbols_from_node(
+    node: &tree_sitter::Node,
+    source: &[u8],
+    symbols: &mut Vec<SymbolDef>,
+    parent_name: Option<&str>,
+) {
+    for i in 0..node.child_count() {
+        let child = match node.child(i) {
+            Some(c) => c,
+            None => continue,
+        };
+
+        match child.kind() {
+            "class_declaration" => {
+                let name = find_declaration_name(&child, source);
+                let visibility = csharp_visibility(&child, source);
+                if let Some(ref n) = name {
+                    symbols.push(SymbolDef {
+                        name: n.clone(),
+                        kind: SymbolKind::Class,
+                        visibility,
+                        span: csharp_node_span(&child),
+                        signature: csharp_truncate_signature(&child, source, 200),
+                        parent: parent_name.map(|s| s.to_string()),
+                    });
+                }
+                // Extract members inside class body
+                if let Some(body) = child.child_by_field_name("body") {
+                    extract_csharp_symbols_from_node(&body, source, symbols, name.as_deref());
+                }
+            }
+            "struct_declaration" => {
+                let name = find_declaration_name(&child, source);
+                let visibility = csharp_visibility(&child, source);
+                if let Some(ref n) = name {
+                    symbols.push(SymbolDef {
+                        name: n.clone(),
+                        kind: SymbolKind::Struct,
+                        visibility,
+                        span: csharp_node_span(&child),
+                        signature: csharp_truncate_signature(&child, source, 200),
+                        parent: parent_name.map(|s| s.to_string()),
+                    });
+                }
+                if let Some(body) = child.child_by_field_name("body") {
+                    extract_csharp_symbols_from_node(&body, source, symbols, name.as_deref());
+                }
+            }
+            "interface_declaration" => {
+                let name = find_declaration_name(&child, source);
+                let visibility = csharp_visibility(&child, source);
+                if let Some(ref n) = name {
+                    symbols.push(SymbolDef {
+                        name: n.clone(),
+                        kind: SymbolKind::Interface,
+                        visibility,
+                        span: csharp_node_span(&child),
+                        signature: csharp_truncate_signature(&child, source, 200),
+                        parent: parent_name.map(|s| s.to_string()),
+                    });
+                }
+                if let Some(body) = child.child_by_field_name("body") {
+                    extract_csharp_symbols_from_node(&body, source, symbols, name.as_deref());
+                }
+            }
+            "method_declaration" => {
+                if let Some(name_node) = child.child_by_field_name("name") {
+                    if let Ok(name) = name_node.utf8_text(source) {
+                        symbols.push(SymbolDef {
+                            name: name.to_string(),
+                            kind: SymbolKind::Method,
+                            visibility: csharp_visibility(&child, source),
+                            span: csharp_node_span(&child),
+                            signature: csharp_truncate_signature(&child, source, 200),
+                            parent: parent_name.map(|s| s.to_string()),
+                        });
+                    }
+                }
+            }
+            "field_declaration" => {
+                // Check for const modifier
+                if has_modifier(&child, source, "const") {
+                    // Extract variable declarator names
+                    extract_csharp_field_names(&child, source, symbols, parent_name, true);
+                }
+            }
+            "namespace_declaration" | "file_scoped_namespace_declaration" => {
+                extract_csharp_symbols_from_node(&child, source, symbols, parent_name);
+            }
+            "declaration_list" => {
+                extract_csharp_symbols_from_node(&child, source, symbols, parent_name);
+            }
+            _ => {}
+        }
+    }
+}
+
+/// Extract field names from a field_declaration.
+fn extract_csharp_field_names(
+    node: &tree_sitter::Node,
+    source: &[u8],
+    symbols: &mut Vec<SymbolDef>,
+    parent_name: Option<&str>,
+    _is_const: bool,
+) {
+    let visibility = csharp_visibility(node, source);
+    for i in 0..node.child_count() {
+        if let Some(child) = node.child(i) {
+            if child.kind() == "variable_declaration" {
+                for j in 0..child.child_count() {
+                    if let Some(declarator) = child.child(j) {
+                        if declarator.kind() == "variable_declarator" {
+                            if let Some(name_node) = declarator.child_by_field_name("name") {
+                                if let Ok(name) = name_node.utf8_text(source) {
+                                    symbols.push(SymbolDef {
+                                        name: name.to_string(),
+                                        kind: SymbolKind::Const,
+                                        visibility,
+                                        span: csharp_node_span(node),
+                                        signature: csharp_truncate_signature(node, source, 200),
+                                        parent: parent_name.map(|s| s.to_string()),
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Determine C# visibility from modifier nodes.
+fn csharp_visibility(node: &tree_sitter::Node, source: &[u8]) -> Visibility {
+    for i in 0..node.child_count() {
+        if let Some(child) = node.child(i) {
+            if child.kind() == "modifier" || child.kind() == "public" || child.kind() == "private"
+                || child.kind() == "protected" || child.kind() == "internal"
+            {
+                let text = child.utf8_text(source).unwrap_or("");
+                match text {
+                    "public" => return Visibility::Public,
+                    "internal" => return Visibility::Internal,
+                    "private" | "protected" => return Visibility::Private,
+                    _ => {}
+                }
+            }
+        }
+    }
+    // Default in C# is internal for top-level, private for members
+    Visibility::Internal
+}
+
+/// Check if a node has a specific modifier.
+fn has_modifier(node: &tree_sitter::Node, source: &[u8], modifier: &str) -> bool {
+    for i in 0..node.child_count() {
+        if let Some(child) = node.child(i) {
+            if child.kind() == "modifier" || child.kind() == modifier {
+                let text = child.utf8_text(source).unwrap_or("");
+                if text == modifier {
+                    return true;
+                }
+            }
+        }
+    }
+    false
+}
+
+/// Get LineSpan from a tree-sitter node (1-based).
+fn csharp_node_span(node: &tree_sitter::Node) -> LineSpan {
+    LineSpan {
+        start: node.start_position().row as u32 + 1,
+        end: node.end_position().row as u32 + 1,
+    }
+}
+
+/// Extract first line of node text, truncated to max_len.
+fn csharp_truncate_signature(
+    node: &tree_sitter::Node,
+    source: &[u8],
+    max_len: usize,
+) -> Option<String> {
+    let text = node.utf8_text(source).ok()?;
+    let first_line = text.lines().next()?;
+    let truncated: String = first_line.chars().take(max_len).collect();
+    if truncated.len() < first_line.len() {
+        Some(format!("{}...", truncated))
+    } else {
+        Some(first_line.to_string())
+    }
+}
+
 /// C# import resolver.
 struct CSharpResolver;
 
@@ -241,6 +445,10 @@ pub(crate) fn parser() -> Box<dyn LanguageParser> {
 
 pub(crate) fn resolver() -> Box<dyn ImportResolver> {
     Box::new(CSharpResolver)
+}
+
+pub(crate) fn symbol_extractor() -> std::sync::Arc<dyn SymbolExtractor> {
+    std::sync::Arc::new(CSharpParser)
 }
 
 #[cfg(test)]

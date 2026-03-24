@@ -1,5 +1,8 @@
+use crate::model::symbol::{LineSpan, SymbolDef, SymbolKind, Visibility};
 use crate::model::workspace::WorkspaceInfo;
 use crate::model::{CanonicalPath, FileSet};
+use crate::parser::helpers;
+use crate::parser::symbols::SymbolExtractor;
 use crate::parser::traits::{ImportKind, ImportResolver, LanguageParser, RawExport, RawImport};
 
 /// Go language parser.
@@ -113,6 +116,187 @@ fn strip_go_quotes(s: &str) -> String {
     }
 }
 
+impl SymbolExtractor for GoParser {
+    fn extract_symbols(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Vec<SymbolDef> {
+        let mut symbols = Vec::new();
+        let root = tree.root_node();
+
+        for i in 0..root.child_count() {
+            let node = match root.child(i) {
+                Some(n) => n,
+                None => continue,
+            };
+
+            match node.kind() {
+                "function_declaration" => {
+                    if let Some(name_node) = helpers::find_child_by_kind(&node, "identifier") {
+                        if let Ok(name) = name_node.utf8_text(source) {
+                            symbols.push(SymbolDef {
+                                name: name.to_string(),
+                                kind: SymbolKind::Function,
+                                visibility: go_visibility(name),
+                                span: go_node_span(&node),
+                                signature: go_truncate_signature(&node, source, 200),
+                                parent: None,
+                            });
+                        }
+                    }
+                }
+                "method_declaration" => {
+                    let name = helpers::find_child_by_kind(&node, "field_identifier")
+                        .and_then(|n| n.utf8_text(source).ok())
+                        .map(|s| s.to_string());
+                    // Extract receiver type for parent
+                    let receiver_type = extract_go_receiver_type(&node, source);
+                    if let Some(name) = name {
+                        symbols.push(SymbolDef {
+                            name: name.clone(),
+                            kind: SymbolKind::Method,
+                            visibility: go_visibility(&name),
+                            span: go_node_span(&node),
+                            signature: go_truncate_signature(&node, source, 200),
+                            parent: receiver_type,
+                        });
+                    }
+                }
+                "type_declaration" => {
+                    // type_declaration contains type_spec children
+                    for j in 0..node.child_count() {
+                        let spec = match node.child(j) {
+                            Some(s) if s.kind() == "type_spec" => s,
+                            _ => continue,
+                        };
+                        if let Some(name_node) = helpers::find_child_by_kind(&spec, "type_identifier")
+                        {
+                            if let Ok(name) = name_node.utf8_text(source) {
+                                let kind = if helpers::find_child_by_kind(&spec, "struct_type")
+                                    .is_some()
+                                {
+                                    SymbolKind::Struct
+                                } else if helpers::find_child_by_kind(&spec, "interface_type")
+                                    .is_some()
+                                {
+                                    SymbolKind::Interface
+                                } else {
+                                    SymbolKind::Type
+                                };
+                                symbols.push(SymbolDef {
+                                    name: name.to_string(),
+                                    kind,
+                                    visibility: go_visibility(name),
+                                    span: go_node_span(&spec),
+                                    signature: go_truncate_signature(&spec, source, 200),
+                                    parent: None,
+                                });
+                            }
+                        }
+                    }
+                }
+                "const_declaration" => {
+                    // const_declaration contains const_spec children
+                    for j in 0..node.child_count() {
+                        let spec = match node.child(j) {
+                            Some(s) if s.kind() == "const_spec" => s,
+                            _ => continue,
+                        };
+                        if let Some(name_node) = helpers::find_child_by_kind(&spec, "identifier") {
+                            if let Ok(name) = name_node.utf8_text(source) {
+                                symbols.push(SymbolDef {
+                                    name: name.to_string(),
+                                    kind: SymbolKind::Const,
+                                    visibility: go_visibility(name),
+                                    span: go_node_span(&spec),
+                                    signature: go_truncate_signature(&spec, source, 200),
+                                    parent: None,
+                                });
+                            }
+                        }
+                    }
+                }
+                "var_declaration" => {
+                    // var_declaration contains var_spec children
+                    for j in 0..node.child_count() {
+                        let spec = match node.child(j) {
+                            Some(s) if s.kind() == "var_spec" => s,
+                            _ => continue,
+                        };
+                        if let Some(name_node) = helpers::find_child_by_kind(&spec, "identifier") {
+                            if let Ok(name) = name_node.utf8_text(source) {
+                                symbols.push(SymbolDef {
+                                    name: name.to_string(),
+                                    kind: SymbolKind::Variable,
+                                    visibility: go_visibility(name),
+                                    span: go_node_span(&spec),
+                                    signature: go_truncate_signature(&spec, source, 200),
+                                    parent: None,
+                                });
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        symbols
+    }
+}
+
+/// Go visibility: uppercase first char = Public, else Private.
+fn go_visibility(name: &str) -> Visibility {
+    if name.starts_with(|c: char| c.is_ascii_uppercase()) {
+        Visibility::Public
+    } else {
+        Visibility::Private
+    }
+}
+
+/// Get LineSpan from a tree-sitter node.
+fn go_node_span(node: &tree_sitter::Node) -> LineSpan {
+    LineSpan {
+        start: node.start_position().row as u32 + 1,
+        end: node.end_position().row as u32 + 1,
+    }
+}
+
+/// Extract first line of node text, truncated to max_len (D-081).
+/// Uses char-boundary-safe truncation to avoid panics on non-ASCII.
+fn go_truncate_signature(
+    node: &tree_sitter::Node,
+    source: &[u8],
+    max_len: usize,
+) -> Option<String> {
+    let text = node.utf8_text(source).ok()?;
+    let first_line = text.lines().next()?;
+    let truncated: String = first_line.chars().take(max_len).collect();
+    if truncated.len() < first_line.len() {
+        Some(format!("{}...", truncated))
+    } else {
+        Some(first_line.to_string())
+    }
+}
+
+/// Extract the receiver type name from a Go method declaration.
+fn extract_go_receiver_type(node: &tree_sitter::Node, source: &[u8]) -> Option<String> {
+    let params = helpers::find_child_by_kind(node, "parameter_list")?;
+    // First parameter_list is the receiver
+    let mut cursor = params.walk();
+    for child in params.children(&mut cursor) {
+        if child.kind() == "parameter_declaration" {
+            // Look for type_identifier (non-pointer) or pointer_type
+            if let Some(type_id) = helpers::find_child_by_kind(&child, "type_identifier") {
+                return type_id.utf8_text(source).ok().map(|s| s.to_string());
+            }
+            if let Some(pointer) = helpers::find_child_by_kind(&child, "pointer_type") {
+                if let Some(type_id) = helpers::find_child_by_kind(&pointer, "type_identifier") {
+                    return type_id.utf8_text(source).ok().map(|s| s.to_string());
+                }
+            }
+        }
+    }
+    None
+}
+
 /// Go import resolver.
 struct GoResolver;
 
@@ -216,6 +400,19 @@ pub(crate) fn parser() -> Box<dyn LanguageParser> {
 
 pub(crate) fn resolver() -> Box<dyn ImportResolver> {
     Box::new(GoResolver)
+}
+
+pub(crate) fn symbol_extractor() -> std::sync::Arc<dyn SymbolExtractor> {
+    std::sync::Arc::new(GoParser)
+}
+
+/// Public wrapper for Go symbol extraction (used in tests).
+pub struct GoSymbolExtractor;
+
+impl SymbolExtractor for GoSymbolExtractor {
+    fn extract_symbols(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Vec<SymbolDef> {
+        GoParser.extract_symbols(tree, source)
+    }
 }
 
 #[cfg(test)]

@@ -52,11 +52,12 @@ pub fn resolve_and_build(
                 hash: fc.hash.clone(),
                 exports: Vec::new(), // Populated below from parsed exports
                 cluster: ClusterId::new(""), // Set after clustering
+                symbols: Vec::new(), // Populated below from parsed symbols
             },
         );
     }
 
-    // Populate exports from parsed files
+    // Populate exports and symbols from parsed files
     for pf in parsed_files {
         if let Some(node) = nodes.get_mut(&pf.path) {
             let mut export_symbols: Vec<Symbol> =
@@ -64,6 +65,7 @@ pub fn resolve_and_build(
             export_symbols.sort();
             export_symbols.dedup();
             node.exports = export_symbols;
+            node.symbols = pf.symbols.clone();
         }
     }
 

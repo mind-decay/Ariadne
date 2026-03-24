@@ -71,3 +71,7 @@ harness = false
 [[bench]]
 name = "analysis_bench"
 harness = false
+
+[[bench]]
+name = "symbol_bench"
+harness = false

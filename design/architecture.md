@@ -124,8 +124,76 @@ Node {
     hash: ContentHash,         // content hash for delta detection (D-013)
     exports: Vec<Symbol>,      // exported symbol names (sorted)
     cluster: ClusterId,        // assigned cluster ID
+    symbols: Vec<SymbolDef>,   // extracted symbol definitions (sorted, D-077)
 }
 ```
+
+**Symbol Definitions** (D-077, D-081) — structural symbols extracted per file:
+
+```rust
+SymbolDef {
+    name: String,              // symbol name
+    kind: SymbolKind,          // function|method|class|struct|interface|trait|type|enum|const|variable|module
+    visibility: Visibility,    // public|private|internal
+    span: LineSpan,            // { start: u32, end: u32 } (1-based line numbers)
+    signature: Option<String>, // language-native first line, truncated to 200 chars
+    parent: Option<String>,    // enclosing type name (e.g. class for methods)
+}
+```
+
+Extraction is handled by the `SymbolExtractor` trait (separate from `LanguageParser`).
+Implemented for: TypeScript/JS, Rust, Go, Python, C#, Java. Languages without extractors produce empty lists.
+Serialized with `#[serde(default, skip_serializing_if = "Vec::is_empty")]` for backward compatibility.
+
+**SymbolIndex** (D-078) — built at load time from `Node.symbols` and `edges`:
+
+```rust
+SymbolIndex {
+    by_name: BTreeMap<String, Vec<SymbolLocation>>,   // name -> locations across all files
+    by_file: BTreeMap<CanonicalPath, Vec<SymbolDef>>,  // file -> all symbols in that file
+    usages: BTreeMap<(CanonicalPath, String), Vec<SymbolUsage>>, // (file, symbol) -> callers
+}
+```
+
+Supports: `symbols_for_file()`, `search()` (case-insensitive substring, D-080), `usages_of()`.
+
+**CallGraph** (D-079) — cross-file call graph built from import edges matched against SymbolDefs:
+
+```rust
+CallGraph {
+    callers: BTreeMap<(CanonicalPath, String), Vec<CallEdge>>,  // (file, symbol) -> who imports it
+    callees: BTreeMap<(CanonicalPath, String), Vec<CallEdge>>,  // (file, symbol) -> where it comes from
+}
+
+CallEdge { file, symbol: Option<String>, edge_kind: Import | TypeImport | ReExport }
+```
+
+Build logic: for each architectural edge, match `edge.symbols` against `SymbolIndex.symbols_for_file(target)`. Matched symbols get bidirectional `CallEdge` entries. Leaf module in `algo/` — only imported by `mcp/state.rs`.
+
+Supports: `callers_of()`, `callees_of()`, `all_callers_for_file()`, `all_callees_for_file()`.
+
+**symbol_edges in MCP tool responses** — `ariadne_dependencies` and `ariadne_compressed` L2 include a `symbol_edges` array in their JSON responses, surfacing cross-file call graph data alongside file-level edges:
+
+```json
+"symbol_edges": [
+  {
+    "direction": "out",          // "out" = this file imports, "in" = this file is imported by
+    "symbol": "formatDate",      // symbol name in the current file context
+    "target_file": "src/util.ts",   // (direction=out) file the symbol is imported from
+    "target_symbol": "formatDate",  // (direction=out) symbol name in target file
+    "edge_kind": "import"           // "import" | "type_import" | "re_export"
+  },
+  {
+    "direction": "in",
+    "symbol": "greet",
+    "source_file": "src/app.ts",    // (direction=in) file that imports this symbol
+    "source_symbol": "greet",       // (direction=in) symbol name in source file
+    "edge_kind": "import"
+  }
+]
+```
+
+Field names vary by direction: outgoing edges use `target_file`/`target_symbol`, incoming edges use `source_file`/`source_symbol`. Sorted lexicographically for determinism.
 
 **Edges** — directed, typed connections:
 

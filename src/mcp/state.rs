@@ -2,9 +2,10 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
-use crate::algo::{compress, pagerank, spectral};
+use crate::algo::{callgraph::CallGraph, compress, pagerank, spectral};
 use crate::analysis::metrics::{compute_martin_metrics, ClusterMetrics};
 use crate::diagnostic::FatalError;
+use crate::model::symbol_index::SymbolIndex;
 use crate::model::*;
 use crate::serial::RawImportOutput;
 
@@ -35,6 +36,10 @@ pub struct GraphState {
     pub compressed_l0: CompressedGraph,
     /// Precomputed spectral analysis result.
     pub spectral: spectral::SpectralResult,
+    /// Symbol index: lookup by name, by file, usage tracking (D-078).
+    pub symbol_index: SymbolIndex,
+    /// Cross-file call graph: symbol-level caller/callee relationships (D-079).
+    pub call_graph: CallGraph,
     /// Structural diff from the last auto-update (None before first update).
     pub last_diff: Option<StructuralDiff>,
     pub freshness: FreshnessState,
@@ -121,6 +126,8 @@ impl GraphState {
         let combined = pagerank::combined_importance(&stats.centrality, &pr);
         let compressed_l0 = compress::compress_l0(&graph, &clusters, &stats);
         let spectral_result = spectral::spectral_analysis(&graph, 200, 1e-6);
+        let symbol_index = SymbolIndex::build(&graph.nodes, &graph.edges);
+        let call_graph = CallGraph::build(&graph.edges, &symbol_index);
 
         Self {
             graph,
@@ -136,6 +143,8 @@ impl GraphState {
             combined_importance: combined,
             compressed_l0,
             spectral: spectral_result,
+            symbol_index,
+            call_graph,
             last_diff: None,
             freshness: FreshnessState::new(),
             loaded_at: SystemTime::now(),

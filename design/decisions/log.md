@@ -936,3 +936,60 @@ Applies to: Brandes centrality (Phase 2), Louvain modularity (Phase 2b), PageRan
 **Context:** JSON and YAML files should appear as nodes in the dependency graph so that edges from source files importing them are visible. However, JSON/YAML files themselves have no import/export semantics.
 **Decision:** Add `json_lang.rs` and `yaml.rs` no-op parsers following the `markdown.rs` pattern. Both return empty import/export vectors. No new `ImportKind` or `EdgeType` variants. Registered in `with_tier1_config()`. Dependencies: `tree-sitter-json = "0.24"`, `tree-sitter-yaml = "0.7"`. `json_lang.rs` naming follows `rust_lang.rs` precedent for disambiguation.
 **Affects:** `src/parser/json_lang.rs` (new), `src/parser/yaml.rs` (new), `src/parser/mod.rs`, `src/parser/registry.rs`, `Cargo.toml`.
+
+## D-077: SymbolExtractor as Separate Trait from LanguageParser
+
+**Date:** 2026-03-24
+**Status:** Accepted
+**Context:** Phase 4 introduces symbol-level extraction (functions, classes, structs, interfaces, etc.) from source files. This could be added to the existing `LanguageParser` trait or kept separate.
+**Decision:** `SymbolExtractor` is a separate trait (`src/parser/symbols.rs`) mirroring D-018's pattern. Receives the same `tree_sitter::Tree` already parsed by `LanguageParser` — no re-parsing. Registered in `ParserRegistry` via `register_symbol_extractor()` parallel to `register()`. Implemented for TypeScript/JS, Rust, and Go. Languages without extractors produce empty symbol lists.
+**Alternatives rejected:**
+- Adding methods to `LanguageParser` — violates single-responsibility, forces all language parsers to implement symbol extraction even when not supported.
+- Separate pass with re-parsing — wasteful; tree-sitter trees are cheap to reuse.
+**Reasoning:** Keeps existing parsers unchanged, enables incremental rollout per language, and follows the established trait separation pattern.
+**Affects:** `src/parser/symbols.rs` (new), `src/parser/typescript.rs`, `src/parser/rust_lang.rs`, `src/parser/go.rs`, `src/parser/registry.rs`, `src/pipeline/mod.rs`.
+
+## D-081: Language-Native Signature Format with 200-Char Truncation
+
+**Date:** 2026-03-24
+**Status:** Accepted
+**Context:** Symbol definitions benefit from a signature field showing the declaration's source text (function signature, struct definition, etc.). Signatures can be arbitrarily long.
+**Decision:** Signature is the first line of the node's source text, in the language's native syntax. Truncated to 200 characters with `...` suffix. Stored as `Option<String>` — `None` when not applicable (e.g., module declarations). Serialized with `skip_serializing_if = "Option::is_none"`.
+**Affects:** `src/model/symbol.rs`, all `SymbolExtractor` implementations.
+
+## D-078: SymbolIndex Built at Load Time (Not Persisted)
+
+**Date:** 2026-03-25
+**Status:** Accepted
+**Context:** Phase 4b introduces a SymbolIndex for cross-project symbol lookup. The index could be persisted to disk or rebuilt at load time.
+**Decision:** `SymbolIndex` is built in `GraphState::from_loaded_data()` from `Node.symbols` and `edges`, following the same pattern as `reverse_index`, `forward_index`, and `layer_index`. Not persisted to a separate file. Rebuilt on auto-update alongside other derived indices. Uses `BTreeMap` for deterministic iteration.
+**Alternatives rejected:**
+- Persisted index file — adds I/O complexity, version management, and staleness concerns for marginal benefit since the build is O(n) on symbols.
+- Lazy build on first query — complicates concurrency model and adds latency to first MCP tool call.
+**Reasoning:** Consistent with existing GraphState pattern. Build time is negligible compared to PageRank/spectral which already run at load time. Eliminates cache invalidation concerns.
+**Affects:** `src/model/symbol_index.rs` (new), `src/mcp/state.rs`.
+
+## D-080: Symbol Search Uses Case-Insensitive Substring (Not Regex)
+
+**Date:** 2026-03-25
+**Status:** Accepted
+**Context:** The `ariadne_symbol_search` MCP tool needs a query mechanism. Options: exact match, substring, glob, regex.
+**Decision:** Case-insensitive substring match. No regex support. Early termination at 100 results. Optional kind filter (parse SymbolKind from string). Results sorted deterministically via BTreeMap iteration.
+**Alternatives rejected:**
+- Regex — complexity and potential DoS with pathological patterns. Not needed for symbol lookup.
+- Exact match — too restrictive for exploratory use.
+- Fuzzy match — complex to implement deterministically, overkill for structural analysis.
+**Reasoning:** Substring match covers 95% of use cases (finding all "Service" symbols, all "auth" functions). Case-insensitivity matches developer expectations. 100-result cap prevents unbounded output.
+**Affects:** `src/model/symbol_index.rs`, `src/mcp/tools.rs`.
+
+## D-079: Cross-File Call Graph via Import Matching
+
+**Date:** 2026-03-25
+**Status:** Accepted
+**Context:** Phase 4c requires a cross-file call graph for symbol-level dependency analysis. Two approaches: (1) analyze function bodies for call sites, (2) match imported symbol names against SymbolDefs in the target file.
+**Decision:** Cross-file via imports ONLY. For each architectural edge (Imports/TypeImports/ReExports), match imported symbol names against `SymbolIndex.symbols_for_file(target)`. If found, create bidirectional `CallEdge` entries (caller and callee maps). `CallGraph` is a leaf module in `algo/` — only imported by `mcp/state.rs` and `mcp/tools.rs`. Built at load time alongside `SymbolIndex`. Uses `BTreeMap` for deterministic output.
+**Alternatives rejected:**
+- Intra-file body analysis — requires tree-sitter re-parsing at load time, significant complexity, and breaks the architectural-edges-only principle.
+- Persisted call graph — unnecessary given O(n) build time from edges + symbol index.
+**Reasoning:** Leverages existing edge symbols and SymbolIndex. Consistent with Ariadne's structural (not semantic) analysis philosophy. Avoids false positives from intra-file analysis.
+**Affects:** `src/algo/callgraph.rs` (new), `src/mcp/state.rs`, `src/mcp/tools.rs`.

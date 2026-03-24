@@ -131,6 +131,7 @@ mod tests {
             hash: ContentHash::new("0000000000000000".to_string()),
             exports: vec![],
             cluster: ClusterId::new(cluster),
+                    symbols: Vec::new(),
         }
     }
 

@@ -1,4 +1,5 @@
 pub mod blast_radius;
+pub mod callgraph;
 pub mod centrality;
 pub mod compress;
 pub mod delta;

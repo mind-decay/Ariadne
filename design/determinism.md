@@ -62,6 +62,12 @@ edges.sort_by(|a, b| {
 
 Sort order: `from` path → `to` path → edge type. This is deterministic and human-readable (edges from the same file are grouped).
 
+### Symbol Sorting (D-077)
+
+`Node.symbols` is a `Vec<SymbolDef>` where `SymbolDef` derives `Ord`. Symbols are sorted via `symbols.sort()` before persistence. The sort key is `(name, kind, visibility, span, signature, parent)` — the natural `Ord` derivation order. This ensures deterministic output even when tree-sitter traversal order varies.
+
+Sort point: `BuildPipeline::extract_symbols_for_file()` sorts after extraction, before storing in `ParsedFile`.
+
 ### Parallel Collection
 
 `rayon`'s `par_iter()` on a sorted slice preserves order if you use `par_iter().map().collect::<Vec<_>>()` (rayon maintains index order for indexed iterators).

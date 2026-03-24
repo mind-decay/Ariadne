@@ -1,9 +1,11 @@
+use crate::model::symbol::{LineSpan, SymbolDef, SymbolKind, Visibility};
 use crate::model::workspace::WorkspaceInfo;
 use crate::model::{CanonicalPath, FileSet};
+use crate::parser::symbols::SymbolExtractor;
 use crate::parser::traits::{ImportKind, ImportResolver, LanguageParser, RawExport, RawImport};
 
 /// Java language parser.
-struct JavaParser;
+pub(crate) struct JavaParser;
 
 impl LanguageParser for JavaParser {
     fn language(&self) -> &str {
@@ -153,6 +155,197 @@ fn find_java_declaration_name(node: &tree_sitter::Node, source: &[u8]) -> Option
     None
 }
 
+impl SymbolExtractor for JavaParser {
+    fn extract_symbols(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Vec<SymbolDef> {
+        let mut symbols = Vec::new();
+        let root = tree.root_node();
+        extract_java_symbols_from_node(&root, source, &mut symbols, None);
+        symbols
+    }
+}
+
+/// Recursively extract symbol definitions from a Java AST node.
+fn extract_java_symbols_from_node(
+    node: &tree_sitter::Node,
+    source: &[u8],
+    symbols: &mut Vec<SymbolDef>,
+    parent_name: Option<&str>,
+) {
+    for i in 0..node.child_count() {
+        let child = match node.child(i) {
+            Some(c) => c,
+            None => continue,
+        };
+
+        match child.kind() {
+            "class_declaration" => {
+                let name = find_java_declaration_name(&child, source);
+                let visibility = java_visibility(&child, source);
+                if let Some(ref n) = name {
+                    symbols.push(SymbolDef {
+                        name: n.clone(),
+                        kind: SymbolKind::Class,
+                        visibility,
+                        span: java_node_span(&child),
+                        signature: java_truncate_signature(&child, source, 200),
+                        parent: parent_name.map(|s| s.to_string()),
+                    });
+                }
+                // Extract members inside class body
+                if let Some(body) = child.child_by_field_name("body") {
+                    extract_java_symbols_from_node(&body, source, symbols, name.as_deref());
+                }
+            }
+            "interface_declaration" => {
+                let name = find_java_declaration_name(&child, source);
+                let visibility = java_visibility(&child, source);
+                if let Some(ref n) = name {
+                    symbols.push(SymbolDef {
+                        name: n.clone(),
+                        kind: SymbolKind::Interface,
+                        visibility,
+                        span: java_node_span(&child),
+                        signature: java_truncate_signature(&child, source, 200),
+                        parent: parent_name.map(|s| s.to_string()),
+                    });
+                }
+                if let Some(body) = child.child_by_field_name("body") {
+                    extract_java_symbols_from_node(&body, source, symbols, name.as_deref());
+                }
+            }
+            "method_declaration" => {
+                if let Some(name_node) = child.child_by_field_name("name") {
+                    if let Ok(name) = name_node.utf8_text(source) {
+                        symbols.push(SymbolDef {
+                            name: name.to_string(),
+                            kind: SymbolKind::Method,
+                            visibility: java_visibility(&child, source),
+                            span: java_node_span(&child),
+                            signature: java_truncate_signature(&child, source, 200),
+                            parent: parent_name.map(|s| s.to_string()),
+                        });
+                    }
+                }
+            }
+            "field_declaration" => {
+                // Check for static final → Const
+                if has_java_modifier(&child, "static") && has_java_modifier(&child, "final") {
+                    extract_java_field_names(&child, source, symbols, parent_name);
+                }
+            }
+            "enum_declaration" => {
+                let name = find_java_declaration_name(&child, source);
+                let visibility = java_visibility(&child, source);
+                if let Some(ref n) = name {
+                    symbols.push(SymbolDef {
+                        name: n.clone(),
+                        kind: SymbolKind::Enum,
+                        visibility,
+                        span: java_node_span(&child),
+                        signature: java_truncate_signature(&child, source, 200),
+                        parent: parent_name.map(|s| s.to_string()),
+                    });
+                }
+            }
+            "program" => {
+                extract_java_symbols_from_node(&child, source, symbols, parent_name);
+            }
+            _ => {}
+        }
+    }
+}
+
+/// Extract field names from a Java field_declaration (for static final constants).
+fn extract_java_field_names(
+    node: &tree_sitter::Node,
+    source: &[u8],
+    symbols: &mut Vec<SymbolDef>,
+    parent_name: Option<&str>,
+) {
+    let visibility = java_visibility(node, source);
+    for i in 0..node.child_count() {
+        if let Some(child) = node.child(i) {
+            if child.kind() == "variable_declarator" {
+                if let Some(name_node) = child.child_by_field_name("name") {
+                    if let Ok(name) = name_node.utf8_text(source) {
+                        symbols.push(SymbolDef {
+                            name: name.to_string(),
+                            kind: SymbolKind::Const,
+                            visibility,
+                            span: java_node_span(node),
+                            signature: java_truncate_signature(node, source, 200),
+                            parent: parent_name.map(|s| s.to_string()),
+                        });
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Determine Java visibility from modifier nodes.
+fn java_visibility(node: &tree_sitter::Node, _source: &[u8]) -> Visibility {
+    for i in 0..node.child_count() {
+        if let Some(child) = node.child(i) {
+            if child.kind() == "modifiers" {
+                for j in 0..child.child_count() {
+                    if let Some(modifier) = child.child(j) {
+                        match modifier.kind() {
+                            "public" => return Visibility::Public,
+                            "private" | "protected" => return Visibility::Private,
+                            _ => {}
+                        }
+                    }
+                }
+            }
+        }
+    }
+    // Default (package-private) → Internal
+    Visibility::Internal
+}
+
+/// Check if a Java declaration has a specific modifier.
+fn has_java_modifier(node: &tree_sitter::Node, modifier: &str) -> bool {
+    for i in 0..node.child_count() {
+        if let Some(child) = node.child(i) {
+            if child.kind() == "modifiers" {
+                for j in 0..child.child_count() {
+                    if let Some(m) = child.child(j) {
+                        if m.kind() == modifier {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    false
+}
+
+/// Get LineSpan from a tree-sitter node (1-based).
+fn java_node_span(node: &tree_sitter::Node) -> LineSpan {
+    LineSpan {
+        start: node.start_position().row as u32 + 1,
+        end: node.end_position().row as u32 + 1,
+    }
+}
+
+/// Extract first line of node text, truncated to max_len.
+fn java_truncate_signature(
+    node: &tree_sitter::Node,
+    source: &[u8],
+    max_len: usize,
+) -> Option<String> {
+    let text = node.utf8_text(source).ok()?;
+    let first_line = text.lines().next()?;
+    let truncated: String = first_line.chars().take(max_len).collect();
+    if truncated.len() < first_line.len() {
+        Some(format!("{}...", truncated))
+    } else {
+        Some(first_line.to_string())
+    }
+}
+
 /// Java import resolver.
 struct JavaResolver;
 
@@ -234,6 +427,10 @@ pub(crate) fn parser() -> Box<dyn LanguageParser> {
 
 pub(crate) fn resolver() -> Box<dyn ImportResolver> {
     Box::new(JavaResolver)
+}
+
+pub(crate) fn symbol_extractor() -> std::sync::Arc<dyn SymbolExtractor> {
+    std::sync::Arc::new(JavaParser)
 }
 
 #[cfg(test)]

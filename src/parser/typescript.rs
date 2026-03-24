@@ -1,6 +1,8 @@
+use crate::model::symbol::{LineSpan, SymbolDef, SymbolKind, Visibility};
 use crate::model::workspace::WorkspaceInfo;
 use crate::model::{CanonicalPath, FileSet};
 use crate::parser::helpers;
+use crate::parser::symbols::SymbolExtractor;
 use crate::parser::traits::{ImportKind, ImportResolver, LanguageParser, RawExport, RawImport};
 
 /// Parser and resolver for TypeScript and JavaScript files.
@@ -378,6 +380,301 @@ impl TypeScriptParser {
     ) {
         Self::extract_require_or_dynamic_import(node, source, imports);
     }
+}
+
+impl SymbolExtractor for TypeScriptParser {
+    fn extract_symbols(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Vec<SymbolDef> {
+        let mut symbols = Vec::new();
+        let root = tree.root_node();
+        self.extract_symbols_from_node(&root, source, &mut symbols, None, false);
+        symbols
+    }
+}
+
+impl TypeScriptParser {
+    /// Recursively extract symbol definitions from a node and its children.
+    fn extract_symbols_from_node(
+        &self,
+        node: &tree_sitter::Node,
+        source: &[u8],
+        symbols: &mut Vec<SymbolDef>,
+        parent_name: Option<&str>,
+        is_exported: bool,
+    ) {
+        let mut cursor = node.walk();
+        for child in node.children(&mut cursor) {
+            match child.kind() {
+                "export_statement" => {
+                    // Children of export_statement are the actual declarations
+                    self.extract_symbols_from_node(&child, source, symbols, parent_name, true);
+                }
+                "function_declaration" | "generator_function_declaration" => {
+                    if let Some(name_node) = helpers::find_child_by_kind(&child, "identifier") {
+                        if let Ok(name) = name_node.utf8_text(source) {
+                            let visibility = if is_exported {
+                                Visibility::Public
+                            } else {
+                                Visibility::Private
+                            };
+                            let kind = if parent_name.is_some() {
+                                SymbolKind::Method
+                            } else {
+                                SymbolKind::Function
+                            };
+                            symbols.push(SymbolDef {
+                                name: name.to_string(),
+                                kind,
+                                visibility,
+                                span: node_span(&child),
+                                signature: truncate_signature(child.utf8_text(source).ok(), 200),
+                                parent: parent_name.map(|s| s.to_string()),
+                            });
+                        }
+                    }
+                }
+                "class_declaration" => {
+                    let class_name = helpers::find_child_by_kind(&child, "type_identifier")
+                        .and_then(|n| n.utf8_text(source).ok())
+                        .map(|s| s.to_string());
+                    if let Some(ref name) = class_name {
+                        let visibility = if is_exported {
+                            Visibility::Public
+                        } else {
+                            Visibility::Private
+                        };
+                        symbols.push(SymbolDef {
+                            name: name.clone(),
+                            kind: SymbolKind::Class,
+                            visibility,
+                            span: node_span(&child),
+                            signature: truncate_signature(
+                                first_line_signature(&child, source).as_deref(),
+                                200,
+                            ),
+                            parent: parent_name.map(|s| s.to_string()),
+                        });
+                    }
+                    // Extract methods inside the class body
+                    if let Some(body) = helpers::find_child_by_kind(&child, "class_body") {
+                        self.extract_class_members(
+                            &body,
+                            source,
+                            symbols,
+                            class_name.as_deref(),
+                        );
+                    }
+                }
+                "interface_declaration" => {
+                    if let Some(name_node) = helpers::find_child_by_kind(&child, "type_identifier")
+                    {
+                        if let Ok(name) = name_node.utf8_text(source) {
+                            let visibility = if is_exported {
+                                Visibility::Public
+                            } else {
+                                Visibility::Private
+                            };
+                            symbols.push(SymbolDef {
+                                name: name.to_string(),
+                                kind: SymbolKind::Interface,
+                                visibility,
+                                span: node_span(&child),
+                                signature: truncate_signature(
+                                    first_line_signature(&child, source).as_deref(),
+                                    200,
+                                ),
+                                parent: parent_name.map(|s| s.to_string()),
+                            });
+                        }
+                    }
+                }
+                "type_alias_declaration" => {
+                    if let Some(name_node) = helpers::find_child_by_kind(&child, "type_identifier")
+                    {
+                        if let Ok(name) = name_node.utf8_text(source) {
+                            let visibility = if is_exported {
+                                Visibility::Public
+                            } else {
+                                Visibility::Private
+                            };
+                            symbols.push(SymbolDef {
+                                name: name.to_string(),
+                                kind: SymbolKind::Type,
+                                visibility,
+                                span: node_span(&child),
+                                signature: truncate_signature(child.utf8_text(source).ok(), 200),
+                                parent: parent_name.map(|s| s.to_string()),
+                            });
+                        }
+                    }
+                }
+                "enum_declaration" => {
+                    if let Some(name_node) = helpers::find_child_by_kind(&child, "identifier") {
+                        if let Ok(name) = name_node.utf8_text(source) {
+                            let visibility = if is_exported {
+                                Visibility::Public
+                            } else {
+                                Visibility::Private
+                            };
+                            symbols.push(SymbolDef {
+                                name: name.to_string(),
+                                kind: SymbolKind::Enum,
+                                visibility,
+                                span: node_span(&child),
+                                signature: truncate_signature(
+                                    first_line_signature(&child, source).as_deref(),
+                                    200,
+                                ),
+                                parent: parent_name.map(|s| s.to_string()),
+                            });
+                        }
+                    }
+                }
+                "lexical_declaration" | "variable_declaration" => {
+                    // const FOO = ... or const foo = () => {}
+                    let mut decl_cursor = child.walk();
+                    for declarator in child.children(&mut decl_cursor) {
+                        if declarator.kind() == "variable_declarator" {
+                            if let Some(name_node) =
+                                helpers::find_child_by_kind(&declarator, "identifier")
+                            {
+                                if let Ok(name) = name_node.utf8_text(source) {
+                                    let visibility = if is_exported {
+                                        Visibility::Public
+                                    } else {
+                                        Visibility::Private
+                                    };
+                                    // Determine kind: named arrow function or const
+                                    let kind = if is_arrow_function(&declarator) {
+                                        SymbolKind::Function
+                                    } else if is_upper_case_const(name) {
+                                        SymbolKind::Const
+                                    } else {
+                                        SymbolKind::Variable
+                                    };
+                                    symbols.push(SymbolDef {
+                                        name: name.to_string(),
+                                        kind,
+                                        visibility,
+                                        span: node_span(&child),
+                                        signature: truncate_signature(
+                                            child.utf8_text(source).ok(),
+                                            200,
+                                        ),
+                                        parent: parent_name.map(|s| s.to_string()),
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+
+    /// Extract methods and properties from a class body.
+    fn extract_class_members(
+        &self,
+        body: &tree_sitter::Node,
+        source: &[u8],
+        symbols: &mut Vec<SymbolDef>,
+        class_name: Option<&str>,
+    ) {
+        let mut cursor = body.walk();
+        for member in body.children(&mut cursor) {
+            match member.kind() {
+                "method_definition" | "public_field_definition" => {
+                    if let Some(name_node) = helpers::find_child_by_kind(&member, "property_identifier") {
+                        if let Ok(name) = name_node.utf8_text(source) {
+                            let visibility = extract_member_visibility(&member, source);
+                            symbols.push(SymbolDef {
+                                name: name.to_string(),
+                                kind: SymbolKind::Method,
+                                visibility,
+                                span: node_span(&member),
+                                signature: truncate_signature(
+                                    first_line_signature(&member, source).as_deref(),
+                                    200,
+                                ),
+                                parent: class_name.map(|s| s.to_string()),
+                            });
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+}
+
+/// Check if a variable_declarator contains an arrow_function or function value.
+fn is_arrow_function(declarator: &tree_sitter::Node) -> bool {
+    let mut cursor = declarator.walk();
+    for child in declarator.children(&mut cursor) {
+        if child.kind() == "arrow_function" || child.kind() == "function" {
+            return true;
+        }
+    }
+    false
+}
+
+/// Check if a name matches UPPER_CASE const pattern: ^[A-Z][A-Z0-9_]*$
+fn is_upper_case_const(name: &str) -> bool {
+    if name.is_empty() {
+        return false;
+    }
+    let bytes = name.as_bytes();
+    bytes[0].is_ascii_uppercase()
+        && bytes
+            .iter()
+            .all(|&b| b.is_ascii_uppercase() || b.is_ascii_digit() || b == b'_')
+}
+
+/// Extract visibility from a TS/JS class member by checking for accessibility_modifier.
+/// Defaults to Public if no modifier is present (TypeScript default).
+fn extract_member_visibility(member: &tree_sitter::Node, source: &[u8]) -> Visibility {
+    let mut cursor = member.walk();
+    for child in member.children(&mut cursor) {
+        if child.kind() == "accessibility_modifier" {
+            if let Ok(text) = child.utf8_text(source) {
+                return match text {
+                    "private" => Visibility::Private,
+                    "protected" => Visibility::Internal, // map TS protected → Internal
+                    _ => Visibility::Public,
+                };
+            }
+        }
+    }
+    Visibility::Public
+}
+
+/// Get the LineSpan from a tree-sitter node (0-based rows → 1-based lines).
+fn node_span(node: &tree_sitter::Node) -> LineSpan {
+    LineSpan {
+        start: node.start_position().row as u32 + 1,
+        end: node.end_position().row as u32 + 1,
+    }
+}
+
+/// Extract the first line of a node's text as signature.
+fn first_line_signature(node: &tree_sitter::Node, source: &[u8]) -> Option<String> {
+    let text = node.utf8_text(source).ok()?;
+    let first_line = text.lines().next()?;
+    Some(first_line.to_string())
+}
+
+/// Truncate a signature to the given max character length (D-081).
+/// Uses char-boundary-safe truncation to avoid panics on non-ASCII.
+fn truncate_signature(sig: Option<&str>, max_len: usize) -> Option<String> {
+    sig.map(|s| {
+        let first_line = s.lines().next().unwrap_or(s);
+        let truncated: String = first_line.chars().take(max_len).collect();
+        if truncated.len() < first_line.len() {
+            format!("{}...", truncated)
+        } else {
+            first_line.to_string()
+        }
+    })
 }
 
 /// TypeScript/JavaScript import resolver.

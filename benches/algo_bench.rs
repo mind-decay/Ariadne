@@ -23,6 +23,7 @@ fn build_synthetic_graph(node_count: usize, edge_count: usize) -> ProjectGraph {
                 hash: ContentHash::new(format!("{:016x}", i)),
                 exports: vec![Symbol::new(format!("export_{}", i))],
                 cluster: ClusterId::new(format!("cluster_{}", i % 30)),
+                    symbols: Vec::new(),
             },
         );
     }

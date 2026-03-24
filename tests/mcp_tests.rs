@@ -188,6 +188,7 @@ mod state_tests {
                 hash: ContentHash::new("abc123".to_string()),
                 exports: vec![Symbol::new("foo")],
                 cluster: ClusterId::new("src"),
+                    symbols: Vec::new(),
             },
         );
         nodes.insert(
@@ -201,6 +202,7 @@ mod state_tests {
                 hash: ContentHash::new("def456".to_string()),
                 exports: vec![],
                 cluster: ClusterId::new("src"),
+                    symbols: Vec::new(),
             },
         );
         let edges = vec![Edge {

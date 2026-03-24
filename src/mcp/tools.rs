@@ -62,6 +62,8 @@ pub struct BlastRadiusParam {
     pub path: String,
     /// Maximum BFS depth (optional, default unbounded)
     pub depth: Option<u32>,
+    /// Optional symbol name for symbol-level blast radius
+    pub symbol: Option<String>,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -126,6 +128,46 @@ pub struct CompressedParam {
     pub focus: Option<String>,
     /// BFS depth for level 2 (default: 2)
     pub depth: Option<u32>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct SymbolsParam {
+    /// File path relative to project root
+    pub path: String,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct SymbolSearchParam {
+    /// Search query (case-insensitive substring match)
+    pub query: String,
+    /// Optional kind filter: function, method, class, struct, interface, trait, type, enum, const, variable, module
+    pub kind: Option<String>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct SymbolBlastRadiusParam {
+    /// File path relative to project root
+    pub path: String,
+    /// Symbol name to trace
+    pub symbol: String,
+    /// BFS depth (default 3, max 10)
+    pub depth: Option<u32>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct CallersParam {
+    /// File path relative to project root
+    pub path: String,
+    /// Symbol name to look up callers for
+    pub symbol: String,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct CalleesParam {
+    /// File path relative to project root
+    pub path: String,
+    /// Symbol name to look up callees for
+    pub symbol: String,
 }
 
 #[tool_router]
@@ -214,6 +256,28 @@ impl AriadneTools {
 
         let centrality = state.stats.centrality.get(params.path.as_str()).copied();
 
+        let symbols: Vec<serde_json::Value> = state
+            .symbol_index
+            .symbols_for_file(&cp)
+            .unwrap_or_default()
+            .iter()
+            .map(|s| {
+                let mut obj = serde_json::json!({
+                    "name": s.name,
+                    "kind": s.kind,
+                    "visibility": s.visibility,
+                    "span": { "start": s.span.start, "end": s.span.end },
+                });
+                if let Some(ref sig) = s.signature {
+                    obj["signature"] = serde_json::Value::String(sig.clone());
+                }
+                if let Some(ref parent) = s.parent {
+                    obj["parent"] = serde_json::Value::String(parent.clone());
+                }
+                obj
+            })
+            .collect();
+
         let result = serde_json::json!({
             "path": params.path,
             "type": node.file_type.as_str(),
@@ -226,6 +290,7 @@ impl AriadneTools {
             "centrality": centrality,
             "incoming_edges": incoming,
             "outgoing_edges": outgoing,
+            "symbols": symbols,
         });
 
         to_json(&result)
@@ -235,11 +300,48 @@ impl AriadneTools {
 
     #[tool(
         name = "ariadne_blast_radius",
-        description = "Reverse BFS: map of affected files with distances from the given file"
+        description = "Reverse BFS: map of affected files with distances from the given file. When 'symbol' is provided, traces symbol-level blast radius instead."
     )]
     fn blast_radius(&self, Parameters(params): Parameters<BlastRadiusParam>) -> String {
         let state = self.state.load();
         let cp = CanonicalPath::new(&params.path);
+
+        // When symbol is provided, delegate to symbol blast radius logic
+        if let Some(ref symbol) = params.symbol {
+            if !state.graph.nodes.contains_key(&cp) {
+                let result = serde_json::json!({
+                    "error": "not_found",
+                    "path": params.path,
+                });
+                return to_json(&result);
+            }
+
+            let sym_exists = state
+                .symbol_index
+                .symbols_for_file(&cp)
+                .map(|syms| syms.iter().any(|s| s.name == *symbol))
+                .unwrap_or(false);
+
+            if !sym_exists {
+                let result = serde_json::json!({
+                    "error": "symbol_not_found",
+                    "path": params.path,
+                    "symbol": symbol,
+                    "suggestion": "Use ariadne_symbols to list symbols in this file",
+                });
+                return to_json(&result);
+            }
+
+            let max_depth = params.depth.unwrap_or(3).min(10);
+            let sbr_params = SymbolBlastRadiusParam {
+                path: params.path,
+                symbol: symbol.clone(),
+                depth: Some(max_depth),
+            };
+            return self.symbol_blast_radius(Parameters(sbr_params));
+        }
+
+        // File-level blast radius (existing behavior)
         let index = algo::AdjacencyIndex::build(&state.graph.edges, algo::is_architectural);
         let result = algo::blast_radius::blast_radius(&state.graph, &cp, params.depth, &index);
 
@@ -429,11 +531,53 @@ impl AriadneTools {
                 vec![]
             };
 
+        // Build symbol_edges from call graph
+        let symbol_edges: Vec<serde_json::Value> = {
+            let mut edges_out: Vec<serde_json::Value> = Vec::new();
+
+            if params.direction == "out" || params.direction == "both" {
+                for (sym_name, call_edges) in state.call_graph.all_callees_for_file(&cp) {
+                    for ce in call_edges {
+                        edges_out.push(serde_json::json!({
+                            "direction": "out",
+                            "symbol": sym_name,
+                            "target_file": ce.file.as_str(),
+                            "target_symbol": ce.symbol,
+                            "edge_kind": ce.edge_kind.as_str(),
+                        }));
+                    }
+                }
+            }
+
+            if params.direction == "in" || params.direction == "both" {
+                for (sym_name, call_edges) in state.call_graph.all_callers_for_file(&cp) {
+                    for ce in call_edges {
+                        edges_out.push(serde_json::json!({
+                            "direction": "in",
+                            "symbol": sym_name,
+                            "source_file": ce.file.as_str(),
+                            "source_symbol": ce.symbol,
+                            "edge_kind": ce.edge_kind.as_str(),
+                        }));
+                    }
+                }
+            }
+
+            // Sort for determinism
+            edges_out.sort_by(|a, b| {
+                let a_str = a.to_string();
+                let b_str = b.to_string();
+                a_str.cmp(&b_str)
+            });
+            edges_out
+        };
+
         let result = serde_json::json!({
             "path": params.path,
             "direction": params.direction,
             "incoming": incoming,
             "outgoing": outgoing,
+            "symbol_edges": symbol_edges,
         });
 
         to_json(&result)
@@ -612,7 +756,58 @@ impl AriadneTools {
                     &cp,
                     depth,
                 ) {
-                    Ok(cg) => to_json(&cg),
+                    Ok(cg) => {
+                        // Enhance L2 with symbol_edges from call graph
+                        let symbol_edges: Vec<serde_json::Value> = {
+                            let mut edges_out = Vec::new();
+                            for (sym_name, call_edges) in
+                                state.call_graph.all_callees_for_file(&cp)
+                            {
+                                for ce in call_edges {
+                                    edges_out.push(serde_json::json!({
+                                        "direction": "out",
+                                        "symbol": sym_name,
+                                        "target_file": ce.file.as_str(),
+                                        "target_symbol": ce.symbol,
+                                        "edge_kind": ce.edge_kind.as_str(),
+                                    }));
+                                }
+                            }
+                            for (sym_name, call_edges) in
+                                state.call_graph.all_callers_for_file(&cp)
+                            {
+                                for ce in call_edges {
+                                    edges_out.push(serde_json::json!({
+                                        "direction": "in",
+                                        "symbol": sym_name,
+                                        "source_file": ce.file.as_str(),
+                                        "source_symbol": ce.symbol,
+                                        "edge_kind": ce.edge_kind.as_str(),
+                                    }));
+                                }
+                            }
+                            edges_out.sort_by_key(|a| a.to_string());
+                            edges_out
+                        };
+
+                        // Serialize compressed graph then merge symbol_edges
+                        let mut json_val = serde_json::to_value(&cg)
+                            .unwrap_or_else(|_| serde_json::json!({}));
+                        if !symbol_edges.is_empty() {
+                            if let serde_json::Value::Object(ref mut map) = json_val {
+                                map.insert(
+                                    "symbol_edges".to_string(),
+                                    serde_json::Value::Array(symbol_edges),
+                                );
+                            }
+                        }
+                        serde_json::to_string_pretty(&json_val).unwrap_or_else(|e| {
+                            format!(
+                                "{{\"error\":\"serialization_failed\",\"reason\":\"{}\"}}",
+                                e
+                            )
+                        })
+                    }
                     Err(e) => {
                         let result = serde_json::json!({
                             "error": "not_found",
@@ -641,6 +836,407 @@ impl AriadneTools {
     fn spectral(&self) -> String {
         let state = self.state.load();
         to_json(&state.spectral)
+    }
+
+    // --- T18: Symbols ---
+
+    #[tool(
+        name = "ariadne_symbols",
+        description = "Symbol definitions in a file: functions, classes, methods, interfaces, constants with visibility and line spans"
+    )]
+    fn symbols(&self, Parameters(params): Parameters<SymbolsParam>) -> String {
+        let state = self.state.load();
+        let cp = CanonicalPath::new(&params.path);
+
+        if !state.graph.nodes.contains_key(&cp) {
+            let result = serde_json::json!({
+                "error": "not_found",
+                "path": params.path,
+                "suggestion": format!("File not in graph. Graph freshness: {:.0}%",
+                    state.freshness.hash_confidence * 100.0),
+            });
+            return to_json(&result);
+        }
+
+        let symbols = state
+            .symbol_index
+            .symbols_for_file(&cp)
+            .unwrap_or_default();
+
+        let sym_json: Vec<serde_json::Value> = symbols
+            .iter()
+            .map(|s| {
+                let mut obj = serde_json::json!({
+                    "name": s.name,
+                    "kind": s.kind,
+                    "visibility": s.visibility,
+                    "span": { "start": s.span.start, "end": s.span.end },
+                });
+                if let Some(ref sig) = s.signature {
+                    obj["signature"] = serde_json::Value::String(sig.clone());
+                }
+                if let Some(ref parent) = s.parent {
+                    obj["parent"] = serde_json::Value::String(parent.clone());
+                }
+                obj
+            })
+            .collect();
+
+        let result = serde_json::json!({
+            "file": params.path,
+            "symbols": sym_json,
+        });
+
+        to_json(&result)
+    }
+
+    // --- T19: Symbol search ---
+
+    #[tool(
+        name = "ariadne_symbol_search",
+        description = "Search symbols by name across the entire project. Case-insensitive substring match with optional kind filter."
+    )]
+    fn symbol_search(&self, Parameters(params): Parameters<SymbolSearchParam>) -> String {
+        if params.query.trim().is_empty() {
+            let result = serde_json::json!({
+                "error": "empty_query",
+                "message": "Query must be a non-empty string",
+            });
+            return to_json(&result);
+        }
+
+        let state = self.state.load();
+
+        let kind_filter = params.kind.as_deref().and_then(parse_symbol_kind);
+
+        let matches = state.symbol_index.search(&params.query, kind_filter);
+
+        let match_json: Vec<serde_json::Value> = matches
+            .iter()
+            .map(|loc| {
+                serde_json::json!({
+                    "file": loc.file.as_str(),
+                    "name": loc.name,
+                    "kind": loc.kind,
+                    "span": { "start": loc.span.start, "end": loc.span.end },
+                })
+            })
+            .collect();
+
+        let result = serde_json::json!({
+            "query": params.query,
+            "kind": params.kind,
+            "matches": match_json,
+            "count": match_json.len(),
+        });
+
+        to_json(&result)
+    }
+
+    // --- T20: Symbol blast radius ---
+
+    #[tool(
+        name = "ariadne_symbol_blast_radius",
+        description = "Trace symbol blast radius: BFS through usages to find all affected symbols and files at increasing depths"
+    )]
+    fn symbol_blast_radius(
+        &self,
+        Parameters(params): Parameters<SymbolBlastRadiusParam>,
+    ) -> String {
+        let state = self.state.load();
+        let cp = CanonicalPath::new(&params.path);
+
+        if !state.graph.nodes.contains_key(&cp) {
+            let result = serde_json::json!({
+                "error": "not_found",
+                "path": params.path,
+            });
+            return to_json(&result);
+        }
+
+        let sym_exists = state
+            .symbol_index
+            .symbols_for_file(&cp)
+            .map(|syms| syms.iter().any(|s| s.name == params.symbol))
+            .unwrap_or(false);
+
+        if !sym_exists {
+            let result = serde_json::json!({
+                "error": "symbol_not_found",
+                "path": params.path,
+                "symbol": params.symbol,
+                "suggestion": "Use ariadne_symbols to list symbols in this file",
+            });
+            return to_json(&result);
+        }
+
+        let max_depth = params.depth.unwrap_or(3).min(10);
+
+        // BFS on usages index
+        let mut visited: std::collections::BTreeSet<(String, String)> = std::collections::BTreeSet::new();
+        let mut affected_symbols: Vec<serde_json::Value> = Vec::new();
+        let mut affected_files: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
+        let mut truncated = false;
+
+        // Seed: the starting symbol
+        let start_key = (cp.as_str().to_string(), params.symbol.clone());
+        visited.insert(start_key.clone());
+
+        let mut frontier: std::collections::VecDeque<(CanonicalPath, String, u32)> =
+            std::collections::VecDeque::new();
+        frontier.push_back((cp.clone(), params.symbol.clone(), 0));
+
+        while let Some((file, sym_name, distance)) = frontier.pop_front() {
+            if distance > 0 {
+                affected_symbols.push(serde_json::json!({
+                    "file": file.as_str(),
+                    "symbol": sym_name,
+                    "distance": distance,
+                }));
+                affected_files.insert(file.as_str().to_string());
+            }
+
+            if distance >= max_depth {
+                // If we hit the depth limit, check whether there would be
+                // more nodes to explore — if so, the traversal is truncated.
+                let has_more_usages = state
+                    .symbol_index
+                    .usages_of(&file, &sym_name)
+                    .map(|u| u.iter().any(|usage| {
+                        let key = (usage.file.as_str().to_string(), sym_name.clone());
+                        !visited.contains(&key)
+                    }))
+                    .unwrap_or(false);
+
+                let has_more_reverse = state
+                    .reverse_index
+                    .get(&file)
+                    .map(|rev_edges| {
+                        rev_edges.iter().any(|edge| {
+                            edge.symbols.iter().any(|s| s.as_str() == sym_name)
+                                && !visited.contains(&(
+                                    edge.from.as_str().to_string(),
+                                    sym_name.clone(),
+                                ))
+                        })
+                    })
+                    .unwrap_or(false);
+
+                if has_more_usages || has_more_reverse {
+                    truncated = true;
+                }
+                continue;
+            }
+
+            // Find usages of this symbol
+            if let Some(usages) = state.symbol_index.usages_of(&file, &sym_name) {
+                for usage in usages {
+                    let key = (usage.file.as_str().to_string(), sym_name.clone());
+                    if !visited.contains(&key) {
+                        visited.insert(key);
+                        frontier.push_back((
+                            usage.file.clone(),
+                            sym_name.clone(),
+                            distance + 1,
+                        ));
+                    }
+                }
+            }
+
+            // Also check reverse edges: files that import from this file
+            // and reference this symbol name
+            if let Some(rev_edges) = state.reverse_index.get(&file) {
+                for edge in rev_edges {
+                    if edge.symbols.iter().any(|s| s.as_str() == sym_name) {
+                        let caller_key =
+                            (edge.from.as_str().to_string(), sym_name.clone());
+                        if !visited.contains(&caller_key) {
+                            visited.insert(caller_key);
+                            frontier.push_back((
+                                edge.from.clone(),
+                                sym_name.clone(),
+                                distance + 1,
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+
+        // Sort for deterministic output
+        affected_symbols.sort_by(|a, b| {
+            let ad = a["distance"].as_u64().unwrap_or(0);
+            let bd = b["distance"].as_u64().unwrap_or(0);
+            ad.cmp(&bd)
+                .then_with(|| {
+                    a["file"]
+                        .as_str()
+                        .unwrap_or("")
+                        .cmp(b["file"].as_str().unwrap_or(""))
+                })
+                .then_with(|| {
+                    a["symbol"]
+                        .as_str()
+                        .unwrap_or("")
+                        .cmp(b["symbol"].as_str().unwrap_or(""))
+                })
+        });
+
+        let affected_files_sorted: Vec<&str> = {
+            let mut v: Vec<&str> = affected_files.iter().map(|s| s.as_str()).collect();
+            v.sort();
+            v
+        };
+
+        if truncated {
+            eprintln!(
+                "warn[W021]: {}: call graph traversal for '{}' truncated at depth {} (more nodes exist beyond limit)",
+                params.path, params.symbol, max_depth
+            );
+        }
+
+        let result = serde_json::json!({
+            "file": params.path,
+            "symbol": params.symbol,
+            "depth": max_depth,
+            "affected_symbols": affected_symbols,
+            "affected_files": affected_files_sorted,
+            "total_affected": affected_symbols.len(),
+            "truncated": truncated,
+        });
+
+        to_json(&result)
+    }
+
+    // --- T21: Callers ---
+
+    #[tool(
+        name = "ariadne_callers",
+        description = "Cross-file callers of a symbol: which files import/reference this symbol definition"
+    )]
+    fn callers(&self, Parameters(params): Parameters<CallersParam>) -> String {
+        let state = self.state.load();
+        let cp = CanonicalPath::new(&params.path);
+
+        if !state.graph.nodes.contains_key(&cp) {
+            let result = serde_json::json!({
+                "error": "not_found",
+                "path": params.path,
+                "suggestion": format!("File not in graph. Graph freshness: {:.0}%",
+                    state.freshness.hash_confidence * 100.0),
+            });
+            return to_json(&result);
+        }
+
+        let sym_exists = state
+            .symbol_index
+            .symbols_for_file(&cp)
+            .map(|syms| syms.iter().any(|s| s.name == params.symbol))
+            .unwrap_or(false);
+
+        if !sym_exists {
+            let result = serde_json::json!({
+                "error": "symbol_not_found",
+                "path": params.path,
+                "symbol": params.symbol,
+                "suggestion": "Use ariadne_symbols to list symbols in this file",
+            });
+            return to_json(&result);
+        }
+
+        let call_edges = state.call_graph.callers_of(&cp, &params.symbol);
+        let callers_json: Vec<serde_json::Value> = call_edges
+            .iter()
+            .map(|ce| {
+                serde_json::json!({
+                    "file": ce.file.as_str(),
+                    "symbol": ce.symbol,
+                    "edge_kind": ce.edge_kind.as_str(),
+                })
+            })
+            .collect();
+
+        let result = serde_json::json!({
+            "file": params.path,
+            "symbol": params.symbol,
+            "callers": callers_json,
+            "count": callers_json.len(),
+        });
+
+        to_json(&result)
+    }
+
+    // --- T22: Callees ---
+
+    #[tool(
+        name = "ariadne_callees",
+        description = "Cross-file callees of a symbol: which files/symbols does this symbol's file import via this name"
+    )]
+    fn callees(&self, Parameters(params): Parameters<CalleesParam>) -> String {
+        let state = self.state.load();
+        let cp = CanonicalPath::new(&params.path);
+
+        if !state.graph.nodes.contains_key(&cp) {
+            let result = serde_json::json!({
+                "error": "not_found",
+                "path": params.path,
+                "suggestion": format!("File not in graph. Graph freshness: {:.0}%",
+                    state.freshness.hash_confidence * 100.0),
+            });
+            return to_json(&result);
+        }
+
+        // Validate symbol existence: check if it's defined in this file or has call graph entries
+        let defined_here = state
+            .symbol_index
+            .symbols_for_file(&cp)
+            .map(|syms| syms.iter().any(|s| s.name == params.symbol))
+            .unwrap_or(false);
+
+        let call_edges = state.call_graph.callees_of(&cp, &params.symbol);
+
+        // If the symbol is neither defined here nor has callee edges, it doesn't exist
+        if !defined_here && call_edges.is_empty() {
+            let result = serde_json::json!({
+                "error": "symbol_not_found",
+                "path": params.path,
+                "symbol": params.symbol,
+                "suggestion": "Use ariadne_symbols to list symbols in this file",
+            });
+            return to_json(&result);
+        }
+
+        if call_edges.is_empty() && defined_here {
+            // Symbol exists but has no outgoing call edges (it's defined here, not imported)
+            let result = serde_json::json!({
+                "file": params.path,
+                "symbol": params.symbol,
+                "callees": [],
+                "count": 0,
+                "note": "Symbol is defined in this file. Use ariadne_callers to find who calls it.",
+            });
+            return to_json(&result);
+        }
+
+        let callees_json: Vec<serde_json::Value> = call_edges
+            .iter()
+            .map(|ce| {
+                serde_json::json!({
+                    "file": ce.file.as_str(),
+                    "symbol": ce.symbol,
+                    "edge_kind": ce.edge_kind.as_str(),
+                })
+            })
+            .collect();
+
+        let result = serde_json::json!({
+            "file": params.path,
+            "symbol": params.symbol,
+            "callees": callees_json,
+            "count": callees_json.len(),
+        });
+
+        to_json(&result)
     }
 
     // --- T11: Views export ---
@@ -697,6 +1293,25 @@ fn to_json<T: serde::Serialize>(value: &T) -> String {
             e
         )
     })
+}
+
+/// Parse a SymbolKind from a string (case-insensitive).
+fn parse_symbol_kind(s: &str) -> Option<crate::model::SymbolKind> {
+    use crate::model::SymbolKind;
+    match s.to_lowercase().as_str() {
+        "function" => Some(SymbolKind::Function),
+        "method" => Some(SymbolKind::Method),
+        "class" => Some(SymbolKind::Class),
+        "struct" => Some(SymbolKind::Struct),
+        "interface" => Some(SymbolKind::Interface),
+        "trait" => Some(SymbolKind::Trait),
+        "type" => Some(SymbolKind::Type),
+        "enum" => Some(SymbolKind::Enum),
+        "const" => Some(SymbolKind::Const),
+        "variable" => Some(SymbolKind::Variable),
+        "module" => Some(SymbolKind::Module),
+        _ => None,
+    }
 }
 
 /// Helper: convert Edge to JSON value.

@@ -1,6 +1,8 @@
+use crate::model::symbol::{LineSpan, SymbolDef, SymbolKind, Visibility};
 use crate::model::workspace::WorkspaceInfo;
 use crate::model::{CanonicalPath, FileSet};
 use crate::parser::helpers;
+use crate::parser::symbols::SymbolExtractor;
 use crate::parser::traits::{ImportKind, ImportResolver, LanguageParser, RawExport, RawImport};
 
 /// Parser and resolver for Rust source files (.rs).
@@ -446,6 +448,203 @@ impl RustParser {
             }
         }
         false
+    }
+}
+
+impl SymbolExtractor for RustParser {
+    fn extract_symbols(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Vec<SymbolDef> {
+        let mut symbols = Vec::new();
+        let root = tree.root_node();
+        self.extract_symbols_from_node(&root, source, &mut symbols, None);
+        symbols
+    }
+}
+
+impl RustParser {
+    /// Recursively extract symbol definitions from a node.
+    fn extract_symbols_from_node(
+        &self,
+        node: &tree_sitter::Node,
+        source: &[u8],
+        symbols: &mut Vec<SymbolDef>,
+        parent_name: Option<&str>,
+    ) {
+        let mut cursor = node.walk();
+        for child in node.children(&mut cursor) {
+            match child.kind() {
+                "function_item" => {
+                    if let Some(name_node) = helpers::find_child_by_kind(&child, "identifier") {
+                        if let Ok(name) = name_node.utf8_text(source) {
+                            let visibility = rust_visibility(&child, source);
+                            let kind = if parent_name.is_some() {
+                                SymbolKind::Method
+                            } else {
+                                SymbolKind::Function
+                            };
+                            symbols.push(SymbolDef {
+                                name: name.to_string(),
+                                kind,
+                                visibility,
+                                span: rust_node_span(&child),
+                                signature: rust_truncate_signature(&child, source, 200),
+                                parent: parent_name.map(|s| s.to_string()),
+                            });
+                        }
+                    }
+                }
+                "struct_item" => {
+                    if let Some(name_node) = helpers::find_child_by_kind(&child, "type_identifier")
+                    {
+                        if let Ok(name) = name_node.utf8_text(source) {
+                            symbols.push(SymbolDef {
+                                name: name.to_string(),
+                                kind: SymbolKind::Struct,
+                                visibility: rust_visibility(&child, source),
+                                span: rust_node_span(&child),
+                                signature: rust_truncate_signature(&child, source, 200),
+                                parent: parent_name.map(|s| s.to_string()),
+                            });
+                        }
+                    }
+                }
+                "enum_item" => {
+                    if let Some(name_node) = helpers::find_child_by_kind(&child, "type_identifier")
+                    {
+                        if let Ok(name) = name_node.utf8_text(source) {
+                            symbols.push(SymbolDef {
+                                name: name.to_string(),
+                                kind: SymbolKind::Enum,
+                                visibility: rust_visibility(&child, source),
+                                span: rust_node_span(&child),
+                                signature: rust_truncate_signature(&child, source, 200),
+                                parent: parent_name.map(|s| s.to_string()),
+                            });
+                        }
+                    }
+                }
+                "trait_item" => {
+                    if let Some(name_node) = helpers::find_child_by_kind(&child, "type_identifier")
+                    {
+                        if let Ok(name) = name_node.utf8_text(source) {
+                            symbols.push(SymbolDef {
+                                name: name.to_string(),
+                                kind: SymbolKind::Trait,
+                                visibility: rust_visibility(&child, source),
+                                span: rust_node_span(&child),
+                                signature: rust_truncate_signature(&child, source, 200),
+                                parent: parent_name.map(|s| s.to_string()),
+                            });
+                        }
+                    }
+                }
+                "type_item" => {
+                    if let Some(name_node) = helpers::find_child_by_kind(&child, "type_identifier")
+                    {
+                        if let Ok(name) = name_node.utf8_text(source) {
+                            symbols.push(SymbolDef {
+                                name: name.to_string(),
+                                kind: SymbolKind::Type,
+                                visibility: rust_visibility(&child, source),
+                                span: rust_node_span(&child),
+                                signature: rust_truncate_signature(&child, source, 200),
+                                parent: parent_name.map(|s| s.to_string()),
+                            });
+                        }
+                    }
+                }
+                "const_item" | "static_item" => {
+                    if let Some(name_node) = helpers::find_child_by_kind(&child, "identifier") {
+                        if let Ok(name) = name_node.utf8_text(source) {
+                            symbols.push(SymbolDef {
+                                name: name.to_string(),
+                                kind: SymbolKind::Const,
+                                visibility: rust_visibility(&child, source),
+                                span: rust_node_span(&child),
+                                signature: rust_truncate_signature(&child, source, 200),
+                                parent: parent_name.map(|s| s.to_string()),
+                            });
+                        }
+                    }
+                }
+                "impl_item" => {
+                    // Extract the impl target type name
+                    let impl_target = helpers::find_child_by_kind(&child, "type_identifier")
+                        .and_then(|n| n.utf8_text(source).ok())
+                        .map(|s| s.to_string());
+                    // Recurse into the declaration_list (impl body)
+                    if let Some(body) = helpers::find_child_by_kind(&child, "declaration_list") {
+                        self.extract_symbols_from_node(
+                            &body,
+                            source,
+                            symbols,
+                            impl_target.as_deref(),
+                        );
+                    }
+                }
+                "mod_item" => {
+                    // Only inline modules (with declaration_list body)
+                    if let Some(name_node) = helpers::find_child_by_kind(&child, "identifier") {
+                        if let Ok(name) = name_node.utf8_text(source) {
+                            // Check if it's an inline module (has body)
+                            if helpers::find_child_by_kind(&child, "declaration_list").is_some() {
+                                symbols.push(SymbolDef {
+                                    name: name.to_string(),
+                                    kind: SymbolKind::Module,
+                                    visibility: rust_visibility(&child, source),
+                                    span: rust_node_span(&child),
+                                    signature: None,
+                                    parent: parent_name.map(|s| s.to_string()),
+                                });
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+}
+
+/// Determine visibility of a Rust item.
+fn rust_visibility(node: &tree_sitter::Node, source: &[u8]) -> Visibility {
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        if child.kind() == "visibility_modifier" {
+            if let Ok(text) = child.utf8_text(source) {
+                if text.contains("pub(crate)") || text.contains("pub(super)") {
+                    return Visibility::Internal;
+                }
+                if text.starts_with("pub") {
+                    return Visibility::Public;
+                }
+            }
+        }
+    }
+    Visibility::Private
+}
+
+/// Get LineSpan from a tree-sitter node (0-based rows -> 1-based lines).
+fn rust_node_span(node: &tree_sitter::Node) -> LineSpan {
+    LineSpan {
+        start: node.start_position().row as u32 + 1,
+        end: node.end_position().row as u32 + 1,
+    }
+}
+
+/// Extract first line of node text, truncated to max_len (D-081).
+/// Uses char-boundary-safe truncation to avoid panics on non-ASCII.
+fn rust_truncate_signature(
+    node: &tree_sitter::Node,
+    source: &[u8],
+    max_len: usize,
+) -> Option<String> {
+    let text = node.utf8_text(source).ok()?;
+    let first_line = text.lines().next()?;
+    let truncated: String = first_line.chars().take(max_len).collect();
+    if truncated.len() < first_line.len() {
+        Some(format!("{}...", truncated))
+    } else {
+        Some(first_line.to_string())
     }
 }
 

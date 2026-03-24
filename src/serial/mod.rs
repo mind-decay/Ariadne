@@ -7,6 +7,7 @@ use std::path::Path;
 use serde::{Deserialize, Serialize};
 
 use crate::diagnostic::FatalError;
+use crate::model::symbol::SymbolDef;
 use crate::model::StatsOutput;
 
 /// Output model for graph.json (D-022).
@@ -35,6 +36,8 @@ pub struct NodeOutput {
     pub cluster: String,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub fsd_layer: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub symbols: Vec<SymbolDef>,
 }
 
 /// Output model for clusters.json.

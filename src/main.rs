@@ -760,6 +760,7 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
                             .collect(),
                         cluster: node.cluster.as_str().to_string(),
                         fsd_layer: node.fsd_layer.map(|l| l.as_str().to_string()),
+                        symbols: node.symbols.clone(),
                     },
                     incoming_edges: graph
                         .edges

@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use super::csharp;
 use super::go;
@@ -7,16 +8,18 @@ use super::json_lang;
 use super::markdown;
 use super::python::{PythonParser, PythonResolver};
 use super::rust_lang::{RustParser, RustResolver};
+use super::symbols::SymbolExtractor;
 use super::traits::{ImportResolver, LanguageParser, RawExport, RawImport};
 use super::typescript::{TypeScriptParser, TypeScriptResolver};
 use super::yaml;
+use crate::model::symbol::SymbolDef;
 
 /// Result of parsing a source file.
 pub enum ParseOutcome {
     /// Parsed successfully with no errors.
-    Ok(Vec<RawImport>, Vec<RawExport>),
+    Ok(Vec<RawImport>, Vec<RawExport>, Vec<SymbolDef>),
     /// Parsed with partial errors (>0% but ≤50% ERROR nodes) — W007.
-    Partial(Vec<RawImport>, Vec<RawExport>),
+    Partial(Vec<RawImport>, Vec<RawExport>, Vec<SymbolDef>),
     /// Parse failed (>50% ERROR nodes or no tree produced) — W001.
     Failed,
 }
@@ -25,7 +28,9 @@ pub enum ParseOutcome {
 pub struct ParserRegistry {
     parsers: Vec<Box<dyn LanguageParser>>,
     resolvers: Vec<Box<dyn ImportResolver>>,
+    symbol_extractors: Vec<(Vec<&'static str>, Arc<dyn SymbolExtractor>)>,
     extension_index: HashMap<String, usize>,
+    symbol_ext_index: HashMap<String, usize>,
 }
 
 impl ParserRegistry {
@@ -33,7 +38,9 @@ impl ParserRegistry {
         Self {
             parsers: Vec::new(),
             resolvers: Vec::new(),
+            symbol_extractors: Vec::new(),
             extension_index: HashMap::new(),
+            symbol_ext_index: HashMap::new(),
         }
     }
 
@@ -45,6 +52,26 @@ impl ParserRegistry {
         }
         self.parsers.push(parser);
         self.resolvers.push(resolver);
+    }
+
+    /// Register a symbol extractor for a set of file extensions.
+    pub fn register_symbol_extractor(
+        &mut self,
+        extensions: Vec<&'static str>,
+        extractor: Arc<dyn SymbolExtractor>,
+    ) {
+        let index = self.symbol_extractors.len();
+        for ext in &extensions {
+            self.symbol_ext_index.insert(ext.to_string(), index);
+        }
+        self.symbol_extractors.push((extensions, extractor));
+    }
+
+    /// Look up a symbol extractor by file extension.
+    pub fn symbol_extractor_for(&self, extension: &str) -> Option<&dyn SymbolExtractor> {
+        self.symbol_ext_index
+            .get(extension)
+            .map(|&i| self.symbol_extractors[i].1.as_ref())
     }
 
     /// Look up a parser by file extension.
@@ -70,6 +97,16 @@ impl ParserRegistry {
     /// for resolving `use <crate_name>::` imports as internal.
     pub fn with_tier1_config(rust_crate_name: Option<String>) -> Self {
         let mut registry = Self::new();
+
+        // Create shared instances for symbol extractors (D-077: separate trait)
+        let ts_extractor: Arc<dyn SymbolExtractor> = Arc::new(TypeScriptParser::new());
+        let rust_extractor: Arc<dyn SymbolExtractor> =
+            Arc::new(RustParser::with_crate_name(rust_crate_name.clone()));
+        let go_extractor: Arc<dyn SymbolExtractor> = go::symbol_extractor();
+        let python_extractor: Arc<dyn SymbolExtractor> = super::python::symbol_extractor();
+        let csharp_extractor: Arc<dyn SymbolExtractor> = csharp::symbol_extractor();
+        let java_extractor: Arc<dyn SymbolExtractor> = java::symbol_extractor();
+
         registry.register(
             Box::new(TypeScriptParser::new()),
             Box::new(TypeScriptResolver::new()),
@@ -88,6 +125,18 @@ impl ParserRegistry {
         registry.register(markdown::parser(), markdown::resolver());
         registry.register(json_lang::parser(), json_lang::resolver());
         registry.register(yaml::parser(), yaml::resolver());
+
+        // Register symbol extractors (D-077: separate trait)
+        registry.register_symbol_extractor(
+            vec!["ts", "tsx", "js", "jsx", "mjs", "cjs"],
+            ts_extractor,
+        );
+        registry.register_symbol_extractor(vec!["rs"], rust_extractor);
+        registry.register_symbol_extractor(vec!["go"], go_extractor);
+        registry.register_symbol_extractor(vec!["py", "pyi"], python_extractor);
+        registry.register_symbol_extractor(vec!["cs"], csharp_extractor);
+        registry.register_symbol_extractor(vec!["java"], java_extractor);
+
         registry
     }
 
@@ -133,10 +182,22 @@ impl ParserRegistry {
         let imports = parser.extract_imports(&tree, source);
         let exports = parser.extract_exports(&tree, source);
 
+        // Extract symbols from the same tree (D-077: no re-parsing).
+        // catch_unwind guards against panics in symbol extractors (W019 safety).
+        let symbols = self
+            .symbol_extractor_for(extension)
+            .and_then(|ext| {
+                std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    ext.extract_symbols(&tree, source)
+                }))
+                .ok()
+            })
+            .unwrap_or_default();
+
         if is_partial {
-            Ok(ParseOutcome::Partial(imports, exports))
+            Ok(ParseOutcome::Partial(imports, exports, symbols))
         } else {
-            Ok(ParseOutcome::Ok(imports, exports))
+            Ok(ParseOutcome::Ok(imports, exports, symbols))
         }
     }
 

@@ -96,6 +96,7 @@ fn bench_clustering_3000(c: &mut Criterion) {
                 hash: ContentHash::new(format!("{:016x}", i)),
                 exports: vec![],
                 cluster: ClusterId::new(String::new()),
+                symbols: Vec::new(),
             },
         );
 
@@ -139,6 +140,7 @@ fn bench_serialization_3000(c: &mut Criterion) {
                 hash: format!("{:016x}", i),
                 exports: vec![format!("item_{}", i)],
                 cluster: format!("dir_{}", i % 100),
+                symbols: Vec::new(),
             },
         );
     }

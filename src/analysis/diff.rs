@@ -323,6 +323,7 @@ mod tests {
             hash: ContentHash::new("0000000000000000".to_string()),
             exports: vec![],
             cluster: cluster.clone(),
+            symbols: Vec::new(),
         }
     }
 

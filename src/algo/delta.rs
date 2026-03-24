@@ -84,6 +84,7 @@ mod tests {
             hash: ContentHash::new(hash.to_string()),
             exports: vec![],
             cluster: ClusterId::new("default"),
+                    symbols: Vec::new(),
         }
     }
 

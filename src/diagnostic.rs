@@ -60,6 +60,9 @@ pub enum WarningCode {
     W016StaleLockRemoved,
     W017SmellDetectionSkipped,
     W018BlastRadiusTimeout,
+    W019SymbolExtractionFailed,
+    W020SymbolOverflow,
+    W021CallGraphCyclicDepth,
 }
 
 impl WarningCode {
@@ -83,6 +86,9 @@ impl WarningCode {
             Self::W016StaleLockRemoved => "W016",
             Self::W017SmellDetectionSkipped => "W017",
             Self::W018BlastRadiusTimeout => "W018",
+            Self::W019SymbolExtractionFailed => "W019",
+            Self::W020SymbolOverflow => "W020",
+            Self::W021CallGraphCyclicDepth => "W021",
         }
     }
 }
@@ -311,6 +317,11 @@ impl DiagnosticCollector {
             WarningCode::W016StaleLockRemoved => {}
             WarningCode::W017SmellDetectionSkipped => {}
             WarningCode::W018BlastRadiusTimeout => {}
+            WarningCode::W019SymbolExtractionFailed => {
+                guard.1.files_skipped += 1;
+            }
+            WarningCode::W020SymbolOverflow => {}
+            WarningCode::W021CallGraphCyclicDepth => {}
         }
         guard.0.push(warning);
     }

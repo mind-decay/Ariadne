@@ -127,6 +127,7 @@ mod tests {
                 hash: ContentHash::new("a".to_string()),
                 exports: vec![],
                 cluster: ClusterId::new("src"),
+                    symbols: Vec::new(),
             },
         );
         nodes.insert(
@@ -140,6 +141,7 @@ mod tests {
                 hash: ContentHash::new("b".to_string()),
                 exports: vec![],
                 cluster: ClusterId::new("src"),
+                    symbols: Vec::new(),
             },
         );
         let graph = ProjectGraph {
@@ -195,6 +197,7 @@ mod tests {
                 hash: ContentHash::new("a".to_string()),
                 exports: vec![],
                 cluster: ClusterId::new("src"),
+                    symbols: Vec::new(),
             },
         );
         let edges = vec![Edge {

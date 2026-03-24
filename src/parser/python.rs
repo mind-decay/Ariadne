@@ -1,6 +1,8 @@
+use crate::model::symbol::{LineSpan, SymbolDef, SymbolKind, Visibility};
 use crate::model::workspace::WorkspaceInfo;
 use crate::model::{CanonicalPath, FileSet};
 use crate::parser::helpers;
+use crate::parser::symbols::SymbolExtractor;
 use crate::parser::traits::{ImportKind, ImportResolver, LanguageParser, RawExport, RawImport};
 
 /// Parser and resolver for Python files (.py, .pyi).
@@ -401,6 +403,198 @@ impl PythonParser {
     }
 }
 
+impl SymbolExtractor for PythonParser {
+    fn extract_symbols(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Vec<SymbolDef> {
+        let mut symbols = Vec::new();
+        let root = tree.root_node();
+        extract_python_symbols_from_node(&root, source, &mut symbols, None);
+        symbols
+    }
+}
+
+/// Recursively extract symbol definitions from a Python AST node.
+fn extract_python_symbols_from_node(
+    node: &tree_sitter::Node,
+    source: &[u8],
+    symbols: &mut Vec<SymbolDef>,
+    parent_name: Option<&str>,
+) {
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        match child.kind() {
+            "function_definition" => {
+                if let Some(name_node) = helpers::find_child_by_kind(&child, "identifier") {
+                    if let Ok(name) = name_node.utf8_text(source) {
+                        // Skip `self` — not a symbol
+                        if name == "self" {
+                            continue;
+                        }
+                        let kind = if parent_name.is_some() {
+                            SymbolKind::Method
+                        } else {
+                            SymbolKind::Function
+                        };
+                        symbols.push(SymbolDef {
+                            name: name.to_string(),
+                            kind,
+                            visibility: python_visibility(name),
+                            span: python_node_span(&child),
+                            signature: python_truncate_signature(&child, source, 200),
+                            parent: parent_name.map(|s| s.to_string()),
+                        });
+                    }
+                }
+            }
+            "decorated_definition" => {
+                // Get the actual definition inside the decorator
+                if let Some(def) = helpers::find_child_by_kind(&child, "function_definition")
+                    .or_else(|| helpers::find_child_by_kind(&child, "class_definition"))
+                {
+                    // Process the inner definition with the same parent context
+                    let inner_kind = def.kind();
+                    if inner_kind == "class_definition" {
+                        let class_name = helpers::find_child_by_kind(&def, "identifier")
+                            .and_then(|n| n.utf8_text(source).ok())
+                            .map(|s| s.to_string());
+                        if let Some(ref name) = class_name {
+                            symbols.push(SymbolDef {
+                                name: name.clone(),
+                                kind: SymbolKind::Class,
+                                visibility: python_visibility(name),
+                                span: python_node_span(&child),
+                                signature: python_truncate_signature(&def, source, 200),
+                                parent: parent_name.map(|s| s.to_string()),
+                            });
+                        }
+                        // Extract methods inside the class body
+                        if let Some(body) = helpers::find_child_by_kind(&def, "block") {
+                            extract_python_symbols_from_node(
+                                &body,
+                                source,
+                                symbols,
+                                class_name.as_deref(),
+                            );
+                        }
+                    } else {
+                        // function_definition inside decorated_definition
+                        if let Some(name_node) = helpers::find_child_by_kind(&def, "identifier") {
+                            if let Ok(name) = name_node.utf8_text(source) {
+                                if name != "self" {
+                                    let kind = if parent_name.is_some() {
+                                        SymbolKind::Method
+                                    } else {
+                                        SymbolKind::Function
+                                    };
+                                    symbols.push(SymbolDef {
+                                        name: name.to_string(),
+                                        kind,
+                                        visibility: python_visibility(name),
+                                        span: python_node_span(&child),
+                                        signature: python_truncate_signature(&def, source, 200),
+                                        parent: parent_name.map(|s| s.to_string()),
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            "class_definition" => {
+                let class_name = helpers::find_child_by_kind(&child, "identifier")
+                    .and_then(|n| n.utf8_text(source).ok())
+                    .map(|s| s.to_string());
+                if let Some(ref name) = class_name {
+                    symbols.push(SymbolDef {
+                        name: name.clone(),
+                        kind: SymbolKind::Class,
+                        visibility: python_visibility(name),
+                        span: python_node_span(&child),
+                        signature: python_truncate_signature(&child, source, 200),
+                        parent: parent_name.map(|s| s.to_string()),
+                    });
+                }
+                // Extract methods inside the class body
+                if let Some(body) = helpers::find_child_by_kind(&child, "block") {
+                    extract_python_symbols_from_node(&body, source, symbols, class_name.as_deref());
+                }
+            }
+            "expression_statement" => {
+                // Check for UPPER_CASE constant assignments
+                if let Some(assignment) = helpers::find_child_by_kind(&child, "assignment") {
+                    let mut assign_cursor = assignment.walk();
+                    let children: Vec<_> = assignment.children(&mut assign_cursor).collect();
+                    if let Some(left) = children.first() {
+                        if left.kind() == "identifier" {
+                            if let Ok(name) = left.utf8_text(source) {
+                                if is_python_constant(name) {
+                                    symbols.push(SymbolDef {
+                                        name: name.to_string(),
+                                        kind: SymbolKind::Const,
+                                        visibility: python_visibility(name),
+                                        span: python_node_span(&child),
+                                        signature: python_truncate_signature(
+                                            &child, source, 200,
+                                        ),
+                                        parent: parent_name.map(|s| s.to_string()),
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
+/// Python visibility: starts with `__` → Private, `_` → Private, else Public.
+fn python_visibility(name: &str) -> Visibility {
+    if name.starts_with("__") || name.starts_with('_') {
+        Visibility::Private
+    } else {
+        Visibility::Public
+    }
+}
+
+/// Check if a name matches UPPER_CASE constant pattern: `^[A-Z][A-Z0-9_]*$`.
+fn is_python_constant(name: &str) -> bool {
+    if name.is_empty() {
+        return false;
+    }
+    let mut chars = name.chars();
+    match chars.next() {
+        Some(c) if c.is_ascii_uppercase() => {}
+        _ => return false,
+    }
+    chars.all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == '_')
+}
+
+/// Get LineSpan from a tree-sitter node (1-based).
+fn python_node_span(node: &tree_sitter::Node) -> LineSpan {
+    LineSpan {
+        start: node.start_position().row as u32 + 1,
+        end: node.end_position().row as u32 + 1,
+    }
+}
+
+/// Extract first line of node text, truncated to max_len.
+/// Uses char-safe truncation to avoid panics on non-ASCII.
+fn python_truncate_signature(
+    node: &tree_sitter::Node,
+    source: &[u8],
+    max_len: usize,
+) -> Option<String> {
+    let text = node.utf8_text(source).ok()?;
+    let first_line = text.lines().next()?;
+    let truncated: String = first_line.chars().take(max_len).collect();
+    if truncated.len() < first_line.len() {
+        Some(format!("{}...", truncated))
+    } else {
+        Some(first_line.to_string())
+    }
+}
+
 /// Python import resolver.
 pub(crate) struct PythonResolver;
 
@@ -493,6 +687,10 @@ impl PythonResolver {
 
         None
     }
+}
+
+pub(crate) fn symbol_extractor() -> std::sync::Arc<dyn SymbolExtractor> {
+    std::sync::Arc::new(PythonParser::new())
 }
 
 #[cfg(test)]

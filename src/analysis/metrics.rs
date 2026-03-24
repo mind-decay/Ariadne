@@ -172,6 +172,7 @@ mod tests {
                     hash: ContentHash::new("0000000000000000".to_string()),
                     exports: exports.clone(),
                     cluster: cluster_id.clone(),
+                    symbols: Vec::new(),
                 },
             );
             cluster_files

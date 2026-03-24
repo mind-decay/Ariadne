@@ -1,5 +1,6 @@
 use serde::Serialize;
 
+use super::symbol::SymbolDef;
 use super::types::{ClusterId, ContentHash, Symbol};
 
 /// File type classification.
@@ -98,4 +99,5 @@ pub struct Node {
     pub hash: ContentHash,
     pub exports: Vec<Symbol>,
     pub cluster: ClusterId,
+    pub symbols: Vec<SymbolDef>,
 }

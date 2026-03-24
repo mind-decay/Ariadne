@@ -31,6 +31,7 @@ impl TryFrom<GraphOutput> for ProjectGraph {
                     hash: ContentHash::new(node_output.hash),
                     exports: node_output.exports.into_iter().map(Symbol::new).collect(),
                     cluster: ClusterId::new(node_output.cluster),
+                    symbols: node_output.symbols,
                 },
             );
         }
@@ -150,6 +151,7 @@ mod tests {
                         exports: vec!["foo".to_string()],
                         cluster: "src".to_string(),
                         fsd_layer: None,
+                        symbols: Vec::new(),
                     },
                 ),
                 (
@@ -163,6 +165,7 @@ mod tests {
                         exports: vec![],
                         cluster: "src".to_string(),
                         fsd_layer: None,
+                        symbols: Vec::new(),
                     },
                 ),
             ]),

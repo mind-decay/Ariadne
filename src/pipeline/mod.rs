@@ -13,6 +13,7 @@ use crate::cluster::assign_clusters;
 use crate::detect::{detect_fsd_project, detect_workspace, is_case_insensitive};
 use crate::diagnostic::{DiagnosticCollector, DiagnosticCounts, FatalError, Warning, WarningCode};
 use crate::model::*;
+use crate::model::symbol::SymbolDef;
 use crate::parser::{ParseOutcome, ParserRegistry, RawExport, RawImport};
 use crate::serial::{
     ClusterEntryOutput, ClusterOutput, GraphOutput, GraphReader, GraphSerializer, NodeOutput,
@@ -28,6 +29,7 @@ pub struct ParsedFile {
     pub path: CanonicalPath,
     pub imports: Vec<RawImport>,
     pub exports: Vec<RawExport>,
+    pub symbols: Vec<SymbolDef>,
 }
 
 /// Result of a successful pipeline run.
@@ -86,6 +88,33 @@ impl BuildPipeline {
         source: &[u8],
     ) -> Option<Vec<crate::parser::RawImport>> {
         self.registry.reparse_imports(extension, source)
+    }
+
+    /// Apply symbol limits (W020 overflow guard) and sort for determinism.
+    /// Symbols are already extracted during parse_source (D-077: no re-parsing).
+    fn apply_symbol_limits(
+        &self,
+        mut symbols: Vec<SymbolDef>,
+        fc: &FileContent,
+        diagnostics: &DiagnosticCollector,
+    ) -> Vec<SymbolDef> {
+        // W020: overflow guard — truncate to 1000
+        if symbols.len() > 1000 {
+            diagnostics.warn(Warning {
+                code: WarningCode::W020SymbolOverflow,
+                path: fc.path.clone(),
+                message: format!(
+                    "symbol count {} exceeds limit 1000, truncating",
+                    symbols.len()
+                ),
+                detail: None,
+            });
+            symbols.truncate(1000);
+        }
+
+        // Sort for determinism
+        symbols.sort();
+        symbols
     }
 
     pub fn run(&self, root: &Path, config: WalkConfig) -> Result<BuildOutput, FatalError> {
@@ -176,12 +205,16 @@ impl BuildPipeline {
                 let parser = self.registry.parser_for(extension)?;
 
                 match self.registry.parse_source(&fc.bytes, parser, extension) {
-                    Ok(ParseOutcome::Ok(imports, exports)) => Some(ParsedFile {
-                        path: fc.path.clone(),
-                        imports,
-                        exports,
-                    }),
-                    Ok(ParseOutcome::Partial(imports, exports)) => {
+                    Ok(ParseOutcome::Ok(imports, exports, symbols)) => {
+                        let symbols = self.apply_symbol_limits(symbols, fc, &diagnostics);
+                        Some(ParsedFile {
+                            path: fc.path.clone(),
+                            imports,
+                            exports,
+                            symbols,
+                        })
+                    }
+                    Ok(ParseOutcome::Partial(imports, exports, symbols)) => {
                         // Partial parse — extract what we can, emit W007
                         diagnostics.warn(Warning {
                             code: WarningCode::W007PartialParse,
@@ -189,10 +222,12 @@ impl BuildPipeline {
                             message: "partial parse: some syntax errors".to_string(),
                             detail: None,
                         });
+                        let symbols = self.apply_symbol_limits(symbols, fc, &diagnostics);
                         Some(ParsedFile {
                             path: fc.path.clone(),
                             imports,
                             exports,
+                            symbols,
                         })
                     }
                     Ok(ParseOutcome::Failed) => {
@@ -615,6 +650,7 @@ fn project_graph_to_output(graph: &ProjectGraph, project_root: &Path) -> GraphOu
                     .collect(),
                 cluster: node.cluster.as_str().to_string(),
                 fsd_layer: node.fsd_layer.map(|l| l.as_str().to_string()),
+                symbols: node.symbols.clone(),
             },
         );
     }
