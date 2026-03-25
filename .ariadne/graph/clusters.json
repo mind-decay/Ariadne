@@ -79,8 +79,8 @@
       ],
       "file_count": 17,
       "internal_edges": 32,
-      "external_edges": 35,
-      "cohesion": 0.4776
+      "external_edges": 36,
+      "cohesion": 0.4706
     },
     "analysis": {
       "files": [
@@ -136,6 +136,8 @@
         "design/reports/archive/2026-03-19-v2-architecture-review.md",
         "design/reports/archive/2026-03-22-architectural-review.md",
         "design/reports/archive/2026-03-23-moira-violations.md",
+        "design/specs/2026-03-25-phase7-git-temporal-analysis.md",
+        "design/specs/2026-03-25-phase7-implementation-plan.md",
         "design/specs/archive/2026-03-17-phase1-core-cli.md",
         "design/specs/archive/2026-03-17-phase1-implementation-plan.md",
         "design/specs/archive/2026-03-17-phase1a-implementation-plan.md",
@@ -155,7 +157,7 @@
         "design/specs/archive/2026-03-19-phase3c-implementation-plan.md",
         "design/testing.md"
       ],
-      "file_count": 34,
+      "file_count": 36,
       "internal_edges": 0,
       "external_edges": 0,
       "cohesion": 1.0
@@ -195,13 +197,14 @@
         "src/mcp/state.rs",
         "src/mcp/tools.rs",
         "src/mcp/tools_context.rs",
+        "src/mcp/tools_temporal.rs",
         "src/mcp/user_state.rs",
         "src/mcp/watch.rs"
       ],
-      "file_count": 13,
-      "internal_edges": 26,
+      "file_count": 14,
+      "internal_edges": 28,
       "external_edges": 32,
-      "cohesion": 0.4483
+      "cohesion": 0.4667
     },
     "model": {
       "files": [
@@ -218,13 +221,14 @@
         "src/model/stats.rs",
         "src/model/symbol.rs",
         "src/model/symbol_index.rs",
+        "src/model/temporal.rs",
         "src/model/types.rs",
         "src/model/workspace.rs"
       ],
-      "file_count": 15,
-      "internal_edges": 18,
-      "external_edges": 83,
-      "cohesion": 0.1782
+      "file_count": 16,
+      "internal_edges": 19,
+      "external_edges": 93,
+      "cohesion": 0.1696
     },
     "parser": {
       "files": [
@@ -273,8 +277,8 @@
       ],
       "file_count": 7,
       "internal_edges": 2,
-      "external_edges": 25,
-      "cohesion": 0.0741
+      "external_edges": 28,
+      "cohesion": 0.0667
     },
     "serial": {
       "files": [
@@ -286,6 +290,20 @@
       "internal_edges": 2,
       "external_edges": 11,
       "cohesion": 0.1538
+    },
+    "temporal": {
+      "files": [
+        "src/temporal/churn.rs",
+        "src/temporal/coupling.rs",
+        "src/temporal/git.rs",
+        "src/temporal/hotspot.rs",
+        "src/temporal/mod.rs",
+        "src/temporal/ownership.rs"
+      ],
+      "file_count": 6,
+      "internal_edges": 5,
+      "external_edges": 14,
+      "cohesion": 0.2632
     },
     "tests": {
       "files": [
@@ -390,9 +408,10 @@
         "tests/mcp_tests.rs",
         "tests/pipeline_tests.rs",
         "tests/properties.rs",
-        "tests/symbol_tests.rs"
+        "tests/symbol_tests.rs",
+        "tests/temporal_integration.rs"
       ],
-      "file_count": 102,
+      "file_count": 103,
       "internal_edges": 34,
       "external_edges": 0,
       "cohesion": 1.0

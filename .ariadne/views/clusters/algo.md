@@ -12,9 +12,9 @@
 | `src/algo/delta.rs` | source | 3 | 1 | 1 | 0.0000 |
 | `src/algo/impact.rs` | source | 4 | 2 | 5 | 0.0000 |
 | `src/algo/louvain.rs` | source | 3 | 1 | 1 | 0.0000 |
-| `src/algo/mod.rs` | source | 4 | 22 | 17 | 0.0057 |
+| `src/algo/mod.rs` | source | 4 | 22 | 17 | 0.0056 |
 | `src/algo/pagerank.rs` | source | 4 | 2 | 2 | 0.0001 |
-| `src/algo/reading_order.rs` | source | 4 | 2 | 4 | 0.0000 |
+| `src/algo/reading_order.rs` | source | 4 | 3 | 4 | 0.0001 |
 | `src/algo/scc.rs` | source | 4 | 2 | 2 | 0.0000 |
 | `src/algo/spectral.rs` | source | 4 | 2 | 2 | 0.0001 |
 | `src/algo/stats.rs` | source | 4 | 1 | 2 | 0.0000 |
@@ -92,6 +92,7 @@
 - `src/algo/mod.rs` ← `src/analysis/smells.rs` (imports)
 - `src/algo/mod.rs` ← `src/lib.rs` (imports)
 - `src/algo/mod.rs` ← `src/main.rs` (imports)
+- `src/algo/reading_order.rs` ← `src/mcp/prompts.rs` (imports)
 - `src/algo/callgraph.rs` ← `src/mcp/state.rs` (imports)
 - `src/algo/compress.rs` ← `src/mcp/state.rs` (imports)
 - `src/algo/pagerank.rs` ← `src/mcp/state.rs` (imports)

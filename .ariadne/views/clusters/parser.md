@@ -10,7 +10,7 @@
 | `src/parser/java.rs` | source | 4 | 1 | 5 | 0.0000 |
 | `src/parser/json_lang.rs` | source | 4 | 1 | 3 | 0.0000 |
 | `src/parser/markdown.rs` | source | 4 | 1 | 3 | 0.0000 |
-| `src/parser/mod.rs` | source | 5 | 9 | 13 | 0.0021 |
+| `src/parser/mod.rs` | source | 5 | 8 | 13 | 0.0020 |
 | `src/parser/python.rs` | source | 4 | 1 | 6 | 0.0000 |
 | `src/parser/registry.rs` | source | 1 | 1 | 1 | 0.0000 |
 | `src/parser/rust_lang.rs` | source | 4 | 1 | 6 | 0.0000 |
@@ -92,7 +92,6 @@
 - `src/parser/mod.rs` ← `benches/symbol_bench.rs` (imports)
 - `src/parser/mod.rs` ← `src/lib.rs` (imports)
 - `src/parser/mod.rs` ← `src/main.rs` (imports)
-- `src/parser/mod.rs` ← `src/mcp/server.rs` (imports)
 - `src/parser/mod.rs` ← `src/pipeline/build.rs` (imports)
 - `src/parser/mod.rs` ← `src/pipeline/mod.rs` (imports)
 - `src/parser/mod.rs` ← `src/pipeline/resolve.rs` (imports)

@@ -68,6 +68,8 @@
     "design/reports/archive/2026-03-19-v2-architecture-review.md": 0.0,
     "design/reports/archive/2026-03-22-architectural-review.md": 0.0,
     "design/reports/archive/2026-03-23-moira-violations.md": 0.0,
+    "design/specs/2026-03-25-phase7-git-temporal-analysis.md": 0.0,
+    "design/specs/2026-03-25-phase7-implementation-plan.md": 0.0,
     "design/specs/archive/2026-03-17-phase1-core-cli.md": 0.0,
     "design/specs/archive/2026-03-17-phase1-implementation-plan.md": 0.0,
     "design/specs/archive/2026-03-17-phase1a-implementation-plan.md": 0.0,
@@ -95,7 +97,7 @@
     "src/algo/delta.rs": 0.0,
     "src/algo/impact.rs": 0.0,
     "src/algo/louvain.rs": 0.0,
-    "src/algo/mod.rs": 0.0044,
+    "src/algo/mod.rs": 0.0042,
     "src/algo/pagerank.rs": 0.0001,
     "src/algo/reading_order.rs": 0.0001,
     "src/algo/scc.rs": 0.0,
@@ -126,9 +128,10 @@
     "src/mcp/prompts.rs": 0.0,
     "src/mcp/resources.rs": 0.0,
     "src/mcp/server.rs": 0.0002,
-    "src/mcp/state.rs": 0.0009,
+    "src/mcp/state.rs": 0.0008,
     "src/mcp/tools.rs": 0.0004,
     "src/mcp/tools_context.rs": 0.0,
+    "src/mcp/tools_temporal.rs": 0.0,
     "src/mcp/user_state.rs": 0.0001,
     "src/mcp/watch.rs": 0.0002,
     "src/model/annotation.rs": 0.0,
@@ -137,13 +140,14 @@
     "src/model/diff.rs": 0.0,
     "src/model/edge.rs": 0.0,
     "src/model/graph.rs": 0.0,
-    "src/model/mod.rs": 0.0112,
+    "src/model/mod.rs": 0.012,
     "src/model/node.rs": 0.0,
     "src/model/query.rs": 0.0,
     "src/model/smell.rs": 0.0,
     "src/model/stats.rs": 0.0,
     "src/model/symbol.rs": 0.0,
     "src/model/symbol_index.rs": 0.0001,
+    "src/model/temporal.rs": 0.0,
     "src/model/types.rs": 0.0,
     "src/model/workspace.rs": 0.0,
     "src/parser/csharp.rs": 0.0,
@@ -152,7 +156,7 @@
     "src/parser/java.rs": 0.0,
     "src/parser/json_lang.rs": 0.0,
     "src/parser/markdown.rs": 0.0,
-    "src/parser/mod.rs": 0.0012,
+    "src/parser/mod.rs": 0.0011,
     "src/parser/python.rs": 0.0,
     "src/parser/registry.rs": 0.0,
     "src/parser/rust_lang.rs": 0.0,
@@ -161,13 +165,19 @@
     "src/parser/typescript.rs": 0.0,
     "src/parser/yaml.rs": 0.0,
     "src/pipeline/build.rs": 0.0,
-    "src/pipeline/mod.rs": 0.0013,
+    "src/pipeline/mod.rs": 0.0012,
     "src/pipeline/read.rs": 0.0001,
     "src/pipeline/resolve.rs": 0.0,
     "src/pipeline/walk.rs": 0.0,
     "src/serial/convert.rs": 0.0,
     "src/serial/json.rs": 0.0001,
     "src/serial/mod.rs": 0.0002,
+    "src/temporal/churn.rs": 0.0,
+    "src/temporal/coupling.rs": 0.0,
+    "src/temporal/git.rs": 0.0,
+    "src/temporal/hotspot.rs": 0.0,
+    "src/temporal/mod.rs": 0.0001,
+    "src/temporal/ownership.rs": 0.0,
     "src/views/cluster.rs": 0.0,
     "src/views/impact.rs": 0.0,
     "src/views/index.rs": 0.0,
@@ -273,7 +283,8 @@
     "tests/mcp_tests.rs": 0.0,
     "tests/pipeline_tests.rs": 0.0,
     "tests/properties.rs": 0.0,
-    "tests/symbol_tests.rs": 0.0
+    "tests/symbol_tests.rs": 0.0,
+    "tests/temporal_integration.rs": 0.0
   },
   "sccs": [
     [
@@ -364,6 +375,8 @@
       "design/reports/archive/2026-03-19-v2-architecture-review.md",
       "design/reports/archive/2026-03-22-architectural-review.md",
       "design/reports/archive/2026-03-23-moira-violations.md",
+      "design/specs/2026-03-25-phase7-git-temporal-analysis.md",
+      "design/specs/2026-03-25-phase7-implementation-plan.md",
       "design/specs/archive/2026-03-17-phase1-core-cli.md",
       "design/specs/archive/2026-03-17-phase1-implementation-plan.md",
       "design/specs/archive/2026-03-17-phase1a-implementation-plan.md",
@@ -386,6 +399,7 @@
       "src/main.rs",
       "src/mcp/persist.rs",
       "src/mcp/tools_context.rs",
+      "src/mcp/tools_temporal.rs",
       "src/model/annotation.rs",
       "src/model/bookmark.rs",
       "src/model/compress.rs",
@@ -397,6 +411,7 @@
       "src/model/smell.rs",
       "src/model/stats.rs",
       "src/model/symbol.rs",
+      "src/model/temporal.rs",
       "src/model/types.rs",
       "src/model/workspace.rs",
       "src/parser/helpers.rs",
@@ -487,13 +502,15 @@
       "tests/mcp_tests.rs",
       "tests/pipeline_tests.rs",
       "tests/properties.rs",
-      "tests/symbol_tests.rs"
+      "tests/symbol_tests.rs",
+      "tests/temporal_integration.rs"
     ],
     "00001": [
       "src/detect/case_sensitivity.rs",
       "src/model/symbol_index.rs",
       "src/parser/registry.rs",
       "src/parser/symbols.rs",
+      "src/temporal/hotspot.rs",
       "tests/fixtures/edge-cases/syntax-error.ts",
       "tests/fixtures/mixed-project/frontend/src/App.tsx",
       "tests/fixtures/python-package/src/auth/login.py",
@@ -526,6 +543,9 @@
       "src/mcp/user_state.rs",
       "src/parser/traits.rs",
       "src/serial/convert.rs",
+      "src/temporal/churn.rs",
+      "src/temporal/coupling.rs",
+      "src/temporal/ownership.rs",
       "src/views/cluster.rs",
       "src/views/impact.rs",
       "src/views/index.rs"
@@ -559,13 +579,15 @@
       "src/pipeline/read.rs",
       "src/pipeline/walk.rs",
       "src/serial/json.rs",
+      "src/temporal/git.rs",
       "src/views/mod.rs"
     ],
     "00005": [
       "src/analysis/metrics.rs",
       "src/detect/mod.rs",
       "src/parser/mod.rs",
-      "src/serial/mod.rs"
+      "src/serial/mod.rs",
+      "src/temporal/mod.rs"
     ],
     "00006": [
       "src/analysis/smells.rs",
@@ -596,8 +618,8 @@
   },
   "summary": {
     "max_depth": 11,
-    "avg_in_degree": 1.0769,
-    "avg_out_degree": 1.0769,
+    "avg_in_degree": 1.1127,
+    "avg_out_degree": 1.1127,
     "bottleneck_files": [],
     "orphan_files": [
       "benches/algo_bench.rs",
@@ -638,7 +660,8 @@
       "tests/mcp_tests.rs",
       "tests/pipeline_tests.rs",
       "tests/properties.rs",
-      "tests/symbol_tests.rs"
+      "tests/symbol_tests.rs",
+      "tests/temporal_integration.rs"
     ]
   }
 }

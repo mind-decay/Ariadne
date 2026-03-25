@@ -7,7 +7,7 @@
 | `src/analysis/diff.rs` | source | 7 | 3 | 4 | 0.0003 |
 | `src/analysis/metrics.rs` | source | 5 | 5 | 2 | 0.0002 |
 | `src/analysis/mod.rs` | source | 8 | 1 | 3 | 0.0000 |
-| `src/analysis/smells.rs` | source | 6 | 4 | 3 | 0.0002 |
+| `src/analysis/smells.rs` | source | 6 | 6 | 3 | 0.0005 |
 
 ## Internal Dependencies
 
@@ -33,6 +33,8 @@
 - `src/analysis/metrics.rs` ← `benches/analysis_bench.rs` (imports)
 - `src/analysis/smells.rs` ← `benches/analysis_bench.rs` (imports)
 - `src/analysis/mod.rs` ← `src/lib.rs` (imports)
+- `src/analysis/smells.rs` ← `src/mcp/prompts.rs` (imports)
+- `src/analysis/smells.rs` ← `src/mcp/resources.rs` (imports)
 - `src/analysis/metrics.rs` ← `src/mcp/state.rs` (imports)
 - `src/analysis/smells.rs` ← `src/mcp/tools.rs` (imports)
 - `src/analysis/diff.rs` ← `src/mcp/watch.rs` (imports)

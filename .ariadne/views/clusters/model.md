@@ -4,11 +4,13 @@
 
 | File | Type | Layer | In | Out | Centrality |
 |------|------|------:|---:|----:|-----------:|
+| `src/model/annotation.rs` | source | 0 | 1 | 0 | 0.0000 |
+| `src/model/bookmark.rs` | source | 0 | 1 | 0 | 0.0000 |
 | `src/model/compress.rs` | source | 0 | 2 | 0 | 0.0000 |
 | `src/model/diff.rs` | source | 0 | 1 | 0 | 0.0000 |
 | `src/model/edge.rs` | source | 0 | 3 | 0 | 0.0000 |
 | `src/model/graph.rs` | source | 0 | 1 | 0 | 0.0000 |
-| `src/model/mod.rs` | source | 2 | 55 | 12 | 0.0104 |
+| `src/model/mod.rs` | source | 2 | 59 | 14 | 0.0124 |
 | `src/model/node.rs` | source | 0 | 2 | 0 | 0.0000 |
 | `src/model/query.rs` | source | 0 | 1 | 0 | 0.0000 |
 | `src/model/smell.rs` | source | 0 | 1 | 0 | 0.0000 |
@@ -20,6 +22,8 @@
 
 ## Internal Dependencies
 
+- `src/model/mod.rs` → `src/model/annotation.rs` (imports)
+- `src/model/mod.rs` → `src/model/bookmark.rs` (imports)
 - `src/model/mod.rs` → `src/model/compress.rs` (imports)
 - `src/model/mod.rs` → `src/model/diff.rs` (imports)
 - `src/model/mod.rs` → `src/model/edge.rs` (imports)
@@ -78,9 +82,13 @@
 - `src/model/mod.rs` ← `src/hash.rs` (imports)
 - `src/model/mod.rs` ← `src/lib.rs` (imports)
 - `src/model/mod.rs` ← `src/main.rs` (imports)
+- `src/model/mod.rs` ← `src/mcp/annotations.rs` (imports)
+- `src/model/mod.rs` ← `src/mcp/bookmarks.rs` (imports)
+- `src/model/mod.rs` ← `src/mcp/prompts.rs` (imports)
 - `src/model/mod.rs` ← `src/mcp/state.rs` (imports)
 - `src/model/symbol_index.rs` ← `src/mcp/state.rs` (imports)
 - `src/model/mod.rs` ← `src/mcp/tools.rs` (imports)
+- `src/model/mod.rs` ← `src/mcp/user_state.rs` (imports)
 - `src/model/mod.rs` ← `src/parser/csharp.rs` (imports)
 - `src/model/symbol.rs` ← `src/parser/csharp.rs` (imports)
 - `src/model/workspace.rs` ← `src/parser/csharp.rs` (imports)

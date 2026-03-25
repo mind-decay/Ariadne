@@ -5,8 +5,8 @@
 | File | Type | Layer | In | Out | Centrality |
 |------|------|------:|---:|----:|-----------:|
 | `src/serial/convert.rs` | source | 3 | 1 | 1 | 0.0000 |
-| `src/serial/json.rs` | source | 4 | 5 | 2 | 0.0001 |
-| `src/serial/mod.rs` | source | 5 | 4 | 5 | 0.0002 |
+| `src/serial/json.rs` | source | 4 | 5 | 2 | 0.0002 |
+| `src/serial/mod.rs` | source | 5 | 4 | 5 | 0.0003 |
 
 ## Internal Dependencies
 
