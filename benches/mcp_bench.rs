@@ -81,7 +81,7 @@ fn build_synthetic_state(node_count: usize, edge_count: usize) -> GraphState {
         clusters: cluster_map,
     };
 
-    GraphState::from_loaded_data(graph, stats, clusters, BTreeMap::new())
+    GraphState::from_loaded_data(graph, stats, clusters, BTreeMap::new(), None)
 }
 
 #[cfg(feature = "serve")]

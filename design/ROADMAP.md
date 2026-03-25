@@ -1212,7 +1212,7 @@ where d_i = degree of vertex i, m = total edges.
 
 ---
 
-## Phase 7: Git Temporal Analysis [PLANNED]
+## Phase 7: Git Temporal Analysis [DONE]
 
 **Goal:** Add time dimension — co-change patterns, code churn, file ownership, hotspot detection. Transforms Ariadne from "static snapshot" to "structural + temporal intelligence."
 

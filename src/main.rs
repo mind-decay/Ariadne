@@ -1054,7 +1054,7 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
             let metrics =
                 ariadne_graph::analysis::metrics::compute_martin_metrics(&graph, &clusters);
             let smells =
-                ariadne_graph::analysis::smells::detect_smells(&graph, &stats, &clusters, &metrics);
+                ariadne_graph::analysis::smells::detect_smells(&graph, &stats, &clusters, &metrics, None);
 
             let filtered: Vec<_> = if let Some(ref min_sev) = min_severity {
                 let min = ariadne_graph::model::SmellSeverity::from_str_loose(min_sev);

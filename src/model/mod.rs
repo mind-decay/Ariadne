@@ -10,6 +10,7 @@ pub mod smell;
 pub mod stats;
 pub mod symbol;
 pub mod symbol_index;
+pub mod temporal;
 pub mod types;
 pub mod workspace;
 
@@ -28,4 +29,5 @@ pub use symbol::{LineSpan, SymbolDef, SymbolKind, Visibility};
 pub use symbol_index::{SymbolIndex, SymbolLocation, SymbolUsage, UsageKind};
 pub use annotation::{Annotation, AnnotationStore, AnnotationTarget};
 pub use bookmark::{Bookmark, BookmarkStore};
+pub use temporal::{ChurnMetrics, CoChange, Hotspot, OwnershipInfo, TemporalState};
 pub use workspace::{WorkspaceInfo, WorkspaceKind, WorkspaceMember};

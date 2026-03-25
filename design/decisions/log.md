@@ -1150,3 +1150,68 @@ Applies to: Brandes centrality (Phase 2), Louvain modularity (Phase 2b), PageRan
 - Re-expand on every graph rebuild — unnecessary work for bookmarks that may never be queried
 **Reasoning:** Dynamic expansion means bookmarks track the living codebase. New files under a bookmarked directory are automatically included; deleted files are automatically excluded.
 **Affects:** `src/mcp/bookmarks.rs`, `src/algo/compress.rs`, `src/algo/context.rs`.
+
+## D-095: Temporal Module as Optional Feature
+
+**Date:** 2026-03-25
+**Status:** Accepted
+**Context:** The `temporal/` module shells out to `git`. Not all environments have git. The module should be cleanly optional.
+**Decision:** `temporal/` is always compiled (no feature flag) but produces `Option<TemporalState>`. Git availability is checked at runtime. `GraphState.temporal` is `Option<TemporalState>`. Temporal tools check for `None` and return descriptive errors. No `#[cfg]` gates — the code is small and unconditional compilation is simpler.
+**Alternatives rejected:**
+- Cargo feature flag for temporal — adds complexity to build matrix, testing surface area. The code is small (~1000 lines).
+**Reasoning:** Matches existing optional patterns (e.g., spectral analysis can fail with W012 and graph still works). Runtime optionality is simpler than compile-time.
+**Affects:** `src/temporal/mod.rs`, `src/mcp/state.rs`.
+
+## D-096: Single Git Invocation with Streaming Parse
+
+**Date:** 2026-03-25
+**Status:** Accepted
+**Context:** Need git history for churn, co-change, ownership. Multiple strategies possible.
+**Decision:** Single `git log --numstat -M --format="commit %H%nauthor %aN%ndate %aI" --since="1 year ago"` invocation. Output piped through `std::process::Command` and parsed line-by-line. No git2 library dependency.
+**Reasoning:** Keeps build simple (no libgit2/OpenSSL dependency chain). Git binary is universal. Single invocation = single process spawn regardless of project size.
+**Affects:** `src/temporal/git.rs`.
+
+## D-097: TemporalState Lives in model/, Computed in temporal/
+
+**Date:** 2026-03-25
+**Status:** Accepted
+**Context:** Where should `TemporalState`, `ChurnMetrics`, `CoChange`, `OwnershipInfo`, `Hotspot` live?
+**Decision:** Data types in `src/model/temporal.rs` (leaf module, no deps — consistent with all model types per D-017). Computation logic in `src/temporal/` module. `mcp/state.rs` stores `Option<TemporalState>` computed by `temporal::analyze()`.
+**Reasoning:** Follows the established `model/` = data types, `algo/`/`analysis/`/`temporal/` = computation pattern exactly.
+**Affects:** `src/model/temporal.rs`, `src/temporal/mod.rs`, `src/mcp/state.rs`.
+
+## D-098: Co-Change Confidence via Jaccard Index
+
+**Date:** 2026-03-25
+**Status:** Accepted
+**Context:** Multiple metrics possible for co-change confidence (Jaccard, MI, Bayesian). See ROADMAP FM-7.1, FM-7.2.
+**Decision:** Phase 7 uses Jaccard index only: `confidence = co_changes(A,B) / (changes(A) + changes(B) - co_changes(A,B))`. FM-7.1 (MI) and FM-7.2 (Bayesian) deferred to Phase 7b.
+**Reasoning:** Jaccard is well-understood, deterministic, and sufficient for initial release. FM methods require empirical validation.
+**Affects:** `src/temporal/coupling.rs`.
+
+## D-099: LOC as Complexity Proxy in Hotspot Formula
+
+**Date:** 2026-03-25
+**Status:** Accepted
+**Context:** Hotspot formula references "complexity" but Ariadne has no cyclomatic complexity.
+**Decision:** Use `Node.lines` (lines of code) as complexity proxy. Rename `complexity_rank` to `loc_rank` in Hotspot struct for honesty.
+**Reasoning:** LOC is available, correlates with complexity, avoids false precision.
+**Affects:** `src/model/temporal.rs`, `src/temporal/hotspot.rs`.
+
+## D-100: Temporal Coupling Smell Detection
+
+**Date:** 2026-03-25
+**Status:** Accepted
+**Context:** `ariadne_smells` needs a new smell type: "Temporal Coupling Without Import."
+**Decision:** New `SmellType::TemporalCouplingWithoutImport` variant. Detection: co-change pairs with confidence >= 0.5 AND `has_structural_link == false`. Severity: MEDIUM. The detection function lives in `analysis/smells.rs` and receives `Option<&TemporalState>` — when None, this smell is simply not checked.
+**Reasoning:** Follows existing smell detection pattern exactly. Optional temporal data means no impact when git is unavailable.
+**Affects:** `src/model/smell.rs`, `src/analysis/smells.rs`.
+
+## D-101: Rename Tracking via -M Flag Path Mapping
+
+**Date:** 2026-03-25
+**Status:** Accepted
+**Context:** Files get renamed. Without rename tracking, churn data splits across old and new paths.
+**Decision:** Parse `-M` rename output format (`{old} => {new}` in numstat). Build `BTreeMap<String, CanonicalPath>` mapping old paths to their current canonical paths. When aggregating churn, map all old paths to current paths. Only track renames to paths that exist on disk.
+**Reasoning:** Keeps rename handling simple and bounded. Paths not in current graph are irrelevant.
+**Affects:** `src/temporal/git.rs`.

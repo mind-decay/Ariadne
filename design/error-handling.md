@@ -60,6 +60,11 @@ These affect individual files. The file is excluded from the graph. Build contin
 | `W021: CallGraphCyclicDepth` | Call graph traversal hit depth limit during BFS | Truncate traversal at depth limit, emit warning |
 | `W022: AnnotationFileCorrupted` | `.ariadne/annotations.json` cannot be parsed | Start with empty annotations, emit warning |
 | `W023: BookmarkFileCorrupted` | `.ariadne/bookmarks.json` cannot be parsed | Start with empty bookmarks, emit warning |
+| `W024: GitNotFound` | git binary not found in PATH | Skip temporal analysis, emit warning |
+| `W025: NotGitRepository` | project directory is not inside a git repository | Skip temporal analysis, emit warning |
+| `W026: ShallowRepository` | repository is a shallow clone (limited history) | Proceed with available history, emit warning |
+| `W027: GitCommandFailed` | git command failed | Skip temporal analysis, emit warning |
+| `W028: TemporalAnalysisFailed` | temporal analysis failed | Skip temporal results, emit warning |
 
 ### Design Decisions
 

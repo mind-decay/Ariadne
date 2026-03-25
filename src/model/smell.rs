@@ -57,4 +57,5 @@ pub enum SmellType {
     UnstableFoundation,
     DeadCluster,
     ShotgunSurgery,
+    TemporalCouplingWithoutImport,
 }

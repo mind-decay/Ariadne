@@ -36,7 +36,7 @@ pub async fn run(config: ServeConfig) -> Result<(), FatalError> {
     let rust_crate_name = crate::detect::detect_rust_crate_name(&config.project_root);
 
     // 3. Load or build graph
-    let graph_state = match load_graph_state(&config.output_dir, &JsonSerializer) {
+    let graph_state = match load_graph_state(&config.output_dir, &JsonSerializer, Some(&config.project_root)) {
         Ok(state) => state,
         Err(FatalError::GraphNotFound { .. }) | Err(FatalError::StatsNotFound { .. }) => {
             eprintln!(
@@ -52,7 +52,7 @@ pub async fn run(config: ServeConfig) -> Result<(), FatalError> {
                     ..BuildOptions::default()
                 },
             )?;
-            load_graph_state(&config.output_dir, &JsonSerializer)?
+            load_graph_state(&config.output_dir, &JsonSerializer, Some(&config.project_root))?
         }
         Err(e) => return Err(e),
     };
@@ -232,7 +232,7 @@ fn start_poll_fallback(
                     ..BuildOptions::default()
                 },
             ) {
-                Ok(_) => match load_graph_state(&output_dir, &reader) {
+                Ok(_) => match load_graph_state(&output_dir, &reader, Some(&project_root)) {
                     Ok(new_state) => {
                         state.store(Arc::new(new_state));
                     }

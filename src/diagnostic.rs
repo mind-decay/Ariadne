@@ -65,6 +65,11 @@ pub enum WarningCode {
     W021CallGraphCyclicDepth,
     W022AnnotationFileCorrupted,
     W023BookmarkFileCorrupted,
+    W024GitNotFound,
+    W025NotGitRepository,
+    W026ShallowRepository,
+    W027GitCommandFailed,
+    W028TemporalAnalysisFailed,
 }
 
 impl WarningCode {
@@ -93,6 +98,11 @@ impl WarningCode {
             Self::W021CallGraphCyclicDepth => "W021",
             Self::W022AnnotationFileCorrupted => "W022",
             Self::W023BookmarkFileCorrupted => "W023",
+            Self::W024GitNotFound => "W024",
+            Self::W025NotGitRepository => "W025",
+            Self::W026ShallowRepository => "W026",
+            Self::W027GitCommandFailed => "W027",
+            Self::W028TemporalAnalysisFailed => "W028",
         }
     }
 }
@@ -328,6 +338,11 @@ impl DiagnosticCollector {
             WarningCode::W021CallGraphCyclicDepth => {}
             WarningCode::W022AnnotationFileCorrupted => {}
             WarningCode::W023BookmarkFileCorrupted => {}
+            WarningCode::W024GitNotFound => {}
+            WarningCode::W025NotGitRepository => {}
+            WarningCode::W026ShallowRepository => {}
+            WarningCode::W027GitCommandFailed => {}
+            WarningCode::W028TemporalAnalysisFailed => {}
         }
         guard.0.push(warning);
     }

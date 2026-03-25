@@ -217,6 +217,7 @@ fn read_smells(state: &GraphState) -> String {
         &state.stats,
         &state.clusters,
         &state.cluster_metrics,
+        state.temporal.as_ref(),
     );
 
     let items: Vec<serde_json::Value> = smells
@@ -387,7 +388,7 @@ mod tests {
             clusters: clusters_map,
         };
 
-        GraphState::from_loaded_data(graph, stats, clusters, BTreeMap::new())
+        GraphState::from_loaded_data(graph, stats, clusters, BTreeMap::new(), None)
     }
 
     #[test]

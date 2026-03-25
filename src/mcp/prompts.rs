@@ -264,6 +264,7 @@ fn prompt_find_refactoring(
         &state.stats,
         &state.clusters,
         &state.cluster_metrics,
+        state.temporal.as_ref(),
     );
 
     // Filter by scope if provided
@@ -646,7 +647,7 @@ mod tests {
             clusters: BTreeMap::new(),
         };
 
-        GraphState::from_loaded_data(graph, stats, clusters, BTreeMap::new())
+        GraphState::from_loaded_data(graph, stats, clusters, BTreeMap::new(), None)
     }
 
     /// GraphState with two files and one cluster for prompt content tests.
@@ -724,6 +725,6 @@ mod tests {
             clusters: clusters_map,
         };
 
-        GraphState::from_loaded_data(graph, stats, clusters, BTreeMap::new())
+        GraphState::from_loaded_data(graph, stats, clusters, BTreeMap::new(), None)
     }
 }

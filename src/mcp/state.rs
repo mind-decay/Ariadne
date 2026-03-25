@@ -4,7 +4,7 @@ use std::time::SystemTime;
 
 use crate::algo::{callgraph::CallGraph, compress, pagerank, spectral};
 use crate::analysis::metrics::{compute_martin_metrics, ClusterMetrics};
-use crate::diagnostic::FatalError;
+use crate::diagnostic::{DiagnosticCollector, FatalError};
 use crate::model::symbol_index::SymbolIndex;
 use crate::model::*;
 use crate::serial::RawImportOutput;
@@ -40,6 +40,8 @@ pub struct GraphState {
     pub symbol_index: SymbolIndex,
     /// Cross-file call graph: symbol-level caller/callee relationships (D-079).
     pub call_graph: CallGraph,
+    /// Temporal analysis from git history (None if git unavailable).
+    pub temporal: Option<TemporalState>,
     /// Structural diff from the last auto-update (None before first update).
     pub last_diff: Option<StructuralDiff>,
     pub freshness: FreshnessState,
@@ -106,11 +108,15 @@ impl Default for FreshnessState {
 
 impl GraphState {
     /// Build GraphState from loaded data, constructing derived indices.
+    ///
+    /// When `project_root` is provided, temporal analysis via git history is attempted.
+    /// Pass `None` in test contexts where git is unavailable.
     pub fn from_loaded_data(
         graph: ProjectGraph,
         stats: StatsOutput,
         clusters: ClusterMap,
         raw_imports: BTreeMap<String, Vec<RawImportOutput>>,
+        project_root: Option<&Path>,
     ) -> Self {
         let reverse_index = Self::build_reverse_index(&graph);
         let forward_index = Self::build_forward_index(&graph);
@@ -129,6 +135,12 @@ impl GraphState {
         let symbol_index = SymbolIndex::build(&graph.nodes, &graph.edges);
         let call_graph = CallGraph::build(&graph.edges, &symbol_index);
 
+        // Temporal analysis from git history (if project root available)
+        let temporal = project_root.and_then(|root| {
+            let collector = DiagnosticCollector::new();
+            crate::temporal::analyze(root, &graph, &collector)
+        });
+
         Self {
             graph,
             stats,
@@ -145,6 +157,7 @@ impl GraphState {
             spectral: spectral_result,
             symbol_index,
             call_graph,
+            temporal,
             last_diff: None,
             freshness: FreshnessState::new(),
             loaded_at: SystemTime::now(),
@@ -180,9 +193,12 @@ impl GraphState {
 }
 
 /// Load graph state from disk, or build if missing.
+///
+/// When `project_root` is provided, temporal analysis via git history is attempted.
 pub fn load_graph_state(
     output_dir: &Path,
     reader: &dyn crate::serial::GraphReader,
+    project_root: Option<&Path>,
 ) -> Result<GraphState, FatalError> {
     let graph_output = reader.read_graph(output_dir)?;
     let graph: ProjectGraph =
@@ -215,5 +231,6 @@ pub fn load_graph_state(
         stats,
         clusters,
         raw_imports,
+        project_root,
     ))
 }

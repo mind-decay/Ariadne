@@ -251,7 +251,7 @@ mod state_tests {
     #[test]
     fn graph_state_builds_reverse_index() {
         let (graph, stats, clusters) = make_test_graph();
-        let state = GraphState::from_loaded_data(graph, stats, clusters, BTreeMap::new());
+        let state = GraphState::from_loaded_data(graph, stats, clusters, BTreeMap::new(), None);
 
         // b.ts should have one incoming edge from a.ts
         let b_incoming = state
@@ -265,7 +265,7 @@ mod state_tests {
     #[test]
     fn graph_state_builds_layer_index() {
         let (graph, stats, clusters) = make_test_graph();
-        let state = GraphState::from_loaded_data(graph, stats, clusters, BTreeMap::new());
+        let state = GraphState::from_loaded_data(graph, stats, clusters, BTreeMap::new(), None);
 
         let layer0 = state.layer_index.get(&0).unwrap();
         assert_eq!(layer0.len(), 1);
@@ -279,7 +279,7 @@ mod state_tests {
     #[test]
     fn graph_state_builds_forward_index() {
         let (graph, stats, clusters) = make_test_graph();
-        let state = GraphState::from_loaded_data(graph, stats, clusters, BTreeMap::new());
+        let state = GraphState::from_loaded_data(graph, stats, clusters, BTreeMap::new(), None);
 
         // a.ts should have one outgoing edge to b.ts
         let a_outgoing = state
@@ -298,7 +298,7 @@ mod state_tests {
     #[test]
     fn graph_state_extracts_file_hashes() {
         let (graph, stats, clusters) = make_test_graph();
-        let state = GraphState::from_loaded_data(graph, stats, clusters, BTreeMap::new());
+        let state = GraphState::from_loaded_data(graph, stats, clusters, BTreeMap::new(), None);
 
         assert_eq!(
             state.file_hashes.get(&CanonicalPath::new("src/a.ts")),
@@ -394,7 +394,7 @@ mod phase6_integration_tests {
         };
 
         let graph_state =
-            GraphState::from_loaded_data(graph, stats, clusters, BTreeMap::new());
+            GraphState::from_loaded_data(graph, stats, clusters, BTreeMap::new(), None);
         let state = Arc::new(ArcSwap::from_pointee(graph_state));
         let rebuilding = Arc::new(AtomicBool::new(false));
 

@@ -20,6 +20,9 @@ use crate::algo::test_map::find_tests_for;
 use crate::analysis::smells::detect_smells;
 use crate::mcp::state::GraphState;
 use crate::mcp::tools_context::{ContextParam, PlanImpactParam, ReadingOrderParam, TestsForParam};
+use crate::mcp::tools_temporal::{
+    ChurnParam, CouplingParam, HiddenDepsParam, HotspotsParam, OwnershipParam,
+};
 use crate::mcp::user_state::UserStateManager;
 use crate::model::{AnnotationTarget, CanonicalPath};
 
@@ -319,7 +322,7 @@ impl AriadneTools {
             *layer_counts.entry(node.arch_depth).or_default() += 1;
         }
 
-        let result = serde_json::json!({
+        let mut result = serde_json::json!({
             "node_count": graph.nodes.len(),
             "edge_count": graph.edges.len(),
             "cluster_count": state.clusters.clusters.len(),
@@ -335,6 +338,22 @@ impl AriadneTools {
                 "structural_confidence": state.freshness.structural_confidence,
             },
         });
+
+        // Add temporal summary when available
+        if let Some(ref temporal) = state.temporal {
+            let total_commits_30d: u32 = temporal.churn.values().map(|c| c.commits_30d).sum();
+            let hidden_dep_count = temporal
+                .co_changes
+                .iter()
+                .filter(|cc| !cc.has_structural_link)
+                .count();
+            result["temporal"] = serde_json::json!({
+                "total_commits_30d": total_commits_30d,
+                "hotspot_count": temporal.hotspots.len(),
+                "hidden_dep_count": hidden_dep_count,
+                "commits_analyzed": temporal.commits_analyzed,
+            });
+        }
 
         to_json(&result)
     }
@@ -402,7 +421,7 @@ impl AriadneTools {
             &self.user_state, &params.path,
         );
 
-        let result = serde_json::json!({
+        let mut result = serde_json::json!({
             "path": params.path,
             "type": node.file_type.as_str(),
             "layer": node.layer.as_str(),
@@ -417,6 +436,19 @@ impl AriadneTools {
             "symbols": symbols,
             "annotations": annotations,
         });
+
+        // Add temporal data when available
+        if let Some(ref temporal) = state.temporal {
+            if let Some(churn) = temporal.churn.get(&cp) {
+                result["temporal"] = serde_json::json!({
+                    "commits_30d": churn.commits_30d,
+                    "commits_90d": churn.commits_90d,
+                    "commits_1y": churn.commits_1y,
+                    "last_changed": churn.last_changed,
+                    "top_authors": churn.top_authors,
+                });
+            }
+        }
 
         to_json(&result)
     }
@@ -801,6 +833,7 @@ impl AriadneTools {
             &state.stats,
             &state.clusters,
             &state.cluster_metrics,
+            state.temporal.as_ref(),
         );
 
         let filtered: Vec<_> = if let Some(ref min_sev) = params.min_severity {
@@ -840,9 +873,43 @@ impl AriadneTools {
         let state = self.state.load();
         let top = params.top.unwrap_or(20) as usize;
 
-        let mut ranked: Vec<_> = state.combined_importance.iter().collect();
+        // Enhanced formula when temporal data available:
+        // structural_importance * (1.0 + ln(1 + churn_30d) / max_log_churn)
+        let temporal_boost: Option<(BTreeMap<&CanonicalPath, f64>, f64)> =
+            state.temporal.as_ref().map(|temporal| {
+                let max_log_churn = temporal
+                    .churn
+                    .values()
+                    .map(|c| (1.0 + c.commits_30d as f64).ln())
+                    .fold(0.0_f64, f64::max)
+                    .max(1.0); // avoid division by zero
+                let boosts: BTreeMap<&CanonicalPath, f64> = temporal
+                    .churn
+                    .iter()
+                    .map(|(path, c)| {
+                        let log_churn = (1.0 + c.commits_30d as f64).ln();
+                        (path, log_churn)
+                    })
+                    .collect();
+                (boosts, max_log_churn)
+            });
+
+        let mut ranked: Vec<(&CanonicalPath, f64)> = state
+            .combined_importance
+            .iter()
+            .map(|(path, &score)| {
+                let boosted = if let Some((ref boosts, max_log)) = temporal_boost {
+                    let log_churn = boosts.get(path).copied().unwrap_or(0.0);
+                    score * (1.0 + log_churn / max_log)
+                } else {
+                    score
+                };
+                (path, boosted)
+            })
+            .collect();
+
         ranked.sort_by(|a, b| {
-            b.1.partial_cmp(a.1)
+            b.1.partial_cmp(&a.1)
                 .unwrap_or(std::cmp::Ordering::Equal)
                 .then_with(|| a.0.cmp(b.0))
         });
@@ -850,13 +917,19 @@ impl AriadneTools {
 
         let result: Vec<serde_json::Value> = ranked
             .iter()
-            .map(|(path, &score)| {
-                serde_json::json!({
+            .map(|(path, score)| {
+                let mut obj = serde_json::json!({
                     "path": path.as_str(),
                     "combined_score": score,
                     "centrality": state.stats.centrality.get(path.as_str()).copied().unwrap_or(0.0),
                     "pagerank": state.pagerank.get(*path).copied().unwrap_or(0.0),
-                })
+                });
+                if let Some(ref temporal) = state.temporal {
+                    if let Some(churn) = temporal.churn.get(*path) {
+                        obj["churn_30d"] = serde_json::json!(churn.commits_30d);
+                    }
+                }
+                obj
             })
             .collect();
 
@@ -1478,16 +1551,51 @@ impl AriadneTools {
         let mut all_warnings = ctx.warnings;
         all_warnings.extend(warnings);
 
+        // Compute temporal churn boost when available:
+        // High-churn files get a relevance boost to surface them in context
+        let churn_boost: Option<(BTreeMap<&CanonicalPath, f64>, f64)> =
+            state.temporal.as_ref().map(|temporal| {
+                let max_log_churn = temporal
+                    .churn
+                    .values()
+                    .map(|c| (1.0 + c.commits_30d as f64).ln())
+                    .fold(0.0_f64, f64::max)
+                    .max(1.0);
+                let boosts: BTreeMap<&CanonicalPath, f64> = temporal
+                    .churn
+                    .iter()
+                    .map(|(path, c)| (path, (1.0 + c.commits_30d as f64).ln()))
+                    .collect();
+                (boosts, max_log_churn)
+            });
+
         let selected: Vec<serde_json::Value> = ctx
             .selected
             .iter()
             .map(|c| {
-                serde_json::json!({
+                let boosted_relevance = if let Some((ref boosts, max_log)) = churn_boost {
+                    let log_churn = boosts.get(&c.path).copied().unwrap_or(0.0);
+                    // Add up to 0.15 bonus based on churn
+                    let bonus = 0.15 * (log_churn / max_log);
+                    (c.relevance + bonus).min(1.0)
+                } else {
+                    c.relevance
+                };
+
+                let mut obj = serde_json::json!({
                     "path": c.path.as_str(),
-                    "relevance": c.relevance,
+                    "relevance": boosted_relevance,
                     "tokens": c.tokens,
                     "tier": c.tier.as_str(),
-                })
+                });
+                if let Some((ref boosts, _)) = churn_boost {
+                    if let Some(&log_churn) = boosts.get(&c.path) {
+                        if log_churn > 0.0 {
+                            obj["churn_boost"] = serde_json::json!(true);
+                        }
+                    }
+                }
+                obj
             })
             .collect();
 
@@ -1877,6 +1985,298 @@ impl AriadneTools {
                 to_json(&result)
             }
         }
+    }
+
+    // --- T33: Churn ---
+
+    #[tool(
+        name = "ariadne_churn",
+        description = "File change frequency from git history: commit counts, lines changed, authors per file across time windows (30d/90d/1y)"
+    )]
+    fn churn(&self, Parameters(params): Parameters<ChurnParam>) -> String {
+        let state = self.state.load();
+        let temporal = match &state.temporal {
+            Some(t) => t,
+            None => {
+                return to_json(&serde_json::json!({
+                    "error": "temporal_unavailable",
+                    "reason": "git history not available",
+                }));
+            }
+        };
+
+        let period = params.period.as_deref().unwrap_or("30d");
+        // Validate period
+        if !matches!(period, "30d" | "90d" | "1y") {
+            return to_json(&serde_json::json!({
+                "error": "invalid_period",
+                "value": period,
+                "valid_values": ["30d", "90d", "1y"],
+                "message": "Period must be one of: '30d', '90d', '1y'",
+            }));
+        }
+
+        let top = params.top.unwrap_or(20);
+        if top == 0 {
+            return to_json(&serde_json::json!({
+                "error": "invalid_top",
+                "value": top,
+                "message": "'top' must be greater than 0",
+            }));
+        }
+
+        let mut entries: Vec<_> = temporal
+            .churn
+            .iter()
+            .map(|(path, churn)| {
+                let commits = match period {
+                    "30d" => churn.commits_30d,
+                    "90d" => churn.commits_90d,
+                    "1y" => churn.commits_1y,
+                    _ => churn.commits_30d,
+                };
+                let lines_changed = match period {
+                    "30d" => churn.lines_changed_30d,
+                    "90d" => churn.lines_changed_90d,
+                    _ => churn.lines_changed_30d, // 1y uses 30d lines as best available
+                };
+                (path, churn, commits, lines_changed)
+            })
+            .collect();
+
+        // Sort by commit count descending, then path for determinism
+        entries.sort_by(|a, b| {
+            b.2.cmp(&a.2)
+                .then_with(|| a.0.cmp(b.0))
+        });
+        entries.truncate(top as usize);
+
+        let result: Vec<serde_json::Value> = entries
+            .iter()
+            .map(|(path, churn, commits, lines_changed)| {
+                serde_json::json!({
+                    "path": path.as_str(),
+                    "commits": commits,
+                    "lines_changed": lines_changed,
+                    "authors": churn.authors_30d,
+                    "last_changed": churn.last_changed,
+                    "top_authors": churn.top_authors,
+                })
+            })
+            .collect();
+
+        to_json(&result)
+    }
+
+    // --- T34: Coupling ---
+
+    #[tool(
+        name = "ariadne_coupling",
+        description = "Co-change coupling from git history: file pairs that frequently change together, with confidence scores and structural link status"
+    )]
+    fn coupling(&self, Parameters(params): Parameters<CouplingParam>) -> String {
+        let state = self.state.load();
+        let temporal = match &state.temporal {
+            Some(t) => t,
+            None => {
+                return to_json(&serde_json::json!({
+                    "error": "temporal_unavailable",
+                    "reason": "git history not available",
+                }));
+            }
+        };
+
+        let min_confidence = params.min_confidence.unwrap_or(0.3);
+        if !(0.0..=1.0).contains(&min_confidence) {
+            return to_json(&serde_json::json!({
+                "error": "invalid_min_confidence",
+                "value": min_confidence,
+                "message": "'min_confidence' must be in [0.0, 1.0]",
+            }));
+        }
+
+        let mut filtered: Vec<_> = temporal
+            .co_changes
+            .iter()
+            .filter(|cc| cc.confidence >= min_confidence)
+            .collect();
+
+        // Sort by confidence descending, then file_a+file_b for determinism
+        filtered.sort_by(|a, b| {
+            b.confidence
+                .partial_cmp(&a.confidence)
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then_with(|| a.file_a.cmp(&b.file_a))
+                .then_with(|| a.file_b.cmp(&b.file_b))
+        });
+
+        let result: Vec<serde_json::Value> = filtered
+            .iter()
+            .map(|cc| {
+                serde_json::json!({
+                    "file_a": cc.file_a.as_str(),
+                    "file_b": cc.file_b.as_str(),
+                    "co_change_count": cc.co_change_count,
+                    "confidence": cc.confidence,
+                    "has_structural_link": cc.has_structural_link,
+                })
+            })
+            .collect();
+
+        to_json(&result)
+    }
+
+    // --- T35: Hotspots ---
+
+    #[tool(
+        name = "ariadne_hotspots",
+        description = "High-risk change hotspots: files with high combined churn, size, and blast radius scores"
+    )]
+    fn hotspots(&self, Parameters(params): Parameters<HotspotsParam>) -> String {
+        let state = self.state.load();
+        let temporal = match &state.temporal {
+            Some(t) => t,
+            None => {
+                return to_json(&serde_json::json!({
+                    "error": "temporal_unavailable",
+                    "reason": "git history not available",
+                }));
+            }
+        };
+
+        let top = params.top.unwrap_or(20);
+        if top == 0 {
+            return to_json(&serde_json::json!({
+                "error": "invalid_top",
+                "value": top,
+                "message": "'top' must be greater than 0",
+            }));
+        }
+
+        // Hotspots are pre-sorted by score descending
+        let result: Vec<serde_json::Value> = temporal
+            .hotspots
+            .iter()
+            .take(top as usize)
+            .map(|h| {
+                serde_json::json!({
+                    "path": h.path.as_str(),
+                    "score": h.score,
+                    "churn_rank": h.churn_rank,
+                    "loc_rank": h.loc_rank,
+                    "blast_radius_rank": h.blast_radius_rank,
+                })
+            })
+            .collect();
+
+        to_json(&result)
+    }
+
+    // --- T36: Ownership ---
+
+    #[tool(
+        name = "ariadne_ownership",
+        description = "File ownership from git history: last author, top contributors, author count. Query a specific file or get project-wide top authors."
+    )]
+    fn ownership(&self, Parameters(params): Parameters<OwnershipParam>) -> String {
+        let state = self.state.load();
+        let temporal = match &state.temporal {
+            Some(t) => t,
+            None => {
+                return to_json(&serde_json::json!({
+                    "error": "temporal_unavailable",
+                    "reason": "git history not available",
+                }));
+            }
+        };
+
+        if let Some(ref path) = params.path {
+            let cp = CanonicalPath::new(path);
+            match temporal.ownership.get(&cp) {
+                Some(info) => to_json(&serde_json::json!({
+                    "path": path,
+                    "last_author": info.last_author,
+                    "top_contributors": info.top_contributors,
+                    "author_count": info.author_count,
+                })),
+                None => to_json(&serde_json::json!({
+                    "error": "not_found",
+                    "path": path,
+                    "message": "No ownership data for this file",
+                })),
+            }
+        } else {
+            // Aggregate: top authors across the project
+            let mut author_counts: BTreeMap<String, u32> = BTreeMap::new();
+            for info in temporal.ownership.values() {
+                for (name, count) in &info.top_contributors {
+                    *author_counts.entry(name.clone()).or_default() += count;
+                }
+            }
+            let mut sorted: Vec<(String, u32)> = author_counts.into_iter().collect();
+            sorted.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
+            sorted.truncate(20);
+
+            let total_authors: std::collections::BTreeSet<&str> = temporal
+                .ownership
+                .values()
+                .flat_map(|info| info.top_contributors.iter().map(|(n, _)| n.as_str()))
+                .collect();
+
+            to_json(&serde_json::json!({
+                "top_contributors": sorted,
+                "author_count": total_authors.len(),
+                "files_with_ownership": temporal.ownership.len(),
+            }))
+        }
+    }
+
+    // --- T37: Hidden dependencies ---
+
+    #[tool(
+        name = "ariadne_hidden_deps",
+        description = "Hidden dependencies: file pairs that co-change frequently but have NO structural import link — potential missing abstractions or implicit coupling"
+    )]
+    fn hidden_deps(&self, Parameters(_params): Parameters<HiddenDepsParam>) -> String {
+        let state = self.state.load();
+        let temporal = match &state.temporal {
+            Some(t) => t,
+            None => {
+                return to_json(&serde_json::json!({
+                    "error": "temporal_unavailable",
+                    "reason": "git history not available",
+                }));
+            }
+        };
+
+        let mut hidden: Vec<_> = temporal
+            .co_changes
+            .iter()
+            .filter(|cc| !cc.has_structural_link)
+            .collect();
+
+        // Sort by confidence descending
+        hidden.sort_by(|a, b| {
+            b.confidence
+                .partial_cmp(&a.confidence)
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then_with(|| a.file_a.cmp(&b.file_a))
+                .then_with(|| a.file_b.cmp(&b.file_b))
+        });
+
+        let result: Vec<serde_json::Value> = hidden
+            .iter()
+            .map(|cc| {
+                serde_json::json!({
+                    "file_a": cc.file_a.as_str(),
+                    "file_b": cc.file_b.as_str(),
+                    "co_change_count": cc.co_change_count,
+                    "confidence": cc.confidence,
+                })
+            })
+            .collect();
+
+        to_json(&result)
     }
 }
 

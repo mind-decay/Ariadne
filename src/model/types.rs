@@ -72,6 +72,13 @@ impl serde::Serialize for CanonicalPath {
     }
 }
 
+impl<'de> serde::Deserialize<'de> for CanonicalPath {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let s = String::deserialize(deserializer)?;
+        Ok(CanonicalPath::new(s))
+    }
+}
+
 /// Content hash (xxHash64, lowercase hex, 16 chars).
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct ContentHash(String);

@@ -177,7 +177,7 @@ impl FileWatcher {
                                 Ok(_) => {
                                     // Reload state from disk
                                     let reader = JsonSerializer;
-                                    match load_graph_state(&output_dir, &reader) {
+                                    match load_graph_state(&output_dir, &reader, Some(&project_root)) {
                                         Ok(mut new_state) => {
                                             // Compute structural diff before state swap
                                             let old_state = state.load();
