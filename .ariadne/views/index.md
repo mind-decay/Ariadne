@@ -2,31 +2,33 @@
 
 ## Architecture Summary
 
-- **Files:** 177
-- **Edges:** 253
-- **Clusters:** 15
-- **Max depth:** 10
-- **Avg in-degree:** 1.3220
-- **Avg out-degree:** 1.3220
+- **Files:** 259
+- **Edges:** 305
+- **Clusters:** 17
+- **Max depth:** 11
+- **Avg in-degree:** 1.0734
+- **Avg out-degree:** 1.0734
 
 ## Clusters
 
 | Cluster | Files | Key File | Cohesion |
 |---------|------:|----------|--------:|
-| algo | 12 | `src/algo/mod.rs` | 0.4091 |
+| .claude | 38 | `.claude/settings.json` | 1.0000 |
+| .github | 2 | `.github/workflows/release.yml` | 1.0000 |
+| algo | 13 | `src/algo/mod.rs` | 0.3654 |
 | analysis | 4 | `src/analysis/diff.rs` | 0.3158 |
-| benches | 6 | `benches/parser_bench.rs` | 0.0000 |
+| benches | 7 | `benches/symbol_bench.rs` | 0.0000 |
 | cluster | 1 | `src/cluster/mod.rs` | 0.0000 |
-| design | 32 | `design/testing.md` | 1.0000 |
+| design | 34 | `design/testing.md` | 1.0000 |
 | detect | 5 | `src/detect/mod.rs` | 0.2857 |
 | docs | 1 | `docs/superpowers/plans/2026-03-19-architecture-review-fixes.md` | 1.0000 |
-| mcp | 6 | `src/mcp/state.rs` | 0.3438 |
-| model | 11 | `src/model/mod.rs` | 0.1370 |
-| parser | 11 | `src/parser/mod.rs` | 0.4348 |
-| pipeline | 5 | `src/pipeline/mod.rs` | 0.1250 |
-| root | 6 | `src/diagnostic.rs` | 0.0769 |
-| serial | 3 | `src/serial/mod.rs` | 0.1111 |
-| tests | 70 | `tests/properties.rs` | 0.7234 |
+| mcp | 6 | `src/mcp/state.rs` | 0.3235 |
+| model | 13 | `src/model/mod.rs` | 0.1509 |
+| parser | 14 | `src/parser/mod.rs` | 0.4444 |
+| pipeline | 5 | `src/pipeline/mod.rs` | 0.1212 |
+| root | 7 | `src/diagnostic.rs` | 0.0769 |
+| serial | 3 | `src/serial/mod.rs` | 0.1053 |
+| tests | 102 | `tests/symbol_tests.rs` | 0.6182 |
 | views | 4 | `src/views/mod.rs` | 0.3333 |
 
 ## Circular Dependencies
@@ -37,6 +39,7 @@
 ## Orphan Files
 
 - `benches/helpers.rs`
+- `tests/callgraph_tests.rs`
 - `tests/fixtures/csharp-project/Data/UserRepository.cs`
 - `tests/fixtures/csharp-project/Program.cs`
 - `tests/fixtures/csharp-project/Services/AuthService.cs`
@@ -66,4 +69,5 @@
 - `tests/mcp_tests.rs`
 - `tests/pipeline_tests.rs`
 - `tests/properties.rs`
+- `tests/symbol_tests.rs`
 

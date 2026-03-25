@@ -660,7 +660,7 @@ Phase │ Name                    │ Effort │ Agent Value │ Moira Effort �
 
 ---
 
-## Phase 4: Symbol Graph [PLANNED]
+## Phase 4: Symbol Graph [DONE]
 
 **Goal:** Parse and index symbols (functions, classes, types, constants) from AST. Build call graph. Transform Ariadne from "which files depend on which files" to "which symbols depend on which symbols."
 
@@ -846,7 +846,7 @@ The following formal approaches should be **evaluated during implementation** to
 
 ---
 
-## Phase 5: Agent Context Engine [PLANNED]
+## Phase 5: Agent Context Engine [DONE]
 
 **Goal:** Transform Ariadne from "answer individual queries" to "assemble optimal context for a task." Reduce agent tool calls from 3-5 to 1 for common workflows.
 

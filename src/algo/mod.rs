@@ -2,6 +2,7 @@ pub mod blast_radius;
 pub mod callgraph;
 pub mod centrality;
 pub mod compress;
+pub mod context;
 pub mod delta;
 pub mod louvain;
 pub mod pagerank;
@@ -9,7 +10,11 @@ pub mod scc;
 pub mod spectral;
 pub mod stats;
 pub mod subgraph;
+pub mod test_map;
 pub mod topo_sort;
+
+pub mod impact;
+pub mod reading_order;
 
 use std::collections::{BTreeMap, BTreeSet};
 

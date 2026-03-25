@@ -4,10 +4,10 @@
 
 | File | Type | Layer | In | Out | Centrality |
 |------|------|------:|---:|----:|-----------:|
-| `src/views/cluster.rs` | source | 2 | 1 | 1 | 0.0000 |
-| `src/views/impact.rs` | source | 2 | 1 | 1 | 0.0000 |
-| `src/views/index.rs` | source | 2 | 1 | 1 | 0.0000 |
-| `src/views/mod.rs` | source | 3 | 1 | 5 | 0.0001 |
+| `src/views/cluster.rs` | source | 3 | 1 | 1 | 0.0000 |
+| `src/views/impact.rs` | source | 3 | 1 | 1 | 0.0000 |
+| `src/views/index.rs` | source | 3 | 1 | 1 | 0.0000 |
+| `src/views/mod.rs` | source | 4 | 1 | 5 | 0.0000 |
 
 ## Internal Dependencies
 

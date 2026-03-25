@@ -12,8 +12,13 @@ use schemars::JsonSchema;
 use serde::Deserialize;
 
 use crate::algo;
+use crate::algo::context::{assemble_context, TaskType};
+use crate::algo::impact::analyze_impact;
+use crate::algo::reading_order::compute_reading_order;
+use crate::algo::test_map::find_tests_for;
 use crate::analysis::smells::detect_smells;
 use crate::mcp::state::GraphState;
+use crate::mcp::tools_context::{ContextParam, PlanImpactParam, ReadingOrderParam, TestsForParam};
 use crate::model::CanonicalPath;
 
 /// MCP tool handler struct. Each tool is a thin wrapper around existing algo functions.
@@ -1234,6 +1239,281 @@ impl AriadneTools {
             "symbol": params.symbol,
             "callees": callees_json,
             "count": callees_json.len(),
+        });
+
+        to_json(&result)
+    }
+
+    // --- T23: Smart context assembly ---
+
+    #[tool(
+        name = "ariadne_context",
+        description = "Assemble optimal file context for a task. Returns ranked files within a token budget, scored by relevance to the seed files and task type."
+    )]
+    fn context(&self, Parameters(params): Parameters<ContextParam>) -> String {
+        let state = self.state.load();
+
+        // Convert paths, collecting warnings for invalid ones
+        let mut warnings: Vec<String> = Vec::new();
+        let mut valid_paths: Vec<CanonicalPath> = Vec::new();
+        for path in &params.files {
+            let cp = CanonicalPath::new(path);
+            if state.graph.nodes.contains_key(&cp) {
+                valid_paths.push(cp);
+            } else {
+                warnings.push(format!("File not in graph: {}", path));
+            }
+        }
+
+        if valid_paths.is_empty() {
+            let result = serde_json::json!({
+                "error": "no_valid_files",
+                "message": "None of the provided files exist in the graph",
+                "warnings": warnings,
+            });
+            return to_json(&result);
+        }
+
+        let task = params
+            .task
+            .as_deref()
+            .and_then(TaskType::from_str)
+            .unwrap_or(TaskType::Understand);
+        let budget = params.budget_tokens.unwrap_or(8000);
+        let depth = params.depth.unwrap_or(3);
+
+        let index = algo::AdjacencyIndex::build(&state.graph.edges, algo::is_architectural);
+        let ctx = assemble_context(
+            &valid_paths,
+            &state.graph,
+            &index,
+            &state.stats,
+            &state.clusters,
+            task,
+            budget,
+            depth,
+        );
+
+        let mut all_warnings = ctx.warnings;
+        all_warnings.extend(warnings);
+
+        let selected: Vec<serde_json::Value> = ctx
+            .selected
+            .iter()
+            .map(|c| {
+                serde_json::json!({
+                    "path": c.path.as_str(),
+                    "relevance": c.relevance,
+                    "tokens": c.tokens,
+                    "tier": c.tier.as_str(),
+                })
+            })
+            .collect();
+
+        let result = serde_json::json!({
+            "selected": selected,
+            "total_tokens": ctx.total_tokens,
+            "budget_used": ctx.budget_used,
+            "budget": budget,
+            "task": format!("{:?}", task),
+            "depth": depth,
+            "file_count": ctx.selected.len(),
+            "warnings": all_warnings,
+        });
+
+        to_json(&result)
+    }
+
+    // --- T24: Test mapping ---
+
+    #[tool(
+        name = "ariadne_tests_for",
+        description = "Find test files covering the given source files. Returns tests with confidence levels (high/medium/low) and detection reasons."
+    )]
+    fn tests_for(&self, Parameters(params): Parameters<TestsForParam>) -> String {
+        let state = self.state.load();
+
+        let mut warnings: Vec<String> = Vec::new();
+        let mut valid_paths: Vec<CanonicalPath> = Vec::new();
+        for path in &params.paths {
+            let cp = CanonicalPath::new(path);
+            if state.graph.nodes.contains_key(&cp) {
+                valid_paths.push(cp);
+            } else {
+                warnings.push(format!("File not in graph: {}", path));
+            }
+        }
+
+        if valid_paths.is_empty() && !params.paths.is_empty() {
+            let result = serde_json::json!({
+                "error": "no_valid_files",
+                "message": "None of the provided files exist in the graph",
+                "warnings": warnings,
+            });
+            return to_json(&result);
+        }
+
+        let index = algo::AdjacencyIndex::build(&state.graph.edges, algo::is_architectural);
+        let map_result = find_tests_for(&valid_paths, &state.graph, &index);
+
+        let mut all_warnings = map_result.warnings;
+        all_warnings.extend(warnings);
+
+        let tests: Vec<serde_json::Value> = map_result
+            .tests
+            .iter()
+            .map(|hit| {
+                serde_json::json!({
+                    "path": hit.path.as_str(),
+                    "confidence": hit.confidence.as_str(),
+                    "reason": hit.reason,
+                })
+            })
+            .collect();
+
+        let result = serde_json::json!({
+            "tests": tests,
+            "count": tests.len(),
+            "warnings": all_warnings,
+        });
+
+        to_json(&result)
+    }
+
+    // --- T25: Reading order ---
+
+    #[tool(
+        name = "ariadne_reading_order",
+        description = "Topologically sorted reading order for understanding a set of files. Leaves (no dependencies) come first, then layers build up."
+    )]
+    fn reading_order(&self, Parameters(params): Parameters<ReadingOrderParam>) -> String {
+        let state = self.state.load();
+
+        let mut warnings: Vec<String> = Vec::new();
+        let mut valid_paths: Vec<CanonicalPath> = Vec::new();
+        for path in &params.paths {
+            let cp = CanonicalPath::new(path);
+            if state.graph.nodes.contains_key(&cp) {
+                valid_paths.push(cp);
+            } else {
+                warnings.push(format!("File not in graph: {}", path));
+            }
+        }
+
+        if valid_paths.is_empty() && !params.paths.is_empty() {
+            let result = serde_json::json!({
+                "error": "no_valid_files",
+                "message": "None of the provided files exist in the graph",
+                "warnings": warnings,
+            });
+            return to_json(&result);
+        }
+
+        let depth = params.depth.unwrap_or(3);
+        let order_result = compute_reading_order(&valid_paths, &state.graph, depth);
+
+        let mut all_warnings = order_result.warnings;
+        all_warnings.extend(warnings);
+
+        let entries: Vec<serde_json::Value> = order_result
+            .entries
+            .iter()
+            .map(|e| {
+                serde_json::json!({
+                    "path": e.path.as_str(),
+                    "reason": e.reason,
+                    "layer": e.layer,
+                    "depth": e.depth,
+                })
+            })
+            .collect();
+
+        let result = serde_json::json!({
+            "entries": entries,
+            "total_files": order_result.total_files,
+            "depth": depth,
+            "warnings": all_warnings,
+        });
+
+        to_json(&result)
+    }
+
+    // --- T26: Plan impact analysis ---
+
+    #[tool(
+        name = "ariadne_plan_impact",
+        description = "Analyze the structural impact of planned file changes. Returns blast radius, affected tests, risk assessment, and change classification."
+    )]
+    fn plan_impact(&self, Parameters(params): Parameters<PlanImpactParam>) -> String {
+        let state = self.state.load();
+
+        let mut warnings: Vec<String> = Vec::new();
+        let mut valid_paths: Vec<CanonicalPath> = Vec::new();
+        for entry in &params.changes {
+            let cp = CanonicalPath::new(&entry.path);
+            if state.graph.nodes.contains_key(&cp) {
+                valid_paths.push(cp);
+            } else {
+                warnings.push(format!("Changed file not in graph: {}", entry.path));
+            }
+        }
+
+        if valid_paths.is_empty() && !params.changes.is_empty() {
+            let result = serde_json::json!({
+                "error": "no_valid_files",
+                "message": "None of the changed files exist in the graph",
+                "warnings": warnings,
+            });
+            return to_json(&result);
+        }
+
+        let index = algo::AdjacencyIndex::build(&state.graph.edges, algo::is_architectural);
+
+        let impact = analyze_impact(
+            &valid_paths,
+            &state.graph,
+            &index,
+            &state.stats,
+            &state.clusters,
+        );
+
+        let mut all_warnings = impact.warnings;
+        all_warnings.extend(warnings);
+
+        let affected: Vec<serde_json::Value> = impact
+            .affected_files
+            .iter()
+            .map(|(path, &dist)| {
+                serde_json::json!({
+                    "path": path.as_str(),
+                    "distance": dist,
+                })
+            })
+            .collect();
+
+        let tests: Vec<serde_json::Value> = impact
+            .affected_tests
+            .iter()
+            .map(|hit| {
+                serde_json::json!({
+                    "path": hit.path.as_str(),
+                    "confidence": hit.confidence.as_str(),
+                    "reason": hit.reason,
+                })
+            })
+            .collect();
+
+        let result = serde_json::json!({
+            "total_affected": impact.total_affected,
+            "affected_files": affected,
+            "affected_tests": tests,
+            "layers_crossed": impact.layers_crossed,
+            "layer_direction": impact.layer_direction,
+            "clusters_affected": impact.clusters_affected,
+            "risks": impact.risks,
+            "change_class": impact.change_class.as_str(),
+            "token_estimate": impact.token_estimate,
+            "warnings": all_warnings,
         });
 
         to_json(&result)

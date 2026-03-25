@@ -12,6 +12,8 @@
 | `design/error-handling.md` | doc | 0 | 0 | 0 | 0.0000 |
 | `design/path-resolution.md` | doc | 0 | 0 | 0 | 0.0000 |
 | `design/performance.md` | doc | 0 | 0 | 0 | 0.0000 |
+| `design/reports/2026-03-23-moira-violations.md` | doc | 0 | 0 | 0 | 0.0000 |
+| `design/reports/2026-03-25-phase4d-formal-methods-evaluation.md` | doc | 0 | 0 | 0 | 0.0000 |
 | `design/reports/archive/2026-03-17-doc-audit.md` | doc | 0 | 0 | 0 | 0.0000 |
 | `design/reports/archive/2026-03-18-architecture-review.md` | doc | 0 | 0 | 0 | 0.0000 |
 | `design/reports/archive/2026-03-18-v2-architecture-review.md` | doc | 0 | 0 | 0 | 0.0000 |

@@ -993,3 +993,27 @@ Applies to: Brandes centrality (Phase 2), Louvain modularity (Phase 2b), PageRan
 - Persisted call graph — unnecessary given O(n) build time from edges + symbol index.
 **Reasoning:** Leverages existing edge symbols and SymbolIndex. Consistent with Ariadne's structural (not semantic) analysis philosophy. Avoids false positives from intra-file analysis.
 **Affects:** `src/algo/callgraph.rs` (new), `src/mcp/state.rs`, `src/mcp/tools.rs`.
+
+## D-082: Token-Budget-Aware Context Assembly
+
+**Date:** 2026-03-25
+**Status:** Accepted
+**Context:** Phase 5 introduces `ariadne_context`, which must assemble file context within a token budget. Naive approaches either exceed the budget or leave it underutilized.
+**Decision:** Two-phase approach: (1) BFS from seed files to generate all candidates within the expansion depth, scoring each by relevance (distance, centrality, task weight). (2) Greedy selection sorted by tier then relevance/tokens ratio, filling the budget. Target files are always included (even if they exceed the budget). Budget default: 8000 tokens. Token estimation: lines * 8 (D-062). Exposed via `ariadne_context` MCP tool with `budget_tokens` parameter.
+**Alternatives rejected:**
+- Knapsack optimization — unnecessary complexity for marginal improvement over greedy selection.
+- Fixed file count — ignores file size variance; a 10-line util and a 500-line service should not count equally.
+**Reasoning:** Greedy with tier-first ordering ensures high-priority context (targets, direct deps) is always included. Token budget maps directly to LLM context window constraints.
+**Affects:** `src/algo/context.rs`, `src/mcp/tools.rs`, `src/mcp/tools_context.rs`.
+
+## D-083: Task-Type-Aware Relevance Scoring
+
+**Date:** 2026-03-25
+**Status:** Accepted
+**Context:** Different development tasks benefit from different context. A bug fix needs test files; a refactor needs interface files; understanding needs high-centrality files.
+**Decision:** Five task types: `AddField`, `Refactor`, `FixBug`, `AddFeature`, `Understand`. Each applies a weight multiplier to relevance scores: FixBug boosts test files (1.5x), Refactor boosts tests (1.3x), AddField boosts interfaces/type definitions (1.5x), Understand boosts high-centrality (1.3x), AddFeature is neutral (1.0x). Task type is optional — defaults to `Understand`. Parsed case-insensitively from string via `TaskType::from_str`.
+**Alternatives rejected:**
+- Per-task BFS strategies — too complex, unclear benefit over simple weight multipliers.
+- User-defined weights — premature customization; the 5 built-in types cover common workflows.
+**Reasoning:** Simple multipliers are deterministic, composable with distance and centrality scores, and easy to tune. The five task types align with common agent workflow patterns.
+**Affects:** `src/algo/context.rs`, `src/mcp/tools.rs`, `src/mcp/tools_context.rs`.

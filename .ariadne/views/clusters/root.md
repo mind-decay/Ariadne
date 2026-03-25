@@ -4,12 +4,13 @@
 
 | File | Type | Layer | In | Out | Centrality |
 |------|------|------:|---:|----:|-----------:|
+| `.mcp.json` | data | 0 | 0 | 0 | 0.0000 |
 | `CLAUDE.md` | doc | 0 | 0 | 0 | 0.0000 |
 | `README.md` | doc | 0 | 0 | 0 | 0.0000 |
-| `src/diagnostic.rs` | source | 2 | 14 | 1 | 0.0005 |
-| `src/hash.rs` | source | 2 | 3 | 1 | 0.0003 |
-| `src/lib.rs` | source | 10 | 0 | 12 | 0.0000 |
-| `src/main.rs` | source | 7 | 0 | 7 | 0.0000 |
+| `src/diagnostic.rs` | source | 3 | 14 | 1 | 0.0003 |
+| `src/hash.rs` | source | 3 | 3 | 1 | 0.0002 |
+| `src/lib.rs` | source | 11 | 0 | 12 | 0.0000 |
+| `src/main.rs` | source | 8 | 0 | 7 | 0.0000 |
 
 ## Internal Dependencies
 

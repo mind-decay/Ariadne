@@ -4,12 +4,12 @@
 
 | File | Type | Layer | In | Out | Centrality |
 |------|------|------:|---:|----:|-----------:|
-| `src/mcp/lock.rs` | source | 3 | 2 | 1 | 0.0000 |
-| `src/mcp/mod.rs` | source | 9 | 1 | 5 | 0.0002 |
-| `src/mcp/server.rs` | source | 8 | 1 | 8 | 0.0006 |
-| `src/mcp/state.rs` | source | 5 | 5 | 7 | 0.0012 |
-| `src/mcp/tools.rs` | source | 6 | 2 | 4 | 0.0007 |
-| `src/mcp/watch.rs` | source | 7 | 2 | 5 | 0.0003 |
+| `src/mcp/lock.rs` | source | 4 | 2 | 1 | 0.0000 |
+| `src/mcp/mod.rs` | source | 10 | 1 | 5 | 0.0001 |
+| `src/mcp/server.rs` | source | 9 | 1 | 8 | 0.0003 |
+| `src/mcp/state.rs` | source | 6 | 5 | 9 | 0.0007 |
+| `src/mcp/tools.rs` | source | 7 | 2 | 4 | 0.0003 |
+| `src/mcp/watch.rs` | source | 8 | 2 | 5 | 0.0001 |
 
 ## Internal Dependencies
 
@@ -32,12 +32,14 @@
 - `src/mcp/server.rs` → `src/parser/mod.rs` (imports)
 - `src/mcp/server.rs` → `src/pipeline/mod.rs` (imports)
 - `src/mcp/server.rs` → `src/serial/json.rs` (imports)
+- `src/mcp/state.rs` → `src/algo/callgraph.rs` (imports)
 - `src/mcp/state.rs` → `src/algo/compress.rs` (imports)
 - `src/mcp/state.rs` → `src/algo/pagerank.rs` (imports)
 - `src/mcp/state.rs` → `src/algo/spectral.rs` (imports)
 - `src/mcp/state.rs` → `src/analysis/metrics.rs` (imports)
 - `src/mcp/state.rs` → `src/diagnostic.rs` (imports)
 - `src/mcp/state.rs` → `src/model/mod.rs` (imports)
+- `src/mcp/state.rs` → `src/model/symbol_index.rs` (imports)
 - `src/mcp/state.rs` → `src/serial/mod.rs` (imports)
 - `src/mcp/tools.rs` → `src/algo/mod.rs` (imports)
 - `src/mcp/tools.rs` → `src/analysis/smells.rs` (imports)

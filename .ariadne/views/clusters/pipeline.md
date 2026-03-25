@@ -4,11 +4,11 @@
 
 | File | Type | Layer | In | Out | Centrality |
 |------|------|------:|---:|----:|-----------:|
-| `src/pipeline/build.rs` | config | 5 | 1 | 5 | 0.0000 |
-| `src/pipeline/mod.rs` | source | 6 | 5 | 11 | 0.0034 |
-| `src/pipeline/read.rs` | source | 3 | 1 | 2 | 0.0002 |
-| `src/pipeline/resolve.rs` | source | 5 | 1 | 5 | 0.0000 |
-| `src/pipeline/walk.rs` | source | 3 | 1 | 2 | 0.0000 |
+| `src/pipeline/build.rs` | config | 6 | 1 | 5 | 0.0000 |
+| `src/pipeline/mod.rs` | source | 7 | 5 | 12 | 0.0017 |
+| `src/pipeline/read.rs` | source | 4 | 1 | 2 | 0.0001 |
+| `src/pipeline/resolve.rs` | source | 6 | 1 | 5 | 0.0000 |
+| `src/pipeline/walk.rs` | source | 4 | 1 | 2 | 0.0000 |
 
 ## Internal Dependencies
 
@@ -29,6 +29,7 @@
 - `src/pipeline/mod.rs` → `src/detect/mod.rs` (imports)
 - `src/pipeline/mod.rs` → `src/diagnostic.rs` (imports)
 - `src/pipeline/mod.rs` → `src/model/mod.rs` (imports)
+- `src/pipeline/mod.rs` → `src/model/symbol.rs` (imports)
 - `src/pipeline/mod.rs` → `src/parser/mod.rs` (imports)
 - `src/pipeline/mod.rs` → `src/serial/mod.rs` (imports)
 - `src/pipeline/read.rs` → `src/hash.rs` (imports)

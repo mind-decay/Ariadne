@@ -1,4 +1,42 @@
 {
+  ".claude/CLAUDE.md": [],
+  ".claude/commands/audit-docs.md": [],
+  ".claude/commands/review-architecture.md": [],
+  ".claude/commands/review-plan.md": [],
+  ".claude/commands/review-spec.md": [],
+  ".claude/commands/write-spec.md": [],
+  ".claude/moira/config.yaml": [],
+  ".claude/moira/config/budgets.yaml": [],
+  ".claude/moira/config/mcp-registry.yaml": [],
+  ".claude/moira/knowledge/architecture/full.md": [],
+  ".claude/moira/knowledge/conventions/full.md": [],
+  ".claude/moira/knowledge/conventions/index.md": [],
+  ".claude/moira/knowledge/conventions/summary.md": [],
+  ".claude/moira/knowledge/decisions/full.md": [],
+  ".claude/moira/knowledge/decisions/index.md": [],
+  ".claude/moira/knowledge/decisions/summary.md": [],
+  ".claude/moira/knowledge/dependencies/full.md": [],
+  ".claude/moira/knowledge/failures/full.md": [],
+  ".claude/moira/knowledge/failures/index.md": [],
+  ".claude/moira/knowledge/failures/summary.md": [],
+  ".claude/moira/knowledge/libraries/index.md": [],
+  ".claude/moira/knowledge/libraries/summary.md": [],
+  ".claude/moira/knowledge/patterns/full.md": [],
+  ".claude/moira/knowledge/patterns/index.md": [],
+  ".claude/moira/knowledge/patterns/summary.md": [],
+  ".claude/moira/knowledge/project-model/full.md": [],
+  ".claude/moira/knowledge/project-model/index.md": [],
+  ".claude/moira/knowledge/project-model/summary.md": [],
+  ".claude/moira/knowledge/quality-map/full.md": [],
+  ".claude/moira/knowledge/quality-map/summary.md": [],
+  ".claude/moira/knowledge/security/full.md": [],
+  ".claude/moira/knowledge/testing/full.md": [],
+  ".claude/moira/project/rules/boundaries.yaml": [],
+  ".claude/moira/project/rules/conventions.yaml": [],
+  ".claude/moira/project/rules/patterns.yaml": [],
+  ".claude/moira/project/rules/stack.yaml": [],
+  ".claude/moira/state/reflection/deep-reflection-counter.yaml": [],
+  ".claude/settings.json": [],
   ".github/workflows/ci.yml": [],
   ".github/workflows/release.yml": [],
   ".mcp.json": [],
@@ -183,6 +221,78 @@
       "is_type_only": false
     }
   ],
+  "benches/symbol_bench.rs": [
+    {
+      "path": "helpers",
+      "symbols": [
+        "helpers"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "ariadne_graph::algo",
+      "symbols": [
+        "algo"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "ariadne_graph::algo::callgraph::CallGraph",
+      "symbols": [
+        "CallGraph"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "ariadne_graph::model::symbol::LineSpan",
+      "symbols": [
+        "LineSpan"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "ariadne_graph::model::symbol::SymbolDef",
+      "symbols": [
+        "SymbolDef"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "ariadne_graph::model::symbol::SymbolKind",
+      "symbols": [
+        "SymbolKind"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "ariadne_graph::model::symbol::Visibility",
+      "symbols": [
+        "Visibility"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "ariadne_graph::model::symbol_index::SymbolIndex",
+      "symbols": [
+        "SymbolIndex"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "ariadne_graph::model",
+      "symbols": [
+        "*"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "ariadne_graph::parser::ParserRegistry",
+      "symbols": [
+        "ParserRegistry"
+      ],
+      "is_type_only": false
+    }
+  ],
   "design/ROADMAP.md": [],
   "design/architecture.md": [],
   "design/decisions/log.md": [],
@@ -192,6 +302,7 @@
   "design/path-resolution.md": [],
   "design/performance.md": [],
   "design/reports/2026-03-23-moira-violations.md": [],
+  "design/reports/2026-03-25-phase4d-formal-methods-evaluation.md": [],
   "design/reports/archive/2026-03-17-doc-audit.md": [],
   "design/reports/archive/2026-03-18-architecture-review.md": [],
   "design/reports/archive/2026-03-18-v2-architecture-review.md": [],
@@ -236,6 +347,36 @@
       "path": "crate::model::ProjectGraph",
       "symbols": [
         "ProjectGraph"
+      ],
+      "is_type_only": false
+    }
+  ],
+  "src/algo/callgraph.rs": [
+    {
+      "path": "crate::model::edge::Edge",
+      "symbols": [
+        "Edge"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::edge::EdgeType",
+      "symbols": [
+        "EdgeType"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::symbol_index::SymbolIndex",
+      "symbols": [
+        "SymbolIndex"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::types::CanonicalPath",
+      "symbols": [
+        "CanonicalPath"
       ],
       "is_type_only": false
     }
@@ -286,6 +427,57 @@
       "is_type_only": false
     }
   ],
+  "src/algo/context.rs": [
+    {
+      "path": "crate::algo::round4",
+      "symbols": [
+        "round4"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::algo::AdjacencyIndex",
+      "symbols": [
+        "AdjacencyIndex"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::CanonicalPath",
+      "symbols": [
+        "CanonicalPath"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::ClusterMap",
+      "symbols": [
+        "ClusterMap"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::Node",
+      "symbols": [
+        "Node"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::ProjectGraph",
+      "symbols": [
+        "ProjectGraph"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::StatsOutput",
+      "symbols": [
+        "StatsOutput"
+      ],
+      "is_type_only": false
+    }
+  ],
   "src/algo/delta.rs": [
     {
       "path": "crate::model::CanonicalPath",
@@ -305,6 +497,71 @@
       "path": "crate::model::Node",
       "symbols": [
         "Node"
+      ],
+      "is_type_only": false
+    }
+  ],
+  "src/algo/impact.rs": [
+    {
+      "path": "crate::algo::blast_radius::blast_radius",
+      "symbols": [
+        "blast_radius"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::algo::context::estimate_tokens",
+      "symbols": [
+        "estimate_tokens"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::algo::test_map::find_tests_for",
+      "symbols": [
+        "find_tests_for"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::algo::test_map::TestHit",
+      "symbols": [
+        "TestHit"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::algo::AdjacencyIndex",
+      "symbols": [
+        "AdjacencyIndex"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::CanonicalPath",
+      "symbols": [
+        "CanonicalPath"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::ClusterMap",
+      "symbols": [
+        "ClusterMap"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::ProjectGraph",
+      "symbols": [
+        "ProjectGraph"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::StatsOutput",
+      "symbols": [
+        "StatsOutput"
       ],
       "is_type_only": false
     }
@@ -376,6 +633,13 @@
       "is_type_only": false
     },
     {
+      "path": "callgraph",
+      "symbols": [
+        "callgraph"
+      ],
+      "is_type_only": false
+    },
+    {
       "path": "centrality",
       "symbols": [
         "centrality"
@@ -386,6 +650,13 @@
       "path": "compress",
       "symbols": [
         "compress"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "context",
+      "symbols": [
+        "context"
       ],
       "is_type_only": false
     },
@@ -439,9 +710,30 @@
       "is_type_only": false
     },
     {
+      "path": "test_map",
+      "symbols": [
+        "test_map"
+      ],
+      "is_type_only": false
+    },
+    {
       "path": "topo_sort",
       "symbols": [
         "topo_sort"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "impact",
+      "symbols": [
+        "impact"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "reading_order",
+      "symbols": [
+        "reading_order"
       ],
       "is_type_only": false
     },
@@ -486,6 +778,50 @@
       "path": "crate::model::EdgeType",
       "symbols": [
         "EdgeType"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::ProjectGraph",
+      "symbols": [
+        "ProjectGraph"
+      ],
+      "is_type_only": false
+    }
+  ],
+  "src/algo/reading_order.rs": [
+    {
+      "path": "crate::algo::scc::find_sccs",
+      "symbols": [
+        "find_sccs"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::algo::topo_sort::topological_layers",
+      "symbols": [
+        "topological_layers"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::algo::is_architectural",
+      "symbols": [
+        "is_architectural"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::algo::AdjacencyIndex",
+      "symbols": [
+        "AdjacencyIndex"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::CanonicalPath",
+      "symbols": [
+        "CanonicalPath"
       ],
       "is_type_only": false
     },
@@ -620,6 +956,43 @@
       "path": "crate::model::SubgraphResult",
       "symbols": [
         "SubgraphResult"
+      ],
+      "is_type_only": false
+    }
+  ],
+  "src/algo/test_map.rs": [
+    {
+      "path": "crate::algo::AdjacencyIndex",
+      "symbols": [
+        "AdjacencyIndex"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::CanonicalPath",
+      "symbols": [
+        "CanonicalPath"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::EdgeType",
+      "symbols": [
+        "EdgeType"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::FileType",
+      "symbols": [
+        "FileType"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::ProjectGraph",
+      "symbols": [
+        "ProjectGraph"
       ],
       "is_type_only": false
     }
@@ -1176,6 +1549,13 @@
       "is_type_only": false
     },
     {
+      "path": "tools_context",
+      "symbols": [
+        "tools_context"
+      ],
+      "is_type_only": false
+    },
+    {
       "path": "watch",
       "symbols": [
         "watch"
@@ -1271,6 +1651,13 @@
   ],
   "src/mcp/state.rs": [
     {
+      "path": "crate::algo::callgraph::CallGraph",
+      "symbols": [
+        "CallGraph"
+      ],
+      "is_type_only": false
+    },
+    {
       "path": "crate::algo::compress",
       "symbols": [
         "compress"
@@ -1313,6 +1700,13 @@
       "is_type_only": false
     },
     {
+      "path": "crate::model::symbol_index::SymbolIndex",
+      "symbols": [
+        "SymbolIndex"
+      ],
+      "is_type_only": false
+    },
+    {
       "path": "crate::model",
       "symbols": [
         "*"
@@ -1336,6 +1730,41 @@
       "is_type_only": false
     },
     {
+      "path": "crate::algo::context::assemble_context",
+      "symbols": [
+        "assemble_context"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::algo::context::TaskType",
+      "symbols": [
+        "TaskType"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::algo::impact::analyze_impact",
+      "symbols": [
+        "analyze_impact"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::algo::reading_order::compute_reading_order",
+      "symbols": [
+        "compute_reading_order"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::algo::test_map::find_tests_for",
+      "symbols": [
+        "find_tests_for"
+      ],
+      "is_type_only": false
+    },
+    {
       "path": "crate::analysis::smells::detect_smells",
       "symbols": [
         "detect_smells"
@@ -1350,6 +1779,34 @@
       "is_type_only": false
     },
     {
+      "path": "crate::mcp::tools_context::ContextParam",
+      "symbols": [
+        "ContextParam"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::mcp::tools_context::PlanImpactParam",
+      "symbols": [
+        "PlanImpactParam"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::mcp::tools_context::ReadingOrderParam",
+      "symbols": [
+        "ReadingOrderParam"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::mcp::tools_context::TestsForParam",
+      "symbols": [
+        "TestsForParam"
+      ],
+      "is_type_only": false
+    },
+    {
       "path": "crate::model::CanonicalPath",
       "symbols": [
         "CanonicalPath"
@@ -1357,6 +1814,7 @@
       "is_type_only": false
     }
   ],
+  "src/mcp/tools_context.rs": [],
   "src/mcp/watch.rs": [
     {
       "path": "crate::analysis::diff::compute_structural_diff",
@@ -1550,6 +2008,20 @@
       "is_type_only": false
     },
     {
+      "path": "symbol",
+      "symbols": [
+        "symbol"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "symbol_index",
+      "symbols": [
+        "symbol_index"
+      ],
+      "is_type_only": false
+    },
+    {
       "path": "types",
       "symbols": [
         "types"
@@ -1565,6 +2037,13 @@
     }
   ],
   "src/model/node.rs": [
+    {
+      "path": "super::symbol::SymbolDef",
+      "symbols": [
+        "SymbolDef"
+      ],
+      "is_type_only": false
+    },
     {
       "path": "super::types::ClusterId",
       "symbols": [
@@ -1620,9 +2099,82 @@
     }
   ],
   "src/model/stats.rs": [],
+  "src/model/symbol.rs": [],
+  "src/model/symbol_index.rs": [
+    {
+      "path": "crate::model::edge::Edge",
+      "symbols": [
+        "Edge"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::node::Node",
+      "symbols": [
+        "Node"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::symbol::LineSpan",
+      "symbols": [
+        "LineSpan"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::symbol::SymbolDef",
+      "symbols": [
+        "SymbolDef"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::symbol::SymbolKind",
+      "symbols": [
+        "SymbolKind"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::types::CanonicalPath",
+      "symbols": [
+        "CanonicalPath"
+      ],
+      "is_type_only": false
+    }
+  ],
   "src/model/types.rs": [],
   "src/model/workspace.rs": [],
   "src/parser/csharp.rs": [
+    {
+      "path": "crate::model::symbol::LineSpan",
+      "symbols": [
+        "LineSpan"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::symbol::SymbolDef",
+      "symbols": [
+        "SymbolDef"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::symbol::SymbolKind",
+      "symbols": [
+        "SymbolKind"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::symbol::Visibility",
+      "symbols": [
+        "Visibility"
+      ],
+      "is_type_only": false
+    },
     {
       "path": "crate::model::workspace::WorkspaceInfo",
       "symbols": [
@@ -1641,6 +2193,13 @@
       "path": "crate::model::FileSet",
       "symbols": [
         "FileSet"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::parser::symbols::SymbolExtractor",
+      "symbols": [
+        "SymbolExtractor"
       ],
       "is_type_only": false
     },
@@ -1682,6 +2241,34 @@
   ],
   "src/parser/go.rs": [
     {
+      "path": "crate::model::symbol::LineSpan",
+      "symbols": [
+        "LineSpan"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::symbol::SymbolDef",
+      "symbols": [
+        "SymbolDef"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::symbol::SymbolKind",
+      "symbols": [
+        "SymbolKind"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::symbol::Visibility",
+      "symbols": [
+        "Visibility"
+      ],
+      "is_type_only": false
+    },
+    {
       "path": "crate::model::workspace::WorkspaceInfo",
       "symbols": [
         "WorkspaceInfo"
@@ -1699,6 +2286,20 @@
       "path": "crate::model::FileSet",
       "symbols": [
         "FileSet"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::parser::helpers",
+      "symbols": [
+        "helpers"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::parser::symbols::SymbolExtractor",
+      "symbols": [
+        "SymbolExtractor"
       ],
       "is_type_only": false
     },
@@ -1741,6 +2342,34 @@
   "src/parser/helpers.rs": [],
   "src/parser/java.rs": [
     {
+      "path": "crate::model::symbol::LineSpan",
+      "symbols": [
+        "LineSpan"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::symbol::SymbolDef",
+      "symbols": [
+        "SymbolDef"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::symbol::SymbolKind",
+      "symbols": [
+        "SymbolKind"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::symbol::Visibility",
+      "symbols": [
+        "Visibility"
+      ],
+      "is_type_only": false
+    },
+    {
       "path": "crate::model::workspace::WorkspaceInfo",
       "symbols": [
         "WorkspaceInfo"
@@ -1758,6 +2387,13 @@
       "path": "crate::model::FileSet",
       "symbols": [
         "FileSet"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::parser::symbols::SymbolExtractor",
+      "symbols": [
+        "SymbolExtractor"
       ],
       "is_type_only": false
     },
@@ -1971,6 +2607,13 @@
       "is_type_only": false
     },
     {
+      "path": "symbols",
+      "symbols": [
+        "symbols"
+      ],
+      "is_type_only": false
+    },
+    {
       "path": "traits",
       "symbols": [
         "traits"
@@ -1993,6 +2636,34 @@
     }
   ],
   "src/parser/python.rs": [
+    {
+      "path": "crate::model::symbol::LineSpan",
+      "symbols": [
+        "LineSpan"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::symbol::SymbolDef",
+      "symbols": [
+        "SymbolDef"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::symbol::SymbolKind",
+      "symbols": [
+        "SymbolKind"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::symbol::Visibility",
+      "symbols": [
+        "Visibility"
+      ],
+      "is_type_only": false
+    },
     {
       "path": "crate::model::workspace::WorkspaceInfo",
       "symbols": [
@@ -2018,6 +2689,13 @@
       "path": "crate::parser::helpers",
       "symbols": [
         "helpers"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::parser::symbols::SymbolExtractor",
+      "symbols": [
+        "SymbolExtractor"
       ],
       "is_type_only": false
     },
@@ -2122,6 +2800,13 @@
       "is_type_only": false
     },
     {
+      "path": "super::symbols::SymbolExtractor",
+      "symbols": [
+        "SymbolExtractor"
+      ],
+      "is_type_only": false
+    },
+    {
       "path": "super::traits::ImportResolver",
       "symbols": [
         "ImportResolver"
@@ -2169,9 +2854,44 @@
         "yaml"
       ],
       "is_type_only": false
+    },
+    {
+      "path": "crate::model::symbol::SymbolDef",
+      "symbols": [
+        "SymbolDef"
+      ],
+      "is_type_only": false
     }
   ],
   "src/parser/rust_lang.rs": [
+    {
+      "path": "crate::model::symbol::LineSpan",
+      "symbols": [
+        "LineSpan"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::symbol::SymbolDef",
+      "symbols": [
+        "SymbolDef"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::symbol::SymbolKind",
+      "symbols": [
+        "SymbolKind"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::symbol::Visibility",
+      "symbols": [
+        "Visibility"
+      ],
+      "is_type_only": false
+    },
     {
       "path": "crate::model::workspace::WorkspaceInfo",
       "symbols": [
@@ -2197,6 +2917,13 @@
       "path": "crate::parser::helpers",
       "symbols": [
         "helpers"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::parser::symbols::SymbolExtractor",
+      "symbols": [
+        "SymbolExtractor"
       ],
       "is_type_only": false
     },
@@ -2236,6 +2963,15 @@
       "is_type_only": false
     }
   ],
+  "src/parser/symbols.rs": [
+    {
+      "path": "crate::model::symbol::SymbolDef",
+      "symbols": [
+        "SymbolDef"
+      ],
+      "is_type_only": false
+    }
+  ],
   "src/parser/traits.rs": [
     {
       "path": "crate::model::workspace::WorkspaceInfo",
@@ -2261,6 +2997,34 @@
   ],
   "src/parser/typescript.rs": [
     {
+      "path": "crate::model::symbol::LineSpan",
+      "symbols": [
+        "LineSpan"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::symbol::SymbolDef",
+      "symbols": [
+        "SymbolDef"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::symbol::SymbolKind",
+      "symbols": [
+        "SymbolKind"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::symbol::Visibility",
+      "symbols": [
+        "Visibility"
+      ],
+      "is_type_only": false
+    },
+    {
       "path": "crate::model::workspace::WorkspaceInfo",
       "symbols": [
         "WorkspaceInfo"
@@ -2285,6 +3049,13 @@
       "path": "crate::parser::helpers",
       "symbols": [
         "helpers"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::parser::symbols::SymbolExtractor",
+      "symbols": [
+        "SymbolExtractor"
       ],
       "is_type_only": false
     },
@@ -2550,6 +3321,13 @@
       "path": "crate::model",
       "symbols": [
         "*"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "crate::model::symbol::SymbolDef",
+      "symbols": [
+        "SymbolDef"
       ],
       "is_type_only": false
     },
@@ -2839,6 +3617,13 @@
       "is_type_only": false
     },
     {
+      "path": "crate::model::symbol::SymbolDef",
+      "symbols": [
+        "SymbolDef"
+      ],
+      "is_type_only": false
+    },
+    {
       "path": "crate::model::StatsOutput",
       "symbols": [
         "StatsOutput"
@@ -2966,6 +3751,113 @@
       "is_type_only": false
     }
   ],
+  "tests/callgraph_tests.rs": [
+    {
+      "path": "ariadne_graph::algo::callgraph::CallEdgeKind",
+      "symbols": [
+        "CallEdgeKind"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "ariadne_graph::algo::callgraph::CallGraph",
+      "symbols": [
+        "CallGraph"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "ariadne_graph::model::edge::Edge",
+      "symbols": [
+        "Edge"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "ariadne_graph::model::edge::EdgeType",
+      "symbols": [
+        "EdgeType"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "ariadne_graph::model::node::ArchLayer",
+      "symbols": [
+        "ArchLayer"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "ariadne_graph::model::node::FileType",
+      "symbols": [
+        "FileType"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "ariadne_graph::model::node::Node",
+      "symbols": [
+        "Node"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "ariadne_graph::model::symbol::LineSpan",
+      "symbols": [
+        "LineSpan"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "ariadne_graph::model::symbol::SymbolDef",
+      "symbols": [
+        "SymbolDef"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "ariadne_graph::model::symbol::Visibility",
+      "symbols": [
+        "Visibility"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "ariadne_graph::model::symbol_index::SymbolIndex",
+      "symbols": [
+        "SymbolIndex"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "ariadne_graph::model::types::CanonicalPath",
+      "symbols": [
+        "CanonicalPath"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "ariadne_graph::model::types::ClusterId",
+      "symbols": [
+        "ClusterId"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "ariadne_graph::model::types::ContentHash",
+      "symbols": [
+        "ContentHash"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "ariadne_graph::model::types::Symbol",
+      "symbols": [
+        "Symbol"
+      ],
+      "is_type_only": false
+    }
+  ],
   "tests/fixtures/csharp-project/Data/UserRepository.cs": [],
   "tests/fixtures/csharp-project/Program.cs": [
     {
@@ -2998,6 +3890,8 @@
   "tests/fixtures/data-files/sample.json": [],
   "tests/fixtures/data-files/sample.yaml": [],
   "tests/fixtures/data-files/sample.yml": [],
+  "tests/fixtures/edge-cases/.ariadne/graph/clusters.json": [],
+  "tests/fixtures/edge-cases/.ariadne/graph/graph.json": [],
   "tests/fixtures/edge-cases/circular-a.ts": [
     {
       "path": "./circular-b",
@@ -3031,6 +3925,8 @@
     }
   ],
   "tests/fixtures/edge-cases/valid.ts": [],
+  "tests/fixtures/go-service/.ariadne/graph/clusters.json": [],
+  "tests/fixtures/go-service/.ariadne/graph/graph.json": [],
   "tests/fixtures/go-service/cmd/server/main.go": [
     {
       "path": "fmt",
@@ -3139,6 +4035,8 @@
       "is_type_only": false
     }
   ],
+  "tests/fixtures/mixed-project/.ariadne/graph/clusters.json": [],
+  "tests/fixtures/mixed-project/.ariadne/graph/graph.json": [],
   "tests/fixtures/mixed-project/README.md": [],
   "tests/fixtures/mixed-project/backend/main.go": [
     {
@@ -3190,6 +4088,8 @@
       "is_type_only": false
     }
   ],
+  "tests/fixtures/python-package/.ariadne/graph/clusters.json": [],
+  "tests/fixtures/python-package/.ariadne/graph/graph.json": [],
   "tests/fixtures/python-package/src/__init__.py": [],
   "tests/fixtures/python-package/src/auth/__init__.py": [],
   "tests/fixtures/python-package/src/auth/login.py": [
@@ -3237,6 +4137,8 @@
       "is_type_only": false
     }
   ],
+  "tests/fixtures/rust-crate/.ariadne/graph/clusters.json": [],
+  "tests/fixtures/rust-crate/.ariadne/graph/graph.json": [],
   "tests/fixtures/rust-crate/src/auth/login.rs": [
     {
       "path": "crate::utils::format",
@@ -3459,6 +4361,10 @@
       "is_type_only": false
     }
   ],
+  "tests/fixtures/typescript-app/.ariadne/graph/clusters.json": [],
+  "tests/fixtures/typescript-app/.ariadne/graph/graph.json": [],
+  "tests/fixtures/typescript-app/.ariadne/graph/raw_imports.json": [],
+  "tests/fixtures/typescript-app/.ariadne/graph/stats.json": [],
   "tests/fixtures/typescript-app/package.json": [],
   "tests/fixtures/typescript-app/src/__tests__/login.test.ts": [
     {
@@ -3509,6 +4415,8 @@
   "tests/fixtures/typescript-app/src/types/index.d.ts": [],
   "tests/fixtures/typescript-app/src/utils/format.ts": [],
   "tests/fixtures/typescript-app/tsconfig.json": [],
+  "tests/fixtures/workspace-project/.ariadne/graph/clusters.json": [],
+  "tests/fixtures/workspace-project/.ariadne/graph/graph.json": [],
   "tests/fixtures/workspace-project/package.json": [],
   "tests/fixtures/workspace-project/packages/api/package.json": [],
   "tests/fixtures/workspace-project/packages/api/src/index.ts": [],
@@ -3738,6 +4646,43 @@
       "path": "ariadne_graph::model::CanonicalPath",
       "symbols": [
         "CanonicalPath"
+      ],
+      "is_type_only": false
+    }
+  ],
+  "tests/symbol_tests.rs": [
+    {
+      "path": "ariadne_graph::model::symbol::LineSpan",
+      "symbols": [
+        "LineSpan"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "ariadne_graph::model::symbol::SymbolDef",
+      "symbols": [
+        "SymbolDef"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "ariadne_graph::model::symbol::SymbolKind",
+      "symbols": [
+        "SymbolKind"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "ariadne_graph::model::symbol::Visibility",
+      "symbols": [
+        "Visibility"
+      ],
+      "is_type_only": false
+    },
+    {
+      "path": "ariadne_graph::parser::SymbolExtractor",
+      "symbols": [
+        "SymbolExtractor"
       ],
       "is_type_only": false
     }

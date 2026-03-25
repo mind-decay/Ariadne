@@ -1,5 +1,51 @@
 {
   "clusters": {
+    ".claude": {
+      "files": [
+        ".claude/CLAUDE.md",
+        ".claude/commands/audit-docs.md",
+        ".claude/commands/review-architecture.md",
+        ".claude/commands/review-plan.md",
+        ".claude/commands/review-spec.md",
+        ".claude/commands/write-spec.md",
+        ".claude/moira/config.yaml",
+        ".claude/moira/config/budgets.yaml",
+        ".claude/moira/config/mcp-registry.yaml",
+        ".claude/moira/knowledge/architecture/full.md",
+        ".claude/moira/knowledge/conventions/full.md",
+        ".claude/moira/knowledge/conventions/index.md",
+        ".claude/moira/knowledge/conventions/summary.md",
+        ".claude/moira/knowledge/decisions/full.md",
+        ".claude/moira/knowledge/decisions/index.md",
+        ".claude/moira/knowledge/decisions/summary.md",
+        ".claude/moira/knowledge/dependencies/full.md",
+        ".claude/moira/knowledge/failures/full.md",
+        ".claude/moira/knowledge/failures/index.md",
+        ".claude/moira/knowledge/failures/summary.md",
+        ".claude/moira/knowledge/libraries/index.md",
+        ".claude/moira/knowledge/libraries/summary.md",
+        ".claude/moira/knowledge/patterns/full.md",
+        ".claude/moira/knowledge/patterns/index.md",
+        ".claude/moira/knowledge/patterns/summary.md",
+        ".claude/moira/knowledge/project-model/full.md",
+        ".claude/moira/knowledge/project-model/index.md",
+        ".claude/moira/knowledge/project-model/summary.md",
+        ".claude/moira/knowledge/quality-map/full.md",
+        ".claude/moira/knowledge/quality-map/summary.md",
+        ".claude/moira/knowledge/security/full.md",
+        ".claude/moira/knowledge/testing/full.md",
+        ".claude/moira/project/rules/boundaries.yaml",
+        ".claude/moira/project/rules/conventions.yaml",
+        ".claude/moira/project/rules/patterns.yaml",
+        ".claude/moira/project/rules/stack.yaml",
+        ".claude/moira/state/reflection/deep-reflection-counter.yaml",
+        ".claude/settings.json"
+      ],
+      "file_count": 38,
+      "internal_edges": 0,
+      "external_edges": 0,
+      "cohesion": 1.0
+    },
     ".github": {
       "files": [
         ".github/workflows/ci.yml",
@@ -13,22 +59,27 @@
     "algo": {
       "files": [
         "src/algo/blast_radius.rs",
+        "src/algo/callgraph.rs",
         "src/algo/centrality.rs",
         "src/algo/compress.rs",
+        "src/algo/context.rs",
         "src/algo/delta.rs",
+        "src/algo/impact.rs",
         "src/algo/louvain.rs",
         "src/algo/mod.rs",
         "src/algo/pagerank.rs",
+        "src/algo/reading_order.rs",
         "src/algo/scc.rs",
         "src/algo/spectral.rs",
         "src/algo/stats.rs",
         "src/algo/subgraph.rs",
+        "src/algo/test_map.rs",
         "src/algo/topo_sort.rs"
       ],
-      "file_count": 12,
-      "internal_edges": 18,
-      "external_edges": 22,
-      "cohesion": 0.45
+      "file_count": 17,
+      "internal_edges": 32,
+      "external_edges": 34,
+      "cohesion": 0.4848
     },
     "analysis": {
       "files": [
@@ -49,9 +100,10 @@
         "benches/build_bench.rs",
         "benches/helpers.rs",
         "benches/mcp_bench.rs",
-        "benches/parser_bench.rs"
+        "benches/parser_bench.rs",
+        "benches/symbol_bench.rs"
       ],
-      "file_count": 6,
+      "file_count": 7,
       "internal_edges": 0,
       "external_edges": 0,
       "cohesion": 1.0
@@ -76,6 +128,7 @@
         "design/path-resolution.md",
         "design/performance.md",
         "design/reports/2026-03-23-moira-violations.md",
+        "design/reports/2026-03-25-phase4d-formal-methods-evaluation.md",
         "design/reports/archive/2026-03-17-doc-audit.md",
         "design/reports/archive/2026-03-18-architecture-review.md",
         "design/reports/archive/2026-03-18-v2-architecture-review.md",
@@ -101,7 +154,7 @@
         "design/specs/archive/2026-03-19-phase3c-implementation-plan.md",
         "design/testing.md"
       ],
-      "file_count": 33,
+      "file_count": 34,
       "internal_edges": 0,
       "external_edges": 0,
       "cohesion": 1.0
@@ -135,12 +188,13 @@
         "src/mcp/server.rs",
         "src/mcp/state.rs",
         "src/mcp/tools.rs",
+        "src/mcp/tools_context.rs",
         "src/mcp/watch.rs"
       ],
-      "file_count": 6,
-      "internal_edges": 11,
-      "external_edges": 20,
-      "cohesion": 0.3548
+      "file_count": 7,
+      "internal_edges": 13,
+      "external_edges": 26,
+      "cohesion": 0.3333
     },
     "model": {
       "files": [
@@ -153,13 +207,15 @@
         "src/model/query.rs",
         "src/model/smell.rs",
         "src/model/stats.rs",
+        "src/model/symbol.rs",
+        "src/model/symbol_index.rs",
         "src/model/types.rs",
         "src/model/workspace.rs"
       ],
-      "file_count": 11,
-      "internal_edges": 10,
-      "external_edges": 61,
-      "cohesion": 0.1408
+      "file_count": 13,
+      "internal_edges": 16,
+      "external_edges": 79,
+      "cohesion": 0.1684
     },
     "parser": {
       "files": [
@@ -173,14 +229,15 @@
         "src/parser/python.rs",
         "src/parser/registry.rs",
         "src/parser/rust_lang.rs",
+        "src/parser/symbols.rs",
         "src/parser/traits.rs",
         "src/parser/typescript.rs",
         "src/parser/yaml.rs"
       ],
-      "file_count": 13,
-      "internal_edges": 24,
-      "external_edges": 25,
-      "cohesion": 0.4898
+      "file_count": 14,
+      "internal_edges": 32,
+      "external_edges": 33,
+      "cohesion": 0.4923
     },
     "pipeline": {
       "files": [
@@ -192,8 +249,8 @@
       ],
       "file_count": 5,
       "internal_edges": 4,
-      "external_edges": 24,
-      "cohesion": 0.1429
+      "external_edges": 25,
+      "cohesion": 0.1379
     },
     "root": {
       "files": [
@@ -218,11 +275,12 @@
       ],
       "file_count": 3,
       "internal_edges": 2,
-      "external_edges": 10,
-      "cohesion": 0.1667
+      "external_edges": 11,
+      "cohesion": 0.1538
     },
     "tests": {
       "files": [
+        "tests/callgraph_tests.rs",
         "tests/fixtures/csharp-project/Data/UserRepository.cs",
         "tests/fixtures/csharp-project/Program.cs",
         "tests/fixtures/csharp-project/Services/AuthService.cs",
@@ -232,6 +290,8 @@
         "tests/fixtures/data-files/sample.json",
         "tests/fixtures/data-files/sample.yaml",
         "tests/fixtures/data-files/sample.yml",
+        "tests/fixtures/edge-cases/.ariadne/graph/clusters.json",
+        "tests/fixtures/edge-cases/.ariadne/graph/graph.json",
         "tests/fixtures/edge-cases/circular-a.ts",
         "tests/fixtures/edge-cases/circular-b.ts",
         "tests/fixtures/edge-cases/deeply/nested/a/b/c/d/file.ts",
@@ -241,6 +301,8 @@
         "tests/fixtures/edge-cases/helper.ts",
         "tests/fixtures/edge-cases/syntax-error.ts",
         "tests/fixtures/edge-cases/valid.ts",
+        "tests/fixtures/go-service/.ariadne/graph/clusters.json",
+        "tests/fixtures/go-service/.ariadne/graph/graph.json",
         "tests/fixtures/go-service/cmd/server/main.go",
         "tests/fixtures/go-service/internal/handler/handler.go",
         "tests/fixtures/go-service/internal/repository/repo.go",
@@ -252,12 +314,16 @@
         "tests/fixtures/markdown-docs/README.md",
         "tests/fixtures/markdown-docs/docs/api.md",
         "tests/fixtures/markdown-docs/docs/guide.md",
+        "tests/fixtures/mixed-project/.ariadne/graph/clusters.json",
+        "tests/fixtures/mixed-project/.ariadne/graph/graph.json",
         "tests/fixtures/mixed-project/README.md",
         "tests/fixtures/mixed-project/backend/main.go",
         "tests/fixtures/mixed-project/frontend/package.json",
         "tests/fixtures/mixed-project/frontend/src/App.tsx",
         "tests/fixtures/mixed-project/frontend/src/components/Button.tsx",
         "tests/fixtures/mixed-project/scripts/deploy.py",
+        "tests/fixtures/python-package/.ariadne/graph/clusters.json",
+        "tests/fixtures/python-package/.ariadne/graph/graph.json",
         "tests/fixtures/python-package/src/__init__.py",
         "tests/fixtures/python-package/src/auth/__init__.py",
         "tests/fixtures/python-package/src/auth/login.py",
@@ -266,6 +332,8 @@
         "tests/fixtures/python-package/src/utils/helpers.py",
         "tests/fixtures/python-package/tests/conftest.py",
         "tests/fixtures/python-package/tests/test_auth.py",
+        "tests/fixtures/rust-crate/.ariadne/graph/clusters.json",
+        "tests/fixtures/rust-crate/.ariadne/graph/graph.json",
         "tests/fixtures/rust-crate/src/auth/login.rs",
         "tests/fixtures/rust-crate/src/auth/mod.rs",
         "tests/fixtures/rust-crate/src/lib.rs",
@@ -283,6 +351,10 @@
         "tests/fixtures/tsx-components/components/LegacyButton.jsx",
         "tests/fixtures/tsx-components/components/SpreadProps.tsx",
         "tests/fixtures/tsx-components/components/StyledBox.tsx",
+        "tests/fixtures/typescript-app/.ariadne/graph/clusters.json",
+        "tests/fixtures/typescript-app/.ariadne/graph/graph.json",
+        "tests/fixtures/typescript-app/.ariadne/graph/raw_imports.json",
+        "tests/fixtures/typescript-app/.ariadne/graph/stats.json",
         "tests/fixtures/typescript-app/package.json",
         "tests/fixtures/typescript-app/src/__tests__/login.test.ts",
         "tests/fixtures/typescript-app/src/auth/login.ts",
@@ -291,6 +363,8 @@
         "tests/fixtures/typescript-app/src/types/index.d.ts",
         "tests/fixtures/typescript-app/src/utils/format.ts",
         "tests/fixtures/typescript-app/tsconfig.json",
+        "tests/fixtures/workspace-project/.ariadne/graph/clusters.json",
+        "tests/fixtures/workspace-project/.ariadne/graph/graph.json",
         "tests/fixtures/workspace-project/package.json",
         "tests/fixtures/workspace-project/packages/api/package.json",
         "tests/fixtures/workspace-project/packages/api/src/index.ts",
@@ -306,9 +380,10 @@
         "tests/invariants.rs",
         "tests/mcp_tests.rs",
         "tests/pipeline_tests.rs",
-        "tests/properties.rs"
+        "tests/properties.rs",
+        "tests/symbol_tests.rs"
       ],
-      "file_count": 84,
+      "file_count": 102,
       "internal_edges": 34,
       "external_edges": 0,
       "cohesion": 1.0

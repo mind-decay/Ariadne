@@ -4,7 +4,7 @@
 
 | File | Type | Layer | In | Out | Centrality |
 |------|------|------:|---:|----:|-----------:|
-| `src/cluster/mod.rs` | source | 2 | 2 | 1 | 0.0000 |
+| `src/cluster/mod.rs` | source | 3 | 2 | 1 | 0.0000 |
 
 ## External Dependencies
 

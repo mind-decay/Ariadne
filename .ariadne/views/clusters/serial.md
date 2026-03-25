@@ -4,9 +4,9 @@
 
 | File | Type | Layer | In | Out | Centrality |
 |------|------|------:|---:|----:|-----------:|
-| `src/serial/convert.rs` | source | 2 | 1 | 1 | 0.0000 |
-| `src/serial/json.rs` | source | 3 | 5 | 2 | 0.0003 |
-| `src/serial/mod.rs` | source | 4 | 4 | 4 | 0.0005 |
+| `src/serial/convert.rs` | source | 3 | 1 | 1 | 0.0000 |
+| `src/serial/json.rs` | source | 4 | 5 | 2 | 0.0001 |
+| `src/serial/mod.rs` | source | 5 | 4 | 5 | 0.0002 |
 
 ## Internal Dependencies
 
@@ -20,6 +20,7 @@
 - `src/serial/json.rs` → `src/model/mod.rs` (imports)
 - `src/serial/mod.rs` → `src/diagnostic.rs` (imports)
 - `src/serial/mod.rs` → `src/model/mod.rs` (imports)
+- `src/serial/mod.rs` → `src/model/symbol.rs` (imports)
 
 ## External Dependents
 
