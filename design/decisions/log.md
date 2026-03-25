@@ -1017,3 +1017,65 @@ Applies to: Brandes centrality (Phase 2), Louvain modularity (Phase 2b), PageRan
 - User-defined weights — premature customization; the 5 built-in types cover common workflows.
 **Reasoning:** Simple multipliers are deterministic, composable with distance and centrality scores, and easy to tune. The five task types align with common agent workflow patterns.
 **Affects:** `src/algo/context.rs`, `src/mcp/tools.rs`, `src/mcp/tools_context.rs`.
+
+## D-084: Phase 5 Spec Simplification — Implementation Over Spec
+
+**Date:** 2026-03-25
+**Status:** Accepted
+**Context:** Phase 5 (Agent Context Engine) spec defined a rich output schema with nested `interfaces`, `tests`, `related_configs`, `warnings` arrays, `suggested_review_files` in plan_impact, and conditional task-type weight logic. The implementation simplified all of these to a flat tier-based candidate model with uniform weight application.
+**Decision:** Update specs to match implementation rather than adding unproven complexity. Specific simplifications:
+1. Context output schema uses flat `ContextEntry` list with tier/relevance/tokens instead of nested category arrays
+2. `plan_impact` omits `suggested_review_files` — blast radius already covers this use case
+3. `TaskType` weight multipliers apply unconditionally (simplified from conditional per-tier logic)
+**Alternatives rejected:**
+- Implementing the full spec schema — adds complexity without proven benefit; simpler schema is consumed successfully by MCP clients
+- Keeping spec as aspirational target — creates confusion between spec and reality
+**Reasoning:** Simplified implementations are in production, consumed by MCP clients, and working well. Adding complexity without proven benefit is premature optimization. Specs should reflect reality.
+**Affects:** Phase 5 spec (archived), `src/algo/context.rs`, `src/algo/impact.rs`, `src/mcp/tools.rs`.
+
+## D-085: RAII Lock Guard Pattern for MCP Server
+
+**Date:** 2026-03-25
+**Status:** Accepted
+**Context:** MCP server must prevent concurrent instances on the same project. Lock files must be reliably released even on panics or unexpected exits.
+**Decision:** `LockGuard` struct in `src/mcp/lock.rs` acquires a `.lock` file on creation, releases on `Drop`. Server acquires lock at startup; RAII guarantees cleanup. Stale locks from dead processes are detected and removed with W016 warning.
+**Alternatives rejected:**
+- Manual lock/unlock calls — error-prone, risks orphaned locks on panics
+- Advisory file locking (flock) — not portable across all platforms
+**Reasoning:** RAII is idiomatic Rust for resource management. Drop-based cleanup handles all exit paths including panics.
+**Affects:** `src/mcp/lock.rs`, `src/mcp/server.rs`.
+
+## D-086: Inline Test Detection via Symbol Data
+
+**Date:** 2026-03-25
+**Status:** Accepted
+**Context:** Rust uses `#[cfg(test)] mod tests` inline in source files. Test detection based solely on `FileType::Test` misses inline tests. Phase 4 symbols provide `SymbolKind::Test` markers.
+**Decision:** Context assembly (`src/algo/context.rs`) uses `node.file_type == FileType::Test` for test file boosting in task-aware scoring. The `tests_for` tool (`src/algo/test_map.rs`) additionally checks symbol data for inline test detection. Both approaches coexist — file-level for context scoring, symbol-level for precise test mapping.
+**Alternatives rejected:**
+- Only symbol-based detection — requires symbol extraction to have succeeded; file-type-based detection is more robust as a fallback
+**Reasoning:** Layered approach: fast file-type check for scoring, precise symbol check for test mapping.
+**Affects:** `src/algo/context.rs`, `src/algo/test_map.rs`.
+
+## D-087: Unchanged Diff Classification Variant
+
+**Date:** 2026-03-25
+**Status:** Accepted
+**Context:** `ChangeClassification` in `src/model/diff.rs` needs to handle the case where a structural diff detects zero changes (no added/removed nodes, no added/removed edges, no new cycles).
+**Decision:** Added `ChangeClassification::Unchanged` variant. Returned when all diff vectors are empty. This is distinct from `Additive` (which requires at least one addition). Enables MCP `ariadne_diff` tool to distinguish "no changes" from "changes happened."
+**Alternatives rejected:**
+- Returning `None`/null for unchanged — loses type information, complicates client handling
+- Omitting classification when unchanged — inconsistent API surface
+**Reasoning:** Explicit variant follows Rust's "make invalid states unrepresentable" principle.
+**Affects:** `src/model/diff.rs`, `src/analysis/diff.rs`.
+
+## D-088: Depth Sentinel Null Mapping in JSON API
+
+**Date:** 2026-03-25
+**Status:** Accepted
+**Context:** MCP tool `ariadne_diff` returns `None` when no diff has occurred since last auto-update. JSON serialization must distinguish "no diff computed yet" from "diff computed but empty."
+**Decision:** `None` maps to JSON `"null"` string literal in the `diff()` MCP tool handler. `Some(diff)` is serialized via `to_json()`. This preserves the distinction at the API level.
+**Alternatives rejected:**
+- Returning empty JSON object `{}` — ambiguous, could be confused with an empty diff result
+- Using `Option<String>` in the MCP tool return — MCP tool framework requires `String` return type
+**Reasoning:** Simple and unambiguous. MCP clients can check for the literal `"null"` string to know no diff is available.
+**Affects:** `src/mcp/tools.rs`.

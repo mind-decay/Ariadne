@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use crate::algo::AdjacencyIndex;
-use crate::model::{CanonicalPath, EdgeType, FileType, ProjectGraph};
+use crate::model::{CanonicalPath, EdgeType, FileType, ProjectGraph, SymbolKind};
 
 /// Confidence level for test detection.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -98,7 +98,8 @@ pub fn find_tests_for(
 
             // Also check tests/ directory pattern
             let in_tests_dir = path.as_str().contains("tests/") || path.as_str().contains("test/");
-            let tests_dir_match = in_tests_dir && candidate_base == basename;
+            let tests_dir_match =
+                in_tests_dir && candidate_base == basename && node.file_type == FileType::Test;
 
             if is_match || tests_dir_match {
                 insert_if_higher(
@@ -107,6 +108,26 @@ pub fn find_tests_for(
                     TestConfidence::Medium,
                     format!("Name heuristic for {}", target),
                 );
+            }
+        }
+
+        // Strategy 5: Inline test module detection (Rust only)
+        if target.as_str().ends_with(".rs") {
+            if let Some(node) = graph.nodes.get(target) {
+                let has_test_module = node.symbols.iter().any(|s| {
+                    (s.kind == SymbolKind::Module && s.name.contains("test"))
+                        || s.parent
+                            .as_ref()
+                            .is_some_and(|p| p.contains("tests"))
+                });
+                if has_test_module {
+                    insert_if_higher(
+                        &mut hits,
+                        target.clone(),
+                        TestConfidence::Medium,
+                        format!("Inline test module in {}", target),
+                    );
+                }
             }
         }
 

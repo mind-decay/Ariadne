@@ -9,11 +9,10 @@ use rmcp::ServiceExt;
 use tokio_util::sync::CancellationToken;
 
 use crate::diagnostic::FatalError;
-use crate::mcp::lock::{acquire_lock, release_lock};
+use crate::mcp::lock::LockGuard;
 use crate::mcp::state::{load_graph_state, GraphState};
 use crate::mcp::tools::AriadneTools;
 use crate::mcp::watch::FileWatcher;
-use crate::parser::ParserRegistry;
 use crate::pipeline::{BuildOptions, BuildPipeline, WalkConfig};
 use crate::serial::json::JsonSerializer;
 
@@ -29,10 +28,13 @@ pub struct ServeConfig {
 pub async fn run(config: ServeConfig) -> Result<(), FatalError> {
     let lock_path = config.output_dir.join(".lock");
 
-    // 1. Acquire lock
-    acquire_lock(&lock_path)?;
+    // 1. Acquire lock (RAII — released on drop)
+    let _lock = LockGuard::acquire(&lock_path)?;
 
-    // 2. Load or build graph
+    // 2. Detect Rust crate name once for the entire session
+    let rust_crate_name = crate::detect::detect_rust_crate_name(&config.project_root);
+
+    // 3. Load or build graph
     let graph_state = match load_graph_state(&config.output_dir, &JsonSerializer) {
         Ok(state) => state,
         Err(FatalError::GraphNotFound { .. }) | Err(FatalError::StatsNotFound { .. }) => {
@@ -45,6 +47,7 @@ pub async fn run(config: ServeConfig) -> Result<(), FatalError> {
                 WalkConfig::default(),
                 &BuildOptions {
                     output_dir: Some(&config.output_dir),
+                    rust_crate_name: rust_crate_name.as_deref(),
                     ..BuildOptions::default()
                 },
             )?;
@@ -57,12 +60,10 @@ pub async fn run(config: ServeConfig) -> Result<(), FatalError> {
     let state = Arc::new(ArcSwap::from_pointee(graph_state));
     let rebuilding = Arc::new(AtomicBool::new(false));
 
-    // 4. Start file watcher or poll fallback
+    // 5. Start file watcher or poll fallback
     let _watcher = if config.watch_enabled {
         let pipeline = config.pipeline.clone();
-        let rust_crate_name = crate::detect::detect_rust_crate_name(&config.project_root);
-        let registry = ParserRegistry::with_tier1_config(rust_crate_name);
-        let known_extensions: HashSet<String> = registry
+        let known_extensions: HashSet<String> = pipeline
             .supported_extensions()
             .into_iter()
             .map(|s| s.to_string())
@@ -76,11 +77,17 @@ pub async fn run(config: ServeConfig) -> Result<(), FatalError> {
             rebuilding.clone(),
             pipeline.clone(),
             known_extensions.clone(),
+            rust_crate_name.clone(),
         ) {
             Ok(w) => {
                 eprintln!(
                     "[ariadne] File watcher started (debounce: {}ms)",
                     config.debounce_ms
+                );
+                // Spawn liveness monitor — warns if watcher thread dies (REQ-P3-07)
+                let _monitor = FileWatcher::spawn_liveness_monitor(
+                    w.heartbeat().clone(),
+                    Duration::from_secs(300), // 5 minute stale threshold
                 );
                 Some(w)
             }
@@ -97,6 +104,7 @@ pub async fn run(config: ServeConfig) -> Result<(), FatalError> {
                     rebuilding.clone(),
                     pipeline,
                     known_extensions,
+                    rust_crate_name.clone(),
                 );
                 None
             }
@@ -105,18 +113,33 @@ pub async fn run(config: ServeConfig) -> Result<(), FatalError> {
         None
     };
 
-    // 5. Setup cancellation for graceful shutdown
+    // 6. Setup cancellation for graceful shutdown
     let cancel = CancellationToken::new();
     let cancel_signal = cancel.clone();
-    let lock_for_shutdown = lock_path.clone();
     tokio::spawn(async move {
-        tokio::signal::ctrl_c().await.ok();
-        eprintln!("[ariadne] Shutting down...");
-        release_lock(&lock_for_shutdown).ok();
+        #[cfg(unix)]
+        {
+            use tokio::signal::unix::{signal, SignalKind};
+            let mut sigterm =
+                signal(SignalKind::terminate()).expect("failed to register SIGTERM handler");
+            tokio::select! {
+                _ = tokio::signal::ctrl_c() => {
+                    eprintln!("[ariadne] Received SIGINT, shutting down...");
+                }
+                _ = sigterm.recv() => {
+                    eprintln!("[ariadne] Received SIGTERM, shutting down...");
+                }
+            }
+        }
+        #[cfg(not(unix))]
+        {
+            tokio::signal::ctrl_c().await.ok();
+            eprintln!("[ariadne] Shutting down...");
+        }
         cancel_signal.cancel();
     });
 
-    // 6. Start MCP server on stdio
+    // 7. Start MCP server on stdio
     let tools = AriadneTools::new(
         state.clone(),
         rebuilding.clone(),
@@ -149,8 +172,7 @@ pub async fn run(config: ServeConfig) -> Result<(), FatalError> {
         }
     }
 
-    // 7. Cleanup
-    release_lock(&lock_path)?;
+    // 8. Cleanup — lock released via LockGuard drop
     Ok(())
 }
 
@@ -163,6 +185,7 @@ fn start_poll_fallback(
     rebuilding: Arc<AtomicBool>,
     pipeline: Arc<BuildPipeline>,
     _known_extensions: HashSet<String>,
+    rust_crate_name: Option<String>,
 ) {
     tokio::spawn(async move {
         let mut interval = tokio::time::interval(Duration::from_secs(30));
@@ -186,6 +209,7 @@ fn start_poll_fallback(
                 &reader,
                 &BuildOptions {
                     output_dir: Some(&output_dir),
+                    rust_crate_name: rust_crate_name.as_deref(),
                     ..BuildOptions::default()
                 },
             ) {

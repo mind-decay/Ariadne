@@ -230,3 +230,33 @@ impl Default for ParserRegistry {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn supported_extensions_returns_expected_set() {
+        let registry = ParserRegistry::with_tier1();
+        let exts = registry.supported_extensions();
+
+        // Must be non-empty
+        assert!(!exts.is_empty(), "supported_extensions should not be empty");
+
+        // Must include core language extensions
+        let expected = &["rs", "ts", "tsx", "js", "jsx", "py", "go", "json", "yaml", "yml"];
+        for &ext in expected {
+            assert!(
+                exts.contains(&ext),
+                "supported_extensions should include '{}', got: {:?}",
+                ext,
+                exts
+            );
+        }
+
+        // Must be sorted (deterministic output)
+        let mut sorted = exts.clone();
+        sorted.sort();
+        assert_eq!(exts, sorted, "supported_extensions should return sorted list");
+    }
+}

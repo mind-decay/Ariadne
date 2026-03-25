@@ -346,7 +346,17 @@ impl AriadneTools {
             return self.symbol_blast_radius(Parameters(sbr_params));
         }
 
-        // File-level blast radius (existing behavior)
+        // File-level blast radius — check file exists in graph first
+        if !state.graph.nodes.contains_key(&cp) {
+            let result = serde_json::json!({
+                "error": "not_found",
+                "path": params.path,
+                "suggestion": format!("File may be new. Graph freshness: {:.0}%",
+                    state.freshness.hash_confidence * 100.0),
+            });
+            return to_json(&result);
+        }
+
         let index = algo::AdjacencyIndex::build(&state.graph.edges, algo::is_architectural);
         let result = algo::blast_radius::blast_radius(&state.graph, &cp, params.depth, &index);
 
@@ -513,6 +523,20 @@ impl AriadneTools {
     fn dependencies(&self, Parameters(params): Parameters<DependenciesParam>) -> String {
         let state = self.state.load();
         let cp = CanonicalPath::new(&params.path);
+
+        // Validate direction parameter
+        match params.direction.as_str() {
+            "in" | "out" | "both" => {}
+            other => {
+                let result = serde_json::json!({
+                    "error": "invalid_direction",
+                    "value": other,
+                    "valid_values": ["in", "out", "both"],
+                    "message": "Direction must be one of: 'in', 'out', 'both'",
+                });
+                return to_json(&result);
+            }
+        }
 
         let incoming: Vec<serde_json::Value> =
             if params.direction == "in" || params.direction == "both" {
@@ -1277,7 +1301,7 @@ impl AriadneTools {
         let task = params
             .task
             .as_deref()
-            .and_then(TaskType::from_str)
+            .and_then(TaskType::parse)
             .unwrap_or(TaskType::Understand);
         let budget = params.budget_tokens.unwrap_or(8000);
         let depth = params.depth.unwrap_or(3);
@@ -1419,11 +1443,16 @@ impl AriadneTools {
             .entries
             .iter()
             .map(|e| {
+                let depth_value = if e.depth == u32::MAX {
+                    serde_json::Value::Null
+                } else {
+                    serde_json::json!(e.depth)
+                };
                 serde_json::json!({
                     "path": e.path.as_str(),
                     "reason": e.reason,
                     "layer": e.layer,
-                    "depth": e.depth,
+                    "depth": depth_value,
                 })
             })
             .collect();
@@ -1536,16 +1565,17 @@ impl AriadneTools {
                 })
             }
             "L1" => {
+                let clusters_dir = views_dir.join("clusters");
                 if let Some(cluster) = &params.cluster {
-                    let path = views_dir.join(format!("{}.md", cluster));
+                    let path = clusters_dir.join(format!("{}.md", cluster));
                     std::fs::read_to_string(&path)
                         .unwrap_or_else(|_| format!("L1 cluster view '{}' not found.", cluster))
                 } else {
                     let mut views = Vec::new();
-                    if let Ok(entries) = std::fs::read_dir(&views_dir) {
+                    if let Ok(entries) = std::fs::read_dir(&clusters_dir) {
                         for entry in entries.flatten() {
                             let name = entry.file_name().to_string_lossy().to_string();
-                            if name.ends_with(".md") && name != "index.md" {
+                            if name.ends_with(".md") {
                                 views.push(name.trim_end_matches(".md").to_string());
                             }
                         }

@@ -14,7 +14,7 @@ pub enum TaskType {
 }
 
 impl TaskType {
-    pub fn from_str(s: &str) -> Option<Self> {
+    pub fn parse(s: &str) -> Option<Self> {
         match s.to_lowercase().as_str() {
             "add_field" | "addfield" => Some(Self::AddField),
             "refactor" => Some(Self::Refactor),
@@ -345,6 +345,7 @@ pub fn select_within_budget(
 }
 
 /// Assemble context: generate candidates and select within budget.
+#[allow(clippy::too_many_arguments)] // Intentional: parameters are orthogonal domain inputs
 pub fn assemble_context(
     files: &[CanonicalPath],
     graph: &ProjectGraph,
@@ -615,11 +616,11 @@ mod tests {
 
     #[test]
     fn task_type_from_str() {
-        assert_eq!(TaskType::from_str("fix_bug"), Some(TaskType::FixBug));
-        assert_eq!(TaskType::from_str("refactor"), Some(TaskType::Refactor));
-        assert_eq!(TaskType::from_str("add_field"), Some(TaskType::AddField));
-        assert_eq!(TaskType::from_str("understand"), Some(TaskType::Understand));
-        assert_eq!(TaskType::from_str("feature"), Some(TaskType::AddFeature));
-        assert_eq!(TaskType::from_str("unknown"), None);
+        assert_eq!(TaskType::parse("fix_bug"), Some(TaskType::FixBug));
+        assert_eq!(TaskType::parse("refactor"), Some(TaskType::Refactor));
+        assert_eq!(TaskType::parse("add_field"), Some(TaskType::AddField));
+        assert_eq!(TaskType::parse("understand"), Some(TaskType::Understand));
+        assert_eq!(TaskType::parse("feature"), Some(TaskType::AddFeature));
+        assert_eq!(TaskType::parse("unknown"), None);
     }
 }

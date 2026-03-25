@@ -55,6 +55,9 @@ These affect individual files. The file is excluded from the graph. Build contin
 | `W016: StaleLockRemoved` | Removed stale lock file from dead process | Continue normally |
 | `W017: SmellDetectionSkipped` | Smell detection skipped due to missing data | Return partial results |
 | `W018: BlastRadiusTimeout` | Blast radius computation exceeded limit | Skip file in shotgun surgery detection |
+| `W019: SymbolExtractionFailed` | Tree-sitter symbol extraction panicked or failed for a file | Skip symbols for that file, count as skipped file, emit warning |
+| `W020: SymbolOverflow` | File produced more than 1000 symbols (overflow guard) | Truncate to 1000 symbols, emit warning |
+| `W021: CallGraphCyclicDepth` | Call graph traversal hit depth limit during BFS | Truncate traversal at depth limit, emit warning |
 
 ### Design Decisions
 

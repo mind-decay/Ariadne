@@ -980,6 +980,16 @@ Output: {
 }
 ```
 
+### Implementation Deviations (Phase 5 Reconciliation, D-084)
+
+The following simplifications were made during implementation. These are intentional and documented in the decision log:
+
+1. **Context output schema simplified (D-084):** Spec defined nested arrays (`interfaces`, `tests`, `related_configs`, `warnings`). Implementation uses flat `ContextEntry` list with `tier`/`relevance`/`tokens` fields. Simpler, proven in production via MCP clients.
+
+2. **`plan_impact` omits `suggested_review_files` (D-084):** Spec included `suggested_review_files` in `ariadne_plan_impact` output. Implementation omits this — blast radius (`ariadne_blast_radius`) already provides equivalent information without redundancy.
+
+3. **`TaskType` weight applies unconditionally (D-084):** Spec implied conditional weight logic per tier. Implementation applies task-type weight multipliers uniformly across all candidates. Simpler logic, no loss of ranking quality.
+
 ### Formal Methods & CS Foundations (Phase 5)
 
 #### FM-5.1: Submodular Maximization under Knapsack Constraint

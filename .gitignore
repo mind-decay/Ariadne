@@ -2,6 +2,10 @@
 .vscode/
 .worktrees/
 
+# Ariadne build artifacts (ephemeral, not versioned)
+.ariadne/graph/.lock
+.ariadne/graph/raw_imports.json
+
 
 # Moira orchestration state (per-developer)
 .claude/moira/state/tasks/

@@ -1,8 +1,29 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
 use crate::diagnostic::FatalError;
+
+/// RAII lock guard that releases the lock file on drop.
+pub struct LockGuard {
+    lock_path: PathBuf,
+}
+
+impl LockGuard {
+    /// Acquire the lock and return a guard that releases it on drop.
+    pub fn acquire(path: &Path) -> Result<Self, FatalError> {
+        acquire_lock(path)?;
+        Ok(Self {
+            lock_path: path.to_path_buf(),
+        })
+    }
+}
+
+impl Drop for LockGuard {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_file(&self.lock_path);
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 struct LockContent {

@@ -283,6 +283,16 @@ fn classify_change(
     new_cycles: &[Vec<CanonicalPath>],
     magnitude: f64,
 ) -> ChangeClassification {
+    // Zero changes → Unchanged
+    if added_nodes.is_empty()
+        && removed_nodes.is_empty()
+        && _added_edges.is_empty()
+        && removed_edges.is_empty()
+        && new_cycles.is_empty()
+    {
+        return ChangeClassification::Unchanged;
+    }
+
     if !removed_edges.is_empty() && !new_cycles.is_empty() {
         return ChangeClassification::Breaking;
     }
@@ -593,6 +603,7 @@ mod tests {
 
         let diff = compute_structural_diff(&graph, &stats, &cl, &m, &graph, &stats, &cl, &m);
         assert_eq!(diff.summary.structural_change_magnitude, 0.0);
+        assert_eq!(diff.summary.change_type, ChangeClassification::Unchanged);
         assert!(diff.added_nodes.is_empty());
         assert!(diff.removed_nodes.is_empty());
         assert!(diff.added_edges.is_empty());

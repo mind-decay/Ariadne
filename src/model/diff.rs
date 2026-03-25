@@ -46,6 +46,7 @@ pub struct DiffSummary {
 /// How the change is classified based on heuristics.
 #[derive(Debug, Clone, Copy, Serialize, PartialEq)]
 pub enum ChangeClassification {
+    Unchanged,
     Additive,
     Refactor,
     Migration,

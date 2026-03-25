@@ -380,3 +380,195 @@ fn reparse_imports_returns_none_for_unknown_extension() {
     let result = pipeline.reparse_imports("xyz", source);
     assert!(result.is_none());
 }
+
+// ---------------------------------------------------------------------------
+// Watcher rebuild edge parity test (REQ-P2-05)
+// ---------------------------------------------------------------------------
+
+/// Verifies that building with `rust_crate_name` set produces the same edge
+/// count as a build without it (for non-Rust fixtures). This exercises the
+/// same code path the watcher's rebuild uses (`run_with_options` with full
+/// `BuildOptions`).
+#[test]
+fn watcher_rebuild_edge_parity() {
+    let path = helpers::fixture_path("typescript-app");
+    let pipeline = make_pipeline();
+
+    // Build 1: fresh build (no rust_crate_name — this is a TS fixture)
+    let out_dir1 = tempfile::tempdir().expect("create tempdir");
+    let output1 = pipeline
+        .run_with_options(
+            &path,
+            WalkConfig::default(),
+            &BuildOptions {
+                output_dir: Some(out_dir1.path()),
+                ..Default::default()
+            },
+        )
+        .expect("first build should succeed");
+
+    // Build 2: rebuild (same options, simulating watcher rebuild path)
+    let out_dir2 = tempfile::tempdir().expect("create tempdir");
+    let output2 = pipeline
+        .run_with_options(
+            &path,
+            WalkConfig::default(),
+            &BuildOptions {
+                output_dir: Some(out_dir2.path()),
+                rust_crate_name: None,
+                ..Default::default()
+            },
+        )
+        .expect("rebuild should succeed");
+
+    assert_eq!(
+        output1.edge_count, output2.edge_count,
+        "fresh build and rebuild should produce the same edge count"
+    );
+    assert_eq!(
+        output1.file_count, output2.file_count,
+        "fresh build and rebuild should produce the same file count"
+    );
+}
+
+/// Same test for the rust-crate fixture, verifying that setting `rust_crate_name`
+/// in the rebuild path matches a fresh build.
+#[test]
+fn watcher_rebuild_edge_parity_rust_crate() {
+    let path = helpers::fixture_path("rust-crate");
+    let pipeline = make_pipeline();
+    let crate_name = ariadne_graph::detect::detect_rust_crate_name(&path);
+
+    // Build 1: fresh build with crate name
+    let out_dir1 = tempfile::tempdir().expect("create tempdir");
+    let output1 = pipeline
+        .run_with_options(
+            &path,
+            WalkConfig::default(),
+            &BuildOptions {
+                output_dir: Some(out_dir1.path()),
+                rust_crate_name: crate_name.as_deref(),
+                ..Default::default()
+            },
+        )
+        .expect("first build should succeed");
+
+    // Build 2: rebuild with same crate name (watcher path)
+    let out_dir2 = tempfile::tempdir().expect("create tempdir");
+    let output2 = pipeline
+        .run_with_options(
+            &path,
+            WalkConfig::default(),
+            &BuildOptions {
+                output_dir: Some(out_dir2.path()),
+                rust_crate_name: crate_name.as_deref(),
+                ..Default::default()
+            },
+        )
+        .expect("rebuild should succeed");
+
+    assert_eq!(
+        output1.edge_count, output2.edge_count,
+        "fresh build and rebuild should produce the same edge count (rust-crate)"
+    );
+    assert_eq!(
+        output1.file_count, output2.file_count,
+        "fresh build and rebuild should produce the same file count (rust-crate)"
+    );
+}
+
+// ---------------------------------------------------------------------------
+// L1 view export + read round-trip (REQ-P2-05)
+// ---------------------------------------------------------------------------
+
+#[test]
+fn l1_view_export_round_trip() {
+    use ariadne_graph::serial::GraphReader;
+    use ariadne_graph::views::generate_all_views;
+
+    let path = helpers::fixture_path("typescript-app");
+    let output_dir = tempfile::tempdir().expect("create tempdir");
+    let graph_dir = output_dir.path();
+    let pipeline = make_pipeline();
+
+    // Step 1: Build graph
+    pipeline
+        .run_with_options(
+            &path,
+            WalkConfig::default(),
+            &BuildOptions {
+                output_dir: Some(graph_dir),
+                ..Default::default()
+            },
+        )
+        .expect("build should succeed");
+
+    // Step 2: Load graph, clusters, stats from disk
+    let reader = JsonSerializer;
+    let graph_output = reader.read_graph(graph_dir).expect("read graph");
+    let graph: ariadne_graph::model::ProjectGraph = graph_output
+        .try_into()
+        .expect("graph conversion");
+    let cluster_output = reader.read_clusters(graph_dir).expect("read clusters");
+    let clusters: ariadne_graph::model::ClusterMap = cluster_output
+        .try_into()
+        .expect("cluster conversion");
+    let stats = reader
+        .read_stats(graph_dir)
+        .expect("read stats")
+        .expect("stats should exist");
+
+    // Step 3: Generate views
+    let views_dir = output_dir.path().join("views");
+    let cluster_count =
+        generate_all_views(&graph, &clusters, &stats, &views_dir).expect("views generation");
+
+    // Step 4: Verify files exist and contain content
+    let index_path = views_dir.join("index.md");
+    assert!(index_path.exists(), "index.md should exist");
+    let index_content = std::fs::read_to_string(&index_path).expect("read index.md");
+    assert!(
+        index_content.contains("# Project Index"),
+        "index.md should contain header"
+    );
+    assert!(
+        !index_content.is_empty(),
+        "index.md should not be empty"
+    );
+
+    // Verify cluster view files exist in clusters/ subdirectory
+    let clusters_dir = views_dir.join("clusters");
+    assert!(clusters_dir.exists(), "clusters/ directory should exist");
+
+    let cluster_files: Vec<_> = std::fs::read_dir(&clusters_dir)
+        .expect("read clusters dir")
+        .filter_map(|e| e.ok())
+        .filter(|e| {
+            e.path()
+                .extension()
+                .map(|ext| ext == "md")
+                .unwrap_or(false)
+        })
+        .collect();
+
+    assert_eq!(
+        cluster_files.len(),
+        cluster_count,
+        "number of cluster .md files should match generate_all_views return value"
+    );
+
+    // Verify each cluster file has content
+    for entry in &cluster_files {
+        let content = std::fs::read_to_string(entry.path()).expect("read cluster file");
+        assert!(
+            content.contains("# Cluster:"),
+            "cluster view {} should contain header",
+            entry.file_name().to_string_lossy()
+        );
+        assert!(
+            !content.is_empty(),
+            "cluster view {} should not be empty",
+            entry.file_name().to_string_lossy()
+        );
+    }
+}

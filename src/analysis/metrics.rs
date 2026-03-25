@@ -128,6 +128,29 @@ fn is_abstract_file_fast(node: &Node, re_export_count: usize) -> bool {
     if node.file_type == FileType::TypeDef {
         return true;
     }
+
+    // Check symbol-level abstractness: traits/interfaces with public visibility
+    let public_symbols: Vec<_> = node
+        .symbols
+        .iter()
+        .filter(|s| s.visibility == Visibility::Public)
+        .collect();
+    let trait_interface_count = public_symbols
+        .iter()
+        .filter(|s| s.kind == SymbolKind::Trait || s.kind == SymbolKind::Interface)
+        .count();
+
+    if !public_symbols.is_empty() {
+        // File with <3 public symbols but at least 1 trait/interface → abstract
+        if public_symbols.len() < 3 && trait_interface_count >= 1 {
+            return true;
+        }
+        // >50% of public symbols are traits/interfaces → abstract
+        if trait_interface_count as f64 / public_symbols.len() as f64 > 0.5 {
+            return true;
+        }
+    }
+
     if node.exports.is_empty() {
         return false;
     }

@@ -154,7 +154,7 @@ pub fn analyze_impact(
     let token_estimate: u32 = affected_files
         .keys()
         .filter_map(|p| graph.nodes.get(p))
-        .map(|n| estimate_tokens(n))
+        .map(estimate_tokens)
         .sum();
 
     ImpactResult {

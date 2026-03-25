@@ -78,7 +78,7 @@ pub fn compute_reading_order(
 
     // Build entries
     let mut entries: Vec<ReadingOrderEntry> = Vec::new();
-    for (path, _node) in &sub_graph.nodes {
+    for path in sub_graph.nodes.keys() {
         let layer = layers.get(path).copied().unwrap_or(0);
         let d = bfs_depth.get(path).copied().unwrap_or(u32::MAX);
         let reason = match d {

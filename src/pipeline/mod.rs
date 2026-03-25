@@ -79,6 +79,13 @@ impl BuildPipeline {
         }
     }
 
+    /// Return the set of file extensions this pipeline's registry can parse.
+    /// Used by the MCP server to filter file watcher events without
+    /// constructing a second `ParserRegistry`.
+    pub fn supported_extensions(&self) -> Vec<&str> {
+        self.registry.supported_extensions()
+    }
+
     /// Re-parse imports from source bytes for a given file extension.
     /// Used by the freshness engine for lightweight import change detection.
     /// Preserves the dependency boundary: mcp/ -> pipeline/ -> parser/.
