@@ -127,7 +127,6 @@
         "design/error-handling.md",
         "design/path-resolution.md",
         "design/performance.md",
-        "design/reports/2026-03-23-moira-violations.md",
         "design/reports/2026-03-25-phase4d-formal-methods-evaluation.md",
         "design/reports/archive/2026-03-17-doc-audit.md",
         "design/reports/archive/2026-03-18-architecture-review.md",
@@ -135,6 +134,7 @@
         "design/reports/archive/2026-03-19-architecture-review.md",
         "design/reports/archive/2026-03-19-v2-architecture-review.md",
         "design/reports/archive/2026-03-22-architectural-review.md",
+        "design/reports/archive/2026-03-23-moira-violations.md",
         "design/specs/archive/2026-03-17-phase1-core-cli.md",
         "design/specs/archive/2026-03-17-phase1-implementation-plan.md",
         "design/specs/archive/2026-03-17-phase1a-implementation-plan.md",
@@ -193,8 +193,8 @@
       ],
       "file_count": 7,
       "internal_edges": 13,
-      "external_edges": 26,
-      "cohesion": 0.3333
+      "external_edges": 25,
+      "cohesion": 0.3421
     },
     "model": {
       "files": [
@@ -236,8 +236,8 @@
       ],
       "file_count": 14,
       "internal_edges": 32,
-      "external_edges": 33,
-      "cohesion": 0.4923
+      "external_edges": 32,
+      "cohesion": 0.5
     },
     "pipeline": {
       "files": [

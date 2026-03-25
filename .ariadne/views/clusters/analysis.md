@@ -7,7 +7,7 @@
 | `src/analysis/diff.rs` | source | 7 | 3 | 4 | 0.0003 |
 | `src/analysis/metrics.rs` | source | 5 | 5 | 2 | 0.0002 |
 | `src/analysis/mod.rs` | source | 8 | 1 | 3 | 0.0000 |
-| `src/analysis/smells.rs` | source | 6 | 4 | 3 | 0.0001 |
+| `src/analysis/smells.rs` | source | 6 | 4 | 3 | 0.0002 |
 
 ## Internal Dependencies
 

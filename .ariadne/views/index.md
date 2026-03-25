@@ -2,12 +2,12 @@
 
 ## Architecture Summary
 
-- **Files:** 259
-- **Edges:** 305
+- **Files:** 264
+- **Edges:** 328
 - **Clusters:** 17
 - **Max depth:** 11
-- **Avg in-degree:** 1.0734
-- **Avg out-degree:** 1.0734
+- **Avg in-degree:** 1.1402
+- **Avg out-degree:** 1.1402
 
 ## Clusters
 
@@ -15,25 +15,25 @@
 |---------|------:|----------|--------:|
 | .claude | 38 | `.claude/settings.json` | 1.0000 |
 | .github | 2 | `.github/workflows/release.yml` | 1.0000 |
-| algo | 13 | `src/algo/mod.rs` | 0.3654 |
+| algo | 17 | `src/algo/mod.rs` | 0.4384 |
 | analysis | 4 | `src/analysis/diff.rs` | 0.3158 |
 | benches | 7 | `benches/symbol_bench.rs` | 0.0000 |
 | cluster | 1 | `src/cluster/mod.rs` | 0.0000 |
 | design | 34 | `design/testing.md` | 1.0000 |
 | detect | 5 | `src/detect/mod.rs` | 0.2857 |
 | docs | 1 | `docs/superpowers/plans/2026-03-19-architecture-review-fixes.md` | 1.0000 |
-| mcp | 6 | `src/mcp/state.rs` | 0.3235 |
-| model | 13 | `src/model/mod.rs` | 0.1509 |
+| mcp | 7 | `src/mcp/state.rs` | 0.3250 |
+| model | 13 | `src/model/mod.rs` | 0.1455 |
 | parser | 14 | `src/parser/mod.rs` | 0.4444 |
 | pipeline | 5 | `src/pipeline/mod.rs` | 0.1212 |
-| root | 7 | `src/diagnostic.rs` | 0.0769 |
+| root | 7 | `src/hash.rs` | 0.0769 |
 | serial | 3 | `src/serial/mod.rs` | 0.1053 |
 | tests | 102 | `tests/symbol_tests.rs` | 0.6182 |
 | views | 4 | `src/views/mod.rs` | 0.3333 |
 
 ## Circular Dependencies
 
-1. 8 files: src/algo/blast_radius.rs → src/algo/centrality.rs → src/algo/mod.rs → src/algo/pagerank.rs → src/algo/scc.rs → src/algo/spectral.rs → src/algo/stats.rs → src/algo/topo_sort.rs
+1. 12 files: src/algo/blast_radius.rs → src/algo/centrality.rs → src/algo/context.rs → src/algo/impact.rs → src/algo/mod.rs → src/algo/pagerank.rs → src/algo/reading_order.rs → src/algo/scc.rs → src/algo/spectral.rs → src/algo/stats.rs → src/algo/test_map.rs → src/algo/topo_sort.rs
 2. 2 files: tests/fixtures/edge-cases/circular-a.ts → tests/fixtures/edge-cases/circular-b.ts
 
 ## Orphan Files

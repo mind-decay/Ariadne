@@ -2,7 +2,7 @@
   "version": 1,
   "project_root": "/Users/minddecay/Documents/Projects/Ariadne",
   "node_count": 264,
-  "edge_count": 279,
+  "edge_count": 278,
   "nodes": {
     ".claude/CLAUDE.md": {
       "type": "doc",
@@ -944,8 +944,8 @@
       "type": "doc",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 1863,
-      "hash": "e19da628d6c99c57",
+      "lines": 1873,
+      "hash": "b941184d7f1411ab",
       "exports": [],
       "cluster": "design"
     },
@@ -962,8 +962,8 @@
       "type": "doc",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 1019,
-      "hash": "d5a05233820f8a99",
+      "lines": 1081,
+      "hash": "7dada1356da8510d",
       "exports": [],
       "cluster": "design"
     },
@@ -989,8 +989,8 @@
       "type": "doc",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 412,
-      "hash": "87b93a24539f1186",
+      "lines": 415,
+      "hash": "f30004c2873f7737",
       "exports": [],
       "cluster": "design"
     },
@@ -1009,15 +1009,6 @@
       "arch_depth": 0,
       "lines": 248,
       "hash": "3d9ab9f3e8fb999d",
-      "exports": [],
-      "cluster": "design"
-    },
-    "design/reports/2026-03-23-moira-violations.md": {
-      "type": "doc",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 117,
-      "hash": "5383633453a2ffa7",
       "exports": [],
       "cluster": "design"
     },
@@ -1081,6 +1072,15 @@
       "arch_depth": 0,
       "lines": 437,
       "hash": "69cc4f8eb3092aa7",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/reports/archive/2026-03-23-moira-violations.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 117,
+      "hash": "5383633453a2ffa7",
       "exports": [],
       "cluster": "design"
     },
@@ -1507,8 +1507,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 4,
-      "lines": 625,
-      "hash": "c8feaa2043423cc6",
+      "lines": 626,
+      "hash": "ac3b285def138830",
       "exports": [
         "ContextCandidate",
         "ContextResult",
@@ -1578,8 +1578,8 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 348,
-            "end": 361
+            "start": 349,
+            "end": 362
           },
           "signature": "pub fn assemble_context("
         },
@@ -1614,17 +1614,6 @@
           "signature": "pub fn estimate_tokens(node: &Node) -> u32 {"
         },
         {
-          "name": "from_str",
-          "kind": "method",
-          "visibility": "public",
-          "span": {
-            "start": 17,
-            "end": 26
-          },
-          "signature": "pub fn from_str(s: &str) -> Option<Self> {",
-          "parent": "TaskType"
-        },
-        {
           "name": "generate_candidates",
           "kind": "function",
           "visibility": "public",
@@ -1633,6 +1622,17 @@
             "end": 279
           },
           "signature": "pub fn generate_candidates("
+        },
+        {
+          "name": "parse",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 17,
+            "end": 26
+          },
+          "signature": "pub fn parse(s: &str) -> Option<Self> {",
+          "parent": "TaskType"
         },
         {
           "name": "score_relevance",
@@ -1659,8 +1659,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 364,
-            "end": 625
+            "start": 365,
+            "end": 626
           }
         }
       ]
@@ -1713,7 +1713,7 @@
       "layer": "unknown",
       "arch_depth": 4,
       "lines": 418,
-      "hash": "e8cdf9d5ac509024",
+      "hash": "bb93186022045ed5",
       "exports": [
         "ChangeClass",
         "ImpactResult",
@@ -1975,7 +1975,7 @@
       "layer": "unknown",
       "arch_depth": 4,
       "lines": 277,
-      "hash": "df70865d783c1efe",
+      "hash": "6db74ee5500fed66",
       "exports": [
         "ReadingOrderEntry",
         "ReadingOrderResult",
@@ -2239,8 +2239,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 4,
-      "lines": 313,
-      "hash": "a3fb63fe667d1bb8",
+      "lines": 334,
+      "hash": "a4917608a8156981",
       "exports": [
         "TestConfidence",
         "TestHit",
@@ -2296,7 +2296,7 @@
           "visibility": "public",
           "span": {
             "start": 41,
-            "end": 145
+            "end": 166
           },
           "signature": "pub fn find_tests_for("
         },
@@ -2305,8 +2305,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 148,
-            "end": 165
+            "start": 169,
+            "end": 186
           },
           "signature": "fn insert_if_higher("
         },
@@ -2315,8 +2315,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 168,
-            "end": 173
+            "start": 189,
+            "end": 194
           },
           "signature": "fn strip_extension(name: &str) -> String {"
         },
@@ -2325,8 +2325,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 176,
-            "end": 313
+            "start": 197,
+            "end": 334
           }
         }
       ]
@@ -2367,8 +2367,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 7,
-      "lines": 601,
-      "hash": "26f2063af8b1498a",
+      "lines": 612,
+      "hash": "a22e3e90c9c67b56",
       "exports": [
         "compute_structural_diff"
       ],
@@ -2400,7 +2400,7 @@
           "visibility": "private",
           "span": {
             "start": 278,
-            "end": 309
+            "end": 319
           },
           "signature": "fn classify_change("
         },
@@ -2509,8 +2509,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 312,
-            "end": 601
+            "start": 322,
+            "end": 612
           }
         }
       ]
@@ -2519,8 +2519,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 5,
-      "lines": 502,
-      "hash": "df4ff3eef2bf3fa6",
+      "lines": 525,
+      "hash": "9a33a487b48ab8ba",
       "exports": [
         "ClusterMetrics",
         "MetricZone",
@@ -2553,8 +2553,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 138,
-            "end": 148
+            "start": 161,
+            "end": 171
           },
           "signature": "fn classify_zone(distance: f64, abstractness: f64, instability: f64) -> MetricZone {"
         },
@@ -2574,7 +2574,7 @@
           "visibility": "private",
           "span": {
             "start": 127,
-            "end": 136
+            "end": 159
           },
           "signature": "fn is_abstract_file_fast(node: &Node, re_export_count: usize) -> bool {"
         },
@@ -2583,8 +2583,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 151,
-            "end": 502
+            "start": 174,
+            "end": 525
           }
         }
       ]
@@ -3515,9 +3515,10 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 4,
-      "lines": 146,
-      "hash": "791f79dd11f754de",
+      "lines": 167,
+      "hash": "9b95025e7bbc3447",
       "exports": [
+        "LockGuard",
         "LockStatus",
         "acquire_lock",
         "check_lock",
@@ -3530,28 +3531,49 @@
           "kind": "struct",
           "visibility": "private",
           "span": {
-            "start": 8,
-            "end": 11
+            "start": 29,
+            "end": 32
           },
           "signature": "struct LockContent {"
+        },
+        {
+          "name": "LockGuard",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 8,
+            "end": 10
+          },
+          "signature": "pub struct LockGuard {"
         },
         {
           "name": "LockStatus",
           "kind": "enum",
           "visibility": "public",
           "span": {
+            "start": 35,
+            "end": 40
+          },
+          "signature": "pub enum LockStatus {"
+        },
+        {
+          "name": "acquire",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
             "start": 14,
             "end": 19
           },
-          "signature": "pub enum LockStatus {"
+          "signature": "pub fn acquire(path: &Path) -> Result<Self, FatalError> {",
+          "parent": "LockGuard"
         },
         {
           "name": "acquire_lock",
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 35,
-            "end": 50
+            "start": 56,
+            "end": 71
           },
           "signature": "pub fn acquire_lock(lock_path: &Path) -> Result<(), FatalError> {"
         },
@@ -3560,8 +3582,8 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 66,
-            "end": 89
+            "start": 87,
+            "end": 110
           },
           "signature": "pub fn check_lock(lock_path: &Path) -> Result<LockStatus, FatalError> {"
         },
@@ -3570,18 +3592,29 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 127,
-            "end": 138
+            "start": 148,
+            "end": 159
           },
           "signature": "fn current_timestamp() -> String {"
+        },
+        {
+          "name": "drop",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 23,
+            "end": 25
+          },
+          "signature": "fn drop(&mut self) {",
+          "parent": "Drop"
         },
         {
           "name": "is_free",
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 22,
-            "end": 24
+            "start": 43,
+            "end": 45
           },
           "signature": "pub fn is_free(&self) -> bool {",
           "parent": "LockStatus"
@@ -3591,8 +3624,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 25,
-            "end": 27
+            "start": 46,
+            "end": 48
           },
           "signature": "pub fn is_held_by_us(&self) -> bool {",
           "parent": "LockStatus"
@@ -3602,8 +3635,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 107,
-            "end": 119
+            "start": 128,
+            "end": 140
           },
           "signature": "fn is_process_alive(pid: u32) -> bool {"
         },
@@ -3612,8 +3645,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 122,
-            "end": 125
+            "start": 143,
+            "end": 146
           },
           "signature": "fn is_process_alive(_pid: u32) -> bool {"
         },
@@ -3622,8 +3655,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 28,
-            "end": 30
+            "start": 49,
+            "end": 51
           },
           "signature": "pub fn is_stale(&self) -> bool {",
           "parent": "LockStatus"
@@ -3633,8 +3666,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 142,
-            "end": 146
+            "start": 163,
+            "end": 167
           }
         },
         {
@@ -3642,8 +3675,8 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 53,
-            "end": 61
+            "start": 74,
+            "end": 82
           },
           "signature": "pub fn release_lock(lock_path: &Path) -> Result<(), FatalError> {"
         },
@@ -3652,8 +3685,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 91,
-            "end": 104
+            "start": 112,
+            "end": 125
           },
           "signature": "fn write_lock(lock_path: &Path) -> Result<(), FatalError> {"
         }
@@ -3679,8 +3712,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 9,
-      "lines": 208,
-      "hash": "71a6b56b955ec047",
+      "lines": 232,
+      "hash": "ea74bb19fa702b40",
       "exports": [
         "ServeConfig",
         "run"
@@ -3692,8 +3725,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 20,
-            "end": 26
+            "start": 19,
+            "end": 25
           },
           "signature": "pub struct ServeConfig {"
         },
@@ -3702,8 +3735,8 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 29,
-            "end": 155
+            "start": 28,
+            "end": 177
           },
           "signature": "pub async fn run(config: ServeConfig) -> Result<(), FatalError> {"
         },
@@ -3712,8 +3745,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 159,
-            "end": 208
+            "start": 181,
+            "end": 232
           },
           "signature": "fn start_poll_fallback("
         }
@@ -3845,8 +3878,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 7,
-      "lines": 1605,
-      "hash": "6fe80be981786f6f",
+      "lines": 1635,
+      "hash": "2a648fd42a93a741",
       "exports": [
         "AriadneTools",
         "BlastRadiusParam",
@@ -4044,7 +4077,7 @@
           "visibility": "private",
           "span": {
             "start": 310,
-            "end": 359
+            "end": 369
           },
           "signature": "fn blast_radius(&self, Parameters(params): Parameters<BlastRadiusParam>) -> String {",
           "parent": "AriadneTools"
@@ -4054,8 +4087,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 1180,
-            "end": 1245
+            "start": 1204,
+            "end": 1269
           },
           "signature": "fn callees(&self, Parameters(params): Parameters<CalleesParam>) -> String {",
           "parent": "AriadneTools"
@@ -4065,8 +4098,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 1122,
-            "end": 1172
+            "start": 1146,
+            "end": 1196
           },
           "signature": "fn callers(&self, Parameters(params): Parameters<CallersParam>) -> String {",
           "parent": "AriadneTools"
@@ -4076,8 +4109,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 407,
-            "end": 429
+            "start": 417,
+            "end": 439
           },
           "signature": "fn centrality(&self, Parameters(params): Parameters<CentralityParam>) -> String {",
           "parent": "AriadneTools"
@@ -4087,8 +4120,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 480,
-            "end": 505
+            "start": 490,
+            "end": 515
           },
           "signature": "fn cluster(&self, Parameters(params): Parameters<ClusterParam>) -> String {",
           "parent": "AriadneTools"
@@ -4098,8 +4131,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 707,
-            "end": 833
+            "start": 731,
+            "end": 857
           },
           "signature": "fn compressed(&self, Parameters(params): Parameters<CompressedParam>) -> String {",
           "parent": "AriadneTools"
@@ -4109,8 +4142,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 1253,
-            "end": 1325
+            "start": 1277,
+            "end": 1349
           },
           "signature": "fn context(&self, Parameters(params): Parameters<ContextParam>) -> String {",
           "parent": "AriadneTools"
@@ -4120,8 +4153,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 437,
-            "end": 440
+            "start": 447,
+            "end": 450
           },
           "signature": "fn cycles(&self) -> String {",
           "parent": "AriadneTools"
@@ -4131,8 +4164,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 513,
-            "end": 589
+            "start": 523,
+            "end": 613
           },
           "signature": "fn dependencies(&self, Parameters(params): Parameters<DependenciesParam>) -> String {",
           "parent": "AriadneTools"
@@ -4142,8 +4175,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 660,
-            "end": 666
+            "start": 684,
+            "end": 690
           },
           "signature": "fn diff(&self) -> String {",
           "parent": "AriadneTools"
@@ -4153,8 +4186,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 1598,
-            "end": 1605
+            "start": 1628,
+            "end": 1635
           },
           "signature": "fn edge_to_json(e: &crate::model::Edge) -> serde_json::Value {"
         },
@@ -4174,8 +4207,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 597,
-            "end": 613
+            "start": 621,
+            "end": 637
           },
           "signature": "fn freshness(&self) -> String {",
           "parent": "AriadneTools"
@@ -4196,8 +4229,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 674,
-            "end": 699
+            "start": 698,
+            "end": 723
           },
           "signature": "fn importance(&self, Parameters(params): Parameters<ImportanceParam>) -> String {",
           "parent": "AriadneTools"
@@ -4207,8 +4240,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 448,
-            "end": 472
+            "start": 458,
+            "end": 482
           },
           "signature": "fn layers(&self, Parameters(params): Parameters<LayerParam>) -> String {",
           "parent": "AriadneTools"
@@ -4218,8 +4251,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 621,
-            "end": 624
+            "start": 645,
+            "end": 648
           },
           "signature": "fn metrics(&self) -> String {",
           "parent": "AriadneTools"
@@ -4251,8 +4284,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 1579,
-            "end": 1595
+            "start": 1609,
+            "end": 1625
           },
           "signature": "fn parse_symbol_kind(s: &str) -> Option<crate::model::SymbolKind> {"
         },
@@ -4261,8 +4294,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 1447,
-            "end": 1520
+            "start": 1476,
+            "end": 1549
           },
           "signature": "fn plan_impact(&self, Parameters(params): Parameters<PlanImpactParam>) -> String {",
           "parent": "AriadneTools"
@@ -4272,8 +4305,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 1389,
-            "end": 1439
+            "start": 1413,
+            "end": 1468
           },
           "signature": "fn reading_order(&self, Parameters(params): Parameters<ReadingOrderParam>) -> String {",
           "parent": "AriadneTools"
@@ -4283,8 +4316,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 632,
-            "end": 652
+            "start": 656,
+            "end": 676
           },
           "signature": "fn smells(&self, Parameters(params): Parameters<SmellsParam>) -> String {",
           "parent": "AriadneTools"
@@ -4294,8 +4327,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 841,
-            "end": 844
+            "start": 865,
+            "end": 868
           },
           "signature": "fn spectral(&self) -> String {",
           "parent": "AriadneTools"
@@ -4305,8 +4338,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 367,
-            "end": 399
+            "start": 377,
+            "end": 409
           },
           "signature": "fn subgraph(&self, Parameters(params): Parameters<SubgraphParam>) -> String {",
           "parent": "AriadneTools"
@@ -4316,8 +4349,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 947,
-            "end": 1114
+            "start": 971,
+            "end": 1138
           },
           "signature": "fn symbol_blast_radius(",
           "parent": "AriadneTools"
@@ -4327,8 +4360,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 904,
-            "end": 939
+            "start": 928,
+            "end": 963
           },
           "signature": "fn symbol_search(&self, Parameters(params): Parameters<SymbolSearchParam>) -> String {",
           "parent": "AriadneTools"
@@ -4338,8 +4371,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 852,
-            "end": 896
+            "start": 876,
+            "end": 920
           },
           "signature": "fn symbols(&self, Parameters(params): Parameters<SymbolsParam>) -> String {",
           "parent": "AriadneTools"
@@ -4349,8 +4382,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 1333,
-            "end": 1381
+            "start": 1357,
+            "end": 1405
           },
           "signature": "fn tests_for(&self, Parameters(params): Parameters<TestsForParam>) -> String {",
           "parent": "AriadneTools"
@@ -4360,8 +4393,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 1569,
-            "end": 1576
+            "start": 1599,
+            "end": 1606
           },
           "signature": "fn to_json<T: serde::Serialize>(value: &T) -> String {"
         },
@@ -4370,8 +4403,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 1528,
-            "end": 1565
+            "start": 1557,
+            "end": 1595
           },
           "signature": "fn views_export(&self, Parameters(params): Parameters<ViewsExportParam>) -> String {",
           "parent": "AriadneTools"
@@ -4459,41 +4492,107 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 8,
-      "lines": 222,
-      "hash": "4be0359047cb4305",
+      "lines": 333,
+      "hash": "183e768fa387fda7",
       "exports": [
+        "AtomicHeartbeat",
         "FileWatcher",
         "should_trigger_rebuild"
       ],
       "cluster": "mcp",
       "symbols": [
         {
+          "name": "AtomicHeartbeat",
+          "kind": "struct",
+          "visibility": "internal",
+          "span": {
+            "start": 26,
+            "end": 29
+          },
+          "signature": "pub(crate) struct AtomicHeartbeat {"
+        },
+        {
           "name": "FileWatcher",
           "kind": "struct",
           "visibility": "public",
           "span": {
             "start": 18,
-            "end": 20
+            "end": 23
           },
           "signature": "pub struct FileWatcher {"
+        },
+        {
+          "name": "beat",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 42,
+            "end": 48
+          },
+          "signature": "fn beat(&self) {",
+          "parent": "AtomicHeartbeat"
+        },
+        {
+          "name": "elapsed_ms",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 50,
+            "end": 56
+          },
+          "signature": "fn elapsed_ms(&self) -> u64 {",
+          "parent": "AtomicHeartbeat"
+        },
+        {
+          "name": "heartbeat",
+          "kind": "method",
+          "visibility": "internal",
+          "span": {
+            "start": 84,
+            "end": 86
+          },
+          "signature": "pub(crate) fn heartbeat(&self) -> &Arc<AtomicHeartbeat> {",
+          "parent": "FileWatcher"
+        },
+        {
+          "name": "new",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 32,
+            "end": 40
+          },
+          "signature": "fn new() -> Self {",
+          "parent": "AtomicHeartbeat"
         },
         {
           "name": "should_trigger_rebuild",
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 24,
-            "end": 43
+            "start": 61,
+            "end": 80
           },
           "signature": "pub fn should_trigger_rebuild("
+        },
+        {
+          "name": "spawn_liveness_monitor",
+          "kind": "method",
+          "visibility": "internal",
+          "span": {
+            "start": 244,
+            "end": 270
+          },
+          "signature": "pub(crate) fn spawn_liveness_monitor(",
+          "parent": "FileWatcher"
         },
         {
           "name": "start",
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 48,
-            "end": 159
+            "start": 95,
+            "end": 235
           },
           "signature": "pub fn start(",
           "parent": "FileWatcher"
@@ -4503,8 +4602,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 163,
-            "end": 222
+            "start": 274,
+            "end": 333
           }
         }
       ]
@@ -4580,8 +4679,8 @@
       "type": "source",
       "layer": "data",
       "arch_depth": 0,
-      "lines": 53,
-      "hash": "5f5e0c66b9b5fd6d",
+      "lines": 54,
+      "hash": "3f57c0c11460e5a8",
       "exports": [
         "ChangeClassification",
         "ClusterChange",
@@ -4597,7 +4696,7 @@
           "visibility": "public",
           "span": {
             "start": 48,
-            "end": 53
+            "end": 54
           },
           "signature": "pub enum ChangeClassification {"
         },
@@ -7185,8 +7284,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 1,
-      "lines": 232,
-      "hash": "8acbb474126992d0",
+      "lines": 262,
+      "hash": "b23bef2e3f86f6df",
       "exports": [
         "ParseOutcome",
         "ParserRegistry"
@@ -7333,6 +7432,15 @@
           },
           "signature": "pub fn symbol_extractor_for(&self, extension: &str) -> Option<&dyn SymbolExtractor> {",
           "parent": "ParserRegistry"
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 235,
+            "end": 262
+          }
         },
         {
           "name": "with_tier1",
@@ -8250,8 +8358,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 7,
-      "lines": 757,
-      "hash": "95d07d592f61c18c",
+      "lines": 764,
+      "hash": "4beca01a07d43b93",
       "exports": [
         "BuildOptions",
         "BuildOutput",
@@ -8318,8 +8426,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 95,
-            "end": 118
+            "start": 102,
+            "end": 125
           },
           "signature": "fn apply_symbol_limits(",
           "parent": "BuildPipeline"
@@ -8329,8 +8437,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 683,
-            "end": 702
+            "start": 690,
+            "end": 709
           },
           "signature": "fn cluster_map_to_output(cluster_map: &ClusterMap) -> ClusterOutput {"
         },
@@ -8339,8 +8447,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 719,
-            "end": 727
+            "start": 726,
+            "end": 734
           },
           "signature": "fn format_size(bytes: u64) -> String {"
         },
@@ -8349,8 +8457,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 705,
-            "end": 716
+            "start": 712,
+            "end": 723
           },
           "signature": "fn format_utc_timestamp() -> String {"
         },
@@ -8370,8 +8478,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 635,
-            "end": 680
+            "start": 642,
+            "end": 687
           },
           "signature": "fn project_graph_to_output(graph: &ProjectGraph, project_root: &Path) -> GraphOutput {"
         },
@@ -8380,8 +8488,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 85,
-            "end": 91
+            "start": 92,
+            "end": 98
           },
           "signature": "pub fn reparse_imports(",
           "parent": "BuildPipeline"
@@ -8391,8 +8499,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 120,
-            "end": 122
+            "start": 127,
+            "end": 129
           },
           "signature": "pub fn run(&self, root: &Path, config: WalkConfig) -> Result<BuildOutput, FatalError> {",
           "parent": "BuildPipeline"
@@ -8402,8 +8510,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 124,
-            "end": 464
+            "start": 131,
+            "end": 471
           },
           "signature": "pub fn run_with_options(",
           "parent": "BuildPipeline"
@@ -8413,18 +8521,29 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 730,
-            "end": 757
+            "start": 737,
+            "end": 764
           },
           "signature": "fn skip_reason_to_warning(reason: &FileSkipReason) -> Warning {"
+        },
+        {
+          "name": "supported_extensions",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 85,
+            "end": 87
+          },
+          "signature": "pub fn supported_extensions(&self) -> Vec<&str> {",
+          "parent": "BuildPipeline"
         },
         {
           "name": "update",
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 473,
-            "end": 631
+            "start": 480,
+            "end": 638
           },
           "signature": "pub fn update(",
           "parent": "BuildPipeline"
@@ -11405,8 +11524,8 @@
       "type": "test",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 382,
-      "hash": "39269fe1c667a2a5",
+      "lines": 574,
+      "hash": "a6a076acacbab9ce",
       "exports": [],
       "cluster": "tests",
       "symbols": [
@@ -11449,6 +11568,16 @@
             "end": 75
           },
           "signature": "fn diagnostic_collector_increment_unresolved() {"
+        },
+        {
+          "name": "l1_view_export_round_trip",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 485,
+            "end": 574
+          },
+          "signature": "fn l1_view_export_round_trip() {"
         },
         {
           "name": "make_pipeline",
@@ -11589,6 +11718,26 @@
             "end": 161
           },
           "signature": "fn walk_excludes_all_configured_dirs() {"
+        },
+        {
+          "name": "watcher_rebuild_edge_parity",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 393,
+            "end": 432
+          },
+          "signature": "fn watcher_rebuild_edge_parity() {"
+        },
+        {
+          "name": "watcher_rebuild_edge_parity_rust_crate",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 437,
+            "end": 478
+          },
+          "signature": "fn watcher_rebuild_edge_parity_rust_crate() {"
         }
       ]
     },
@@ -12224,7 +12373,8 @@
         "CanonicalPath",
         "EdgeType",
         "FileType",
-        "ProjectGraph"
+        "ProjectGraph",
+        "SymbolKind"
       ]
     ],
     [
@@ -12621,8 +12771,7 @@
       "src/mcp/lock.rs",
       "imports",
       [
-        "acquire_lock",
-        "release_lock"
+        "LockGuard"
       ]
     ],
     [
@@ -12648,14 +12797,6 @@
       "imports",
       [
         "FileWatcher"
-      ]
-    ],
-    [
-      "src/mcp/server.rs",
-      "src/parser/mod.rs",
-      "imports",
-      [
-        "ParserRegistry"
       ]
     ],
     [

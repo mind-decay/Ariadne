@@ -7,7 +7,7 @@
 | `.mcp.json` | data | 0 | 0 | 0 | 0.0000 |
 | `CLAUDE.md` | doc | 0 | 0 | 0 | 0.0000 |
 | `README.md` | doc | 0 | 0 | 0 | 0.0000 |
-| `src/diagnostic.rs` | source | 3 | 14 | 1 | 0.0003 |
+| `src/diagnostic.rs` | source | 3 | 14 | 1 | 0.0002 |
 | `src/hash.rs` | source | 3 | 3 | 1 | 0.0002 |
 | `src/lib.rs` | source | 11 | 0 | 12 | 0.0000 |
 | `src/main.rs` | source | 8 | 0 | 7 | 0.0000 |

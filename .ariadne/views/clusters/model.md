@@ -8,7 +8,7 @@
 | `src/model/diff.rs` | source | 0 | 1 | 0 | 0.0000 |
 | `src/model/edge.rs` | source | 0 | 3 | 0 | 0.0000 |
 | `src/model/graph.rs` | source | 0 | 1 | 0 | 0.0000 |
-| `src/model/mod.rs` | source | 2 | 51 | 12 | 0.0101 |
+| `src/model/mod.rs` | source | 2 | 55 | 12 | 0.0104 |
 | `src/model/node.rs` | source | 0 | 2 | 0 | 0.0000 |
 | `src/model/query.rs` | source | 0 | 1 | 0 | 0.0000 |
 | `src/model/smell.rs` | source | 0 | 1 | 0 | 0.0000 |
@@ -52,14 +52,18 @@
 - `src/model/mod.rs` ← `src/algo/centrality.rs` (imports)
 - `src/model/compress.rs` ← `src/algo/compress.rs` (imports)
 - `src/model/mod.rs` ← `src/algo/compress.rs` (imports)
+- `src/model/mod.rs` ← `src/algo/context.rs` (imports)
 - `src/model/mod.rs` ← `src/algo/delta.rs` (imports)
+- `src/model/mod.rs` ← `src/algo/impact.rs` (imports)
 - `src/model/mod.rs` ← `src/algo/louvain.rs` (imports)
 - `src/model/mod.rs` ← `src/algo/mod.rs` (imports)
 - `src/model/mod.rs` ← `src/algo/pagerank.rs` (imports)
+- `src/model/mod.rs` ← `src/algo/reading_order.rs` (imports)
 - `src/model/mod.rs` ← `src/algo/scc.rs` (imports)
 - `src/model/mod.rs` ← `src/algo/spectral.rs` (imports)
 - `src/model/mod.rs` ← `src/algo/stats.rs` (imports)
 - `src/model/mod.rs` ← `src/algo/subgraph.rs` (imports)
+- `src/model/mod.rs` ← `src/algo/test_map.rs` (imports)
 - `src/model/mod.rs` ← `src/algo/topo_sort.rs` (imports)
 - `src/model/mod.rs` ← `src/analysis/diff.rs` (imports)
 - `src/model/mod.rs` ← `src/analysis/metrics.rs` (imports)
