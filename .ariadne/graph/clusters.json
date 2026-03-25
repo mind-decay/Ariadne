@@ -39,9 +39,10 @@
         ".claude/moira/project/rules/patterns.yaml",
         ".claude/moira/project/rules/stack.yaml",
         ".claude/moira/state/reflection/deep-reflection-counter.yaml",
-        ".claude/settings.json"
+        ".claude/settings.json",
+        ".claude/settings.local.json"
       ],
-      "file_count": 38,
+      "file_count": 39,
       "internal_edges": 0,
       "external_edges": 0,
       "cohesion": 1.0
@@ -78,8 +79,8 @@
       ],
       "file_count": 17,
       "internal_edges": 32,
-      "external_edges": 34,
-      "cohesion": 0.4848
+      "external_edges": 35,
+      "cohesion": 0.4776
     },
     "analysis": {
       "files": [
@@ -90,8 +91,8 @@
       ],
       "file_count": 4,
       "internal_edges": 6,
-      "external_edges": 10,
-      "cohesion": 0.375
+      "external_edges": 12,
+      "cohesion": 0.3333
     },
     "benches": {
       "files": [
@@ -183,21 +184,29 @@
     },
     "mcp": {
       "files": [
+        "src/mcp/annotations.rs",
+        "src/mcp/bookmarks.rs",
         "src/mcp/lock.rs",
         "src/mcp/mod.rs",
+        "src/mcp/persist.rs",
+        "src/mcp/prompts.rs",
+        "src/mcp/resources.rs",
         "src/mcp/server.rs",
         "src/mcp/state.rs",
         "src/mcp/tools.rs",
         "src/mcp/tools_context.rs",
+        "src/mcp/user_state.rs",
         "src/mcp/watch.rs"
       ],
-      "file_count": 7,
-      "internal_edges": 13,
-      "external_edges": 25,
-      "cohesion": 0.3421
+      "file_count": 13,
+      "internal_edges": 26,
+      "external_edges": 32,
+      "cohesion": 0.4483
     },
     "model": {
       "files": [
+        "src/model/annotation.rs",
+        "src/model/bookmark.rs",
         "src/model/compress.rs",
         "src/model/diff.rs",
         "src/model/edge.rs",
@@ -212,10 +221,10 @@
         "src/model/types.rs",
         "src/model/workspace.rs"
       ],
-      "file_count": 13,
-      "internal_edges": 16,
-      "external_edges": 79,
-      "cohesion": 0.1684
+      "file_count": 15,
+      "internal_edges": 18,
+      "external_edges": 83,
+      "cohesion": 0.1782
     },
     "parser": {
       "files": [

@@ -1,3 +1,5 @@
+pub mod annotation;
+pub mod bookmark;
 pub mod compress;
 pub mod diff;
 pub mod edge;
@@ -24,4 +26,6 @@ pub use stats::{StatsOutput, StatsSummary};
 pub use types::{CanonicalPath, ClusterId, ContentHash, FileSet, Symbol};
 pub use symbol::{LineSpan, SymbolDef, SymbolKind, Visibility};
 pub use symbol_index::{SymbolIndex, SymbolLocation, SymbolUsage, UsageKind};
+pub use annotation::{Annotation, AnnotationStore, AnnotationTarget};
+pub use bookmark::{Bookmark, BookmarkStore};
 pub use workspace::{WorkspaceInfo, WorkspaceKind, WorkspaceMember};

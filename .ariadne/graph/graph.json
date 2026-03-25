@@ -1,8 +1,8 @@
 {
   "version": 1,
   "project_root": "/Users/minddecay/Documents/Projects/Ariadne",
-  "node_count": 264,
-  "edge_count": 278,
+  "node_count": 273,
+  "edge_count": 300,
   "nodes": {
     ".claude/CLAUDE.md": {
       "type": "doc",
@@ -343,6 +343,15 @@
       "arch_depth": 0,
       "lines": 19,
       "hash": "98570e7dd0542123",
+      "exports": [],
+      "cluster": ".claude"
+    },
+    ".claude/settings.local.json": {
+      "type": "data",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 7,
+      "hash": "4260806defb8cb56",
       "exports": [],
       "cluster": ".claude"
     },
@@ -944,8 +953,8 @@
       "type": "doc",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 1873,
-      "hash": "b941184d7f1411ab",
+      "lines": 1885,
+      "hash": "9762124f8b77a76a",
       "exports": [],
       "cluster": "design"
     },
@@ -962,8 +971,8 @@
       "type": "doc",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 1081,
-      "hash": "7dada1356da8510d",
+      "lines": 1152,
+      "hash": "666618bbfec62fc9",
       "exports": [],
       "cluster": "design"
     },
@@ -989,8 +998,8 @@
       "type": "doc",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 415,
-      "hash": "f30004c2873f7737",
+      "lines": 417,
+      "hash": "c036ea6bbf88f3f5",
       "exports": [],
       "cluster": "design"
     },
@@ -3082,8 +3091,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 3,
-      "lines": 520,
-      "hash": "cc07edba6acad8d7",
+      "lines": 526,
+      "hash": "c09a378232c2a5f9",
       "exports": [
         "DiagnosticCollector",
         "DiagnosticCounts",
@@ -3102,8 +3111,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 258,
-            "end": 260
+            "start": 262,
+            "end": 264
           },
           "signature": "pub struct DiagnosticCollector {"
         },
@@ -3112,8 +3121,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 237,
-            "end": 249
+            "start": 241,
+            "end": 253
           },
           "signature": "pub struct DiagnosticCounts {"
         },
@@ -3122,8 +3131,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 252,
-            "end": 255
+            "start": 256,
+            "end": 259
           },
           "signature": "pub struct DiagnosticReport {"
         },
@@ -3142,8 +3151,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 228,
-            "end": 233
+            "start": 232,
+            "end": 237
           },
           "signature": "pub struct Warning {"
         },
@@ -3153,7 +3162,7 @@
           "visibility": "public",
           "span": {
             "start": 44,
-            "end": 66
+            "end": 68
           },
           "signature": "pub enum WarningCode {"
         },
@@ -3162,8 +3171,8 @@
           "kind": "enum",
           "visibility": "public",
           "span": {
-            "start": 104,
-            "end": 107
+            "start": 108,
+            "end": 111
           },
           "signature": "pub enum WarningFormat {"
         },
@@ -3172,8 +3181,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 69,
-            "end": 93
+            "start": 71,
+            "end": 97
           },
           "signature": "pub fn code(&self) -> &'static str {",
           "parent": "WarningCode"
@@ -3183,8 +3192,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 346,
-            "end": 348
+            "start": 352,
+            "end": 354
           },
           "signature": "fn default() -> Self {",
           "parent": "Default"
@@ -3194,8 +3203,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 337,
-            "end": 342
+            "start": 343,
+            "end": 348
           },
           "signature": "pub fn drain(self) -> DiagnosticReport {",
           "parent": "DiagnosticCollector"
@@ -3205,8 +3214,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 97,
-            "end": 99
+            "start": 101,
+            "end": 103
           },
           "signature": "fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {",
           "parent": "WarningCode"
@@ -3216,8 +3225,8 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 151,
-            "end": 205
+            "start": 155,
+            "end": 209
           },
           "signature": "pub fn format_summary("
         },
@@ -3226,8 +3235,8 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 112,
-            "end": 148
+            "start": 116,
+            "end": 152
           },
           "signature": "pub fn format_warnings(report: &DiagnosticReport, format: WarningFormat, verbose: bool) -> String {"
         },
@@ -3236,8 +3245,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 331,
-            "end": 334
+            "start": 337,
+            "end": 340
           },
           "signature": "pub fn increment_unresolved(&self) {",
           "parent": "DiagnosticCollector"
@@ -3247,8 +3256,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 208,
-            "end": 224
+            "start": 212,
+            "end": 228
           },
           "signature": "fn json_escape(s: &str) -> String {"
         },
@@ -3257,8 +3266,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 263,
-            "end": 267
+            "start": 267,
+            "end": 271
           },
           "signature": "pub fn new() -> Self {",
           "parent": "DiagnosticCollector"
@@ -3268,8 +3277,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 352,
-            "end": 520
+            "start": 358,
+            "end": 526
           }
         },
         {
@@ -3277,8 +3286,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 270,
-            "end": 327
+            "start": 274,
+            "end": 333
           },
           "signature": "pub fn warn(&self, warning: Warning) {",
           "parent": "DiagnosticCollector"
@@ -3511,6 +3520,198 @@
         }
       ]
     },
+    "src/mcp/annotations.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 4,
+      "lines": 574,
+      "hash": "e88aee1c094bcc0a",
+      "exports": [
+        "annotate",
+        "annotations_for_cluster",
+        "annotations_for_file",
+        "list_annotations",
+        "remove_annotation"
+      ],
+      "cluster": "mcp",
+      "symbols": [
+        {
+          "name": "annotate",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 66,
+            "end": 115
+          },
+          "signature": "pub fn annotate("
+        },
+        {
+          "name": "annotations_for_cluster",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 213,
+            "end": 222
+          },
+          "signature": "pub fn annotations_for_cluster(manager: &UserStateManager, name: &str) -> Vec<Annotation> {"
+        },
+        {
+          "name": "annotations_for_file",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 201,
+            "end": 210
+          },
+          "signature": "pub fn annotations_for_file(manager: &UserStateManager, path: &str) -> Vec<Annotation> {"
+        },
+        {
+          "name": "list_annotations",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 122,
+            "end": 172
+          },
+          "signature": "pub fn list_annotations("
+        },
+        {
+          "name": "next_ann_id",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 52,
+            "end": 60
+          },
+          "signature": "fn next_ann_id(store: &AnnotationStore) -> String {"
+        },
+        {
+          "name": "now_iso8601",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 14,
+            "end": 44
+          },
+          "signature": "fn now_iso8601() -> String {"
+        },
+        {
+          "name": "parse_ann_id",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 47,
+            "end": 49
+          },
+          "signature": "fn parse_ann_id(id: &str) -> Option<u64> {"
+        },
+        {
+          "name": "remove_annotation",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 175,
+            "end": 198
+          },
+          "signature": "pub fn remove_annotation("
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 225,
+            "end": 574
+          }
+        }
+      ]
+    },
+    "src/mcp/bookmarks.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 4,
+      "lines": 438,
+      "hash": "78fe1636cfc4c537",
+      "exports": [
+        "bookmark",
+        "expand_paths",
+        "list_bookmarks",
+        "remove_bookmark",
+        "resolve_bookmark"
+      ],
+      "cluster": "mcp",
+      "symbols": [
+        {
+          "name": "bookmark",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 46,
+            "end": 90
+          },
+          "signature": "pub fn bookmark("
+        },
+        {
+          "name": "expand_paths",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 135,
+            "end": 176
+          },
+          "signature": "pub fn expand_paths(raw_paths: &[String], graph: &ProjectGraph) -> Vec<String> {"
+        },
+        {
+          "name": "list_bookmarks",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 93,
+            "end": 99
+          },
+          "signature": "pub fn list_bookmarks(manager: &UserStateManager) -> serde_json::Value {"
+        },
+        {
+          "name": "now_iso8601",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 16,
+            "end": 43
+          },
+          "signature": "fn now_iso8601() -> String {"
+        },
+        {
+          "name": "remove_bookmark",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 102,
+            "end": 125
+          },
+          "signature": "pub fn remove_bookmark("
+        },
+        {
+          "name": "resolve_bookmark",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 179,
+            "end": 193
+          },
+          "signature": "pub fn resolve_bookmark("
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 196,
+            "end": 438
+          }
+        }
+      ]
+    },
     "src/mcp/lock.rs": {
       "type": "source",
       "layer": "unknown",
@@ -3696,24 +3897,361 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 10,
-      "lines": 6,
-      "hash": "8413a919f46f4913",
+      "lines": 12,
+      "hash": "a6fe5cb6cbfef267",
       "exports": [
+        "annotations",
+        "bookmarks",
         "lock",
+        "persist",
+        "prompts",
+        "resources",
         "server",
         "state",
         "tools",
         "tools_context",
+        "user_state",
         "watch"
       ],
       "cluster": "mcp"
+    },
+    "src/mcp/persist.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 240,
+      "hash": "dff4307785e0ae0b",
+      "exports": [
+        "JsonStore",
+        "JsonStoreError"
+      ],
+      "cluster": "mcp",
+      "symbols": [
+        {
+          "name": "JsonStore",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 9,
+            "end": 12
+          },
+          "signature": "pub struct JsonStore<T> {"
+        },
+        {
+          "name": "JsonStoreError",
+          "kind": "enum",
+          "visibility": "public",
+          "span": {
+            "start": 97,
+            "end": 110
+          },
+          "signature": "pub enum JsonStoreError {"
+        },
+        {
+          "name": "fmt",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 113,
+            "end": 123
+          },
+          "signature": "fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {",
+          "parent": "JsonStoreError"
+        },
+        {
+          "name": "load",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 35,
+            "end": 50
+          },
+          "signature": "pub fn load(&self) -> Result<T, JsonStoreError> {"
+        },
+        {
+          "name": "new",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 19,
+            "end": 24
+          },
+          "signature": "pub fn new(path: impl Into<PathBuf>) -> Self {"
+        },
+        {
+          "name": "path",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 27,
+            "end": 29
+          },
+          "signature": "pub fn path(&self) -> &Path {"
+        },
+        {
+          "name": "save",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 56,
+            "end": 85
+          },
+          "signature": "pub fn save(&self, data: &T) -> Result<(), JsonStoreError> {"
+        },
+        {
+          "name": "source",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 127,
+            "end": 133
+          },
+          "signature": "fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {",
+          "parent": "JsonStoreError"
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 137,
+            "end": 240
+          }
+        },
+        {
+          "name": "tmp_path",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 88,
+            "end": 92
+          },
+          "signature": "fn tmp_path(&self) -> PathBuf {"
+        }
+      ]
+    },
+    "src/mcp/prompts.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 7,
+      "lines": 729,
+      "hash": "0f9d81b375eedd10",
+      "exports": [
+        "get_prompt_impl",
+        "list_prompts_impl"
+      ],
+      "cluster": "mcp",
+      "symbols": [
+        {
+          "name": "error_prompt",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 463,
+            "end": 468
+          },
+          "signature": "fn error_prompt(message: &str) -> GetPromptResult {"
+        },
+        {
+          "name": "get_prompt_impl",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 65,
+            "end": 80
+          },
+          "signature": "pub fn get_prompt_impl("
+        },
+        {
+          "name": "list_prompts_impl",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 18,
+            "end": 59
+          },
+          "signature": "pub fn list_prompts_impl() -> ListPromptsResult {"
+        },
+        {
+          "name": "prompt_explore_area",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 84,
+            "end": 174
+          },
+          "signature": "fn prompt_explore_area("
+        },
+        {
+          "name": "prompt_find_refactoring",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 254,
+            "end": 346
+          },
+          "signature": "fn prompt_find_refactoring("
+        },
+        {
+          "name": "prompt_review_impact",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 176,
+            "end": 252
+          },
+          "signature": "fn prompt_review_impact("
+        },
+        {
+          "name": "prompt_understand_module",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 348,
+            "end": 460
+          },
+          "signature": "fn prompt_understand_module("
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 471,
+            "end": 729
+          }
+        }
+      ]
+    },
+    "src/mcp/resources.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 7,
+      "lines": 543,
+      "hash": "9f3c9a2b5cdcf433",
+      "exports": [
+        "list_resources_impl",
+        "read_resource_impl"
+      ],
+      "cluster": "mcp",
+      "symbols": [
+        {
+          "name": "list_resources_impl",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 17,
+            "end": 60
+          },
+          "signature": "pub fn list_resources_impl(state: &GraphState) -> ListResourcesResult {"
+        },
+        {
+          "name": "make_resource",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 95,
+            "end": 100
+          },
+          "signature": "fn make_resource(uri: &str, name: &str, description: Option<&str>) -> Resource {"
+        },
+        {
+          "name": "read_cluster",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 185,
+            "end": 212
+          },
+          "signature": "fn read_cluster(name: &str, state: &GraphState) -> String {"
+        },
+        {
+          "name": "read_file",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 139,
+            "end": 183
+          },
+          "signature": "fn read_file(path: &str, state: &GraphState) -> String {"
+        },
+        {
+          "name": "read_freshness",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 270,
+            "end": 279
+          },
+          "signature": "fn read_freshness(state: &GraphState) -> String {"
+        },
+        {
+          "name": "read_hotspots",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 244,
+            "end": 268
+          },
+          "signature": "fn read_hotspots(state: &GraphState) -> String {"
+        },
+        {
+          "name": "read_overview",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 102,
+            "end": 137
+          },
+          "signature": "fn read_overview(state: &GraphState) -> String {"
+        },
+        {
+          "name": "read_resource_impl",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 65,
+            "end": 91
+          },
+          "signature": "pub fn read_resource_impl(uri: &str, state: &GraphState) -> ReadResourceResult {"
+        },
+        {
+          "name": "read_smells",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 214,
+            "end": 242
+          },
+          "signature": "fn read_smells(state: &GraphState) -> String {"
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 292,
+            "end": 543
+          }
+        },
+        {
+          "name": "to_json_string",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 282,
+            "end": 289
+          },
+          "signature": "fn to_json_string<T: serde::Serialize>(value: &T) -> String {"
+        }
+      ]
     },
     "src/mcp/server.rs": {
       "type": "source",
       "layer": "unknown",
       "arch_depth": 9,
-      "lines": 232,
-      "hash": "ea74bb19fa702b40",
+      "lines": 251,
+      "hash": "2d3b03872c465bc6",
       "exports": [
         "ServeConfig",
         "run"
@@ -3725,8 +4263,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 19,
-            "end": 25
+            "start": 20,
+            "end": 26
           },
           "signature": "pub struct ServeConfig {"
         },
@@ -3735,8 +4273,8 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 28,
-            "end": 177
+            "start": 29,
+            "end": 196
           },
           "signature": "pub async fn run(config: ServeConfig) -> Result<(), FatalError> {"
         },
@@ -3745,8 +4283,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 181,
-            "end": 232
+            "start": 200,
+            "end": 251
           },
           "signature": "fn start_poll_fallback("
         }
@@ -3878,11 +4416,14 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 7,
-      "lines": 1635,
-      "hash": "2a648fd42a93a741",
+      "lines": 1920,
+      "hash": "08678eceff6f13ab",
       "exports": [
+        "AnnotateParam",
+        "AnnotationsParam",
         "AriadneTools",
         "BlastRadiusParam",
+        "BookmarkParam",
         "CalleesParam",
         "CallersParam",
         "CentralityParam",
@@ -3892,6 +4433,8 @@
         "FileParam",
         "ImportanceParam",
         "LayerParam",
+        "RemoveAnnotationParam",
+        "RemoveBookmarkParam",
         "SmellsParam",
         "SubgraphParam",
         "SymbolBlastRadiusParam",
@@ -3902,12 +4445,32 @@
       "cluster": "mcp",
       "symbols": [
         {
+          "name": "AnnotateParam",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 248,
+            "end": 259
+          },
+          "signature": "pub struct AnnotateParam {"
+        },
+        {
+          "name": "AnnotationsParam",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 262,
+            "end": 269
+          },
+          "signature": "pub struct AnnotationsParam {"
+        },
+        {
           "name": "AriadneTools",
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 26,
-            "end": 31
+            "start": 28,
+            "end": 34
           },
           "signature": "pub struct AriadneTools {"
         },
@@ -3916,18 +4479,28 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 65,
-            "end": 72
+            "start": 130,
+            "end": 137
           },
           "signature": "pub struct BlastRadiusParam {"
+        },
+        {
+          "name": "BookmarkParam",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 278,
+            "end": 285
+          },
+          "signature": "pub struct BookmarkParam {"
         },
         {
           "name": "CalleesParam",
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 171,
-            "end": 176
+            "start": 238,
+            "end": 243
           },
           "signature": "pub struct CalleesParam {"
         },
@@ -3936,8 +4509,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 163,
-            "end": 168
+            "start": 230,
+            "end": 235
           },
           "signature": "pub struct CallersParam {"
         },
@@ -3946,8 +4519,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 83,
-            "end": 86
+            "start": 150,
+            "end": 153
           },
           "signature": "pub struct CentralityParam {"
         },
@@ -3956,8 +4529,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 95,
-            "end": 98
+            "start": 162,
+            "end": 165
           },
           "signature": "pub struct ClusterParam {"
         },
@@ -3966,8 +4539,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 129,
-            "end": 136
+            "start": 196,
+            "end": 203
           },
           "signature": "pub struct CompressedParam {"
         },
@@ -3976,8 +4549,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 101,
-            "end": 106
+            "start": 168,
+            "end": 173
           },
           "signature": "pub struct DependenciesParam {"
         },
@@ -3986,8 +4559,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 59,
-            "end": 62
+            "start": 124,
+            "end": 127
           },
           "signature": "pub struct FileParam {"
         },
@@ -3996,8 +4569,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 123,
-            "end": 126
+            "start": 190,
+            "end": 193
           },
           "signature": "pub struct ImportanceParam {"
         },
@@ -4006,18 +4579,38 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 89,
-            "end": 92
+            "start": 156,
+            "end": 159
           },
           "signature": "pub struct LayerParam {"
+        },
+        {
+          "name": "RemoveAnnotationParam",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 272,
+            "end": 275
+          },
+          "signature": "pub struct RemoveAnnotationParam {"
+        },
+        {
+          "name": "RemoveBookmarkParam",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 288,
+            "end": 291
+          },
+          "signature": "pub struct RemoveBookmarkParam {"
         },
         {
           "name": "SmellsParam",
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 117,
-            "end": 120
+            "start": 184,
+            "end": 187
           },
           "signature": "pub struct SmellsParam {"
         },
@@ -4026,8 +4619,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 75,
-            "end": 80
+            "start": 140,
+            "end": 147
           },
           "signature": "pub struct SubgraphParam {"
         },
@@ -4036,8 +4629,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 153,
-            "end": 160
+            "start": 220,
+            "end": 227
           },
           "signature": "pub struct SymbolBlastRadiusParam {"
         },
@@ -4046,8 +4639,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 145,
-            "end": 150
+            "start": 212,
+            "end": 217
           },
           "signature": "pub struct SymbolSearchParam {"
         },
@@ -4056,8 +4649,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 139,
-            "end": 142
+            "start": 206,
+            "end": 209
           },
           "signature": "pub struct SymbolsParam {"
         },
@@ -4066,20 +4659,64 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 109,
-            "end": 114
+            "start": 176,
+            "end": 181
           },
           "signature": "pub struct ViewsExportParam {"
+        },
+        {
+          "name": "annotate",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 1760,
+            "end": 1800
+          },
+          "signature": "fn annotate(&self, Parameters(params): Parameters<AnnotateParam>) -> String {",
+          "parent": "AriadneTools"
+        },
+        {
+          "name": "annotations",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 1808,
+            "end": 1816
+          },
+          "signature": "fn annotations(&self, Parameters(params): Parameters<AnnotationsParam>) -> String {",
+          "parent": "AriadneTools"
         },
         {
           "name": "blast_radius",
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 310,
-            "end": 369
+            "start": 430,
+            "end": 489
           },
           "signature": "fn blast_radius(&self, Parameters(params): Parameters<BlastRadiusParam>) -> String {",
+          "parent": "AriadneTools"
+        },
+        {
+          "name": "bookmark",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 1840,
+            "end": 1853
+          },
+          "signature": "fn bookmark(&self, Parameters(params): Parameters<BookmarkParam>) -> String {",
+          "parent": "AriadneTools"
+        },
+        {
+          "name": "bookmarks",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 1861,
+            "end": 1864
+          },
+          "signature": "fn bookmarks(&self) -> String {",
           "parent": "AriadneTools"
         },
         {
@@ -4087,8 +4724,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 1204,
-            "end": 1269
+            "start": 1345,
+            "end": 1410
           },
           "signature": "fn callees(&self, Parameters(params): Parameters<CalleesParam>) -> String {",
           "parent": "AriadneTools"
@@ -4098,8 +4735,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 1146,
-            "end": 1196
+            "start": 1287,
+            "end": 1337
           },
           "signature": "fn callers(&self, Parameters(params): Parameters<CallersParam>) -> String {",
           "parent": "AriadneTools"
@@ -4109,8 +4746,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 417,
-            "end": 439
+            "start": 554,
+            "end": 576
           },
           "signature": "fn centrality(&self, Parameters(params): Parameters<CentralityParam>) -> String {",
           "parent": "AriadneTools"
@@ -4120,8 +4757,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 490,
-            "end": 515
+            "start": 627,
+            "end": 656
           },
           "signature": "fn cluster(&self, Parameters(params): Parameters<ClusterParam>) -> String {",
           "parent": "AriadneTools"
@@ -4131,8 +4768,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 731,
-            "end": 857
+            "start": 872,
+            "end": 998
           },
           "signature": "fn compressed(&self, Parameters(params): Parameters<CompressedParam>) -> String {",
           "parent": "AriadneTools"
@@ -4142,8 +4779,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 1277,
-            "end": 1349
+            "start": 1418,
+            "end": 1506
           },
           "signature": "fn context(&self, Parameters(params): Parameters<ContextParam>) -> String {",
           "parent": "AriadneTools"
@@ -4153,8 +4790,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 447,
-            "end": 450
+            "start": 584,
+            "end": 587
           },
           "signature": "fn cycles(&self) -> String {",
           "parent": "AriadneTools"
@@ -4164,8 +4801,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 523,
-            "end": 613
+            "start": 664,
+            "end": 754
           },
           "signature": "fn dependencies(&self, Parameters(params): Parameters<DependenciesParam>) -> String {",
           "parent": "AriadneTools"
@@ -4175,8 +4812,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 684,
-            "end": 690
+            "start": 825,
+            "end": 831
           },
           "signature": "fn diff(&self) -> String {",
           "parent": "AriadneTools"
@@ -4186,8 +4823,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 1628,
-            "end": 1635
+            "start": 1913,
+            "end": 1920
           },
           "signature": "fn edge_to_json(e: &crate::model::Edge) -> serde_json::Value {"
         },
@@ -4196,8 +4833,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 233,
-            "end": 302
+            "start": 348,
+            "end": 422
           },
           "signature": "fn file(&self, Parameters(params): Parameters<FileParam>) -> String {",
           "parent": "AriadneTools"
@@ -4207,8 +4844,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 621,
-            "end": 637
+            "start": 762,
+            "end": 778
           },
           "signature": "fn freshness(&self) -> String {",
           "parent": "AriadneTools"
@@ -4218,10 +4855,21 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 50,
-            "end": 53
+            "start": 55,
+            "end": 64
           },
           "signature": "fn get_info(&self) -> ServerInfo {",
+          "parent": "ServerHandler"
+        },
+        {
+          "name": "get_prompt",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 94,
+            "end": 118
+          },
+          "signature": "fn get_prompt(",
           "parent": "ServerHandler"
         },
         {
@@ -4229,8 +4877,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 698,
-            "end": 723
+            "start": 839,
+            "end": 864
           },
           "signature": "fn importance(&self, Parameters(params): Parameters<ImportanceParam>) -> String {",
           "parent": "AriadneTools"
@@ -4240,19 +4888,41 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 458,
-            "end": 482
+            "start": 595,
+            "end": 619
           },
           "signature": "fn layers(&self, Parameters(params): Parameters<LayerParam>) -> String {",
           "parent": "AriadneTools"
+        },
+        {
+          "name": "list_prompts",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 86,
+            "end": 92
+          },
+          "signature": "fn list_prompts(",
+          "parent": "ServerHandler"
+        },
+        {
+          "name": "list_resources",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 66,
+            "end": 73
+          },
+          "signature": "fn list_resources(",
+          "parent": "ServerHandler"
         },
         {
           "name": "metrics",
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 645,
-            "end": 648
+            "start": 786,
+            "end": 789
           },
           "signature": "fn metrics(&self) -> String {",
           "parent": "AriadneTools"
@@ -4262,8 +4932,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 34,
-            "end": 45
+            "start": 37,
+            "end": 50
           },
           "signature": "pub fn new(",
           "parent": "AriadneTools"
@@ -4273,8 +4943,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 186,
-            "end": 225
+            "start": 301,
+            "end": 340
           },
           "signature": "fn overview(&self) -> String {",
           "parent": "AriadneTools"
@@ -4284,8 +4954,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 1609,
-            "end": 1625
+            "start": 1894,
+            "end": 1910
           },
           "signature": "fn parse_symbol_kind(s: &str) -> Option<crate::model::SymbolKind> {"
         },
@@ -4294,21 +4964,54 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 1476,
-            "end": 1549
+            "start": 1633,
+            "end": 1706
           },
           "signature": "fn plan_impact(&self, Parameters(params): Parameters<PlanImpactParam>) -> String {",
           "parent": "AriadneTools"
+        },
+        {
+          "name": "read_resource",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 75,
+            "end": 84
+          },
+          "signature": "fn read_resource(",
+          "parent": "ServerHandler"
         },
         {
           "name": "reading_order",
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 1413,
-            "end": 1468
+            "start": 1570,
+            "end": 1625
           },
           "signature": "fn reading_order(&self, Parameters(params): Parameters<ReadingOrderParam>) -> String {",
+          "parent": "AriadneTools"
+        },
+        {
+          "name": "remove_annotation",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 1824,
+            "end": 1832
+          },
+          "signature": "fn remove_annotation(&self, Parameters(params): Parameters<RemoveAnnotationParam>) -> String {",
+          "parent": "AriadneTools"
+        },
+        {
+          "name": "remove_bookmark",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 1872,
+            "end": 1880
+          },
+          "signature": "fn remove_bookmark(&self, Parameters(params): Parameters<RemoveBookmarkParam>) -> String {",
           "parent": "AriadneTools"
         },
         {
@@ -4316,8 +5019,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 656,
-            "end": 676
+            "start": 797,
+            "end": 817
           },
           "signature": "fn smells(&self, Parameters(params): Parameters<SmellsParam>) -> String {",
           "parent": "AriadneTools"
@@ -4327,8 +5030,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 865,
-            "end": 868
+            "start": 1006,
+            "end": 1009
           },
           "signature": "fn spectral(&self) -> String {",
           "parent": "AriadneTools"
@@ -4338,8 +5041,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 377,
-            "end": 409
+            "start": 497,
+            "end": 546
           },
           "signature": "fn subgraph(&self, Parameters(params): Parameters<SubgraphParam>) -> String {",
           "parent": "AriadneTools"
@@ -4349,8 +5052,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 971,
-            "end": 1138
+            "start": 1112,
+            "end": 1279
           },
           "signature": "fn symbol_blast_radius(",
           "parent": "AriadneTools"
@@ -4360,8 +5063,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 928,
-            "end": 963
+            "start": 1069,
+            "end": 1104
           },
           "signature": "fn symbol_search(&self, Parameters(params): Parameters<SymbolSearchParam>) -> String {",
           "parent": "AriadneTools"
@@ -4371,8 +5074,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 876,
-            "end": 920
+            "start": 1017,
+            "end": 1061
           },
           "signature": "fn symbols(&self, Parameters(params): Parameters<SymbolsParam>) -> String {",
           "parent": "AriadneTools"
@@ -4382,8 +5085,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 1357,
-            "end": 1405
+            "start": 1514,
+            "end": 1562
           },
           "signature": "fn tests_for(&self, Parameters(params): Parameters<TestsForParam>) -> String {",
           "parent": "AriadneTools"
@@ -4393,8 +5096,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 1599,
-            "end": 1606
+            "start": 1884,
+            "end": 1891
           },
           "signature": "fn to_json<T: serde::Serialize>(value: &T) -> String {"
         },
@@ -4403,8 +5106,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 1557,
-            "end": 1595
+            "start": 1714,
+            "end": 1752
           },
           "signature": "fn views_export(&self, Parameters(params): Parameters<ViewsExportParam>) -> String {",
           "parent": "AriadneTools"
@@ -4415,8 +5118,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 54,
-      "hash": "21a2cca74c336b94",
+      "lines": 56,
+      "hash": "3686a891b38d7eef",
       "exports": [
         "ChangeEntry",
         "ContextParam",
@@ -4431,8 +5134,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 37,
-            "end": 43
+            "start": 39,
+            "end": 45
           },
           "signature": "pub struct ChangeEntry {"
         },
@@ -4442,7 +5145,7 @@
           "visibility": "public",
           "span": {
             "start": 6,
-            "end": 17
+            "end": 19
           },
           "signature": "pub struct ContextParam {"
         },
@@ -4451,8 +5154,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 51,
-            "end": 54
+            "start": 53,
+            "end": 56
           },
           "signature": "pub struct PlanImpactParam {"
         },
@@ -4461,8 +5164,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 28,
-            "end": 33
+            "start": 30,
+            "end": 35
           },
           "signature": "pub struct ReadingOrderParam {"
         },
@@ -4471,8 +5174,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 21,
-            "end": 24
+            "start": 23,
+            "end": 26
           },
           "signature": "pub struct TestsForParam {"
         },
@@ -4481,10 +5184,97 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 45,
-            "end": 47
+            "start": 47,
+            "end": 49
           },
           "signature": "fn default_change_type() -> String {"
+        }
+      ]
+    },
+    "src/mcp/user_state.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 3,
+      "lines": 135,
+      "hash": "eb4aff380e74b8ce",
+      "exports": [
+        "UserState",
+        "UserStateManager"
+      ],
+      "cluster": "mcp",
+      "symbols": [
+        {
+          "name": "UserState",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 15,
+            "end": 18
+          },
+          "signature": "pub struct UserState {"
+        },
+        {
+          "name": "UserStateManager",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 24,
+            "end": 31
+          },
+          "signature": "pub struct UserStateManager {"
+        },
+        {
+          "name": "fmt",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 34,
+            "end": 38
+          },
+          "signature": "fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {",
+          "parent": "UserStateManager"
+        },
+        {
+          "name": "load",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 47,
+            "end": 61
+          },
+          "signature": "pub fn load(output_dir: &Path) -> Result<Self, JsonStoreError> {",
+          "parent": "UserStateManager"
+        },
+        {
+          "name": "save_annotations",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 64,
+            "end": 67
+          },
+          "signature": "pub fn save_annotations(&self) -> Result<(), JsonStoreError> {",
+          "parent": "UserStateManager"
+        },
+        {
+          "name": "save_bookmarks",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 70,
+            "end": 73
+          },
+          "signature": "pub fn save_bookmarks(&self) -> Result<(), JsonStoreError> {",
+          "parent": "UserStateManager"
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 77,
+            "end": 135
+          }
         }
       ]
     },
@@ -4604,6 +5394,103 @@
           "span": {
             "start": 274,
             "end": 333
+          }
+        }
+      ]
+    },
+    "src/model/annotation.rs": {
+      "type": "source",
+      "layer": "data",
+      "arch_depth": 0,
+      "lines": 101,
+      "hash": "94692c256325d47c",
+      "exports": [
+        "Annotation",
+        "AnnotationStore",
+        "AnnotationTarget"
+      ],
+      "cluster": "model",
+      "symbols": [
+        {
+          "name": "Annotation",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 14,
+            "end": 20
+          },
+          "signature": "pub struct Annotation {"
+        },
+        {
+          "name": "AnnotationStore",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 24,
+            "end": 24
+          },
+          "signature": "pub struct AnnotationStore(pub Vec<Annotation>);"
+        },
+        {
+          "name": "AnnotationTarget",
+          "kind": "enum",
+          "visibility": "public",
+          "span": {
+            "start": 6,
+            "end": 10
+          },
+          "signature": "pub enum AnnotationTarget {"
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 27,
+            "end": 101
+          }
+        }
+      ]
+    },
+    "src/model/bookmark.rs": {
+      "type": "source",
+      "layer": "data",
+      "arch_depth": 0,
+      "lines": 65,
+      "hash": "9487f32f9c5b886b",
+      "exports": [
+        "Bookmark",
+        "BookmarkStore"
+      ],
+      "cluster": "model",
+      "symbols": [
+        {
+          "name": "Bookmark",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 5,
+            "end": 10
+          },
+          "signature": "pub struct Bookmark {"
+        },
+        {
+          "name": "BookmarkStore",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 14,
+            "end": 14
+          },
+          "signature": "pub struct BookmarkStore(pub Vec<Bookmark>);"
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 17,
+            "end": 65
           }
         }
       ]
@@ -4847,11 +5734,16 @@
       "type": "source",
       "layer": "data",
       "arch_depth": 2,
-      "lines": 27,
-      "hash": "ceb25d9256276305",
+      "lines": 31,
+      "hash": "e6eff3186920b951",
       "exports": [
+        "Annotation",
+        "AnnotationStore",
+        "AnnotationTarget",
         "ArchLayer",
         "ArchSmell",
+        "Bookmark",
+        "BookmarkStore",
         "CanonicalPath",
         "ChangeClassification",
         "Cluster",
@@ -4892,6 +5784,8 @@
         "WorkspaceInfo",
         "WorkspaceKind",
         "WorkspaceMember",
+        "annotation",
+        "bookmark",
         "compress",
         "diff",
         "edge",
@@ -11477,8 +12371,8 @@
       "type": "test",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 421,
-      "hash": "5a1f549d8806d9fd",
+      "lines": 808,
+      "hash": "23269df6b4d1b06e",
       "exports": [],
       "cluster": "tests",
       "symbols": [
@@ -11496,8 +12390,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 311,
-            "end": 421
+            "start": 691,
+            "end": 808
           }
         },
         {
@@ -11507,6 +12401,15 @@
           "span": {
             "start": 4,
             "end": 106
+          }
+        },
+        {
+          "name": "phase6_integration_tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 311,
+            "end": 688
           }
         },
         {
@@ -12703,6 +13606,41 @@
       ]
     ],
     [
+      "src/mcp/annotations.rs",
+      "src/mcp/user_state.rs",
+      "imports",
+      [
+        "UserStateManager"
+      ]
+    ],
+    [
+      "src/mcp/annotations.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "Annotation",
+        "AnnotationStore",
+        "AnnotationTarget"
+      ]
+    ],
+    [
+      "src/mcp/bookmarks.rs",
+      "src/mcp/user_state.rs",
+      "imports",
+      [
+        "UserStateManager"
+      ]
+    ],
+    [
+      "src/mcp/bookmarks.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "Bookmark",
+        "ProjectGraph"
+      ]
+    ],
+    [
       "src/mcp/lock.rs",
       "src/diagnostic.rs",
       "imports",
@@ -12712,10 +13650,50 @@
     ],
     [
       "src/mcp/mod.rs",
+      "src/mcp/annotations.rs",
+      "imports",
+      [
+        "annotations"
+      ]
+    ],
+    [
+      "src/mcp/mod.rs",
+      "src/mcp/bookmarks.rs",
+      "imports",
+      [
+        "bookmarks"
+      ]
+    ],
+    [
+      "src/mcp/mod.rs",
       "src/mcp/lock.rs",
       "imports",
       [
         "lock"
+      ]
+    ],
+    [
+      "src/mcp/mod.rs",
+      "src/mcp/persist.rs",
+      "imports",
+      [
+        "persist"
+      ]
+    ],
+    [
+      "src/mcp/mod.rs",
+      "src/mcp/prompts.rs",
+      "imports",
+      [
+        "prompts"
+      ]
+    ],
+    [
+      "src/mcp/mod.rs",
+      "src/mcp/resources.rs",
+      "imports",
+      [
+        "resources"
       ]
     ],
     [
@@ -12752,10 +13730,66 @@
     ],
     [
       "src/mcp/mod.rs",
+      "src/mcp/user_state.rs",
+      "imports",
+      [
+        "user_state"
+      ]
+    ],
+    [
+      "src/mcp/mod.rs",
       "src/mcp/watch.rs",
       "imports",
       [
         "watch"
+      ]
+    ],
+    [
+      "src/mcp/prompts.rs",
+      "src/algo/reading_order.rs",
+      "imports",
+      [
+        "compute_reading_order"
+      ]
+    ],
+    [
+      "src/mcp/prompts.rs",
+      "src/analysis/smells.rs",
+      "imports",
+      [
+        "detect_smells"
+      ]
+    ],
+    [
+      "src/mcp/prompts.rs",
+      "src/mcp/state.rs",
+      "imports",
+      [
+        "GraphState"
+      ]
+    ],
+    [
+      "src/mcp/prompts.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath"
+      ]
+    ],
+    [
+      "src/mcp/resources.rs",
+      "src/analysis/smells.rs",
+      "imports",
+      [
+        "detect_smells"
+      ]
+    ],
+    [
+      "src/mcp/resources.rs",
+      "src/mcp/state.rs",
+      "imports",
+      [
+        "GraphState"
       ]
     ],
     [
@@ -12789,6 +13823,14 @@
       "imports",
       [
         "AriadneTools"
+      ]
+    ],
+    [
+      "src/mcp/server.rs",
+      "src/mcp/user_state.rs",
+      "imports",
+      [
+        "UserStateManager"
       ]
     ],
     [
@@ -12960,10 +14002,37 @@
     ],
     [
       "src/mcp/tools.rs",
+      "src/mcp/user_state.rs",
+      "imports",
+      [
+        "UserStateManager"
+      ]
+    ],
+    [
+      "src/mcp/tools.rs",
       "src/model/mod.rs",
       "imports",
       [
+        "AnnotationTarget",
         "CanonicalPath"
+      ]
+    ],
+    [
+      "src/mcp/user_state.rs",
+      "src/mcp/persist.rs",
+      "imports",
+      [
+        "JsonStore",
+        "JsonStoreError"
+      ]
+    ],
+    [
+      "src/mcp/user_state.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "AnnotationStore",
+        "BookmarkStore"
       ]
     ],
     [
@@ -13007,6 +14076,22 @@
       "imports",
       [
         "JsonSerializer"
+      ]
+    ],
+    [
+      "src/model/mod.rs",
+      "src/model/annotation.rs",
+      "imports",
+      [
+        "annotation"
+      ]
+    ],
+    [
+      "src/model/mod.rs",
+      "src/model/bookmark.rs",
+      "imports",
+      [
+        "bookmark"
       ]
     ],
     [

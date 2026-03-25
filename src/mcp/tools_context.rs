@@ -14,6 +14,8 @@ pub struct ContextParam {
     pub depth: Option<u32>,
     /// Categories to include: "tests", "interfaces", "configs" (default: all)
     pub include: Option<Vec<String>>,
+    /// Optional bookmark name — if provided, its expanded paths are merged with `files`
+    pub bookmark: Option<String>,
 }
 
 /// Parameters for `ariadne_tests_for` — find test files covering given paths.

@@ -1079,3 +1079,74 @@ Applies to: Brandes centrality (Phase 2), Louvain modularity (Phase 2b), PageRan
 - Using `Option<String>` in the MCP tool return — MCP tool framework requires `String` return type
 **Reasoning:** Simple and unambiguous. MCP clients can check for the literal `"null"` string to know no diff is available.
 **Affects:** `src/mcp/tools.rs`.
+
+## D-089: Resource and Prompt Registration via Manual ServerHandler Override
+
+**Date:** 2026-03-25
+**Status:** Accepted
+**Context:** MCP resources and prompts need to be served alongside tools. rmcp's `#[tool_handler]` macro only generates tool-related methods on the `ServerHandler` impl. No equivalent macro exists for resources or prompts.
+**Decision:** Resources and prompts are registered via manual `list_resources`/`read_resource`/`list_prompts`/`get_prompt` method overrides in the `ServerHandler` impl. The `#[tool_handler]` macro continues to generate tool methods; resource/prompt methods are manually overridden in the same impl block.
+**Alternatives rejected:**
+- Separate ServerHandler impls — Rust's orphan rules and rmcp's design require a single ServerHandler per server
+- Custom macro for resources/prompts — over-engineering for a small number of resources
+**Reasoning:** rmcp has no resource/prompt router macros; single ServerHandler constraint means manual overrides are the only option. Straightforward and explicit.
+**Affects:** `src/mcp/server.rs`, `src/mcp/tools.rs`.
+
+## D-090: Annotation and Bookmark State Separate from GraphState
+
+**Date:** 2026-03-25
+**Status:** Accepted
+**Context:** Annotations and bookmarks are user-created data. GraphState is derived data rebuilt on every file watcher trigger. These have fundamentally different lifecycles.
+**Decision:** Separate `UserState` stored in `Arc<ArcSwap<UserState>>` alongside the existing `Arc<ArcSwap<GraphState>>`. UserState is not rebuilt on file watcher triggers; it has an independent lifecycle managed by annotation/bookmark tool handlers.
+**Alternatives rejected:**
+- Embedding user data in GraphState — would be destroyed on every auto-rebuild
+- Separate Mutex-guarded state — ArcSwap is already proven in the codebase and provides lock-free reads
+**Reasoning:** User-created data (annotations, bookmarks) has a different lifecycle from derived graph data. Keeping them separate prevents accidental data loss during rebuilds.
+**Affects:** `src/mcp/state.rs`, `src/mcp/annotations.rs`, `src/mcp/bookmarks.rs`.
+
+## D-091: Shared Persistence Module `JsonStore<T>`
+
+**Date:** 2026-03-25
+**Status:** Accepted
+**Context:** Both annotation and bookmark stores need to persist data as JSON files with atomic writes. Duplicating file I/O logic across stores violates DRY.
+**Decision:** Generic `JsonStore<T>` in `src/mcp/persist.rs` for atomic JSON file I/O. Provides `load()` and `save()` methods. Atomic write uses temp file + rename pattern to prevent corruption on crashes.
+**Alternatives rejected:**
+- Per-store file I/O — duplicated logic, inconsistent error handling
+- SQLite — overkill for simple key-value JSON persistence
+**Reasoning:** DRY — both annotation and bookmark stores need identical atomic JSON I/O. Generic type parameter keeps it reusable for future persistent state.
+**Affects:** `src/mcp/persist.rs`, `src/mcp/annotations.rs`, `src/mcp/bookmarks.rs`.
+
+## D-092: Annotation/Bookmark Types in `src/model/`
+
+**Date:** 2026-03-25
+**Status:** Accepted
+**Context:** Annotation and bookmark data types need a home. They could live in `src/mcp/` (near their handlers) or `src/model/` (with other data types).
+**Decision:** Pure data types (`Annotation`, `AnnotationTarget`, `Bookmark`) defined in `src/model/` following the precedent of `ArchSmell`, `SymbolDef`, and other domain types. MCP-specific logic (tool handlers, persistence) stays in `src/mcp/`.
+**Alternatives rejected:**
+- Types in `src/mcp/` — would create MCP dependency for any module that needs annotation/bookmark types
+**Reasoning:** Consistent with project pattern of keeping pure data types in `model/` with no infrastructure dependencies.
+**Affects:** `src/model/annotation.rs`, `src/model/bookmark.rs`, `src/model/mod.rs`.
+
+## D-093: Resource Refresh via `list_changed` Capability
+
+**Date:** 2026-03-25
+**Status:** Accepted
+**Context:** MCP resources should reflect the current graph state. When the graph is rebuilt (file watcher trigger), clients need to know resources have changed.
+**Decision:** Enable `list_changed` flag in `ServerCapabilities`. This signals to MCP clients that the resource list may change over time. Push notification (active `notifications/resources/list_changed` messages) deferred; clients poll on the capability flag.
+**Alternatives rejected:**
+- Full push notification system — requires subscription tracking and notification dispatch; can be added incrementally
+- No capability flag — clients have no way to know resources can change
+**Reasoning:** One-line capability flag signals clients that resources are dynamic. Full push notification can be added incrementally without API changes.
+**Affects:** `src/mcp/server.rs`.
+
+## D-094: Query-Time Bookmark Path Expansion
+
+**Date:** 2026-03-25
+**Status:** Accepted
+**Context:** Bookmarks store directory prefixes (e.g., `src/auth/`). These need to be expanded to actual file paths for subgraph extraction and context assembly.
+**Decision:** Expand directory prefixes at each query, not at bookmark creation time. When a bookmark is used (e.g., in `ariadne_subgraph` or `ariadne_context`), its paths are expanded against the current graph state to find all matching files.
+**Alternatives rejected:**
+- Expand at creation time and store full file list — becomes stale as files are added/removed
+- Re-expand on every graph rebuild — unnecessary work for bookmarks that may never be queried
+**Reasoning:** Dynamic expansion means bookmarks track the living codebase. New files under a bookmarked directory are automatically included; deleted files are automatically excluded.
+**Affects:** `src/mcp/bookmarks.rs`, `src/algo/compress.rs`, `src/algo/context.rs`.

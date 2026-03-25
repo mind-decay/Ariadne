@@ -63,6 +63,8 @@ pub enum WarningCode {
     W019SymbolExtractionFailed,
     W020SymbolOverflow,
     W021CallGraphCyclicDepth,
+    W022AnnotationFileCorrupted,
+    W023BookmarkFileCorrupted,
 }
 
 impl WarningCode {
@@ -89,6 +91,8 @@ impl WarningCode {
             Self::W019SymbolExtractionFailed => "W019",
             Self::W020SymbolOverflow => "W020",
             Self::W021CallGraphCyclicDepth => "W021",
+            Self::W022AnnotationFileCorrupted => "W022",
+            Self::W023BookmarkFileCorrupted => "W023",
         }
     }
 }
@@ -322,6 +326,8 @@ impl DiagnosticCollector {
             }
             WarningCode::W020SymbolOverflow => {}
             WarningCode::W021CallGraphCyclicDepth => {}
+            WarningCode::W022AnnotationFileCorrupted => {}
+            WarningCode::W023BookmarkFileCorrupted => {}
         }
         guard.0.push(warning);
     }

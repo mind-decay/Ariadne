@@ -1,6 +1,12 @@
+pub mod annotations;
+pub mod bookmarks;
 pub mod lock;
+pub mod persist;
+pub mod prompts;
+pub mod resources;
 pub mod server;
 pub mod state;
 pub mod tools;
 pub mod tools_context;
+pub mod user_state;
 pub mod watch;

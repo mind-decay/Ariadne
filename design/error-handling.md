@@ -58,6 +58,8 @@ These affect individual files. The file is excluded from the graph. Build contin
 | `W019: SymbolExtractionFailed` | Tree-sitter symbol extraction panicked or failed for a file | Skip symbols for that file, count as skipped file, emit warning |
 | `W020: SymbolOverflow` | File produced more than 1000 symbols (overflow guard) | Truncate to 1000 symbols, emit warning |
 | `W021: CallGraphCyclicDepth` | Call graph traversal hit depth limit during BFS | Truncate traversal at depth limit, emit warning |
+| `W022: AnnotationFileCorrupted` | `.ariadne/annotations.json` cannot be parsed | Start with empty annotations, emit warning |
+| `W023: BookmarkFileCorrupted` | `.ariadne/bookmarks.json` cannot be parsed | Start with empty bookmarks, emit warning |
 
 ### Design Decisions
 

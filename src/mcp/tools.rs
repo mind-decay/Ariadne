@@ -7,7 +7,8 @@ use arc_swap::ArcSwap;
 use rmcp::handler::server::tool::ToolRouter;
 use rmcp::handler::server::wrapper::Parameters;
 use rmcp::model::*;
-use rmcp::{tool, tool_handler, tool_router, ServerHandler};
+use rmcp::service::RequestContext;
+use rmcp::{tool, tool_handler, tool_router, RoleServer, ServerHandler};
 use schemars::JsonSchema;
 use serde::Deserialize;
 
@@ -19,7 +20,8 @@ use crate::algo::test_map::find_tests_for;
 use crate::analysis::smells::detect_smells;
 use crate::mcp::state::GraphState;
 use crate::mcp::tools_context::{ContextParam, PlanImpactParam, ReadingOrderParam, TestsForParam};
-use crate::model::CanonicalPath;
+use crate::mcp::user_state::UserStateManager;
+use crate::model::{AnnotationTarget, CanonicalPath};
 
 /// MCP tool handler struct. Each tool is a thin wrapper around existing algo functions.
 #[derive(Debug, Clone)]
@@ -27,6 +29,7 @@ pub struct AriadneTools {
     pub state: Arc<ArcSwap<GraphState>>,
     pub rebuilding: Arc<AtomicBool>,
     pub project_root: PathBuf,
+    pub user_state: Arc<UserStateManager>,
     tool_router: ToolRouter<Self>,
 }
 
@@ -35,11 +38,13 @@ impl AriadneTools {
         state: Arc<ArcSwap<GraphState>>,
         rebuilding: Arc<AtomicBool>,
         project_root: PathBuf,
+        user_state: Arc<UserStateManager>,
     ) -> Self {
         Self {
             state,
             rebuilding,
             project_root,
+            user_state,
             tool_router: Self::tool_router(),
         }
     }
@@ -48,8 +53,68 @@ impl AriadneTools {
 #[tool_handler]
 impl ServerHandler for AriadneTools {
     fn get_info(&self) -> ServerInfo {
-        ServerInfo::new(ServerCapabilities::builder().enable_tools().build())
-            .with_instructions("Ariadne structural dependency graph engine")
+        ServerInfo::new(
+            ServerCapabilities::builder()
+                .enable_tools()
+                .enable_resources()
+                .enable_prompts()
+                .build(),
+        )
+        .with_instructions("Ariadne structural dependency graph engine")
+    }
+
+    fn list_resources(
+        &self,
+        _request: Option<PaginatedRequestParams>,
+        _context: RequestContext<RoleServer>,
+    ) -> impl std::future::Future<Output = Result<ListResourcesResult, rmcp::ErrorData>> + Send + '_ {
+        let state = self.state.load();
+        std::future::ready(Ok(crate::mcp::resources::list_resources_impl(&state)))
+    }
+
+    fn read_resource(
+        &self,
+        request: ReadResourceRequestParams,
+        _context: RequestContext<RoleServer>,
+    ) -> impl std::future::Future<Output = Result<ReadResourceResult, rmcp::ErrorData>> + Send + '_ {
+        let state = self.state.load();
+        std::future::ready(Ok(crate::mcp::resources::read_resource_impl(
+            &request.uri, &state,
+        )))
+    }
+
+    fn list_prompts(
+        &self,
+        _request: Option<PaginatedRequestParams>,
+        _context: RequestContext<RoleServer>,
+    ) -> impl std::future::Future<Output = Result<ListPromptsResult, rmcp::ErrorData>> + Send + '_ {
+        std::future::ready(Ok(crate::mcp::prompts::list_prompts_impl()))
+    }
+
+    fn get_prompt(
+        &self,
+        request: GetPromptRequestParams,
+        _context: RequestContext<RoleServer>,
+    ) -> impl std::future::Future<Output = Result<GetPromptResult, rmcp::ErrorData>> + Send + '_ {
+        let state = self.state.load();
+        // Convert JsonObject (Map<String, Value>) to HashMap<String, String>
+        let args: Option<std::collections::HashMap<String, String>> =
+            request.arguments.map(|obj| {
+                obj.into_iter()
+                    .map(|(k, v)| {
+                        let s = match v {
+                            serde_json::Value::String(s) => s,
+                            other => other.to_string(),
+                        };
+                        (k, s)
+                    })
+                    .collect()
+            });
+        std::future::ready(Ok(crate::mcp::prompts::get_prompt_impl(
+            &request.name,
+            args,
+            &state,
+        )))
     }
 }
 
@@ -77,6 +142,8 @@ pub struct SubgraphParam {
     pub paths: Vec<String>,
     /// BFS depth (default 2)
     pub depth: Option<u32>,
+    /// Optional bookmark name — if provided, its expanded paths are merged with `paths`
+    pub bookmark: Option<String>,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -173,6 +240,54 @@ pub struct CalleesParam {
     pub path: String,
     /// Symbol name to look up callees for
     pub symbol: String,
+}
+
+// --- Annotation/Bookmark tool parameter types ---
+
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct AnnotateParam {
+    /// Target type: "file", "cluster", or "edge"
+    pub target_type: String,
+    /// Target path or name (file path for "file", cluster name for "cluster", "from->to" for "edge")
+    pub target_path: String,
+    /// Target symbol name (optional, for file-level symbol annotations)
+    pub target_symbol: Option<String>,
+    /// Annotation label (e.g., "entry-point", "deprecated", "hot-path")
+    pub label: String,
+    /// Optional freeform note
+    pub note: Option<String>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct AnnotationsParam {
+    /// Filter by label (exact match)
+    pub tag: Option<String>,
+    /// Filter by target type: "file", "cluster", or "edge"
+    pub target_type: Option<String>,
+    /// Filter by target path/name (substring match)
+    pub target_path: Option<String>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct RemoveAnnotationParam {
+    /// Annotation id (e.g., "ann-1")
+    pub id: String,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct BookmarkParam {
+    /// Bookmark name (unique identifier)
+    pub name: String,
+    /// File paths or directory prefixes to include
+    pub paths: Vec<String>,
+    /// Optional description
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct RemoveBookmarkParam {
+    /// Bookmark name to remove
+    pub name: String,
 }
 
 #[tool_router]
@@ -283,6 +398,10 @@ impl AriadneTools {
             })
             .collect();
 
+        let annotations = crate::mcp::annotations::annotations_for_file(
+            &self.user_state, &params.path,
+        );
+
         let result = serde_json::json!({
             "path": params.path,
             "type": node.file_type.as_str(),
@@ -296,6 +415,7 @@ impl AriadneTools {
             "incoming_edges": incoming,
             "outgoing_edges": outgoing,
             "symbols": symbols,
+            "annotations": annotations,
         });
 
         to_json(&result)
@@ -376,7 +496,24 @@ impl AriadneTools {
     )]
     fn subgraph(&self, Parameters(params): Parameters<SubgraphParam>) -> String {
         let state = self.state.load();
-        let paths: Vec<CanonicalPath> = params.paths.iter().map(CanonicalPath::new).collect();
+
+        // Merge explicit paths with bookmark paths if provided
+        let mut all_paths = params.paths.clone();
+        if let Some(ref bm_name) = params.bookmark {
+            match crate::mcp::bookmarks::resolve_bookmark(&self.user_state, bm_name, &state.graph)
+            {
+                Ok(expanded) => all_paths.extend(expanded),
+                Err(e) => {
+                    let result = serde_json::json!({
+                        "error": "bookmark_not_found",
+                        "message": e,
+                    });
+                    return to_json(&result);
+                }
+            }
+        }
+
+        let paths: Vec<CanonicalPath> = all_paths.iter().map(CanonicalPath::new).collect();
         let depth = params.depth.unwrap_or(2);
         let result = algo::subgraph::extract_subgraph(&state.graph, &paths, depth);
 
@@ -493,6 +630,9 @@ impl AriadneTools {
 
         match state.clusters.clusters.get(&cluster_id) {
             Some(cluster) => {
+                let annotations = crate::mcp::annotations::annotations_for_cluster(
+                    &self.user_state, &params.name,
+                );
                 let result = serde_json::json!({
                     "name": params.name,
                     "files": cluster.files.iter().map(|p| p.as_str().to_string()).collect::<Vec<_>>(),
@@ -500,6 +640,7 @@ impl AriadneTools {
                     "internal_edges": cluster.internal_edges,
                     "external_edges": cluster.external_edges,
                     "cohesion": cluster.cohesion,
+                    "annotations": annotations,
                 });
                 to_json(&result)
             }
@@ -1277,10 +1418,26 @@ impl AriadneTools {
     fn context(&self, Parameters(params): Parameters<ContextParam>) -> String {
         let state = self.state.load();
 
+        // Merge explicit files with bookmark paths if provided
+        let mut all_files = params.files.clone();
+        if let Some(ref bm_name) = params.bookmark {
+            match crate::mcp::bookmarks::resolve_bookmark(&self.user_state, bm_name, &state.graph)
+            {
+                Ok(expanded) => all_files.extend(expanded),
+                Err(e) => {
+                    let result = serde_json::json!({
+                        "error": "bookmark_not_found",
+                        "message": e,
+                    });
+                    return to_json(&result);
+                }
+            }
+        }
+
         // Convert paths, collecting warnings for invalid ones
         let mut warnings: Vec<String> = Vec::new();
         let mut valid_paths: Vec<CanonicalPath> = Vec::new();
-        for path in &params.files {
+        for path in &all_files {
             let cp = CanonicalPath::new(path);
             if state.graph.nodes.contains_key(&cp) {
                 valid_paths.push(cp);
@@ -1591,6 +1748,134 @@ impl AriadneTools {
                 "L2 impact views are generated on-demand via ariadne_blast_radius tool.".to_string()
             }
             _ => format!("Unknown level '{}'. Use L0, L1, or L2.", params.level),
+        }
+    }
+
+    // --- T27: Annotate ---
+
+    #[tool(
+        name = "ariadne_annotate",
+        description = "Add or update an annotation on a graph element (file, cluster, or edge). Labels act as tags. Upserts: same target+label updates the existing annotation."
+    )]
+    fn annotate(&self, Parameters(params): Parameters<AnnotateParam>) -> String {
+        let target = match params.target_type.as_str() {
+            "file" => AnnotationTarget::File {
+                path: params.target_path,
+            },
+            "cluster" => AnnotationTarget::Cluster {
+                name: params.target_path,
+            },
+            "edge" => {
+                let parts: Vec<&str> = params.target_path.splitn(2, "->").collect();
+                if parts.len() != 2 {
+                    let result = serde_json::json!({
+                        "error": "invalid_edge_target",
+                        "message": "Edge target must be in 'from->to' format",
+                    });
+                    return to_json(&result);
+                }
+                AnnotationTarget::Edge {
+                    from: parts[0].trim().to_string(),
+                    to: parts[1].trim().to_string(),
+                }
+            }
+            other => {
+                let result = serde_json::json!({
+                    "error": "invalid_target_type",
+                    "value": other,
+                    "valid_values": ["file", "cluster", "edge"],
+                });
+                return to_json(&result);
+            }
+        };
+
+        match crate::mcp::annotations::annotate(&self.user_state, target, params.label, params.note)
+        {
+            Ok(val) => to_json(&val),
+            Err(e) => {
+                let result = serde_json::json!({ "error": "annotation_failed", "message": e });
+                to_json(&result)
+            }
+        }
+    }
+
+    // --- T28: List annotations ---
+
+    #[tool(
+        name = "ariadne_annotations",
+        description = "List annotations with optional filters: by label (tag), target type, or target path substring"
+    )]
+    fn annotations(&self, Parameters(params): Parameters<AnnotationsParam>) -> String {
+        let result = crate::mcp::annotations::list_annotations(
+            &self.user_state,
+            params.tag,
+            params.target_type,
+            params.target_path,
+        );
+        to_json(&result)
+    }
+
+    // --- T29: Remove annotation ---
+
+    #[tool(
+        name = "ariadne_remove_annotation",
+        description = "Remove an annotation by its id (e.g., 'ann-1')"
+    )]
+    fn remove_annotation(&self, Parameters(params): Parameters<RemoveAnnotationParam>) -> String {
+        match crate::mcp::annotations::remove_annotation(&self.user_state, params.id) {
+            Ok(val) => to_json(&val),
+            Err(e) => {
+                let result = serde_json::json!({ "error": "remove_failed", "message": e });
+                to_json(&result)
+            }
+        }
+    }
+
+    // --- T30: Bookmark ---
+
+    #[tool(
+        name = "ariadne_bookmark",
+        description = "Create or update a named bookmark pointing to file paths or directory prefixes. Bookmarks can be used with ariadne_subgraph and ariadne_context."
+    )]
+    fn bookmark(&self, Parameters(params): Parameters<BookmarkParam>) -> String {
+        match crate::mcp::bookmarks::bookmark(
+            &self.user_state,
+            params.name,
+            params.paths,
+            params.description,
+        ) {
+            Ok(val) => to_json(&val),
+            Err(e) => {
+                let result = serde_json::json!({ "error": "bookmark_failed", "message": e });
+                to_json(&result)
+            }
+        }
+    }
+
+    // --- T31: List bookmarks ---
+
+    #[tool(
+        name = "ariadne_bookmarks",
+        description = "List all saved bookmarks with their paths and descriptions"
+    )]
+    fn bookmarks(&self) -> String {
+        let result = crate::mcp::bookmarks::list_bookmarks(&self.user_state);
+        to_json(&result)
+    }
+
+    // --- T32: Remove bookmark ---
+
+    #[tool(
+        name = "ariadne_remove_bookmark",
+        description = "Remove a bookmark by name"
+    )]
+    fn remove_bookmark(&self, Parameters(params): Parameters<RemoveBookmarkParam>) -> String {
+        match crate::mcp::bookmarks::remove_bookmark(&self.user_state, params.name) {
+            Ok(val) => to_json(&val),
+            Err(e) => {
+                let result = serde_json::json!({ "error": "remove_failed", "message": e });
+                to_json(&result)
+            }
         }
     }
 }

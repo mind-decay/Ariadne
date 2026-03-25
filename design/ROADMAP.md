@@ -1060,7 +1060,7 @@ H(file_B | file_A) = "how much unexpected information in B after reading A"
 
 ---
 
-## Phase 6: MCP Protocol Expansion [PLANNED]
+## Phase 6: MCP Protocol Expansion [DONE]
 
 **Goal:** Leverage full MCP protocol (resources, prompts) beyond just tools. Zero-cost context injection, workflow templates, annotation persistence.
 
@@ -1136,6 +1136,18 @@ Input:  { name: "auth-subsystem", paths: ["src/auth/", "src/middleware/auth.rs"]
 ```
 
 Stored in `.ariadne/bookmarks.json`. Referenced in `ariadne_subgraph({ bookmark: "auth-subsystem" })` and `ariadne_context({ bookmark: "auth-subsystem" })`.
+
+### Implementation Deviations (Phase 6 Reconciliation, D-089 through D-094)
+
+The following deviations from the original spec were made during implementation. These are intentional and documented in the decision log:
+
+1. **Resource URIs simplified (D-089):** Spec defined `ariadne://file/{path}` URIs. Implementation uses `ariadne:///file/{path}` (triple slash) for correct rmcp URI handling. The triple-slash form follows RFC 3986 for URIs with an empty authority component.
+
+2. **`list_changed` push notification deferred (D-093):** Spec called for client notifications on resource change. Implementation sets the `list_changed` capability flag but does not actively push `notifications/resources/list_changed` messages. Clients poll on the flag. Active push can be wired incrementally.
+
+3. **AnnotationTarget includes `Edge` variant (D-090):** Spec defined `AnnotationTarget` with `File`, `Cluster`, and `Symbol` variants. Implementation adds an `Edge` variant with `from`/`to` fields, enabling annotations on specific dependency edges (e.g., marking a dependency as "tech-debt" or "do-not-touch").
+
+4. **Bookmark tool naming (D-094):** Spec implied `ariadne_bookmark_create`/`ariadne_bookmark_list`/`ariadne_bookmark_remove` naming. Implementation uses shorter names: `ariadne_bookmark`, `ariadne_bookmarks`, `ariadne_remove_bookmark` — consistent with existing annotation tool naming convention (`ariadne_annotate`, `ariadne_annotations`, `ariadne_remove_annotation`).
 
 ### Formal Methods & CS Foundations (Phase 6)
 

@@ -12,6 +12,7 @@ use crate::diagnostic::FatalError;
 use crate::mcp::lock::LockGuard;
 use crate::mcp::state::{load_graph_state, GraphState};
 use crate::mcp::tools::AriadneTools;
+use crate::mcp::user_state::UserStateManager;
 use crate::mcp::watch::FileWatcher;
 use crate::pipeline::{BuildOptions, BuildPipeline, WalkConfig};
 use crate::serial::json::JsonSerializer;
@@ -139,11 +140,29 @@ pub async fn run(config: ServeConfig) -> Result<(), FatalError> {
         cancel_signal.cancel();
     });
 
+    // 6b. Load user state (annotations + bookmarks)
+    let ariadne_dir = config.output_dir.parent().unwrap_or(&config.output_dir);
+    let user_state_manager = match UserStateManager::load(ariadne_dir) {
+        Ok(mgr) => mgr,
+        Err(e) => {
+            eprintln!(
+                "[ariadne] Warning: failed to load user state: {}. Starting with empty state.",
+                e
+            );
+            // Fallback: try loading from output_dir itself
+            UserStateManager::load(&config.output_dir).map_err(|e| FatalError::McpServerFailed {
+                reason: format!("failed to initialize user state: {}", e),
+            })?
+        }
+    };
+    let user_state = Arc::new(user_state_manager);
+
     // 7. Start MCP server on stdio
     let tools = AriadneTools::new(
         state.clone(),
         rebuilding.clone(),
         config.project_root.clone(),
+        user_state,
     );
 
     eprintln!(
