@@ -256,6 +256,65 @@ enum QueryCommands {
         #[arg(long, default_value = ".ariadne/graph/")]
         graph_dir: PathBuf,
     },
+    /// Show file churn statistics from git history
+    Churn {
+        /// Time period: "30d", "90d", or "1y"
+        #[arg(long, default_value = "90d", value_parser = ["30d", "90d", "1y"])]
+        period: String,
+        /// Number of top files to show
+        #[arg(long, default_value_t = 20)]
+        top: usize,
+        /// Output format
+        #[arg(long, default_value = "md", value_parser = ["md", "json"])]
+        format: String,
+        /// Graph directory
+        #[arg(long, default_value = ".ariadne/graph/")]
+        graph_dir: PathBuf,
+    },
+    /// Show co-change coupling pairs from git history
+    Coupling {
+        /// Minimum confidence threshold (0.0 - 1.0)
+        #[arg(long, default_value_t = 0.3)]
+        min_confidence: f64,
+        /// Output format
+        #[arg(long, default_value = "md", value_parser = ["md", "json"])]
+        format: String,
+        /// Graph directory
+        #[arg(long, default_value = ".ariadne/graph/")]
+        graph_dir: PathBuf,
+    },
+    /// Show hotspot files (high churn x size x blast radius)
+    Hotspots {
+        /// Number of top hotspots to show
+        #[arg(long, default_value_t = 20)]
+        top: usize,
+        /// Output format
+        #[arg(long, default_value = "md", value_parser = ["md", "json"])]
+        format: String,
+        /// Graph directory
+        #[arg(long, default_value = ".ariadne/graph/")]
+        graph_dir: PathBuf,
+    },
+    /// Show file ownership from git history
+    Ownership {
+        /// File path to query (optional; shows all files if omitted)
+        path: Option<String>,
+        /// Output format
+        #[arg(long, default_value = "md", value_parser = ["md", "json"])]
+        format: String,
+        /// Graph directory
+        #[arg(long, default_value = ".ariadne/graph/")]
+        graph_dir: PathBuf,
+    },
+    /// Show hidden dependencies (co-changed but no structural link)
+    HiddenDeps {
+        /// Output format
+        #[arg(long, default_value = "md", value_parser = ["md", "json"])]
+        format: String,
+        /// Graph directory
+        #[arg(long, default_value = ".ariadne/graph/")]
+        graph_dir: PathBuf,
+    },
     /// Show compressed graph at project/cluster/file level
     Compressed {
         /// Compression level: 0 (project), 1 (cluster), 2 (file)
@@ -1039,6 +1098,271 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
                                 node.layer.as_deref().unwrap_or("?")
                             );
                         }
+                    }
+                }
+            }
+        }
+        QueryCommands::Churn {
+            period,
+            top,
+            format,
+            graph_dir,
+        } => {
+            let graph = load_graph(&reader, &graph_dir)?;
+            let project_root = graph_dir
+                .parent()
+                .and_then(|p| p.parent())
+                .map(|p| p.to_path_buf())
+                .unwrap_or_else(|| std::env::current_dir().unwrap_or_default());
+            let collector = ariadne_graph::diagnostic::DiagnosticCollector::new();
+            let temporal = ariadne_graph::temporal::analyze(&project_root, &graph, &collector)
+                .ok_or_else(|| FatalError::InvalidArgument {
+                    reason: "Temporal analysis unavailable (no git history?)".to_string(),
+                })?;
+
+            let mut entries: Vec<_> = temporal
+                .churn
+                .iter()
+                .map(|(path, metrics)| {
+                    let (commits, lines) = match period.as_str() {
+                        "30d" => (metrics.commits_30d, metrics.lines_changed_30d),
+                        "1y" => (metrics.commits_1y, metrics.lines_changed_30d), // 1y only has commits
+                        _ => (metrics.commits_90d, metrics.lines_changed_90d),
+                    };
+                    (path, commits, lines, metrics)
+                })
+                .collect();
+            entries.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(b.0)));
+            entries.truncate(top);
+
+            if format == "json" {
+                let result: Vec<serde_json::Value> = entries
+                    .iter()
+                    .map(|(path, commits, lines, metrics)| {
+                        serde_json::json!({
+                            "path": path.as_str(),
+                            "commits": commits,
+                            "lines_changed": lines,
+                            "authors": metrics.authors_30d,
+                            "last_changed": metrics.last_changed,
+                            "top_authors": metrics.top_authors,
+                        })
+                    })
+                    .collect();
+                println!("{}", json_pretty(&result)?);
+            } else {
+                println!("# File Churn (period: {}, top {})\n", period, top);
+                println!("| File | Commits | Lines Changed | Authors | Last Changed |");
+                println!("|------|--------:|--------------:|--------:|-------------|");
+                for (path, commits, lines, metrics) in &entries {
+                    let last = metrics
+                        .last_changed
+                        .as_deref()
+                        .unwrap_or("unknown");
+                    println!(
+                        "| `{}` | {} | {} | {} | {} |",
+                        path.as_str(),
+                        commits,
+                        lines,
+                        metrics.authors_30d,
+                        last
+                    );
+                }
+            }
+        }
+        QueryCommands::Coupling {
+            min_confidence,
+            format,
+            graph_dir,
+        } => {
+            let graph = load_graph(&reader, &graph_dir)?;
+            let project_root = graph_dir
+                .parent()
+                .and_then(|p| p.parent())
+                .map(|p| p.to_path_buf())
+                .unwrap_or_else(|| std::env::current_dir().unwrap_or_default());
+            let collector = ariadne_graph::diagnostic::DiagnosticCollector::new();
+            let temporal = ariadne_graph::temporal::analyze(&project_root, &graph, &collector)
+                .ok_or_else(|| FatalError::InvalidArgument {
+                    reason: "Temporal analysis unavailable (no git history?)".to_string(),
+                })?;
+
+            let mut filtered: Vec<_> = temporal
+                .co_changes
+                .iter()
+                .filter(|cc| cc.confidence >= min_confidence)
+                .collect();
+            filtered.sort_by(|a, b| {
+                b.confidence
+                    .partial_cmp(&a.confidence)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+                    .then_with(|| a.file_a.cmp(&b.file_a))
+            });
+
+            if format == "json" {
+                println!("{}", json_pretty(&filtered)?);
+            } else {
+                println!(
+                    "# Co-Change Coupling (min confidence: {:.2})\n",
+                    min_confidence
+                );
+                println!(
+                    "| File A | File B | Co-Changes | Confidence | Structural Link |"
+                );
+                println!("|--------|--------|----------:|-----------:|:--------------:|");
+                for cc in &filtered {
+                    println!(
+                        "| `{}` | `{}` | {} | {:.4} | {} |",
+                        cc.file_a.as_str(),
+                        cc.file_b.as_str(),
+                        cc.co_change_count,
+                        cc.confidence,
+                        if cc.has_structural_link { "yes" } else { "no" }
+                    );
+                }
+            }
+        }
+        QueryCommands::Hotspots {
+            top,
+            format,
+            graph_dir,
+        } => {
+            let graph = load_graph(&reader, &graph_dir)?;
+            let project_root = graph_dir
+                .parent()
+                .and_then(|p| p.parent())
+                .map(|p| p.to_path_buf())
+                .unwrap_or_else(|| std::env::current_dir().unwrap_or_default());
+            let collector = ariadne_graph::diagnostic::DiagnosticCollector::new();
+            let temporal = ariadne_graph::temporal::analyze(&project_root, &graph, &collector)
+                .ok_or_else(|| FatalError::InvalidArgument {
+                    reason: "Temporal analysis unavailable (no git history?)".to_string(),
+                })?;
+
+            let mut hotspots = temporal.hotspots.clone();
+            hotspots.truncate(top);
+
+            if format == "json" {
+                println!("{}", json_pretty(&hotspots)?);
+            } else {
+                println!("# Hotspots (top {})\n", top);
+                println!("| File | Score | Churn Rank | LOC Rank | Blast Radius Rank |");
+                println!("|------|------:|-----------:|---------:|------------------:|");
+                for h in &hotspots {
+                    println!(
+                        "| `{}` | {:.4} | {} | {} | {} |",
+                        h.path.as_str(),
+                        h.score,
+                        h.churn_rank,
+                        h.loc_rank,
+                        h.blast_radius_rank
+                    );
+                }
+            }
+        }
+        QueryCommands::Ownership {
+            path,
+            format,
+            graph_dir,
+        } => {
+            let graph = load_graph(&reader, &graph_dir)?;
+            let project_root = graph_dir
+                .parent()
+                .and_then(|p| p.parent())
+                .map(|p| p.to_path_buf())
+                .unwrap_or_else(|| std::env::current_dir().unwrap_or_default());
+            let collector = ariadne_graph::diagnostic::DiagnosticCollector::new();
+            let temporal = ariadne_graph::temporal::analyze(&project_root, &graph, &collector)
+                .ok_or_else(|| FatalError::InvalidArgument {
+                    reason: "Temporal analysis unavailable (no git history?)".to_string(),
+                })?;
+
+            let entries: Vec<_> = if let Some(ref filter_path) = path {
+                let cp = CanonicalPath::new(filter_path);
+                temporal
+                    .ownership
+                    .iter()
+                    .filter(|(p, _)| **p == cp)
+                    .collect()
+            } else {
+                temporal.ownership.iter().collect()
+            };
+
+            if format == "json" {
+                let result: Vec<serde_json::Value> = entries
+                    .iter()
+                    .map(|(p, info)| {
+                        serde_json::json!({
+                            "path": p.as_str(),
+                            "last_author": info.last_author,
+                            "author_count": info.author_count,
+                            "top_contributors": info.top_contributors,
+                        })
+                    })
+                    .collect();
+                println!("{}", json_pretty(&result)?);
+            } else {
+                println!("# File Ownership\n");
+                println!("| File | Last Author | Authors | Top Contributors |");
+                println!("|------|------------|--------:|-----------------|");
+                for (p, info) in &entries {
+                    let contributors: Vec<String> = info
+                        .top_contributors
+                        .iter()
+                        .map(|(name, count)| format!("{} ({})", name, count))
+                        .collect();
+                    println!(
+                        "| `{}` | {} | {} | {} |",
+                        p.as_str(),
+                        info.last_author,
+                        info.author_count,
+                        contributors.join(", ")
+                    );
+                }
+            }
+        }
+        QueryCommands::HiddenDeps { format, graph_dir } => {
+            let graph = load_graph(&reader, &graph_dir)?;
+            let project_root = graph_dir
+                .parent()
+                .and_then(|p| p.parent())
+                .map(|p| p.to_path_buf())
+                .unwrap_or_else(|| std::env::current_dir().unwrap_or_default());
+            let collector = ariadne_graph::diagnostic::DiagnosticCollector::new();
+            let temporal = ariadne_graph::temporal::analyze(&project_root, &graph, &collector)
+                .ok_or_else(|| FatalError::InvalidArgument {
+                    reason: "Temporal analysis unavailable (no git history?)".to_string(),
+                })?;
+
+            let mut hidden: Vec<_> = temporal
+                .co_changes
+                .iter()
+                .filter(|cc| !cc.has_structural_link)
+                .collect();
+            hidden.sort_by(|a, b| {
+                b.confidence
+                    .partial_cmp(&a.confidence)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+                    .then_with(|| a.file_a.cmp(&b.file_a))
+            });
+
+            if format == "json" {
+                println!("{}", json_pretty(&hidden)?);
+            } else {
+                println!("# Hidden Dependencies\n");
+                if hidden.is_empty() {
+                    println!("No hidden dependencies found.");
+                } else {
+                    println!("| File A | File B | Co-Changes | Confidence |");
+                    println!("|--------|--------|----------:|-----------:|");
+                    for cc in &hidden {
+                        println!(
+                            "| `{}` | `{}` | {} | {:.4} |",
+                            cc.file_a.as_str(),
+                            cc.file_b.as_str(),
+                            cc.co_change_count,
+                            cc.confidence
+                        );
                     }
                 }
             }
