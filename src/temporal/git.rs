@@ -8,6 +8,7 @@ use crate::model::CanonicalPath;
 /// Parsed data from a single git commit.
 #[derive(Debug, Clone)]
 pub(crate) struct CommitData {
+    #[allow(dead_code)] // used in tests; retained for commit identification
     pub hash: String,
     pub author: String,
     pub date: String, // ISO 8601
