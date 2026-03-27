@@ -7,9 +7,9 @@
 | `.mcp.json` | data | 0 | 0 | 0 | 0.0000 |
 | `CLAUDE.md` | doc | 0 | 0 | 0 | 0.0000 |
 | `README.md` | doc | 0 | 0 | 0 | 0.0000 |
-| `src/diagnostic.rs` | source | 3 | 14 | 1 | 0.0003 |
+| `src/diagnostic.rs` | source | 3 | 16 | 1 | 0.0003 |
 | `src/hash.rs` | source | 3 | 3 | 1 | 0.0002 |
-| `src/lib.rs` | source | 11 | 0 | 12 | 0.0000 |
+| `src/lib.rs` | source | 11 | 0 | 13 | 0.0000 |
 | `src/main.rs` | source | 8 | 0 | 7 | 0.0000 |
 
 ## Internal Dependencies
@@ -31,6 +31,7 @@
 - `src/lib.rs` → `src/parser/mod.rs` (imports)
 - `src/lib.rs` → `src/pipeline/mod.rs` (imports)
 - `src/lib.rs` → `src/serial/mod.rs` (imports)
+- `src/lib.rs` → `src/temporal/mod.rs` (imports)
 - `src/lib.rs` → `src/views/mod.rs` (imports)
 - `src/main.rs` → `src/algo/mod.rs` (imports)
 - `src/main.rs` → `src/model/mod.rs` (imports)
@@ -54,6 +55,8 @@
 - `src/diagnostic.rs` ← `src/pipeline/walk.rs` (imports)
 - `src/diagnostic.rs` ← `src/serial/json.rs` (imports)
 - `src/diagnostic.rs` ← `src/serial/mod.rs` (imports)
+- `src/diagnostic.rs` ← `src/temporal/git.rs` (imports)
+- `src/diagnostic.rs` ← `src/temporal/mod.rs` (imports)
 - `src/diagnostic.rs` ← `src/views/mod.rs` (imports)
 
 ## Tests
@@ -62,4 +65,5 @@
 - `tests/pipeline_tests.rs` tests `src/diagnostic.rs`
 - `tests/properties.rs` tests `src/diagnostic.rs`
 - `tests/properties.rs` tests `src/hash.rs`
+- `tests/temporal_integration.rs` tests `src/diagnostic.rs`
 

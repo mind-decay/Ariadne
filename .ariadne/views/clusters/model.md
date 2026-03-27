@@ -10,14 +10,15 @@
 | `src/model/diff.rs` | source | 0 | 1 | 0 | 0.0000 |
 | `src/model/edge.rs` | source | 0 | 3 | 0 | 0.0000 |
 | `src/model/graph.rs` | source | 0 | 1 | 0 | 0.0000 |
-| `src/model/mod.rs` | source | 2 | 59 | 14 | 0.0124 |
+| `src/model/mod.rs` | source | 2 | 64 | 15 | 0.0132 |
 | `src/model/node.rs` | source | 0 | 2 | 0 | 0.0000 |
 | `src/model/query.rs` | source | 0 | 1 | 0 | 0.0000 |
 | `src/model/smell.rs` | source | 0 | 1 | 0 | 0.0000 |
 | `src/model/stats.rs` | source | 0 | 1 | 0 | 0.0000 |
 | `src/model/symbol.rs` | source | 0 | 13 | 0 | 0.0000 |
 | `src/model/symbol_index.rs` | source | 1 | 4 | 4 | 0.0001 |
-| `src/model/types.rs` | source | 0 | 4 | 0 | 0.0000 |
+| `src/model/temporal.rs` | source | 0 | 5 | 0 | 0.0000 |
+| `src/model/types.rs` | source | 0 | 5 | 0 | 0.0000 |
 | `src/model/workspace.rs` | source | 0 | 14 | 0 | 0.0000 |
 
 ## Internal Dependencies
@@ -34,6 +35,7 @@
 - `src/model/mod.rs` → `src/model/stats.rs` (imports)
 - `src/model/mod.rs` → `src/model/symbol.rs` (imports)
 - `src/model/mod.rs` → `src/model/symbol_index.rs` (imports)
+- `src/model/mod.rs` → `src/model/temporal.rs` (imports)
 - `src/model/mod.rs` → `src/model/types.rs` (imports)
 - `src/model/mod.rs` → `src/model/workspace.rs` (imports)
 - `src/model/symbol_index.rs` → `src/model/edge.rs` (imports)
@@ -129,6 +131,16 @@
 - `src/model/mod.rs` ← `src/serial/json.rs` (imports)
 - `src/model/mod.rs` ← `src/serial/mod.rs` (imports)
 - `src/model/symbol.rs` ← `src/serial/mod.rs` (imports)
+- `src/model/mod.rs` ← `src/temporal/churn.rs` (imports)
+- `src/model/temporal.rs` ← `src/temporal/churn.rs` (imports)
+- `src/model/mod.rs` ← `src/temporal/coupling.rs` (imports)
+- `src/model/temporal.rs` ← `src/temporal/coupling.rs` (imports)
+- `src/model/mod.rs` ← `src/temporal/git.rs` (imports)
+- `src/model/temporal.rs` ← `src/temporal/hotspot.rs` (imports)
+- `src/model/types.rs` ← `src/temporal/hotspot.rs` (imports)
+- `src/model/mod.rs` ← `src/temporal/mod.rs` (imports)
+- `src/model/mod.rs` ← `src/temporal/ownership.rs` (imports)
+- `src/model/temporal.rs` ← `src/temporal/ownership.rs` (imports)
 - `src/model/mod.rs` ← `src/views/cluster.rs` (imports)
 - `src/model/mod.rs` ← `src/views/impact.rs` (imports)
 - `src/model/mod.rs` ← `src/views/index.rs` (imports)
@@ -144,4 +156,5 @@
 - `tests/pipeline_tests.rs` tests `src/model/mod.rs`
 - `tests/properties.rs` tests `src/model/mod.rs`
 - `tests/symbol_tests.rs` tests `src/model/symbol.rs`
+- `tests/temporal_integration.rs` tests `src/model/mod.rs`
 

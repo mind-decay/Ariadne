@@ -106,6 +106,7 @@
 | `tests/pipeline_tests.rs` | test | 0 | 0 | 0 | 0.0000 |
 | `tests/properties.rs` | test | 0 | 0 | 0 | 0.0000 |
 | `tests/symbol_tests.rs` | test | 0 | 0 | 0 | 0.0000 |
+| `tests/temporal_integration.rs` | test | 0 | 0 | 0 | 0.0000 |
 
 ## Internal Dependencies
 
@@ -162,4 +163,7 @@
 - `tests/properties.rs` tests `src/model/mod.rs`
 - `tests/symbol_tests.rs` tests `src/model/symbol.rs`
 - `tests/symbol_tests.rs` tests `src/parser/mod.rs`
+- `tests/temporal_integration.rs` tests `src/diagnostic.rs`
+- `tests/temporal_integration.rs` tests `src/model/mod.rs`
+- `tests/temporal_integration.rs` tests `src/temporal/mod.rs`
 

@@ -2,12 +2,12 @@
 
 ## Architecture Summary
 
-- **Files:** 273
-- **Edges:** 349
-- **Clusters:** 17
+- **Files:** 284
+- **Edges:** 374
+- **Clusters:** 18
 - **Max depth:** 11
-- **Avg in-degree:** 1.1795
-- **Avg out-degree:** 1.1795
+- **Avg in-degree:** 1.2113
+- **Avg out-degree:** 1.2113
 
 ## Clusters
 
@@ -15,20 +15,21 @@
 |---------|------:|----------|--------:|
 | .claude | 39 | `.claude/settings.local.json` | 1.0000 |
 | .github | 2 | `.github/workflows/release.yml` | 1.0000 |
-| algo | 17 | `src/algo/mod.rs` | 0.4324 |
+| algo | 17 | `src/algo/mod.rs` | 0.4267 |
 | analysis | 4 | `src/analysis/smells.rs` | 0.2857 |
 | benches | 7 | `benches/symbol_bench.rs` | 0.0000 |
 | cluster | 1 | `src/cluster/mod.rs` | 0.0000 |
-| design | 34 | `design/testing.md` | 1.0000 |
+| design | 36 | `design/testing.md` | 1.0000 |
 | detect | 5 | `src/detect/mod.rs` | 0.2857 |
 | docs | 1 | `docs/superpowers/plans/2026-03-19-architecture-review-fixes.md` | 1.0000 |
-| mcp | 13 | `src/mcp/state.rs` | 0.4407 |
-| model | 15 | `src/model/mod.rs` | 0.1552 |
+| mcp | 14 | `src/mcp/state.rs` | 0.4590 |
+| model | 16 | `src/model/mod.rs` | 0.1484 |
 | parser | 14 | `src/parser/mod.rs` | 0.4507 |
 | pipeline | 5 | `src/pipeline/mod.rs` | 0.1212 |
-| root | 7 | `src/diagnostic.rs` | 0.0769 |
+| root | 7 | `src/diagnostic.rs` | 0.0698 |
 | serial | 3 | `src/serial/mod.rs` | 0.1053 |
-| tests | 102 | `tests/symbol_tests.rs` | 0.6182 |
+| temporal | 6 | `src/temporal/mod.rs` | 0.2500 |
+| tests | 103 | `tests/temporal_integration.rs` | 0.5862 |
 | views | 4 | `src/views/mod.rs` | 0.3333 |
 
 ## Circular Dependencies
@@ -70,4 +71,5 @@
 - `tests/pipeline_tests.rs`
 - `tests/properties.rs`
 - `tests/symbol_tests.rs`
+- `tests/temporal_integration.rs`
 

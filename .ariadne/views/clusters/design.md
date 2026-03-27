@@ -20,6 +20,8 @@
 | `design/reports/archive/2026-03-19-v2-architecture-review.md` | doc | 0 | 0 | 0 | 0.0000 |
 | `design/reports/archive/2026-03-22-architectural-review.md` | doc | 0 | 0 | 0 | 0.0000 |
 | `design/reports/archive/2026-03-23-moira-violations.md` | doc | 0 | 0 | 0 | 0.0000 |
+| `design/specs/2026-03-25-phase7-git-temporal-analysis.md` | doc | 0 | 0 | 0 | 0.0000 |
+| `design/specs/2026-03-25-phase7-implementation-plan.md` | doc | 0 | 0 | 0 | 0.0000 |
 | `design/specs/archive/2026-03-17-phase1-core-cli.md` | doc | 0 | 0 | 0 | 0.0000 |
 | `design/specs/archive/2026-03-17-phase1-implementation-plan.md` | doc | 0 | 0 | 0 | 0.0000 |
 | `design/specs/archive/2026-03-17-phase1a-implementation-plan.md` | doc | 0 | 0 | 0 | 0.0000 |

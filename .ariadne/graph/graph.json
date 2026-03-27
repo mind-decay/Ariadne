@@ -1021,15 +1021,6 @@
       "exports": [],
       "cluster": "design"
     },
-    "design/reports/2026-03-25-phase4d-formal-methods-evaluation.md": {
-      "type": "doc",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 234,
-      "hash": "aec44bf47bbea171",
-      "exports": [],
-      "cluster": "design"
-    },
     "design/reports/archive/2026-03-17-doc-audit.md": {
       "type": "doc",
       "layer": "unknown",
@@ -1093,21 +1084,12 @@
       "exports": [],
       "cluster": "design"
     },
-    "design/specs/2026-03-25-phase7-git-temporal-analysis.md": {
+    "design/reports/archive/2026-03-25-phase4d-formal-methods-evaluation.md": {
       "type": "doc",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 621,
-      "hash": "b3d697bf81752966",
-      "exports": [],
-      "cluster": "design"
-    },
-    "design/specs/2026-03-25-phase7-implementation-plan.md": {
-      "type": "doc",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 547,
-      "hash": "fea08326373f2b88",
+      "lines": 234,
+      "hash": "aec44bf47bbea171",
       "exports": [],
       "cluster": "design"
     },
@@ -1261,6 +1243,24 @@
       "arch_depth": 0,
       "lines": 637,
       "hash": "f0bfa1ba7fdd643d",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/specs/archive/2026-03-25-phase7-git-temporal-analysis.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 621,
+      "hash": "b3d697bf81752966",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/specs/archive/2026-03-25-phase7-implementation-plan.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 547,
+      "hash": "fea08326373f2b88",
       "exports": [],
       "cluster": "design"
     },
@@ -3372,8 +3372,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 1192,
-      "hash": "5d5b7f749a37aa56",
+      "lines": 1516,
+      "hash": "24ce1b91985ec2bb",
       "exports": [],
       "cluster": "root",
       "symbols": [
@@ -3403,7 +3403,7 @@
           "visibility": "private",
           "span": {
             "start": 127,
-            "end": 277
+            "end": 336
           },
           "signature": "enum QueryCommands {"
         },
@@ -3412,8 +3412,8 @@
           "kind": "enum",
           "visibility": "private",
           "span": {
-            "start": 280,
-            "end": 290
+            "start": 339,
+            "end": 349
           },
           "signature": "enum ViewsCommands {"
         },
@@ -3422,8 +3422,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 391,
-            "end": 399
+            "start": 450,
+            "end": 458
           },
           "signature": "fn check_server_lock(output_dir: &std::path::Path) -> Result<(), FatalError> {"
         },
@@ -3432,8 +3432,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 620,
-            "end": 625
+            "start": 679,
+            "end": 684
           },
           "signature": "fn json_pretty<T: serde::Serialize>(value: &T) -> Result<String, FatalError> {"
         },
@@ -3442,8 +3442,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 602,
-            "end": 615
+            "start": 661,
+            "end": 674
           },
           "signature": "fn load_clusters("
         },
@@ -3452,8 +3452,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 582,
-            "end": 592
+            "start": 641,
+            "end": 651
           },
           "signature": "fn load_graph(reader: &dyn GraphReader, dir: &std::path::Path) -> Result<ProjectGraph, FatalError> {"
         },
@@ -3462,8 +3462,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 594,
-            "end": 600
+            "start": 653,
+            "end": 659
           },
           "signature": "fn load_stats(reader: &dyn GraphReader, dir: &std::path::Path) -> Result<StatsOutput, FatalError> {"
         },
@@ -3472,8 +3472,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 292,
-            "end": 387
+            "start": 351,
+            "end": 446
           },
           "signature": "fn main() {"
         },
@@ -3482,8 +3482,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 1117,
-            "end": 1148
+            "start": 1441,
+            "end": 1472
           },
           "signature": "fn print_stats_md(stats: &StatsOutput) {"
         },
@@ -3492,8 +3492,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 402,
-            "end": 480
+            "start": 461,
+            "end": 539
           },
           "signature": "fn run_build("
         },
@@ -3502,8 +3502,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 565,
-            "end": 578
+            "start": 624,
+            "end": 637
           },
           "signature": "fn run_info() {"
         },
@@ -3512,8 +3512,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 627,
-            "end": 1097
+            "start": 686,
+            "end": 1421
           },
           "signature": "fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {"
         },
@@ -3522,8 +3522,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 483,
-            "end": 563
+            "start": 542,
+            "end": 622
           },
           "signature": "fn run_update("
         },
@@ -3532,8 +3532,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 1099,
-            "end": 1115
+            "start": 1423,
+            "end": 1439
           },
           "signature": "fn run_views(cmd: ViewsCommands) -> Result<(), FatalError> {"
         },
@@ -3542,8 +3542,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 1151,
-            "end": 1192
+            "start": 1475,
+            "end": 1516
           },
           "signature": "fn serialize_subgraph_result(result: &ariadne_graph::model::SubgraphResult) -> serde_json::Value {"
         }
