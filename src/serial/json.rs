@@ -4,7 +4,9 @@ use std::path::Path;
 
 use std::collections::BTreeMap;
 
-use super::{ClusterOutput, GraphOutput, GraphReader, GraphSerializer, RawImportOutput};
+use super::{
+    BoundaryOutput, ClusterOutput, GraphOutput, GraphReader, GraphSerializer, RawImportOutput,
+};
 use crate::diagnostic::FatalError;
 use crate::model::StatsOutput;
 
@@ -34,6 +36,15 @@ impl GraphSerializer for JsonSerializer {
     ) -> Result<(), FatalError> {
         ensure_dir(dir)?;
         atomic_write(dir, "raw_imports.json", imports)
+    }
+
+    fn write_boundaries(
+        &self,
+        output: &BoundaryOutput,
+        dir: &Path,
+    ) -> Result<(), FatalError> {
+        ensure_dir(dir)?;
+        atomic_write(dir, "boundaries.json", output)
     }
 }
 
@@ -98,6 +109,31 @@ impl GraphReader for JsonSerializer {
                         reason: e.to_string(),
                     })?;
                 Ok(Some(imports))
+            }
+            Err(_) => Ok(None),
+        }
+    }
+
+    fn read_boundaries(
+        &self,
+        dir: &Path,
+    ) -> Result<Option<BoundaryOutput>, FatalError> {
+        let path = dir.join("boundaries.json");
+        match fs::File::open(&path) {
+            Ok(file) => {
+                let reader = BufReader::new(file);
+                let output: BoundaryOutput =
+                    serde_json::from_reader(reader).map_err(|e| FatalError::GraphCorrupted {
+                        path: path.clone(),
+                        reason: e.to_string(),
+                    })?;
+                if output.version != 1 {
+                    return Err(FatalError::GraphCorrupted {
+                        path,
+                        reason: format!("unsupported boundaries version: {}", output.version),
+                    });
+                }
+                Ok(Some(output))
             }
             Err(_) => Ok(None),
         }

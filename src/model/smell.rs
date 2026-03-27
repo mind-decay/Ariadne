@@ -58,4 +58,6 @@ pub enum SmellType {
     DeadCluster,
     ShotgunSurgery,
     TemporalCouplingWithoutImport,
+    OrphanRoute,
+    OrphanEvent,
 }

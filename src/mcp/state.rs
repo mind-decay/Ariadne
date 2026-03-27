@@ -7,7 +7,7 @@ use crate::analysis::metrics::{compute_martin_metrics, ClusterMetrics};
 use crate::diagnostic::{DiagnosticCollector, FatalError};
 use crate::model::symbol_index::SymbolIndex;
 use crate::model::*;
-use crate::serial::RawImportOutput;
+use crate::serial::{BoundaryOutput, RawImportOutput};
 
 /// Core in-memory state for the MCP server.
 /// Contains the graph plus precomputed indices for O(1) lookups.
@@ -42,6 +42,8 @@ pub struct GraphState {
     pub call_graph: CallGraph,
     /// Temporal analysis from git history (None if git unavailable).
     pub temporal: Option<TemporalState>,
+    /// Semantic boundary data (None if boundaries.json not present).
+    pub semantic: Option<BoundaryOutput>,
     /// Structural diff from the last auto-update (None before first update).
     pub last_diff: Option<StructuralDiff>,
     pub freshness: FreshnessState,
@@ -117,6 +119,7 @@ impl GraphState {
         clusters: ClusterMap,
         raw_imports: BTreeMap<String, Vec<RawImportOutput>>,
         project_root: Option<&Path>,
+        semantic: Option<BoundaryOutput>,
     ) -> Self {
         let reverse_index = Self::build_reverse_index(&graph);
         let forward_index = Self::build_forward_index(&graph);
@@ -158,6 +161,7 @@ impl GraphState {
             symbol_index,
             call_graph,
             temporal,
+            semantic,
             last_diff: None,
             freshness: FreshnessState::new(),
             loaded_at: SystemTime::now(),
@@ -226,11 +230,15 @@ pub fn load_graph_state(
 
     let raw_imports = reader.read_raw_imports(output_dir)?.unwrap_or_default();
 
+    // Load semantic boundary data (optional — missing boundaries.json is fine)
+    let semantic = reader.read_boundaries(output_dir).ok().flatten();
+
     Ok(GraphState::from_loaded_data(
         graph,
         stats,
         clusters,
         raw_imports,
         project_root,
+        semantic,
     ))
 }

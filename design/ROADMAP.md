@@ -1371,7 +1371,7 @@ S(t) = P(no modification before time t)
 
 ---
 
-## Phase 8: Semantic Boundaries [PLANNED]
+## Phase 8: Semantic Boundaries [DONE]
 
 **Goal:** Detect implicit dependencies that static imports miss — API routes, event systems, DI containers, database tables, config-driven routing.
 

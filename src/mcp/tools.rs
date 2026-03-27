@@ -20,6 +20,9 @@ use crate::algo::test_map::find_tests_for;
 use crate::analysis::smells::detect_smells;
 use crate::mcp::state::GraphState;
 use crate::mcp::tools_context::{ContextParam, PlanImpactParam, ReadingOrderParam, TestsForParam};
+use crate::mcp::tools_semantic::{
+    BoundariesParam, BoundaryForParam, EventMapParam, RouteMapParam,
+};
 use crate::mcp::tools_temporal::{
     ChurnParam, CouplingParam, HiddenDepsParam, HotspotsParam, OwnershipParam,
 };
@@ -137,6 +140,8 @@ pub struct BlastRadiusParam {
     pub depth: Option<u32>,
     /// Optional symbol name for symbol-level blast radius
     pub symbol: Option<String>,
+    /// When true, also follow semantic edges (routes/events) for 1 additional hop
+    pub include_semantic: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -450,6 +455,31 @@ impl AriadneTools {
             }
         }
 
+        // Add semantic boundary data when available
+        if let Some(ref semantic) = state.semantic {
+            let boundaries: Vec<serde_json::Value> = semantic
+                .boundaries
+                .get(params.path.as_str())
+                .map(|bs| {
+                    bs.iter()
+                        .map(|b| {
+                            serde_json::json!({
+                                "kind": b.kind,
+                                "name": b.name,
+                                "role": b.role,
+                                "line": b.line,
+                                "framework": b.framework,
+                                "method": b.method,
+                            })
+                        })
+                        .collect()
+                })
+                .unwrap_or_default();
+            result["boundaries"] = serde_json::json!(boundaries);
+        } else {
+            result["boundaries"] = serde_json::json!([]);
+        }
+
         to_json(&result)
     }
 
@@ -457,7 +487,7 @@ impl AriadneTools {
 
     #[tool(
         name = "ariadne_blast_radius",
-        description = "Reverse BFS: map of affected files with distances from the given file. When 'symbol' is provided, traces symbol-level blast radius instead."
+        description = "Reverse BFS: map of affected files with distances from the given file. When 'symbol' is provided, traces symbol-level blast radius instead. Set 'include_semantic' to also follow semantic edges."
     )]
     fn blast_radius(&self, Parameters(params): Parameters<BlastRadiusParam>) -> String {
         let state = self.state.load();
@@ -510,7 +540,58 @@ impl AriadneTools {
         }
 
         let index = algo::AdjacencyIndex::build(&state.graph.edges, algo::is_architectural);
-        let result = algo::blast_radius::blast_radius(&state.graph, &cp, params.depth, &index);
+        let mut result = algo::blast_radius::blast_radius(&state.graph, &cp, params.depth, &index);
+
+        // When include_semantic is true, expand with files connected via semantic edges (1 hop)
+        if params.include_semantic.unwrap_or(false) {
+            if let Some(ref semantic) = state.semantic {
+                let structural_files: Vec<CanonicalPath> =
+                    result.keys().cloned().collect();
+                let mut semantic_files: Vec<(CanonicalPath, u32)> = Vec::new();
+
+                // For each file in the structural blast radius, find semantic edges from it
+                for file in &structural_files {
+                    let file_str = file.as_str();
+                    for edge in &semantic.edges {
+                        if edge.from == file_str {
+                            let target = CanonicalPath::new(&edge.to);
+                            if !result.contains_key(&target) {
+                                let source_dist = result.get(file).copied().unwrap_or(0);
+                                semantic_files.push((target, source_dist + 1));
+                            }
+                        }
+                        if edge.to == file_str {
+                            let target = CanonicalPath::new(&edge.from);
+                            if !result.contains_key(&target) {
+                                let source_dist = result.get(file).copied().unwrap_or(0);
+                                semantic_files.push((target, source_dist + 1));
+                            }
+                        }
+                    }
+                }
+
+                // Also check semantic edges from the origin file itself
+                let origin_str = cp.as_str();
+                for edge in &semantic.edges {
+                    if edge.from == origin_str {
+                        let target = CanonicalPath::new(&edge.to);
+                        if !result.contains_key(&target) {
+                            semantic_files.push((target, 1));
+                        }
+                    }
+                    if edge.to == origin_str {
+                        let target = CanonicalPath::new(&edge.from);
+                        if !result.contains_key(&target) {
+                            semantic_files.push((target, 1));
+                        }
+                    }
+                }
+
+                for (file, dist) in semantic_files {
+                    result.entry(file).or_insert(dist);
+                }
+            }
+        }
 
         let json_result: BTreeMap<String, u32> = result
             .iter()
@@ -774,12 +855,32 @@ impl AriadneTools {
             edges_out
         };
 
+        // Build semantic_deps from semantic edges
+        let semantic_deps: Vec<serde_json::Value> = if let Some(ref semantic) = state.semantic {
+            let path_str = params.path.as_str();
+            semantic
+                .edges
+                .iter()
+                .filter(|e| e.from == path_str)
+                .map(|e| {
+                    serde_json::json!({
+                        "via": format!("{} {}", e.kind, e.name),
+                        "target": e.to,
+                        "confidence": e.confidence,
+                    })
+                })
+                .collect()
+        } else {
+            vec![]
+        };
+
         let result = serde_json::json!({
             "path": params.path,
             "direction": params.direction,
             "incoming": incoming,
             "outgoing": outgoing,
             "symbol_edges": symbol_edges,
+            "semantic_deps": semantic_deps,
         });
 
         to_json(&result)
@@ -824,16 +925,18 @@ impl AriadneTools {
 
     #[tool(
         name = "ariadne_smells",
-        description = "Detect architectural smells: god files, circular dependencies, layer violations, hub-and-spoke, unstable foundations, dead clusters, shotgun surgery"
+        description = "Detect architectural smells: god files, circular dependencies, layer violations, hub-and-spoke, unstable foundations, dead clusters, shotgun surgery, orphan routes/events"
     )]
     fn smells(&self, Parameters(params): Parameters<SmellsParam>) -> String {
         let state = self.state.load();
+        let semantic = state.semantic.as_ref().map(crate::serial::boundary_output_to_semantic_state);
         let smells = detect_smells(
             &state.graph,
             &state.stats,
             &state.clusters,
             &state.cluster_metrics,
             state.temporal.as_ref(),
+            semantic.as_ref(),
         );
 
         let filtered: Vec<_> = if let Some(ref min_sev) = params.min_severity {
@@ -2277,6 +2380,257 @@ impl AriadneTools {
             .collect();
 
         to_json(&result)
+    }
+
+    // --- T38: Semantic boundaries ---
+
+    #[tool(
+        name = "ariadne_boundaries",
+        description = "List all detected semantic boundaries (HTTP routes, event channels) grouped by file. Optionally filter by kind."
+    )]
+    fn boundaries(&self, Parameters(params): Parameters<BoundariesParam>) -> String {
+        let state = self.state.load();
+        let semantic = match state.semantic.as_ref() {
+            Some(s) => s,
+            None => {
+                return to_json(&serde_json::json!({
+                    "message": "No semantic boundary data available. Run `ariadne build` on a project with HTTP routes or event channels to generate.",
+                    "hint": "Semantic analysis detects Express/Fastify routes, EventEmitter patterns, and similar."
+                }));
+            }
+        };
+
+        let filtered: BTreeMap<&String, Vec<&crate::serial::BoundaryEntry>> = semantic
+            .boundaries
+            .iter()
+            .map(|(file, entries)| {
+                let matched: Vec<&crate::serial::BoundaryEntry> = entries
+                    .iter()
+                    .filter(|e| {
+                        params
+                            .kind
+                            .as_ref()
+                            .map_or(true, |k| e.kind.to_lowercase().contains(&k.to_lowercase()))
+                    })
+                    .collect();
+                (file, matched)
+            })
+            .filter(|(_, entries)| !entries.is_empty())
+            .collect();
+
+        to_json(&serde_json::json!({
+            "file_count": filtered.len(),
+            "route_count": semantic.route_count,
+            "event_count": semantic.event_count,
+            "boundaries": filtered.iter().map(|(file, entries)| {
+                serde_json::json!({
+                    "file": file,
+                    "entries": entries.iter().map(|e| {
+                        serde_json::json!({
+                            "kind": e.kind,
+                            "name": e.name,
+                            "role": e.role,
+                            "line": e.line,
+                            "framework": e.framework,
+                            "method": e.method,
+                        })
+                    }).collect::<Vec<_>>(),
+                })
+            }).collect::<Vec<_>>(),
+        }))
+    }
+
+    // --- T39: Route map ---
+
+    #[tool(
+        name = "ariadne_route_map",
+        description = "HTTP route map: routes grouped by path, showing handler file and consumer files"
+    )]
+    fn route_map(&self, Parameters(_params): Parameters<RouteMapParam>) -> String {
+        let state = self.state.load();
+        let semantic = match state.semantic.as_ref() {
+            Some(s) => s,
+            None => {
+                return to_json(&serde_json::json!({
+                    "message": "No semantic boundary data available. Run `ariadne build` on a project with HTTP routes to generate.",
+                }));
+            }
+        };
+
+        // Collect routes: group by route name, find handlers (define role) and consumers (consume role)
+        let mut route_map: BTreeMap<String, serde_json::Value> = BTreeMap::new();
+
+        for (file, entries) in &semantic.boundaries {
+            for entry in entries {
+                if !entry.kind.to_lowercase().contains("http") && !entry.kind.to_lowercase().contains("route") {
+                    continue;
+                }
+                let route = route_map
+                    .entry(entry.name.clone())
+                    .or_insert_with(|| serde_json::json!({
+                        "path": entry.name,
+                        "method": entry.method,
+                        "handlers": [],
+                        "consumers": [],
+                    }));
+
+                let role_lower = entry.role.to_lowercase();
+                if role_lower.contains("define") || role_lower.contains("handler") || role_lower.contains("producer") {
+                    if let Some(handlers) = route.get_mut("handlers") {
+                        if let Some(arr) = handlers.as_array_mut() {
+                            arr.push(serde_json::json!({
+                                "file": file,
+                                "line": entry.line,
+                                "framework": entry.framework,
+                            }));
+                        }
+                    }
+                } else {
+                    if let Some(consumers) = route.get_mut("consumers") {
+                        if let Some(arr) = consumers.as_array_mut() {
+                            arr.push(serde_json::json!({
+                                "file": file,
+                                "line": entry.line,
+                            }));
+                        }
+                    }
+                }
+            }
+        }
+
+        to_json(&serde_json::json!({
+            "route_count": semantic.route_count,
+            "orphan_routes": semantic.orphan_routes,
+            "routes": route_map.values().collect::<Vec<_>>(),
+        }))
+    }
+
+    // --- T40: Event map ---
+
+    #[tool(
+        name = "ariadne_event_map",
+        description = "Event channel map: events grouped by name, showing producer and consumer files"
+    )]
+    fn event_map(&self, Parameters(_params): Parameters<EventMapParam>) -> String {
+        let state = self.state.load();
+        let semantic = match state.semantic.as_ref() {
+            Some(s) => s,
+            None => {
+                return to_json(&serde_json::json!({
+                    "message": "No semantic boundary data available. Run `ariadne build` on a project with event channels to generate.",
+                }));
+            }
+        };
+
+        // Collect events: group by event name, find producers and consumers
+        let mut event_map: BTreeMap<String, serde_json::Value> = BTreeMap::new();
+
+        for (file, entries) in &semantic.boundaries {
+            for entry in entries {
+                if !entry.kind.to_lowercase().contains("event") {
+                    continue;
+                }
+                let event = event_map
+                    .entry(entry.name.clone())
+                    .or_insert_with(|| serde_json::json!({
+                        "name": entry.name,
+                        "producers": [],
+                        "consumers": [],
+                    }));
+
+                let role_lower = entry.role.to_lowercase();
+                if role_lower.contains("produce") || role_lower.contains("emit") || role_lower.contains("define") {
+                    if let Some(producers) = event.get_mut("producers") {
+                        if let Some(arr) = producers.as_array_mut() {
+                            arr.push(serde_json::json!({
+                                "file": file,
+                                "line": entry.line,
+                                "framework": entry.framework,
+                            }));
+                        }
+                    }
+                } else {
+                    if let Some(consumers) = event.get_mut("consumers") {
+                        if let Some(arr) = consumers.as_array_mut() {
+                            arr.push(serde_json::json!({
+                                "file": file,
+                                "line": entry.line,
+                            }));
+                        }
+                    }
+                }
+            }
+        }
+
+        to_json(&serde_json::json!({
+            "event_count": semantic.event_count,
+            "orphan_events": semantic.orphan_events,
+            "events": event_map.values().collect::<Vec<_>>(),
+        }))
+    }
+
+    // --- T41: Boundary for file ---
+
+    #[tool(
+        name = "ariadne_boundary_for",
+        description = "All semantic boundaries (routes, events) defined in a specific file"
+    )]
+    fn boundary_for(&self, Parameters(params): Parameters<BoundaryForParam>) -> String {
+        let state = self.state.load();
+        let semantic = match state.semantic.as_ref() {
+            Some(s) => s,
+            None => {
+                return to_json(&serde_json::json!({
+                    "message": "No semantic boundary data available. Run `ariadne build` on a project with HTTP routes or event channels to generate.",
+                }));
+            }
+        };
+
+        let entries = semantic.boundaries.get(&params.path);
+        match entries {
+            Some(entries) => {
+                // Also find semantic edges involving this file
+                let related_edges: Vec<serde_json::Value> = semantic
+                    .edges
+                    .iter()
+                    .filter(|e| e.from == params.path || e.to == params.path)
+                    .map(|e| {
+                        serde_json::json!({
+                            "from": e.from,
+                            "to": e.to,
+                            "kind": e.kind,
+                            "name": e.name,
+                            "confidence": e.confidence,
+                        })
+                    })
+                    .collect();
+
+                to_json(&serde_json::json!({
+                    "path": params.path,
+                    "boundary_count": entries.len(),
+                    "boundaries": entries.iter().map(|e| {
+                        serde_json::json!({
+                            "kind": e.kind,
+                            "name": e.name,
+                            "role": e.role,
+                            "line": e.line,
+                            "framework": e.framework,
+                            "method": e.method,
+                        })
+                    }).collect::<Vec<_>>(),
+                    "related_edges": related_edges,
+                }))
+            }
+            None => {
+                to_json(&serde_json::json!({
+                    "path": params.path,
+                    "boundary_count": 0,
+                    "boundaries": [],
+                    "related_edges": [],
+                    "message": "No boundaries found for this file",
+                }))
+            }
+        }
     }
 }
 

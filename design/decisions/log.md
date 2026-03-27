@@ -1215,3 +1215,66 @@ Applies to: Brandes centrality (Phase 2), Louvain modularity (Phase 2b), PageRan
 **Decision:** Parse `-M` rename output format (`{old} => {new}` in numstat). Build `BTreeMap<String, CanonicalPath>` mapping old paths to their current canonical paths. When aggregating churn, map all old paths to current paths. Only track renames to paths that exist on disk.
 **Reasoning:** Keeps rename handling simple and bounded. Paths not in current graph are irrelevant.
 **Affects:** `src/temporal/git.rs`.
+
+## D-102: Boundary Extraction Inline During Parse
+
+**Date:** 2026-03-27
+**Status:** Accepted
+**Context:** Phase 8 needs to extract semantic boundaries (routes, events) from source files. Two approaches: separate pass over files, or inline during existing parse pass.
+**Decision:** Following D-077 pattern (symbol extraction inline during parse), BoundaryExtractor receives the same `Tree` + source as `SymbolExtractor`. Extraction happens during the parse stage, not as a separate pipeline step.
+**Reasoning:** Reuses the existing tree-sitter parse result. Avoids double-parsing files. Consistent with the symbol extraction architecture established in Phase 4.
+**Affects:** `src/semantic/mod.rs`, `src/parser/traits.rs`.
+
+## D-103: Boundary Data in Separate boundaries.json
+
+**Date:** 2026-03-27
+**Status:** Accepted
+**Context:** Where to persist extracted boundary data. Options: embed in graph.json, or separate file.
+**Decision:** Boundaries stored in separate `boundaries.json` file, following the temporal precedent (`temporal.json`). `graph.json` schema unchanged.
+**Reasoning:** Follows temporal precedent. Keeps graph.json stable for existing consumers. Semantic data is optional and independently versioned.
+**Affects:** `src/serial/json.rs`, `.ariadne/graph/boundaries.json`.
+
+## D-104: Boundaries Computed at Build Time
+
+**Date:** 2026-03-27
+**Status:** Accepted
+**Context:** When to compute boundaries and semantic edges — at build time or lazily on MCP query.
+**Decision:** Extraction inline during parse; `SemanticState` persisted at build time. MCP loads persisted state, no recomputation needed.
+**Reasoning:** Consistent with temporal analysis pattern. Build-time computation ensures deterministic output. MCP queries stay fast with no file I/O beyond loading state.
+**Affects:** `src/semantic/mod.rs`, `src/mcp/state.rs`.
+
+## D-105: Semantic Edges Separate from Structural Graph
+
+**Date:** 2026-03-27
+**Status:** Accepted
+**Context:** Semantic edges (route producer→consumer) are probabilistic and fundamentally different from structural import edges.
+**Decision:** Probabilistic edges stored in `SemanticState.edges`, not `ProjectGraph.edges`. Structural graph remains purely deterministic.
+**Reasoning:** Mixing probabilistic and deterministic edges would corrupt graph algorithm results. Separate storage allows MCP tools to optionally include semantic edges without affecting core algorithms.
+**Affects:** `src/model/semantic.rs`, `src/semantic/mod.rs`.
+
+## D-106: Exclude Self-Loop Semantic Edges
+
+**Date:** 2026-03-27
+**Status:** Accepted
+**Context:** A file may both produce and consume the same boundary (e.g., define a route and call it in tests within the same file).
+**Decision:** File producing and consuming the same boundary does not create a semantic edge. Self-loops are excluded during edge construction.
+**Reasoning:** Self-loop edges add noise without information. The file already knows about itself structurally.
+**Affects:** `src/semantic/mod.rs`.
+
+## D-107: Phase 8a String Literal Matching Only
+
+**Date:** 2026-03-27
+**Status:** Accepted
+**Context:** Boundary detection could use simple string literal matching or full abstract interpretation of string expressions.
+**Decision:** Phase 8a uses string literal matching only. Abstract interpretation (tracking string concatenation, variable assignments) deferred per ROADMAP Tier C protocol.
+**Reasoning:** String literals cover the vast majority of route/event definitions in real code. Abstract interpretation adds significant complexity for marginal coverage gain. Can be added in Phase 8b if needed.
+**Affects:** `src/semantic/extractors/`.
+
+## D-108: Three-Tier Confidence Scoring
+
+**Date:** 2026-03-27
+**Status:** Accepted
+**Context:** When matching boundary producers to consumers, string matches may be exact or partial (prefix). Need a confidence model.
+**Decision:** Three tiers: 1.0 for exact match, 0.8 for prefix match, no edge created for no match. No intermediate confidence levels.
+**Reasoning:** Simple, deterministic, and interpretable. Two non-zero tiers avoid the complexity of continuous confidence scoring while distinguishing exact from approximate matches.
+**Affects:** `src/semantic/mod.rs`.

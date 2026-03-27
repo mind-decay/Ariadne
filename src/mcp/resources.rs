@@ -212,12 +212,14 @@ fn read_cluster(name: &str, state: &GraphState) -> String {
 }
 
 fn read_smells(state: &GraphState) -> String {
+    let semantic = state.semantic.as_ref().map(crate::serial::boundary_output_to_semantic_state);
     let smells = detect_smells(
         &state.graph,
         &state.stats,
         &state.clusters,
         &state.cluster_metrics,
         state.temporal.as_ref(),
+        semantic.as_ref(),
     );
 
     let items: Vec<serde_json::Value> = smells
@@ -388,7 +390,7 @@ mod tests {
             clusters: clusters_map,
         };
 
-        GraphState::from_loaded_data(graph, stats, clusters, BTreeMap::new(), None)
+        GraphState::from_loaded_data(graph, stats, clusters, BTreeMap::new(), None, None)
     }
 
     #[test]

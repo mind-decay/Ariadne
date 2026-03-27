@@ -13,11 +13,13 @@ use crate::cluster::assign_clusters;
 use crate::detect::{detect_fsd_project, detect_workspace, is_case_insensitive};
 use crate::diagnostic::{DiagnosticCollector, DiagnosticCounts, FatalError, Warning, WarningCode};
 use crate::model::*;
+use crate::model::semantic::Boundary;
 use crate::model::symbol::SymbolDef;
 use crate::parser::{ParseOutcome, ParserRegistry, RawExport, RawImport};
+use crate::semantic;
 use crate::serial::{
-    ClusterEntryOutput, ClusterOutput, GraphOutput, GraphReader, GraphSerializer, NodeOutput,
-    RawImportOutput,
+    self, ClusterEntryOutput, ClusterOutput, GraphOutput, GraphReader, GraphSerializer,
+    NodeOutput, RawImportOutput,
 };
 
 pub use read::{FileContent, FileReader, FileSkipReason, FsReader};
@@ -30,6 +32,7 @@ pub struct ParsedFile {
     pub imports: Vec<RawImport>,
     pub exports: Vec<RawExport>,
     pub symbols: Vec<SymbolDef>,
+    pub boundaries: Vec<Boundary>,
 }
 
 /// Result of a successful pipeline run.
@@ -211,17 +214,18 @@ impl BuildPipeline {
                 let extension = fc.path.extension().unwrap_or("");
                 let parser = self.registry.parser_for(extension)?;
 
-                match self.registry.parse_source(&fc.bytes, parser, extension) {
-                    Ok(ParseOutcome::Ok(imports, exports, symbols)) => {
+                match self.registry.parse_source(&fc.bytes, parser, extension, &fc.path) {
+                    Ok(ParseOutcome::Ok(imports, exports, symbols, boundaries)) => {
                         let symbols = self.apply_symbol_limits(symbols, fc, &diagnostics);
                         Some(ParsedFile {
                             path: fc.path.clone(),
                             imports,
                             exports,
                             symbols,
+                            boundaries,
                         })
                     }
-                    Ok(ParseOutcome::Partial(imports, exports, symbols)) => {
+                    Ok(ParseOutcome::Partial(imports, exports, symbols, boundaries)) => {
                         // Partial parse — extract what we can, emit W007
                         diagnostics.warn(Warning {
                             code: WarningCode::W007PartialParse,
@@ -235,6 +239,7 @@ impl BuildPipeline {
                             imports,
                             exports,
                             symbols,
+                            boundaries,
                         })
                     }
                     Ok(ParseOutcome::Failed) => {
@@ -268,6 +273,14 @@ impl BuildPipeline {
                 parse_warnings
             );
         }
+
+        // Boundary aggregation: collect boundaries from parsed files for semantic analysis
+        let file_boundaries: std::collections::BTreeMap<CanonicalPath, Vec<Boundary>> =
+            parsed_files
+                .iter()
+                .filter(|pf| !pf.boundaries.is_empty())
+                .map(|pf| (pf.path.clone(), pf.boundaries.clone()))
+                .collect();
 
         // Stage 4: Resolve + Build graph
         let resolve_start = Instant::now();
@@ -432,6 +445,13 @@ impl BuildPipeline {
                 .collect();
         self.serializer
             .write_raw_imports(&raw_imports_output, &output_dir)?;
+        // Serialize boundaries if any were found (D-103, D-104)
+        if !file_boundaries.is_empty() {
+            let semantic_state = semantic::analyze(file_boundaries);
+            let boundary_output = serial::semantic_state_to_boundary_output(&semantic_state);
+            self.serializer
+                .write_boundaries(&boundary_output, &output_dir)?;
+        }
         if verbose {
             let graph_size = std::fs::metadata(output_dir.join("graph.json"))
                 .map(|m| m.len())

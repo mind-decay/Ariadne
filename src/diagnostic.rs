@@ -70,6 +70,7 @@ pub enum WarningCode {
     W026ShallowRepository,
     W027GitCommandFailed,
     W028TemporalAnalysisFailed,
+    W029BoundaryOverflow,
 }
 
 impl WarningCode {
@@ -103,6 +104,7 @@ impl WarningCode {
             Self::W026ShallowRepository => "W026",
             Self::W027GitCommandFailed => "W027",
             Self::W028TemporalAnalysisFailed => "W028",
+            Self::W029BoundaryOverflow => "W029",
         }
     }
 }
@@ -343,6 +345,7 @@ impl DiagnosticCollector {
             WarningCode::W026ShallowRepository => {}
             WarningCode::W027GitCommandFailed => {}
             WarningCode::W028TemporalAnalysisFailed => {}
+            WarningCode::W029BoundaryOverflow => {}
         }
         guard.0.push(warning);
     }

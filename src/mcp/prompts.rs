@@ -259,12 +259,14 @@ fn prompt_find_refactoring(
     let mut sections = Vec::new();
 
     // Detect smells
+    let semantic = state.semantic.as_ref().map(crate::serial::boundary_output_to_semantic_state);
     let all_smells = detect_smells(
         &state.graph,
         &state.stats,
         &state.clusters,
         &state.cluster_metrics,
         state.temporal.as_ref(),
+        semantic.as_ref(),
     );
 
     // Filter by scope if provided
@@ -647,7 +649,7 @@ mod tests {
             clusters: BTreeMap::new(),
         };
 
-        GraphState::from_loaded_data(graph, stats, clusters, BTreeMap::new(), None)
+        GraphState::from_loaded_data(graph, stats, clusters, BTreeMap::new(), None, None)
     }
 
     /// GraphState with two files and one cluster for prompt content tests.
@@ -725,6 +727,6 @@ mod tests {
             clusters: clusters_map,
         };
 
-        GraphState::from_loaded_data(graph, stats, clusters, BTreeMap::new(), None)
+        GraphState::from_loaded_data(graph, stats, clusters, BTreeMap::new(), None, None)
     }
 }

@@ -31,8 +31,8 @@ pub fn compute_structural_diff(
     );
     let (new_cycles, resolved_cycles) = diff_cycles(&old_stats.sccs, &new_stats.sccs);
 
-    let old_smells = detect_smells(old_graph, old_stats, old_clusters, old_metrics, None);
-    let new_smells_all = detect_smells(new_graph, new_stats, new_clusters, new_metrics, None);
+    let old_smells = detect_smells(old_graph, old_stats, old_clusters, old_metrics, None, None);
+    let new_smells_all = detect_smells(new_graph, new_stats, new_clusters, new_metrics, None, None);
     let (new_smells, resolved_smells) = diff_smells(&old_smells, &new_smells_all);
 
     let magnitude = compute_magnitude(

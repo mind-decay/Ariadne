@@ -8,6 +8,7 @@ pub mod server;
 pub mod state;
 pub mod tools;
 pub mod tools_context;
+pub mod tools_semantic;
 pub mod tools_temporal;
 pub mod user_state;
 pub mod watch;

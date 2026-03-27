@@ -8,12 +8,15 @@ use crate::model::*;
 ///
 /// When `temporal` is provided, also detects temporal coupling smells
 /// (co-change pairs with high confidence but no structural link).
+/// When `semantic` is provided, also detects orphan boundary smells
+/// (routes/events with no matching consumer/producer).
 pub fn detect_smells(
     graph: &ProjectGraph,
     stats: &StatsOutput,
     clusters: &ClusterMap,
     metrics: &BTreeMap<ClusterId, ClusterMetrics>,
     temporal: Option<&TemporalState>,
+    semantic: Option<&SemanticState>,
 ) -> Vec<ArchSmell> {
     let index = algo::AdjacencyIndex::build(&graph.edges, algo::is_architectural);
     let mut smells = Vec::new();
@@ -26,6 +29,9 @@ pub fn detect_smells(
     detect_shotgun_surgery(graph, &index, &mut smells);
     if let Some(temporal_state) = temporal {
         detect_temporal_coupling_without_import(temporal_state, &mut smells);
+    }
+    if let Some(semantic_state) = semantic {
+        detect_orphan_boundaries(semantic_state, &mut smells);
     }
     // Sort by (smell_type debug, files) for determinism
     smells.sort_by(|a, b| {
@@ -282,6 +288,63 @@ fn detect_temporal_coupling_without_import(
     }
 }
 
+/// Orphan Boundaries: routes/events with no matching consumer/producer (EC-14).
+fn detect_orphan_boundaries(semantic: &SemanticState, smells: &mut Vec<ArchSmell>) {
+    // OrphanRoute: one smell per orphan route name
+    for route_name in &semantic.orphan_routes {
+        let files: Vec<CanonicalPath> = semantic
+            .boundaries
+            .iter()
+            .filter(|(_, bs)| {
+                bs.iter()
+                    .any(|b| b.kind == BoundaryKind::HttpRoute && b.name == *route_name)
+            })
+            .map(|(path, _)| path.clone())
+            .collect();
+
+        smells.push(ArchSmell {
+            smell_type: SmellType::OrphanRoute,
+            files,
+            severity: SmellSeverity::Medium,
+            explanation: format!(
+                "HTTP route '{}' has no matching consumer/producer",
+                route_name
+            ),
+            metrics: SmellMetrics {
+                primary_value: 1.0,
+                threshold: 0.0,
+            },
+        });
+    }
+
+    // OrphanEvent: one smell per orphan event name
+    for event_name in &semantic.orphan_events {
+        let files: Vec<CanonicalPath> = semantic
+            .boundaries
+            .iter()
+            .filter(|(_, bs)| {
+                bs.iter()
+                    .any(|b| b.kind == BoundaryKind::EventChannel && b.name == *event_name)
+            })
+            .map(|(path, _)| path.clone())
+            .collect();
+
+        smells.push(ArchSmell {
+            smell_type: SmellType::OrphanEvent,
+            files,
+            severity: SmellSeverity::Medium,
+            explanation: format!(
+                "Event channel '{}' has no matching consumer/producer",
+                event_name
+            ),
+            metrics: SmellMetrics {
+                primary_value: 1.0,
+                threshold: 0.0,
+            },
+        });
+    }
+}
+
 /// Shotgun Surgery: file with blast radius > 30% of project file count
 /// Optimization: only check files with in-degree > 10 (files with few dependents
 /// can't have 30% blast radius since blast_radius uses reverse BFS).
@@ -405,7 +468,7 @@ mod tests {
         let graph = ProjectGraph { nodes, edges };
         let stats = make_stats(vec![("src/god.ts", 0.85)], vec![]);
 
-        let smells = detect_smells(&graph, &stats, &empty_clusters(), &empty_metrics(), None);
+        let smells = detect_smells(&graph, &stats, &empty_clusters(), &empty_metrics(), None, None);
         assert!(
             smells.iter().any(|s| s.smell_type == SmellType::GodFile),
             "Should detect god file"
@@ -431,7 +494,7 @@ mod tests {
         // centrality 0.75 — below 0.8 threshold
         let stats = make_stats(vec![("src/big.ts", 0.75)], vec![]);
 
-        let smells = detect_smells(&graph, &stats, &empty_clusters(), &empty_metrics(), None);
+        let smells = detect_smells(&graph, &stats, &empty_clusters(), &empty_metrics(), None, None);
         assert!(
             !smells.iter().any(|s| s.smell_type == SmellType::GodFile),
             "Should not detect god file below threshold"
@@ -454,7 +517,7 @@ mod tests {
         };
         let stats = make_stats(vec![], vec![vec!["src/a.ts", "src/b.ts", "src/c.ts"]]);
 
-        let smells = detect_smells(&graph, &stats, &empty_clusters(), &empty_metrics(), None);
+        let smells = detect_smells(&graph, &stats, &empty_clusters(), &empty_metrics(), None, None);
         let cycle_smells: Vec<_> = smells
             .iter()
             .filter(|s| s.smell_type == SmellType::CircularDependency)
@@ -481,7 +544,7 @@ mod tests {
         };
         let stats = make_stats(vec![], vec![]);
 
-        let smells = detect_smells(&graph, &stats, &empty_clusters(), &empty_metrics(), None);
+        let smells = detect_smells(&graph, &stats, &empty_clusters(), &empty_metrics(), None, None);
         assert!(smells
             .iter()
             .any(|s| s.smell_type == SmellType::LayerViolation));
@@ -559,7 +622,7 @@ mod tests {
         };
 
         let stats = make_stats(vec![], vec![]);
-        let smells = detect_smells(&graph, &stats, &clusters, &empty_metrics(), None);
+        let smells = detect_smells(&graph, &stats, &clusters, &empty_metrics(), None, None);
         assert!(
             smells
                 .iter()
@@ -594,7 +657,7 @@ mod tests {
         };
         let stats = make_stats(vec![], vec![]);
 
-        let smells = detect_smells(&graph, &stats, &empty_clusters(), &metrics, None);
+        let smells = detect_smells(&graph, &stats, &empty_clusters(), &metrics, None, None);
         assert!(smells
             .iter()
             .any(|s| s.smell_type == SmellType::UnstableFoundation));
@@ -647,7 +710,7 @@ mod tests {
             clusters: cluster_map,
         };
 
-        let smells = detect_smells(&graph, &stats, &clusters, &empty_metrics(), None);
+        let smells = detect_smells(&graph, &stats, &clusters, &empty_metrics(), None, None);
         let dead_smells: Vec<_> = smells
             .iter()
             .filter(|s| s.smell_type == SmellType::DeadCluster)
@@ -690,7 +753,7 @@ mod tests {
             clusters: cluster_map,
         };
 
-        let smells = detect_smells(&graph, &stats, &clusters, &empty_metrics(), None);
+        let smells = detect_smells(&graph, &stats, &clusters, &empty_metrics(), None, None);
         assert!(
             !smells
                 .iter()
@@ -740,7 +803,7 @@ mod tests {
         let graph = ProjectGraph { nodes, edges };
         let stats = make_stats(vec![], vec![]);
 
-        let smells = detect_smells(&graph, &stats, &empty_clusters(), &empty_metrics(), None);
+        let smells = detect_smells(&graph, &stats, &empty_clusters(), &empty_metrics(), None, None);
         assert!(
             smells
                 .iter()
@@ -806,7 +869,7 @@ mod tests {
         };
 
         let metrics = compute_martin_metrics(&graph, &clusters);
-        let smells = detect_smells(&graph, &stats, &clusters, &metrics, None);
+        let smells = detect_smells(&graph, &stats, &clusters, &metrics, None, None);
         assert!(
             smells.is_empty(),
             "Clean architecture should have no smells, got: {:?}",

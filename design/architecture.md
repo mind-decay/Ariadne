@@ -508,6 +508,9 @@ src/
 │   ├── index.rs         # L0 index generation
 │   ├── cluster.rs       # L1 per-cluster detail
 │   └── impact.rs        # L2 on-demand impact reports
+├── semantic/            # Depends on model/, diagnostic.rs [Phase 8]
+│   ├── mod.rs           # SemanticState, BoundaryExtractor trait, edge construction
+│   └── extractors/      # Per-pattern extractors (HTTP routes, events)
 ├── diagnostic.rs        # FatalError (thiserror), Warning, DiagnosticCollector (D-021)
 └── hash.rs              # xxHash64 wrapper → ContentHash
 ```
@@ -524,7 +527,8 @@ src/
 | `algo/` | `model/` | `serial/`, `pipeline/`, `parser/`, `views/` |
 | `views/` | `model/`, `diagnostic.rs` (for `FatalError`) | `parser/`, `pipeline/`, `algo/`, `serial/` |
 | `analysis/` | `model/`, `algo/` | `serial/`, `pipeline/`, `parser/`, `views/`, `mcp/` |
-| `mcp/` | `model/`, `algo/`, `analysis/`, `serial/`, `pipeline/` | `parser/` |
+| `semantic/` | `model/`, `diagnostic.rs` | `pipeline/`, `mcp/`, `serial/`, `algo/`, `parser/` (except trait consumed by parser) |
+| `mcp/` | `model/`, `algo/`, `analysis/`, `semantic/`, `serial/`, `pipeline/` | `parser/` |
 | `serial/` | `model/`, `diagnostic.rs` (for `FatalError`) | `parser/`, `pipeline/`, `detect/`, `cluster/` |
 | `diagnostic.rs` | `model/` (for `CanonicalPath` in warnings) | everything else |
 | `hash.rs` | `model/` (returns `ContentHash`) | everything else |

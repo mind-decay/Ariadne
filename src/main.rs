@@ -12,8 +12,10 @@ use ariadne_graph::model::StatsOutput;
 use ariadne_graph::model::{CanonicalPath, ClusterMap, ProjectGraph};
 use ariadne_graph::parser::ParserRegistry;
 use ariadne_graph::pipeline::{BuildPipeline, FsReader, FsWalker, WalkConfig};
+use ariadne_graph::semantic::events::EventExtractor;
+use ariadne_graph::semantic::http::HttpRouteExtractor;
 use ariadne_graph::serial::json::JsonSerializer;
-use ariadne_graph::serial::GraphReader;
+use ariadne_graph::serial::{BoundaryEntry, BoundaryOutput, GraphReader};
 
 #[derive(Parser)]
 #[command(
@@ -343,6 +345,47 @@ enum QueryCommands {
         #[arg(long, default_value = ".ariadne/graph/")]
         graph_dir: PathBuf,
     },
+    /// Show all semantic boundaries (HTTP routes, event channels)
+    Boundaries {
+        /// Filter by kind: "HttpRoute" or "EventChannel"
+        #[arg(long)]
+        kind: Option<String>,
+        /// Output format
+        #[arg(long, default_value = "md", value_parser = ["md", "json"])]
+        format: String,
+        /// Graph directory
+        #[arg(long, default_value = ".ariadne/graph/")]
+        graph_dir: PathBuf,
+    },
+    /// Show HTTP routes with handlers and consumers
+    Routes {
+        /// Output format
+        #[arg(long, default_value = "md", value_parser = ["md", "json"])]
+        format: String,
+        /// Graph directory
+        #[arg(long, default_value = ".ariadne/graph/")]
+        graph_dir: PathBuf,
+    },
+    /// Show event channels with producers and consumers
+    Events {
+        /// Output format
+        #[arg(long, default_value = "md", value_parser = ["md", "json"])]
+        format: String,
+        /// Graph directory
+        #[arg(long, default_value = ".ariadne/graph/")]
+        graph_dir: PathBuf,
+    },
+    /// Show all boundaries in a specific file
+    BoundaryFor {
+        /// File path to query
+        path: String,
+        /// Output format
+        #[arg(long, default_value = "md", value_parser = ["md", "json"])]
+        format: String,
+        /// Graph directory
+        #[arg(long, default_value = ".ariadne/graph/")]
+        graph_dir: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]
@@ -401,10 +444,13 @@ fn main() {
             let abs_project = std::fs::canonicalize(&project).unwrap_or(project);
             let output_dir = output.unwrap_or_else(|| abs_project.join(".ariadne").join("graph"));
             let rust_crate_name = ariadne_graph::detect::detect_rust_crate_name(&abs_project);
+            let mut registry = ParserRegistry::with_tier1_config(rust_crate_name);
+            registry.register_boundary_extractor(std::sync::Arc::new(HttpRouteExtractor));
+            registry.register_boundary_extractor(std::sync::Arc::new(EventExtractor));
             let pipeline = std::sync::Arc::new(BuildPipeline::new(
                 Box::new(FsWalker::new()),
                 Box::new(FsReader::new()),
-                ParserRegistry::with_tier1_config(rust_crate_name),
+                registry,
                 Box::new(JsonSerializer),
             ));
             let config = ariadne_graph::mcp::server::ServeConfig {
@@ -571,10 +617,13 @@ fn run_build(
     };
 
     let rust_crate_name = ariadne_graph::detect::detect_rust_crate_name(path);
+    let mut registry = ParserRegistry::with_tier1_config(rust_crate_name.clone());
+    registry.register_boundary_extractor(std::sync::Arc::new(HttpRouteExtractor));
+    registry.register_boundary_extractor(std::sync::Arc::new(EventExtractor));
     let pipeline = BuildPipeline::new(
         Box::new(FsWalker::new()),
         Box::new(FsReader::new()),
-        ParserRegistry::with_tier1_config(rust_crate_name.clone()),
+        registry,
         Box::new(JsonSerializer),
     );
 
@@ -652,10 +701,13 @@ fn run_update(
     };
 
     let rust_crate_name = ariadne_graph::detect::detect_rust_crate_name(path);
+    let mut registry = ParserRegistry::with_tier1_config(rust_crate_name.clone());
+    registry.register_boundary_extractor(std::sync::Arc::new(HttpRouteExtractor));
+    registry.register_boundary_extractor(std::sync::Arc::new(EventExtractor));
     let pipeline = BuildPipeline::new(
         Box::new(FsWalker::new()),
         Box::new(FsReader::new()),
-        ParserRegistry::with_tier1_config(rust_crate_name.clone()),
+        registry,
         Box::new(JsonSerializer),
     );
 
@@ -755,6 +807,18 @@ fn load_clusters(
                 reason: e,
             })?;
     Ok(clusters)
+}
+
+fn load_boundaries(
+    reader: &dyn GraphReader,
+    dir: &std::path::Path,
+) -> Result<BoundaryOutput, FatalError> {
+    reader.read_boundaries(dir)?.ok_or_else(|| {
+        eprintln!("No boundary data. Run `ariadne build` first.");
+        FatalError::InvalidArgument {
+            reason: "No boundary data available".to_string(),
+        }
+    })
 }
 
 // --- Query commands ---
@@ -1451,6 +1515,217 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
                 }
             }
         }
+        QueryCommands::Boundaries {
+            kind,
+            format,
+            graph_dir,
+        } => {
+            let boundaries = load_boundaries(&reader, &graph_dir)?;
+
+            let filtered: std::collections::BTreeMap<&String, Vec<&BoundaryEntry>> = boundaries
+                .boundaries
+                .iter()
+                .map(|(file, entries)| {
+                    let filtered_entries: Vec<&BoundaryEntry> = entries
+                        .iter()
+                        .filter(|e| kind.as_ref().map_or(true, |k| e.kind == *k))
+                        .collect();
+                    (file, filtered_entries)
+                })
+                .filter(|(_, entries)| !entries.is_empty())
+                .collect();
+
+            if format == "json" {
+                println!("{}", json_pretty(&filtered)?);
+            } else {
+                let kind_label = kind.as_deref().unwrap_or("all");
+                println!("# Semantic Boundaries (kind: {})\n", kind_label);
+                if filtered.is_empty() {
+                    println!("No boundaries found.");
+                } else {
+                    println!("| File | Kind | Name | Role | Line | Framework |");
+                    println!("|------|------|------|------|-----:|-----------|");
+                    for (file, entries) in &filtered {
+                        for e in entries {
+                            println!(
+                                "| `{}` | {} | {} | {} | {} | {} |",
+                                file,
+                                e.kind,
+                                e.name,
+                                e.role,
+                                e.line,
+                                e.framework.as_deref().unwrap_or("-")
+                            );
+                        }
+                    }
+                }
+            }
+        }
+        QueryCommands::Routes { format, graph_dir } => {
+            let boundaries = load_boundaries(&reader, &graph_dir)?;
+
+            // Group by route name: collect handler files and consumer files
+            let mut routes: std::collections::BTreeMap<
+                String,
+                (Vec<String>, Vec<String>, Option<String>),
+            > = std::collections::BTreeMap::new();
+
+            for (file, entries) in &boundaries.boundaries {
+                for entry in entries {
+                    if entry.kind == "HttpRoute" {
+                        let route = routes
+                            .entry(entry.name.clone())
+                            .or_insert_with(|| (Vec::new(), Vec::new(), entry.method.clone()));
+                        if entry.role == "Producer" || entry.role == "Both" {
+                            if !route.0.contains(file) {
+                                route.0.push(file.clone());
+                            }
+                        } else {
+                            if !route.1.contains(file) {
+                                route.1.push(file.clone());
+                            }
+                        }
+                    }
+                }
+            }
+
+            if format == "json" {
+                let result: Vec<serde_json::Value> = routes
+                    .iter()
+                    .map(|(name, (handlers, consumers, method))| {
+                        serde_json::json!({
+                            "route": name,
+                            "method": method,
+                            "handlers": handlers,
+                            "consumers": consumers,
+                        })
+                    })
+                    .collect();
+                println!("{}", json_pretty(&result)?);
+            } else {
+                println!("# HTTP Routes\n");
+                if routes.is_empty() {
+                    println!("No HTTP routes found.");
+                } else {
+                    println!("| Route | Method | Handlers | Consumers |");
+                    println!("|-------|--------|----------|-----------|");
+                    for (name, (handlers, consumers, method)) in &routes {
+                        let method_str = method.as_deref().unwrap_or("-");
+                        let handlers_str = handlers
+                            .iter()
+                            .map(|h| format!("`{}`", h))
+                            .collect::<Vec<_>>()
+                            .join(", ");
+                        let consumers_str = consumers
+                            .iter()
+                            .map(|c| format!("`{}`", c))
+                            .collect::<Vec<_>>()
+                            .join(", ");
+                        println!(
+                            "| {} | {} | {} | {} |",
+                            name, method_str, handlers_str, consumers_str
+                        );
+                    }
+                }
+            }
+        }
+        QueryCommands::Events { format, graph_dir } => {
+            let boundaries = load_boundaries(&reader, &graph_dir)?;
+
+            // Group by event name: collect producers and consumers
+            let mut events: std::collections::BTreeMap<String, (Vec<String>, Vec<String>)> =
+                std::collections::BTreeMap::new();
+
+            for (file, entries) in &boundaries.boundaries {
+                for entry in entries {
+                    if entry.kind == "EventChannel" {
+                        let event = events
+                            .entry(entry.name.clone())
+                            .or_insert_with(|| (Vec::new(), Vec::new()));
+                        if entry.role == "Producer" {
+                            if !event.0.contains(file) {
+                                event.0.push(file.clone());
+                            }
+                        } else {
+                            if !event.1.contains(file) {
+                                event.1.push(file.clone());
+                            }
+                        }
+                    }
+                }
+            }
+
+            if format == "json" {
+                let result: Vec<serde_json::Value> = events
+                    .iter()
+                    .map(|(name, (producers, consumers))| {
+                        serde_json::json!({
+                            "event": name,
+                            "producers": producers,
+                            "consumers": consumers,
+                        })
+                    })
+                    .collect();
+                println!("{}", json_pretty(&result)?);
+            } else {
+                println!("# Event Channels\n");
+                if events.is_empty() {
+                    println!("No event channels found.");
+                } else {
+                    println!("| Event | Producers | Consumers |");
+                    println!("|-------|-----------|-----------|");
+                    for (name, (producers, consumers)) in &events {
+                        let producers_str = producers
+                            .iter()
+                            .map(|p| format!("`{}`", p))
+                            .collect::<Vec<_>>()
+                            .join(", ");
+                        let consumers_str = consumers
+                            .iter()
+                            .map(|c| format!("`{}`", c))
+                            .collect::<Vec<_>>()
+                            .join(", ");
+                        println!("| {} | {} | {} |", name, producers_str, consumers_str);
+                    }
+                }
+            }
+        }
+        QueryCommands::BoundaryFor {
+            path,
+            format,
+            graph_dir,
+        } => {
+            let boundaries = load_boundaries(&reader, &graph_dir)?;
+
+            let entries = boundaries.boundaries.get(&path);
+
+            if format == "json" {
+                match entries {
+                    Some(entries) => println!("{}", json_pretty(entries)?),
+                    None => println!("[]"),
+                }
+            } else {
+                println!("# Boundaries for `{}`\n", path);
+                match entries {
+                    Some(entries) if !entries.is_empty() => {
+                        println!("| Kind | Name | Role | Line | Framework | Method |");
+                        println!("|------|------|------|-----:|-----------|--------|");
+                        for e in entries {
+                            println!(
+                                "| {} | {} | {} | {} | {} | {} |",
+                                e.kind,
+                                e.name,
+                                e.role,
+                                e.line,
+                                e.framework.as_deref().unwrap_or("-"),
+                                e.method.as_deref().unwrap_or("-")
+                            );
+                        }
+                    }
+                    _ => println!("No boundaries found for this file."),
+                }
+            }
+        }
         QueryCommands::Smells {
             min_severity,
             format,
@@ -1462,7 +1737,7 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
             let metrics =
                 ariadne_graph::analysis::metrics::compute_martin_metrics(&graph, &clusters);
             let smells =
-                ariadne_graph::analysis::smells::detect_smells(&graph, &stats, &clusters, &metrics, None);
+                ariadne_graph::analysis::smells::detect_smells(&graph, &stats, &clusters, &metrics, None, None);
 
             let filtered: Vec<_> = if let Some(ref min_sev) = min_severity {
                 let min = ariadne_graph::model::SmellSeverity::from_str_loose(min_sev);

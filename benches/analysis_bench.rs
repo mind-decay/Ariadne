@@ -129,7 +129,7 @@ fn bench_smell_detection(c: &mut Criterion) {
     let mut group = c.benchmark_group("smell_detection");
     group.sample_size(10);
     group.bench_function("detect_smells_3000", |b| {
-        b.iter(|| detect_smells(&graph, &stats, &clusters, &metrics, None))
+        b.iter(|| detect_smells(&graph, &stats, &clusters, &metrics, None, None))
     });
     group.finish();
 }

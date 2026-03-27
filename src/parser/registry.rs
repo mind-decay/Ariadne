@@ -12,14 +12,17 @@ use super::symbols::SymbolExtractor;
 use super::traits::{ImportResolver, LanguageParser, RawExport, RawImport};
 use super::typescript::{TypeScriptParser, TypeScriptResolver};
 use super::yaml;
+use crate::model::semantic::Boundary;
 use crate::model::symbol::SymbolDef;
+use crate::model::types::CanonicalPath;
+use crate::semantic::BoundaryExtractor;
 
 /// Result of parsing a source file.
 pub enum ParseOutcome {
     /// Parsed successfully with no errors.
-    Ok(Vec<RawImport>, Vec<RawExport>, Vec<SymbolDef>),
+    Ok(Vec<RawImport>, Vec<RawExport>, Vec<SymbolDef>, Vec<Boundary>),
     /// Parsed with partial errors (>0% but ≤50% ERROR nodes) — W007.
-    Partial(Vec<RawImport>, Vec<RawExport>, Vec<SymbolDef>),
+    Partial(Vec<RawImport>, Vec<RawExport>, Vec<SymbolDef>, Vec<Boundary>),
     /// Parse failed (>50% ERROR nodes or no tree produced) — W001.
     Failed,
 }
@@ -29,8 +32,10 @@ pub struct ParserRegistry {
     parsers: Vec<Box<dyn LanguageParser>>,
     resolvers: Vec<Box<dyn ImportResolver>>,
     symbol_extractors: Vec<(Vec<&'static str>, Arc<dyn SymbolExtractor>)>,
+    boundary_extractors: Vec<Arc<dyn BoundaryExtractor>>,
     extension_index: HashMap<String, usize>,
     symbol_ext_index: HashMap<String, usize>,
+    boundary_ext_index: HashMap<String, Vec<usize>>,
 }
 
 impl ParserRegistry {
@@ -39,8 +44,10 @@ impl ParserRegistry {
             parsers: Vec::new(),
             resolvers: Vec::new(),
             symbol_extractors: Vec::new(),
+            boundary_extractors: Vec::new(),
             extension_index: HashMap::new(),
             symbol_ext_index: HashMap::new(),
+            boundary_ext_index: HashMap::new(),
         }
     }
 
@@ -72,6 +79,32 @@ impl ParserRegistry {
         self.symbol_ext_index
             .get(extension)
             .map(|&i| self.symbol_extractors[i].1.as_ref())
+    }
+
+    /// Register a boundary extractor for its declared extensions.
+    /// Multiple extractors can be registered per extension.
+    pub fn register_boundary_extractor(&mut self, extractor: Arc<dyn BoundaryExtractor>) {
+        let index = self.boundary_extractors.len();
+        for ext in extractor.extensions() {
+            self.boundary_ext_index
+                .entry(ext.to_string())
+                .or_default()
+                .push(index);
+        }
+        self.boundary_extractors.push(extractor);
+    }
+
+    /// Look up all boundary extractors for a given file extension.
+    pub fn boundary_extractors_for(&self, extension: &str) -> Vec<&dyn BoundaryExtractor> {
+        self.boundary_ext_index
+            .get(extension)
+            .map(|indices| {
+                indices
+                    .iter()
+                    .map(|&i| self.boundary_extractors[i].as_ref())
+                    .collect()
+            })
+            .unwrap_or_default()
     }
 
     /// Look up a parser by file extension.
@@ -149,6 +182,7 @@ impl ParserRegistry {
         source: &[u8],
         parser: &dyn LanguageParser,
         extension: &str,
+        path: &CanonicalPath,
     ) -> Result<ParseOutcome, String> {
         let mut ts_parser = tree_sitter::Parser::new();
         ts_parser
@@ -194,10 +228,23 @@ impl ParserRegistry {
             })
             .unwrap_or_default();
 
+        // Extract boundaries from the same tree (D-102: inline during parse).
+        // catch_unwind guards against panics in boundary extractors (W019 safety).
+        let boundaries = self
+            .boundary_extractors_for(extension)
+            .iter()
+            .flat_map(|ext| {
+                std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    ext.extract(&tree, source, path)
+                }))
+                .unwrap_or_default()
+            })
+            .collect::<Vec<_>>();
+
         if is_partial {
-            Ok(ParseOutcome::Partial(imports, exports, symbols))
+            Ok(ParseOutcome::Partial(imports, exports, symbols, boundaries))
         } else {
-            Ok(ParseOutcome::Ok(imports, exports, symbols))
+            Ok(ParseOutcome::Ok(imports, exports, symbols, boundaries))
         }
     }
 
