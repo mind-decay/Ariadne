@@ -89,6 +89,16 @@ enum Commands {
         #[arg(long)]
         no_watch: bool,
     },
+    /// Stop the running MCP server (sends SIGTERM to the server process)
+    #[cfg(feature = "serve")]
+    Restart {
+        /// Project root directory
+        #[arg(long, default_value = ".")]
+        project: PathBuf,
+        /// Output directory containing graph data
+        #[arg(long, short)]
+        output: Option<PathBuf>,
+    },
     /// Incremental update via delta computation
     Update {
         /// Path to the project root
@@ -414,6 +424,8 @@ fn main() {
                 Err(e) => Err(e),
             }
         }
+        #[cfg(feature = "serve")]
+        Commands::Restart { project, output } => run_restart(project, output),
         Commands::Update {
             path,
             output,
@@ -455,6 +467,78 @@ fn check_server_lock(output_dir: &std::path::Path) -> Result<(), FatalError> {
         return Err(FatalError::LockFileHeld { pid, lock_path });
     }
     Ok(())
+}
+
+#[cfg(feature = "serve")]
+fn run_restart(project: PathBuf, output: Option<PathBuf>) -> Result<(), FatalError> {
+    let abs_project = std::fs::canonicalize(&project).unwrap_or(project);
+    let output_dir = output.unwrap_or_else(|| abs_project.join(".ariadne").join("graph"));
+    let lock_path = output_dir.join(".lock");
+
+    use ariadne_graph::mcp::lock::{check_lock, release_lock, LockStatus};
+
+    match check_lock(&lock_path)? {
+        LockStatus::HeldByOther { pid } => {
+            #[cfg(unix)]
+            {
+                match ariadne_graph::mcp::lock::terminate_process(pid) {
+                    Ok(true) => {
+                        eprintln!("Sent SIGTERM to MCP server (pid {}).", pid);
+                        // Poll until process exits or timeout (5s)
+                        let start = std::time::Instant::now();
+                        let timeout = std::time::Duration::from_secs(5);
+                        loop {
+                            std::thread::sleep(std::time::Duration::from_millis(100));
+                            match check_lock(&lock_path)? {
+                                LockStatus::HeldByOther { pid: p } if p == pid => {
+                                    if start.elapsed() > timeout {
+                                        return Err(FatalError::McpServerFailed {
+                                            reason: format!(
+                                                "MCP server (pid {}) did not exit within 5 seconds",
+                                                pid
+                                            ),
+                                        });
+                                    }
+                                }
+                                _ => break,
+                            }
+                        }
+                        // Clean up the lock file after successful termination
+                        release_lock(&lock_path)?;
+                        eprintln!("MCP server stopped.");
+                        Ok(())
+                    }
+                    Ok(false) => {
+                        eprintln!("Process {} not found. Cleaning up stale lock.", pid);
+                        release_lock(&lock_path)?;
+                        Ok(())
+                    }
+                    Err(e) => Err(FatalError::McpServerFailed {
+                        reason: format!("Failed to send SIGTERM to pid {}: {}", pid, e),
+                    }),
+                }
+            }
+            #[cfg(not(unix))]
+            {
+                let _ = pid;
+                Err(FatalError::McpServerFailed {
+                    reason: "Restart is only supported on Unix systems.".to_string(),
+                })
+            }
+        }
+        LockStatus::Free => {
+            eprintln!("No MCP server is running.");
+            Ok(())
+        }
+        LockStatus::Stale { pid } => {
+            eprintln!("Found stale lock (pid {}), cleaning up.", pid);
+            release_lock(&lock_path)?;
+            Ok(())
+        }
+        LockStatus::HeldByUs => Err(FatalError::McpServerFailed {
+            reason: "Lock is held by the current process; cannot restart self.".to_string(),
+        }),
+    }
 }
 
 #[allow(clippy::too_many_arguments)]

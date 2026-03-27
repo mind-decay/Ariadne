@@ -158,6 +158,37 @@ fn current_timestamp() -> String {
     )
 }
 
+/// Send SIGTERM to a process. Returns Ok(true) if signal sent, Ok(false) if process not found
+/// or if the PID is invalid/dangerous. Returns Err on permission denied or other OS errors.
+#[cfg(unix)]
+pub fn terminate_process(pid: u32) -> Result<bool, std::io::Error> {
+    // Guard against dangerous PID values:
+    // - PID 0 sends signal to entire process group
+    // - PID 1 is init/launchd — never kill it
+    // - Values > i32::MAX wrap to negative when cast, signaling process groups
+    if pid <= 1 || pid > i32::MAX as u32 {
+        return Ok(false);
+    }
+
+    let ret = unsafe { libc::kill(pid as i32, 15) }; // 15 = SIGTERM
+    if ret == 0 {
+        Ok(true)
+    } else {
+        let err = std::io::Error::last_os_error();
+        match err.raw_os_error() {
+            Some(3) => Ok(false), // ESRCH - no such process
+            Some(1) => {
+                // EPERM - process exists but owned by another user
+                Err(std::io::Error::new(
+                    std::io::ErrorKind::PermissionDenied,
+                    format!("permission denied: cannot send SIGTERM to pid {} (owned by another user)", pid),
+                ))
+            }
+            _ => Err(err),
+        }
+    }
+}
+
 // Minimal libc bindings for kill(2)
 #[cfg(unix)]
 mod libc {
