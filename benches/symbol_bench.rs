@@ -4,7 +4,6 @@ use std::collections::BTreeMap;
 
 use criterion::{criterion_group, criterion_main, Criterion};
 
-use ariadne_graph::algo;
 use ariadne_graph::algo::callgraph::CallGraph;
 use ariadne_graph::model::symbol::{LineSpan, SymbolDef, SymbolKind, Visibility};
 use ariadne_graph::model::symbol_index::SymbolIndex;
@@ -191,7 +190,7 @@ fn bench_symbol_extraction_typescript(c: &mut Criterion) {
 
     c.bench_function("symbol_extraction_typescript_72_symbols", |b| {
         b.iter(|| {
-            registry.parse_source(&bytes, parser, "ts").unwrap();
+            registry.parse_source(&bytes, parser, "ts", &CanonicalPath::new("bench.ts")).unwrap();
         });
     });
 }
@@ -225,7 +224,7 @@ fn bench_symbol_extraction_rust(c: &mut Criterion) {
 
     c.bench_function("symbol_extraction_rust_66_symbols", |b| {
         b.iter(|| {
-            registry.parse_source(&bytes, parser, "rs").unwrap();
+            registry.parse_source(&bytes, parser, "rs", &CanonicalPath::new("bench.rs")).unwrap();
         });
     });
 }
