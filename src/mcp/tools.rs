@@ -18,11 +18,13 @@ use crate::algo::impact::analyze_impact;
 use crate::algo::reading_order::compute_reading_order;
 use crate::algo::test_map::find_tests_for;
 use crate::analysis::smells::detect_smells;
+use crate::recommend;
 use crate::mcp::state::GraphState;
 use crate::mcp::tools_context::{ContextParam, PlanImpactParam, ReadingOrderParam, TestsForParam};
 use crate::mcp::tools_semantic::{
     BoundariesParam, BoundaryForParam, EventMapParam, RouteMapParam,
 };
+use crate::mcp::tools_recommend::{RefactorOpportunitiesParam, SuggestPlacementParam, SuggestSplitParam};
 use crate::mcp::tools_temporal::{
     ChurnParam, CouplingParam, HiddenDepsParam, HotspotsParam, OwnershipParam,
 };
@@ -2631,6 +2633,144 @@ impl AriadneTools {
                 }))
             }
         }
+    }
+
+    // --- Recommend: refactor_opportunities ---
+
+    #[tool(
+        name = "ariadne_refactor_opportunities",
+        description = "Analyze the project for refactoring opportunities. Detects cycles, god files, coupling issues, merge candidates, and interface extraction candidates. Returns Pareto-ranked recommendations with effort/impact estimates."
+    )]
+    fn refactor_opportunities(
+        &self,
+        Parameters(params): Parameters<RefactorOpportunitiesParam>,
+    ) -> String {
+        let state = self.state.load();
+
+        // Validate min_impact parameter (E008)
+        let min_impact = if let Some(ref val) = params.min_impact {
+            match val.as_str() {
+                "low" => Some(recommend::Impact::Low),
+                "medium" => Some(recommend::Impact::Medium),
+                "high" => Some(recommend::Impact::High),
+                other => {
+                    return format!(
+                        "{{\"error\":\"E008\",\"message\":\"Invalid min_impact value: {}. Expected: low, medium, high\"}}",
+                        other
+                    );
+                }
+            }
+        } else {
+            None
+        };
+
+        // Validate scope parameter (E009)
+        if let Some(ref scope) = params.scope {
+            let has_match = state.graph.nodes.keys().any(|k| k.as_str().starts_with(scope.as_str()));
+            if !has_match {
+                return format!(
+                    "{{\"error\":\"E009\",\"message\":\"No files found in scope: {}\"}}",
+                    scope
+                );
+            }
+        }
+
+        // Build AdjacencyIndex
+        let index = algo::AdjacencyIndex::build(&state.graph.edges, algo::is_architectural);
+
+        // Compute smells
+        let semantic = state.semantic.as_ref().map(crate::serial::boundary_output_to_semantic_state);
+        let smells = detect_smells(
+            &state.graph,
+            &state.stats,
+            &state.clusters,
+            &state.cluster_metrics,
+            state.temporal.as_ref(),
+            semantic.as_ref(),
+        );
+
+        // Convert centrality keys from String to CanonicalPath
+        let centrality: BTreeMap<CanonicalPath, f64> = state
+            .stats
+            .centrality
+            .iter()
+            .map(|(k, v)| (CanonicalPath::new(k), *v))
+            .collect();
+
+        let result = recommend::refactor::find_refactor_opportunities(
+            params.scope.as_deref(),
+            &state.graph,
+            &index,
+            &smells,
+            Some(&state.symbol_index),
+            Some(&state.call_graph),
+            state.temporal.as_ref(),
+            &centrality,
+            min_impact,
+        );
+
+        to_json(&result)
+    }
+
+    // --- Recommend: suggest_split ---
+
+    #[tool(
+        name = "ariadne_suggest_split",
+        description = "Analyze a file and suggest how to split it into smaller, more cohesive modules based on symbol coupling analysis"
+    )]
+    fn suggest_split(&self, Parameters(params): Parameters<SuggestSplitParam>) -> String {
+        let state = self.state.load();
+        let path = CanonicalPath::new(&params.path);
+
+        // Look up precomputed centrality
+        let centrality = state.stats.centrality.get(params.path.as_str()).copied();
+
+        let result = recommend::split::analyze_split(
+            &path,
+            &state.graph,
+            Some(&state.symbol_index),
+            Some(&state.call_graph),
+            state.temporal.as_ref(),
+            centrality,
+        );
+
+        to_json(&result)
+    }
+
+    // --- Recommend: suggest_placement ---
+
+    #[tool(
+        name = "ariadne_suggest_placement",
+        description = "Suggest optimal file location for a new module based on its dependency relationships. Analyzes cluster membership, architectural layers, and dependency patterns to recommend where a new file should be placed."
+    )]
+    fn suggest_placement(
+        &self,
+        Parameters(params): Parameters<SuggestPlacementParam>,
+    ) -> String {
+        let state = self.state.load();
+
+        let depends_on: Vec<CanonicalPath> = params
+            .depends_on
+            .iter()
+            .map(|s| CanonicalPath::new(s))
+            .collect();
+
+        let depended_by: Vec<CanonicalPath> = params
+            .depended_by
+            .iter()
+            .map(|s| CanonicalPath::new(s))
+            .collect();
+
+        let result = recommend::suggest_placement(
+            &params.description,
+            &depends_on,
+            &depended_by,
+            &state.graph.nodes,
+            &state.clusters.clusters,
+            &state.layer_index,
+        );
+
+        to_json(&result)
     }
 }
 

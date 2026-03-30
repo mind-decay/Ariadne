@@ -6,6 +6,7 @@ use criterion::{criterion_group, criterion_main, Criterion};
 
 use ariadne_graph::algo;
 use ariadne_graph::model::*;
+use ariadne_graph::recommend;
 
 /// Build a synthetic in-memory ProjectGraph for algorithm benchmarks.
 fn build_synthetic_graph(node_count: usize, edge_count: usize) -> ProjectGraph {
@@ -173,6 +174,56 @@ fn bench_spectral(c: &mut Criterion) {
     });
 }
 
+fn bench_stoer_wagner_small(c: &mut Criterion) {
+    // 10-node complete graph (small symbol graph)
+    let n = 10;
+    let nodes: Vec<String> = (0..n).map(|i| format!("sym_{i}")).collect();
+    let mut weights = vec![vec![0.0; n]; n];
+    for i in 0..n {
+        for j in 0..n {
+            if i != j {
+                weights[i][j] = 1.0;
+            }
+        }
+    }
+    let graph = recommend::SymbolGraph { nodes, weights };
+    c.bench_function("stoer_wagner_k10", |b| {
+        b.iter(|| recommend::stoer_wagner(&graph))
+    });
+}
+
+fn bench_stoer_wagner_medium(c: &mut Criterion) {
+    // 50-node complete graph (large symbol graph)
+    let n = 50;
+    let nodes: Vec<String> = (0..n).map(|i| format!("sym_{i}")).collect();
+    let mut weights = vec![vec![0.0; n]; n];
+    for i in 0..n {
+        for j in 0..n {
+            if i != j {
+                weights[i][j] = ((i + j) % 5 + 1) as f64;
+            }
+        }
+    }
+    let graph = recommend::SymbolGraph { nodes, weights };
+    c.bench_function("stoer_wagner_k50", |b| {
+        b.iter(|| recommend::stoer_wagner(&graph))
+    });
+}
+
+fn bench_pareto_frontier(c: &mut Criterion) {
+    // 100 points — typical recommendation count
+    let points: Vec<(f64, f64)> = (0..100)
+        .map(|i| {
+            let effort = (i as f64) / 100.0;
+            let impact = 1.0 - (i as f64) / 100.0 + ((i * 7) % 13) as f64 / 50.0;
+            (effort, impact)
+        })
+        .collect();
+    c.bench_function("pareto_frontier_100", |b| {
+        b.iter(|| recommend::pareto_frontier(&points))
+    });
+}
+
 criterion_group!(
     benches,
     bench_scc,
@@ -185,5 +236,8 @@ criterion_group!(
     bench_compression_l1,
     bench_compression_l2,
     bench_spectral,
+    bench_stoer_wagner_small,
+    bench_stoer_wagner_medium,
+    bench_pareto_frontier,
 );
 criterion_main!(benches);

@@ -9,6 +9,7 @@ pub mod mcp;
 pub mod model;
 pub mod parser;
 pub mod pipeline;
+pub mod recommend;
 pub mod semantic;
 pub mod serial;
 pub mod temporal;
