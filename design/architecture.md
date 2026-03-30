@@ -81,11 +81,20 @@ Parsers are registered in a `ParserRegistry` — adding a new language = impleme
 - Bare specifier (`react`, `lodash`) → skip (external package)
 - Relative path (`./foo`, `../bar`) → join with source dir, probe extensions [`.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs`], try index files [`index.ts`, `index.tsx`, `index.js`, `index.jsx`] for directory imports
 - Scoped package (`@scope/name`) → skip (external) unless workspace-matched (Phase 1b)
-- **Not in Phase 1a:** tsconfig `paths`/`baseUrl` (Phase 1b), package.json `exports` field (Phase 1b), CJS vs ESM distinction (treat uniformly)
+- **Not in Phase 1a:** tsconfig `paths`/`baseUrl` (Phase 10), package.json `exports` field (future), CJS vs ESM distinction (treat uniformly)
+
+**Config-aware resolution (Phase 10):**
+
+Config-aware import resolution reads language-specific config files to resolve imports that basic resolution cannot handle. Config flows through the pipeline as: discovery → `ProjectConfig` → resolver construction → resolution.
+
+- **TypeScript/JS:** `tsconfig.json` — resolves `paths` aliases (e.g., `@app/*` → `src/*`), `baseUrl`-relative imports, `extends` chain inheritance. JSONC format supported via comment stripping (D-119). Monorepo support via nearest-ancestor tsconfig lookup (D-121).
+- **Go:** `go.mod` — module path extracted, intra-module imports resolved by stripping module prefix and mapping to filesystem. E.g., `github.com/user/project/pkg/auth` → `pkg/auth/`.
+- **Python:** `pyproject.toml` — detects `src`-layout (`[tool.setuptools.package-dir] "" = "src"`) and resolves imports through `src/` prefix.
+
+Config injection uses construction-time `with_config()` methods on resolvers (D-118). The `ImportResolver` trait signature is unchanged — resolvers that support config store it internally. Config discovery runs as a pipeline stage after file walking, before parsing (D-120). Config parse failures produce warnings (W030-W033), not fatal errors.
 
 **Phase 1a resolution limitations:**
 
-- **Go:** Stdlib-only resolution. Module-qualified imports require `go.mod` reading (Phase 1b).
 - **C#:** Namespace-to-path heuristic. C# namespaces don't map to filesystem paths; low accuracy.
 - **Java:** Package-to-path heuristic with hardcoded `src/main/java/` prefix.
 
@@ -472,6 +481,12 @@ src/
 │   ├── mod.rs           # Re-exports
 │   ├── traits.rs        # LanguageParser, ImportResolver, RawImport, RawExport
 │   ├── registry.rs      # ParserRegistry (register, lookup by extension)
+│   ├── config/          # Config-aware resolution (D-118 through D-123) [Phase 10]
+│   │   ├── mod.rs       # ProjectConfig, ConfigDiscovery trait, warning codes W030-W033
+│   │   ├── discovery.rs # FsConfigDiscovery: scans walked files for config filenames
+│   │   ├── typescript.rs # tsconfig.json: paths, baseUrl, extends, JSONC, nearest-ancestor
+│   │   ├── go.rs        # go.mod: module path extraction
+│   │   └── python.rs    # pyproject.toml: src-layout detection
 │   ├── typescript.rs    # TS/JS parser + resolver
 │   ├── go.rs            # Go parser + resolver
 │   ├── python.rs        # Python parser + resolver
@@ -529,6 +544,7 @@ src/
 | --- | --- | --- |
 | `model/` | nothing (leaf) | everything else |
 | `parser/` | `model/` | `pipeline/`, `serial/`, `detect/`, `cluster/` |
+| `parser/config/` | `model/`, `diagnostic.rs` | `pipeline/`, `serial/`, `detect/`, `cluster/` |
 | `pipeline/` | traits from `parser/`, `serial/`; types from `model/`, `detect/`; `algo/`; `diagnostic.rs` | concrete parser/serializer implementations |
 | `detect/` | `model/`, `diagnostic.rs` (for W008 workspace detection warnings) | `parser/`, `pipeline/`, `serial/` |
 | `cluster/` | `model/` | `parser/`, `pipeline/`, `serial/` |

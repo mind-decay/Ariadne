@@ -16,6 +16,7 @@ use crate::model::semantic::Boundary;
 use crate::model::symbol::SymbolDef;
 use crate::model::types::CanonicalPath;
 use crate::semantic::BoundaryExtractor;
+use crate::parser::config::ProjectConfig;
 
 /// Result of parsing a source file.
 pub enum ParseOutcome {
@@ -153,6 +154,68 @@ impl ParserRegistry {
             Box::new(RustResolver::new()),
         );
         registry.register(go::parser(), go::resolver());
+        registry.register(csharp::parser(), csharp::resolver());
+        registry.register(java::parser(), java::resolver());
+        registry.register(markdown::parser(), markdown::resolver());
+        registry.register(json_lang::parser(), json_lang::resolver());
+        registry.register(yaml::parser(), yaml::resolver());
+
+        // Register symbol extractors (D-077: separate trait)
+        registry.register_symbol_extractor(
+            vec!["ts", "tsx", "js", "jsx", "mjs", "cjs"],
+            ts_extractor,
+        );
+        registry.register_symbol_extractor(vec!["rs"], rust_extractor);
+        registry.register_symbol_extractor(vec!["go"], go_extractor);
+        registry.register_symbol_extractor(vec!["py", "pyi"], python_extractor);
+        registry.register_symbol_extractor(vec!["cs"], csharp_extractor);
+        registry.register_symbol_extractor(vec!["java"], java_extractor);
+
+        registry
+    }
+
+    /// Create a registry with all Tier 1 parsers, configured from discovered project config (D-120).
+    pub fn with_project_config(config: &ProjectConfig) -> Self {
+        let mut registry = Self::new();
+
+        // Create shared instances for symbol extractors (D-077: separate trait)
+        let ts_extractor: Arc<dyn SymbolExtractor> = Arc::new(TypeScriptParser::new());
+        let rust_extractor: Arc<dyn SymbolExtractor> =
+            Arc::new(RustParser::with_crate_name(None));
+        let go_extractor: Arc<dyn SymbolExtractor> = go::symbol_extractor();
+        let python_extractor: Arc<dyn SymbolExtractor> = super::python::symbol_extractor();
+        let csharp_extractor: Arc<dyn SymbolExtractor> = csharp::symbol_extractor();
+        let java_extractor: Arc<dyn SymbolExtractor> = java::symbol_extractor();
+
+        // TypeScript: inject tsconfig path aliases if discovered
+        let ts_resolver: Box<dyn ImportResolver> = if !config.ts_configs.is_empty() {
+            Box::new(TypeScriptResolver::new().with_ts_configs(config.ts_configs.clone()))
+        } else {
+            Box::new(TypeScriptResolver::new())
+        };
+        registry.register(Box::new(TypeScriptParser::new()), ts_resolver);
+
+        // Python: inject pyproject config if discovered
+        let py_resolver: Box<dyn ImportResolver> = if let Some(ref py_config) = config.py_config {
+            Box::new(PythonResolver::with_config(py_config.clone()))
+        } else {
+            Box::new(PythonResolver::new())
+        };
+        registry.register(Box::new(PythonParser::new()), py_resolver);
+
+        // Rust: no project-level config yet
+        registry.register(
+            Box::new(RustParser::with_crate_name(None)),
+            Box::new(RustResolver::new()),
+        );
+
+        // Go: inject go.mod config if discovered
+        if let Some(ref go_config) = config.go_config {
+            registry.register(go::parser(), go::resolver_with_config(go_config.clone()));
+        } else {
+            registry.register(go::parser(), go::resolver());
+        }
+
         registry.register(csharp::parser(), csharp::resolver());
         registry.register(java::parser(), java::resolver());
         registry.register(markdown::parser(), markdown::resolver());

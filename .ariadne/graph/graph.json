@@ -1,8 +1,8 @@
 {
   "version": 1,
   "project_root": "/Users/minddecay/Documents/Projects/Ariadne",
-  "node_count": 312,
-  "edge_count": 443,
+  "node_count": 332,
+  "edge_count": 459,
   "nodes": {
     ".claude/CLAUDE.md": {
       "type": "doc",
@@ -328,15 +328,6 @@
       "exports": [],
       "cluster": ".claude"
     },
-    ".claude/moira/state/queue.yaml": {
-      "type": "data",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 3,
-      "hash": "d9817d8e46125970",
-      "exports": [],
-      "cluster": ".claude"
-    },
     ".claude/moira/state/reflection/deep-reflection-counter.yaml": {
       "type": "data",
       "layer": "unknown",
@@ -395,8 +386,8 @@
       "type": "doc",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 123,
-      "hash": "2157cb52ceecefd2",
+      "lines": 124,
+      "hash": "af2be8236cefdecc",
       "exports": [],
       "cluster": "root"
     },
@@ -992,8 +983,8 @@
       "type": "doc",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 1885,
-      "hash": "95548ce4ddecc336",
+      "lines": 1951,
+      "hash": "47a3b7dab4ee2b8b",
       "exports": [],
       "cluster": "design"
     },
@@ -1001,8 +992,8 @@
       "type": "doc",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 1024,
-      "hash": "096ab633343a5825",
+      "lines": 1040,
+      "hash": "6ee58ecb13f08457",
       "exports": [],
       "cluster": "design"
     },
@@ -1010,8 +1001,8 @@
       "type": "doc",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 1361,
-      "hash": "c7f6ebac430f1a3e",
+      "lines": 1433,
+      "hash": "b3010081abdd10af",
       "exports": [],
       "cluster": "design"
     },
@@ -1046,8 +1037,8 @@
       "type": "doc",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 274,
-      "hash": "b83455998d6a8e0f",
+      "lines": 335,
+      "hash": "1dcff56f8ad83c83",
       "exports": [],
       "cluster": "design"
     },
@@ -3186,8 +3177,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 3,
-      "lines": 544,
-      "hash": "4470127ea2d4fc01",
+      "lines": 556,
+      "hash": "8b0bc98331b7536c",
       "exports": [
         "DiagnosticCollector",
         "DiagnosticCounts",
@@ -3206,8 +3197,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 274,
-            "end": 276
+            "start": 282,
+            "end": 284
           },
           "signature": "pub struct DiagnosticCollector {"
         },
@@ -3216,8 +3207,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 253,
-            "end": 265
+            "start": 261,
+            "end": 273
           },
           "signature": "pub struct DiagnosticCounts {"
         },
@@ -3226,8 +3217,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 268,
-            "end": 271
+            "start": 276,
+            "end": 279
           },
           "signature": "pub struct DiagnosticReport {"
         },
@@ -3246,8 +3237,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 244,
-            "end": 249
+            "start": 252,
+            "end": 257
           },
           "signature": "pub struct Warning {"
         },
@@ -3257,7 +3248,7 @@
           "visibility": "public",
           "span": {
             "start": 44,
-            "end": 74
+            "end": 78
           },
           "signature": "pub enum WarningCode {"
         },
@@ -3266,8 +3257,8 @@
           "kind": "enum",
           "visibility": "public",
           "span": {
-            "start": 120,
-            "end": 123
+            "start": 128,
+            "end": 131
           },
           "signature": "pub enum WarningFormat {"
         },
@@ -3276,8 +3267,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 77,
-            "end": 109
+            "start": 81,
+            "end": 117
           },
           "signature": "pub fn code(&self) -> &'static str {",
           "parent": "WarningCode"
@@ -3287,8 +3278,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 370,
-            "end": 372
+            "start": 382,
+            "end": 384
           },
           "signature": "fn default() -> Self {",
           "parent": "Default"
@@ -3298,8 +3289,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 361,
-            "end": 366
+            "start": 373,
+            "end": 378
           },
           "signature": "pub fn drain(self) -> DiagnosticReport {",
           "parent": "DiagnosticCollector"
@@ -3309,8 +3300,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 113,
-            "end": 115
+            "start": 121,
+            "end": 123
           },
           "signature": "fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {",
           "parent": "WarningCode"
@@ -3320,8 +3311,8 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 167,
-            "end": 221
+            "start": 175,
+            "end": 229
           },
           "signature": "pub fn format_summary("
         },
@@ -3330,8 +3321,8 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 128,
-            "end": 164
+            "start": 136,
+            "end": 172
           },
           "signature": "pub fn format_warnings(report: &DiagnosticReport, format: WarningFormat, verbose: bool) -> String {"
         },
@@ -3340,8 +3331,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 355,
-            "end": 358
+            "start": 367,
+            "end": 370
           },
           "signature": "pub fn increment_unresolved(&self) {",
           "parent": "DiagnosticCollector"
@@ -3351,8 +3342,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 224,
-            "end": 240
+            "start": 232,
+            "end": 248
           },
           "signature": "fn json_escape(s: &str) -> String {"
         },
@@ -3361,8 +3352,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 279,
-            "end": 283
+            "start": 287,
+            "end": 291
           },
           "signature": "pub fn new() -> Self {",
           "parent": "DiagnosticCollector"
@@ -3372,8 +3363,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 376,
-            "end": 544
+            "start": 388,
+            "end": 556
           }
         },
         {
@@ -3381,8 +3372,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 286,
-            "end": 351
+            "start": 294,
+            "end": 363
           },
           "signature": "pub fn warn(&self, warning: Warning) {",
           "parent": "DiagnosticCollector"
@@ -7230,6 +7221,370 @@
         }
       ]
     },
+    "src/parser/config/gomod.rs": {
+      "type": "source",
+      "layer": "config",
+      "arch_depth": 0,
+      "lines": 82,
+      "hash": "2eaff37563763af8",
+      "exports": [
+        "GoModConfig",
+        "parse_go_mod"
+      ],
+      "cluster": "parser",
+      "symbols": [
+        {
+          "name": "GoModConfig",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 3,
+            "end": 6
+          },
+          "signature": "pub struct GoModConfig {"
+        },
+        {
+          "name": "parse_go_mod",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 12,
+            "end": 29
+          },
+          "signature": "pub fn parse_go_mod(content: &str) -> Option<GoModConfig> {"
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 32,
+            "end": 82
+          }
+        }
+      ]
+    },
+    "src/parser/config/jsonc.rs": {
+      "type": "source",
+      "layer": "config",
+      "arch_depth": 0,
+      "lines": 156,
+      "hash": "de6809ea10625a79",
+      "exports": [
+        "strip_jsonc_comments"
+      ],
+      "cluster": "parser",
+      "symbols": [
+        {
+          "name": "strip_jsonc_comments",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 7,
+            "end": 58
+          },
+          "signature": "pub fn strip_jsonc_comments(input: &str) -> String {"
+        },
+        {
+          "name": "strip_trailing_commas",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 61,
+            "end": 85
+          },
+          "signature": "fn strip_trailing_commas(input: &str) -> String {"
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 88,
+            "end": 156
+          }
+        }
+      ]
+    },
+    "src/parser/config/mod.rs": {
+      "type": "source",
+      "layer": "config",
+      "arch_depth": 5,
+      "lines": 247,
+      "hash": "67364cedde4872e8",
+      "exports": [
+        "GoModConfig",
+        "ProjectConfig",
+        "PyProjectConfig",
+        "TsConfig",
+        "discover_config",
+        "find_nearest_tsconfig",
+        "gomod",
+        "jsonc",
+        "pyproject",
+        "tsconfig"
+      ],
+      "cluster": "parser",
+      "symbols": [
+        {
+          "name": "ProjectConfig",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 17,
+            "end": 24
+          },
+          "signature": "pub struct ProjectConfig {"
+        },
+        {
+          "name": "discover_config",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 31,
+            "end": 45
+          },
+          "signature": "pub fn discover_config("
+        },
+        {
+          "name": "discover_go_config",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 83,
+            "end": 89
+          },
+          "signature": "fn discover_go_config(project_root: &Path) -> Option<GoModConfig> {"
+        },
+        {
+          "name": "discover_py_config",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 92,
+            "end": 98
+          },
+          "signature": "fn discover_py_config(project_root: &Path) -> Option<PyProjectConfig> {"
+        },
+        {
+          "name": "discover_tsconfigs",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 48,
+            "end": 80
+          },
+          "signature": "fn discover_tsconfigs("
+        },
+        {
+          "name": "find_nearest_tsconfig",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 104,
+            "end": 116
+          },
+          "signature": "pub fn find_nearest_tsconfig<'a>("
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 119,
+            "end": 247
+          }
+        }
+      ]
+    },
+    "src/parser/config/pyproject.rs": {
+      "type": "source",
+      "layer": "config",
+      "arch_depth": 0,
+      "lines": 143,
+      "hash": "b3338996ff589fee",
+      "exports": [
+        "PyProjectConfig",
+        "parse_pyproject"
+      ],
+      "cluster": "parser",
+      "symbols": [
+        {
+          "name": "PyProjectConfig",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 3,
+            "end": 8
+          },
+          "signature": "pub struct PyProjectConfig {"
+        },
+        {
+          "name": "detect_src_layout",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 29,
+            "end": 48
+          },
+          "signature": "fn detect_src_layout(content: &str) -> bool {"
+        },
+        {
+          "name": "extract_package_name",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 51,
+            "end": 77
+          },
+          "signature": "fn extract_package_name(content: &str) -> Option<String> {"
+        },
+        {
+          "name": "parse_pyproject",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 14,
+            "end": 26
+          },
+          "signature": "pub fn parse_pyproject(content: &str) -> Option<PyProjectConfig> {"
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 80,
+            "end": 143
+          }
+        }
+      ]
+    },
+    "src/parser/config/tsconfig.rs": {
+      "type": "source",
+      "layer": "config",
+      "arch_depth": 5,
+      "lines": 589,
+      "hash": "cb40c84522e5dceb",
+      "exports": [
+        "TsConfig",
+        "parse_tsconfig",
+        "parse_tsconfig_with_extends",
+        "resolve_path_alias"
+      ],
+      "cluster": "parser",
+      "symbols": [
+        {
+          "name": "MAX_EXTENDS_DEPTH",
+          "kind": "const",
+          "visibility": "private",
+          "span": {
+            "start": 117,
+            "end": 117
+          },
+          "signature": "const MAX_EXTENDS_DEPTH: u32 = 10;"
+        },
+        {
+          "name": "TsConfig",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 11,
+            "end": 19
+          },
+          "signature": "pub struct TsConfig {"
+        },
+        {
+          "name": "extract_paths",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 62,
+            "end": 102
+          },
+          "signature": "fn extract_paths("
+        },
+        {
+          "name": "match_wildcard",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 280,
+            "end": 298
+          },
+          "signature": "fn match_wildcard(pattern: &str, specifier: &str) -> Option<String> {"
+        },
+        {
+          "name": "merge_configs",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 223,
+            "end": 237
+          },
+          "signature": "fn merge_configs(parent: TsConfig, child: TsConfig) -> TsConfig {"
+        },
+        {
+          "name": "parse_tsconfig",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 25,
+            "end": 59
+          },
+          "signature": "pub fn parse_tsconfig("
+        },
+        {
+          "name": "parse_tsconfig_recursive",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 119,
+            "end": 208
+          },
+          "signature": "fn parse_tsconfig_recursive("
+        },
+        {
+          "name": "parse_tsconfig_with_extends",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 108,
+            "end": 114
+          },
+          "signature": "pub fn parse_tsconfig_with_extends("
+        },
+        {
+          "name": "resolve_extends_path",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 211,
+            "end": 220
+          },
+          "signature": "fn resolve_extends_path(config_dir: &Path, extends: &str) -> PathBuf {"
+        },
+        {
+          "name": "resolve_path_alias",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 249,
+            "end": 276
+          },
+          "signature": "pub fn resolve_path_alias(specifier: &str, config: &TsConfig) -> Vec<PathBuf> {"
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 301,
+            "end": 589
+          }
+        }
+      ]
+    },
     "src/parser/csharp.rs": {
       "type": "source",
       "layer": "unknown",
@@ -7495,13 +7850,14 @@
     "src/parser/go.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 4,
-      "lines": 532,
-      "hash": "5eb37d5d3f6c12ac",
+      "arch_depth": 5,
+      "lines": 608,
+      "hash": "8e6d02b20c4c5e80",
       "exports": [
         "GoSymbolExtractor",
         "parser",
         "resolver",
+        "resolver_with_config",
         "symbol_extractor"
       ],
       "cluster": "parser",
@@ -7511,8 +7867,8 @@
           "kind": "struct",
           "visibility": "private",
           "span": {
-            "start": 9,
-            "end": 9
+            "start": 10,
+            "end": 10
           },
           "signature": "struct GoParser;"
         },
@@ -7521,28 +7877,37 @@
           "kind": "struct",
           "visibility": "private",
           "span": {
-            "start": 301,
-            "end": 301
+            "start": 302,
+            "end": 305
           },
-          "signature": "struct GoResolver;"
+          "signature": "struct GoResolver {"
         },
         {
           "name": "GoSymbolExtractor",
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 410,
-            "end": 410
+            "start": 417,
+            "end": 417
           },
           "signature": "pub struct GoSymbolExtractor;"
+        },
+        {
+          "name": "config_resolution_tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 542,
+            "end": 608
+          }
         },
         {
           "name": "extensions",
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 16,
-            "end": 18
+            "start": 17,
+            "end": 19
           },
           "signature": "fn extensions(&self) -> &[&str] {",
           "parent": "LanguageParser"
@@ -7552,8 +7917,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 71,
-            "end": 75
+            "start": 72,
+            "end": 76
           },
           "signature": "fn extract_exports(&self, _tree: &tree_sitter::Tree, _source: &[u8]) -> Vec<RawExport> {",
           "parent": "LanguageParser"
@@ -7563,8 +7928,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 79,
-            "end": 104
+            "start": 80,
+            "end": 105
           },
           "signature": "fn extract_go_import_spec(node: &tree_sitter::Node, source: &[u8]) -> Option<RawImport> {"
         },
@@ -7573,8 +7938,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 280,
-            "end": 298
+            "start": 281,
+            "end": 299
           },
           "signature": "fn extract_go_receiver_type(node: &tree_sitter::Node, source: &[u8]) -> Option<String> {"
         },
@@ -7583,8 +7948,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 24,
-            "end": 69
+            "start": 25,
+            "end": 70
           },
           "signature": "fn extract_imports(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Vec<RawImport> {",
           "parent": "LanguageParser"
@@ -7594,8 +7959,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 120,
-            "end": 242
+            "start": 121,
+            "end": 243
           },
           "signature": "fn extract_symbols(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Vec<SymbolDef> {",
           "parent": "SymbolExtractor"
@@ -7605,30 +7970,19 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 413,
-            "end": 415
+            "start": 420,
+            "end": 422
           },
           "signature": "fn extract_symbols(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Vec<SymbolDef> {",
           "parent": "SymbolExtractor"
-        },
-        {
-          "name": "find_module_path",
-          "kind": "method",
-          "visibility": "private",
-          "span": {
-            "start": 305,
-            "end": 317
-          },
-          "signature": "fn find_module_path(known_files: &FileSet) -> Option<String> {",
-          "parent": "GoResolver"
         },
         {
           "name": "go_node_span",
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 255,
-            "end": 260
+            "start": 256,
+            "end": 261
           },
           "signature": "fn go_node_span(node: &tree_sitter::Node) -> LineSpan {"
         },
@@ -7637,8 +7991,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 264,
-            "end": 277
+            "start": 265,
+            "end": 278
           },
           "signature": "fn go_truncate_signature("
         },
@@ -7647,8 +8001,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 246,
-            "end": 252
+            "start": 247,
+            "end": 253
           },
           "signature": "fn go_visibility(name: &str) -> Visibility {"
         },
@@ -7657,8 +8011,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 326,
-            "end": 337
+            "start": 329,
+            "end": 340
           },
           "signature": "fn is_external(import_path: &str, _module_path: Option<&str>) -> bool {",
           "parent": "GoResolver"
@@ -7668,8 +8022,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 321,
-            "end": 323
+            "start": 324,
+            "end": 326
           },
           "signature": "fn is_stdlib(import_path: &str) -> bool {",
           "parent": "GoResolver"
@@ -7679,19 +8033,41 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 12,
-            "end": 14
+            "start": 13,
+            "end": 15
           },
           "signature": "fn language(&self) -> &str {",
           "parent": "LanguageParser"
+        },
+        {
+          "name": "module_path",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 318,
+            "end": 320
+          },
+          "signature": "fn module_path(&self) -> Option<&str> {",
+          "parent": "GoResolver"
+        },
+        {
+          "name": "new",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 308,
+            "end": 310
+          },
+          "signature": "fn new() -> Self {",
+          "parent": "GoResolver"
         },
         {
           "name": "node_text",
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 106,
-            "end": 108
+            "start": 107,
+            "end": 109
           },
           "signature": "fn node_text(node: &tree_sitter::Node, source: &[u8]) -> String {"
         },
@@ -7700,8 +8076,8 @@
           "kind": "function",
           "visibility": "internal",
           "span": {
-            "start": 397,
-            "end": 399
+            "start": 400,
+            "end": 402
           },
           "signature": "pub(crate) fn parser() -> Box<dyn LanguageParser> {"
         },
@@ -7710,8 +8086,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 341,
-            "end": 394
+            "start": 344,
+            "end": 397
           },
           "signature": "fn resolve(",
           "parent": "ImportResolver"
@@ -7721,18 +8097,28 @@
           "kind": "function",
           "visibility": "internal",
           "span": {
-            "start": 401,
-            "end": 403
+            "start": 404,
+            "end": 406
           },
           "signature": "pub(crate) fn resolver() -> Box<dyn ImportResolver> {"
+        },
+        {
+          "name": "resolver_with_config",
+          "kind": "function",
+          "visibility": "internal",
+          "span": {
+            "start": 408,
+            "end": 410
+          },
+          "signature": "pub(crate) fn resolver_with_config(config: GoModConfig) -> Box<dyn ImportResolver> {"
         },
         {
           "name": "strip_go_quotes",
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 110,
-            "end": 117
+            "start": 111,
+            "end": 118
           },
           "signature": "fn strip_go_quotes(s: &str) -> String {"
         },
@@ -7741,8 +8127,8 @@
           "kind": "function",
           "visibility": "internal",
           "span": {
-            "start": 405,
-            "end": 407
+            "start": 412,
+            "end": 414
           },
           "signature": "pub(crate) fn symbol_extractor() -> std::sync::Arc<dyn SymbolExtractor> {"
         },
@@ -7751,8 +8137,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 419,
-            "end": 532
+            "start": 426,
+            "end": 539
           }
         },
         {
@@ -7760,11 +8146,22 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 20,
-            "end": 22
+            "start": 21,
+            "end": 23
           },
           "signature": "fn tree_sitter_language(&self) -> tree_sitter::Language {",
           "parent": "LanguageParser"
+        },
+        {
+          "name": "with_config",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 313,
+            "end": 315
+          },
+          "signature": "pub fn with_config(config: GoModConfig) -> Self {",
+          "parent": "GoResolver"
         }
       ]
     },
@@ -8375,8 +8772,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 5,
-      "lines": 47,
-      "hash": "6787587fe6bf29ff",
+      "lines": 48,
+      "hash": "dd4c0b121a25ddb8",
       "exports": [
         "ImportKind",
         "ImportResolver",
@@ -8386,6 +8783,7 @@
         "RawExport",
         "RawImport",
         "SymbolExtractor",
+        "config",
         "csharp_symbol_extractor",
         "go_symbol_extractor",
         "helpers",
@@ -8404,8 +8802,8 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 40,
-            "end": 42
+            "start": 41,
+            "end": 43
           },
           "signature": "pub fn csharp_symbol_extractor() -> impl SymbolExtractor {"
         },
@@ -8414,8 +8812,8 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 30,
-            "end": 32
+            "start": 31,
+            "end": 33
           },
           "signature": "pub fn go_symbol_extractor() -> impl SymbolExtractor {"
         },
@@ -8424,8 +8822,8 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 45,
-            "end": 47
+            "start": 46,
+            "end": 48
           },
           "signature": "pub fn java_symbol_extractor() -> impl SymbolExtractor {"
         },
@@ -8434,8 +8832,8 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 35,
-            "end": 37
+            "start": 36,
+            "end": 38
           },
           "signature": "pub fn python_symbol_extractor() -> impl SymbolExtractor {"
         },
@@ -8444,8 +8842,8 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 25,
-            "end": 27
+            "start": 26,
+            "end": 28
           },
           "signature": "pub fn rust_symbol_extractor() -> impl SymbolExtractor {"
         },
@@ -8454,8 +8852,8 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 20,
-            "end": 22
+            "start": 21,
+            "end": 23
           },
           "signature": "pub fn typescript_symbol_extractor() -> impl SymbolExtractor {"
         }
@@ -8464,9 +8862,9 @@
     "src/parser/python.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 4,
-      "lines": 864,
-      "hash": "780308b73bf53e1c",
+      "arch_depth": 5,
+      "lines": 974,
+      "hash": "9511337d6dca37e3",
       "exports": [
         "PythonParser",
         "PythonResolver",
@@ -8479,8 +8877,8 @@
           "kind": "struct",
           "visibility": "internal",
           "span": {
-            "start": 9,
-            "end": 9
+            "start": 10,
+            "end": 10
           },
           "signature": "pub(crate) struct PythonParser;"
         },
@@ -8489,18 +8887,27 @@
           "kind": "struct",
           "visibility": "internal",
           "span": {
-            "start": 599,
-            "end": 599
+            "start": 600,
+            "end": 603
           },
-          "signature": "pub(crate) struct PythonResolver;"
+          "signature": "pub(crate) struct PythonResolver {"
+        },
+        {
+          "name": "config_resolution_tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 889,
+            "end": 974
+          }
         },
         {
           "name": "count_relative_dots",
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 35,
-            "end": 53
+            "start": 36,
+            "end": 54
           },
           "signature": "fn count_relative_dots(node: &tree_sitter::Node, source: &[u8]) -> usize {",
           "parent": "PythonParser"
@@ -8510,8 +8917,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 122,
-            "end": 124
+            "start": 123,
+            "end": 125
           },
           "signature": "fn extensions(&self) -> &[&str] {",
           "parent": "LanguageParser"
@@ -8521,8 +8928,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 221,
-            "end": 312
+            "start": 222,
+            "end": 313
           },
           "signature": "fn extract_exports(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Vec<RawExport> {",
           "parent": "LanguageParser"
@@ -8532,8 +8939,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 75,
-            "end": 109
+            "start": 76,
+            "end": 110
           },
           "signature": "fn extract_from_import_names(node: &tree_sitter::Node, source: &[u8]) -> Vec<String> {",
           "parent": "PythonParser"
@@ -8543,8 +8950,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 130,
-            "end": 219
+            "start": 131,
+            "end": 220
           },
           "signature": "fn extract_imports(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Vec<RawImport> {",
           "parent": "LanguageParser"
@@ -8554,8 +8961,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 56,
-            "end": 72
+            "start": 57,
+            "end": 73
           },
           "signature": "fn extract_module_name(node: &tree_sitter::Node, source: &[u8]) -> Option<String> {",
           "parent": "PythonParser"
@@ -8565,8 +8972,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 416,
-            "end": 549
+            "start": 417,
+            "end": 550
           },
           "signature": "fn extract_python_symbols_from_node("
         },
@@ -8575,8 +8982,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 407,
-            "end": 412
+            "start": 408,
+            "end": 413
           },
           "signature": "fn extract_symbols(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Vec<SymbolDef> {",
           "parent": "SymbolExtractor"
@@ -8586,8 +8993,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 317,
-            "end": 403
+            "start": 318,
+            "end": 404
           },
           "signature": "fn extract_type_checking_imports(",
           "parent": "PythonParser"
@@ -8597,8 +9004,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 112,
-            "end": 114
+            "start": 113,
+            "end": 115
           },
           "signature": "fn is_future_import(module_name: &str) -> bool {",
           "parent": "PythonParser"
@@ -8608,8 +9015,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 561,
-            "end": 571
+            "start": 562,
+            "end": 572
           },
           "signature": "fn is_python_constant(name: &str) -> bool {"
         },
@@ -8618,8 +9025,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 607,
-            "end": 609
+            "start": 616,
+            "end": 618
           },
           "signature": "fn is_relative(path: &str) -> bool {",
           "parent": "PythonResolver"
@@ -8629,8 +9036,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 118,
-            "end": 120
+            "start": 119,
+            "end": 121
           },
           "signature": "fn language(&self) -> &str {",
           "parent": "LanguageParser"
@@ -8640,8 +9047,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 12,
-            "end": 14
+            "start": 13,
+            "end": 15
           },
           "signature": "pub fn new() -> Self {",
           "parent": "PythonParser"
@@ -8651,8 +9058,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 602,
-            "end": 604
+            "start": 606,
+            "end": 608
           },
           "signature": "pub fn new() -> Self {",
           "parent": "PythonResolver"
@@ -8662,8 +9069,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 612,
-            "end": 615
+            "start": 621,
+            "end": 624
           },
           "signature": "fn parse_relative(path: &str) -> (usize, &str) {",
           "parent": "PythonResolver"
@@ -8673,8 +9080,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 668,
-            "end": 689
+            "start": 690,
+            "end": 711
           },
           "signature": "fn probe_python_path(base: &str, known_files: &FileSet) -> Option<CanonicalPath> {",
           "parent": "PythonResolver"
@@ -8684,8 +9091,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 574,
-            "end": 579
+            "start": 575,
+            "end": 580
           },
           "signature": "fn python_node_span(node: &tree_sitter::Node) -> LineSpan {"
         },
@@ -8694,8 +9101,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 583,
-            "end": 596
+            "start": 584,
+            "end": 597
           },
           "signature": "fn python_truncate_signature("
         },
@@ -8704,8 +9111,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 552,
-            "end": 558
+            "start": 553,
+            "end": 559
           },
           "signature": "fn python_visibility(name: &str) -> Visibility {"
         },
@@ -8714,8 +9121,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 619,
-            "end": 663
+            "start": 628,
+            "end": 685
           },
           "signature": "fn resolve(",
           "parent": "ImportResolver"
@@ -8725,8 +9132,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 17,
-            "end": 32
+            "start": 18,
+            "end": 33
           },
           "signature": "fn string_content<'a>(node: &tree_sitter::Node<'a>, source: &'a [u8]) -> Option<&'a str> {",
           "parent": "PythonParser"
@@ -8736,8 +9143,8 @@
           "kind": "function",
           "visibility": "internal",
           "span": {
-            "start": 692,
-            "end": 694
+            "start": 714,
+            "end": 716
           },
           "signature": "pub(crate) fn symbol_extractor() -> std::sync::Arc<dyn SymbolExtractor> {"
         },
@@ -8746,8 +9153,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 697,
-            "end": 864
+            "start": 719,
+            "end": 886
           }
         },
         {
@@ -8755,20 +9162,31 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 126,
-            "end": 128
+            "start": 127,
+            "end": 129
           },
           "signature": "fn tree_sitter_language(&self) -> tree_sitter::Language {",
           "parent": "LanguageParser"
+        },
+        {
+          "name": "with_config",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 611,
+            "end": 613
+          },
+          "signature": "pub fn with_config(config: PyProjectConfig) -> Self {",
+          "parent": "PythonResolver"
         }
       ]
     },
     "src/parser/registry.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 3,
-      "lines": 309,
-      "hash": "a45d3a802e3ca977",
+      "arch_depth": 5,
+      "lines": 372,
+      "hash": "376f2b710437cc20",
       "exports": [
         "ParseOutcome",
         "ParserRegistry"
@@ -8780,8 +9198,8 @@
           "kind": "enum",
           "visibility": "public",
           "span": {
-            "start": 21,
-            "end": 28
+            "start": 22,
+            "end": 29
           },
           "signature": "pub enum ParseOutcome {"
         },
@@ -8790,8 +9208,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 31,
-            "end": 39
+            "start": 32,
+            "end": 40
           },
           "signature": "pub struct ParserRegistry {"
         },
@@ -8800,8 +9218,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 98,
-            "end": 108
+            "start": 99,
+            "end": 109
           },
           "signature": "pub fn boundary_extractors_for(&self, extension: &str) -> Vec<&dyn BoundaryExtractor> {",
           "parent": "ParserRegistry"
@@ -8811,8 +9229,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 276,
-            "end": 278
+            "start": 339,
+            "end": 341
           },
           "signature": "fn default() -> Self {",
           "parent": "Default"
@@ -8822,8 +9240,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 270,
-            "end": 272
+            "start": 333,
+            "end": 335
           },
           "signature": "pub fn language_names(&self) -> Vec<&str> {",
           "parent": "ParserRegistry"
@@ -8833,8 +9251,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 42,
-            "end": 52
+            "start": 43,
+            "end": 53
           },
           "signature": "pub fn new() -> Self {",
           "parent": "ParserRegistry"
@@ -8844,8 +9262,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 180,
-            "end": 249
+            "start": 243,
+            "end": 312
           },
           "signature": "pub fn parse_source(",
           "parent": "ParserRegistry"
@@ -8855,8 +9273,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 111,
-            "end": 115
+            "start": 112,
+            "end": 116
           },
           "signature": "pub fn parser_for(&self, extension: &str) -> Option<&dyn LanguageParser> {",
           "parent": "ParserRegistry"
@@ -8866,8 +9284,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 55,
-            "end": 62
+            "start": 56,
+            "end": 63
           },
           "signature": "pub fn register(&mut self, parser: Box<dyn LanguageParser>, resolver: Box<dyn ImportResolver>) {",
           "parent": "ParserRegistry"
@@ -8877,8 +9295,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 86,
-            "end": 95
+            "start": 87,
+            "end": 96
           },
           "signature": "pub fn register_boundary_extractor(&mut self, extractor: Arc<dyn BoundaryExtractor>) {",
           "parent": "ParserRegistry"
@@ -8888,8 +9306,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 65,
-            "end": 75
+            "start": 66,
+            "end": 76
           },
           "signature": "pub fn register_symbol_extractor(",
           "parent": "ParserRegistry"
@@ -8899,8 +9317,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 253,
-            "end": 260
+            "start": 316,
+            "end": 323
           },
           "signature": "pub fn reparse_imports(&self, extension: &str, source: &[u8]) -> Option<Vec<RawImport>> {",
           "parent": "ParserRegistry"
@@ -8910,8 +9328,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 118,
-            "end": 122
+            "start": 119,
+            "end": 123
           },
           "signature": "pub fn resolver_for(&self, extension: &str) -> Option<&dyn ImportResolver> {",
           "parent": "ParserRegistry"
@@ -8921,8 +9339,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 263,
-            "end": 267
+            "start": 326,
+            "end": 330
           },
           "signature": "pub fn supported_extensions(&self) -> Vec<&str> {",
           "parent": "ParserRegistry"
@@ -8932,8 +9350,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 78,
-            "end": 82
+            "start": 79,
+            "end": 83
           },
           "signature": "pub fn symbol_extractor_for(&self, extension: &str) -> Option<&dyn SymbolExtractor> {",
           "parent": "ParserRegistry"
@@ -8943,17 +9361,28 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 282,
-            "end": 309
+            "start": 345,
+            "end": 372
           }
+        },
+        {
+          "name": "with_project_config",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 178,
+            "end": 237
+          },
+          "signature": "pub fn with_project_config(config: &ProjectConfig) -> Self {",
+          "parent": "ParserRegistry"
         },
         {
           "name": "with_tier1",
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 125,
-            "end": 127
+            "start": 126,
+            "end": 128
           },
           "signature": "pub fn with_tier1() -> Self {",
           "parent": "ParserRegistry"
@@ -8963,8 +9392,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 131,
-            "end": 174
+            "start": 132,
+            "end": 175
           },
           "signature": "pub fn with_tier1_config(rust_crate_name: Option<String>) -> Self {",
           "parent": "ParserRegistry"
@@ -9357,9 +9786,9 @@
     "src/parser/typescript.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 4,
-      "lines": 1416,
-      "hash": "610305364cafe4f7",
+      "arch_depth": 5,
+      "lines": 1686,
+      "hash": "1366b03ef04fe7a1",
       "exports": [
         "TypeScriptParser",
         "TypeScriptResolver"
@@ -9371,8 +9800,8 @@
           "kind": "struct",
           "visibility": "internal",
           "span": {
-            "start": 10,
-            "end": 10
+            "start": 14,
+            "end": 14
           },
           "signature": "pub(crate) struct TypeScriptParser;"
         },
@@ -9381,18 +9810,27 @@
           "kind": "struct",
           "visibility": "internal",
           "span": {
-            "start": 681,
-            "end": 681
+            "start": 685,
+            "end": 688
           },
-          "signature": "pub(crate) struct TypeScriptResolver;"
+          "signature": "pub(crate) struct TypeScriptResolver {"
+        },
+        {
+          "name": "config_resolution_tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 1523,
+            "end": 1686
+          }
         },
         {
           "name": "extensions",
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 110,
-            "end": 112
+            "start": 114,
+            "end": 116
           },
           "signature": "fn extensions(&self) -> &[&str] {",
           "parent": "LanguageParser"
@@ -9402,8 +9840,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 576,
-            "end": 607
+            "start": 580,
+            "end": 611
           },
           "signature": "fn extract_class_members(",
           "parent": "TypeScriptParser"
@@ -9413,8 +9851,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 179,
-            "end": 311
+            "start": 183,
+            "end": 315
           },
           "signature": "fn extract_exports(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Vec<RawExport> {",
           "parent": "LanguageParser"
@@ -9424,8 +9862,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 125,
-            "end": 177
+            "start": 129,
+            "end": 181
           },
           "signature": "fn extract_imports(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Vec<RawImport> {",
           "parent": "LanguageParser"
@@ -9435,8 +9873,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 635,
-            "end": 649
+            "start": 639,
+            "end": 653
           },
           "signature": "fn extract_member_visibility(member: &tree_sitter::Node, source: &[u8]) -> Visibility {"
         },
@@ -9445,8 +9883,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 32,
-            "end": 73
+            "start": 36,
+            "end": 77
           },
           "signature": "fn extract_named_symbols(node: &tree_sitter::Node, source: &[u8]) -> Vec<String> {",
           "parent": "TypeScriptParser"
@@ -9456,8 +9894,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 376,
-            "end": 382
+            "start": 380,
+            "end": 386
           },
           "signature": "fn extract_require_from_declaration(",
           "parent": "TypeScriptParser"
@@ -9467,8 +9905,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 316,
-            "end": 373
+            "start": 320,
+            "end": 377
           },
           "signature": "fn extract_require_or_dynamic_import(",
           "parent": "TypeScriptParser"
@@ -9478,8 +9916,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 386,
-            "end": 391
+            "start": 390,
+            "end": 395
           },
           "signature": "fn extract_symbols(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Vec<SymbolDef> {",
           "parent": "SymbolExtractor"
@@ -9489,8 +9927,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 396,
-            "end": 573
+            "start": 400,
+            "end": 577
           },
           "signature": "fn extract_symbols_from_node(",
           "parent": "TypeScriptParser"
@@ -9500,8 +9938,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 660,
-            "end": 664
+            "start": 664,
+            "end": 668
           },
           "signature": "fn first_line_signature(node: &tree_sitter::Node, source: &[u8]) -> Option<String> {"
         },
@@ -9510,8 +9948,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 611,
-            "end": 619
+            "start": 615,
+            "end": 623
           },
           "signature": "fn is_arrow_function(declarator: &tree_sitter::Node) -> bool {"
         },
@@ -9520,8 +9958,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 689,
-            "end": 691
+            "start": 704,
+            "end": 706
           },
           "signature": "fn is_bare_specifier(path: &str) -> bool {",
           "parent": "TypeScriptResolver"
@@ -9531,8 +9969,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 76,
-            "end": 102
+            "start": 80,
+            "end": 106
           },
           "signature": "fn is_type_import(node: &tree_sitter::Node, source: &[u8]) -> bool {",
           "parent": "TypeScriptParser"
@@ -9542,8 +9980,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 622,
-            "end": 631
+            "start": 626,
+            "end": 635
           },
           "signature": "fn is_upper_case_const(name: &str) -> bool {"
         },
@@ -9552,8 +9990,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 106,
-            "end": 108
+            "start": 110,
+            "end": 112
           },
           "signature": "fn language(&self) -> &str {",
           "parent": "LanguageParser"
@@ -9563,8 +10001,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 13,
-            "end": 15
+            "start": 17,
+            "end": 19
           },
           "signature": "pub fn new() -> Self {",
           "parent": "TypeScriptParser"
@@ -9574,8 +10012,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 684,
-            "end": 686
+            "start": 691,
+            "end": 693
           },
           "signature": "pub fn new() -> Self {",
           "parent": "TypeScriptResolver"
@@ -9585,29 +10023,51 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 652,
-            "end": 657
+            "start": 656,
+            "end": 661
           },
           "signature": "fn node_span(node: &tree_sitter::Node) -> LineSpan {"
+        },
+        {
+          "name": "probe_ts_extensions",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 838,
+            "end": 864
+          },
+          "signature": "fn probe_ts_extensions(base: &str, known_files: &FileSet) -> Option<CanonicalPath> {",
+          "parent": "TypeScriptResolver"
         },
         {
           "name": "resolve",
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 774,
-            "end": 840
+            "start": 868,
+            "end": 944
           },
           "signature": "fn resolve(",
           "parent": "ImportResolver"
+        },
+        {
+          "name": "resolve_via_tsconfig",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 797,
+            "end": 833
+          },
+          "signature": "fn resolve_via_tsconfig(",
+          "parent": "TypeScriptResolver"
         },
         {
           "name": "resolve_workspace_import",
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 698,
-            "end": 770
+            "start": 713,
+            "end": 785
           },
           "signature": "fn resolve_workspace_import(",
           "parent": "TypeScriptResolver"
@@ -9617,8 +10077,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 18,
-            "end": 29
+            "start": 22,
+            "end": 33
           },
           "signature": "fn string_content<'a>(node: &tree_sitter::Node<'a>, source: &'a [u8]) -> Option<&'a str> {",
           "parent": "TypeScriptParser"
@@ -9628,8 +10088,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 844,
-            "end": 1416
+            "start": 948,
+            "end": 1520
           }
         },
         {
@@ -9637,8 +10097,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 114,
-            "end": 116
+            "start": 118,
+            "end": 120
           },
           "signature": "fn tree_sitter_language(&self) -> tree_sitter::Language {",
           "parent": "LanguageParser"
@@ -9648,8 +10108,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 118,
-            "end": 123
+            "start": 122,
+            "end": 127
           },
           "signature": "fn tree_sitter_language_for_ext(&self, ext: &str) -> tree_sitter::Language {",
           "parent": "LanguageParser"
@@ -9659,10 +10119,21 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 668,
-            "end": 678
+            "start": 672,
+            "end": 682
           },
           "signature": "fn truncate_signature(sig: Option<&str>, max_len: usize) -> Option<String> {"
+        },
+        {
+          "name": "with_ts_configs",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 696,
+            "end": 701
+          },
+          "signature": "pub fn with_ts_configs(mut self, configs: BTreeMap<PathBuf, TsConfig>) -> Self {",
+          "parent": "TypeScriptResolver"
         }
       ]
     },
@@ -9863,8 +10334,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 7,
-      "lines": 784,
-      "hash": "768bf250ab653553",
+      "lines": 797,
+      "hash": "0524342eaa267b56",
       "exports": [
         "BuildOptions",
         "BuildOutput",
@@ -9891,8 +10362,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 53,
-            "end": 60
+            "start": 54,
+            "end": 61
           },
           "signature": "pub struct BuildOptions<'a> {"
         },
@@ -9901,8 +10372,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 40,
-            "end": 49
+            "start": 41,
+            "end": 50
           },
           "signature": "pub struct BuildOutput {"
         },
@@ -9911,8 +10382,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 63,
-            "end": 68
+            "start": 64,
+            "end": 69
           },
           "signature": "pub struct BuildPipeline {"
         },
@@ -9921,8 +10392,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 30,
-            "end": 36
+            "start": 31,
+            "end": 37
           },
           "signature": "pub struct ParsedFile {"
         },
@@ -9931,8 +10402,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 105,
-            "end": 128
+            "start": 106,
+            "end": 129
           },
           "signature": "fn apply_symbol_limits(",
           "parent": "BuildPipeline"
@@ -9942,8 +10413,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 710,
-            "end": 729
+            "start": 723,
+            "end": 742
           },
           "signature": "fn cluster_map_to_output(cluster_map: &ClusterMap) -> ClusterOutput {"
         },
@@ -9952,8 +10423,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 746,
-            "end": 754
+            "start": 759,
+            "end": 767
           },
           "signature": "fn format_size(bytes: u64) -> String {"
         },
@@ -9962,8 +10433,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 732,
-            "end": 743
+            "start": 745,
+            "end": 756
           },
           "signature": "fn format_utc_timestamp() -> String {"
         },
@@ -9972,8 +10443,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 71,
-            "end": 83
+            "start": 72,
+            "end": 84
           },
           "signature": "pub fn new(",
           "parent": "BuildPipeline"
@@ -9983,8 +10454,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 662,
-            "end": 707
+            "start": 675,
+            "end": 720
           },
           "signature": "fn project_graph_to_output(graph: &ProjectGraph, project_root: &Path) -> GraphOutput {"
         },
@@ -9993,8 +10464,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 95,
-            "end": 101
+            "start": 96,
+            "end": 102
           },
           "signature": "pub fn reparse_imports(",
           "parent": "BuildPipeline"
@@ -10004,8 +10475,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 130,
-            "end": 132
+            "start": 131,
+            "end": 133
           },
           "signature": "pub fn run(&self, root: &Path, config: WalkConfig) -> Result<BuildOutput, FatalError> {",
           "parent": "BuildPipeline"
@@ -10015,8 +10486,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 134,
-            "end": 491
+            "start": 135,
+            "end": 504
           },
           "signature": "pub fn run_with_options(",
           "parent": "BuildPipeline"
@@ -10026,8 +10497,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 757,
-            "end": 784
+            "start": 770,
+            "end": 797
           },
           "signature": "fn skip_reason_to_warning(reason: &FileSkipReason) -> Warning {"
         },
@@ -10036,8 +10507,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 88,
-            "end": 90
+            "start": 89,
+            "end": 91
           },
           "signature": "pub fn supported_extensions(&self) -> Vec<&str> {",
           "parent": "BuildPipeline"
@@ -10047,8 +10518,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 500,
-            "end": 658
+            "start": 513,
+            "end": 671
           },
           "signature": "pub fn update(",
           "parent": "BuildPipeline"
@@ -12603,6 +13074,107 @@
         }
       ]
     },
+    "tests/config_resolution_tests.rs": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 291,
+      "hash": "85e3453401c8ea63",
+      "exports": [],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "gomod_project_resolves_module_imports",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 166,
+            "end": 207
+          },
+          "signature": "fn gomod_project_resolves_module_imports() {"
+        },
+        {
+          "name": "python_src_layout_resolves_package_imports",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 214,
+            "end": 255
+          },
+          "signature": "fn python_src_layout_resolves_package_imports() {"
+        },
+        {
+          "name": "regression_edge_cases_still_works",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 288,
+            "end": 291
+          },
+          "signature": "fn regression_edge_cases_still_works() {"
+        },
+        {
+          "name": "regression_go_service_still_works",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 269,
+            "end": 272
+          },
+          "signature": "fn regression_go_service_still_works() {"
+        },
+        {
+          "name": "regression_python_package_still_works",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 275,
+            "end": 278
+          },
+          "signature": "fn regression_python_package_still_works() {"
+        },
+        {
+          "name": "regression_typescript_app_still_works",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 262,
+            "end": 266
+          },
+          "signature": "fn regression_typescript_app_still_works() {"
+        },
+        {
+          "name": "regression_workspace_project_still_works",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 281,
+            "end": 285
+          },
+          "signature": "fn regression_workspace_project_still_works() {"
+        },
+        {
+          "name": "tsconfig_extends_resolves_inherited_aliases",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 93,
+            "end": 159
+          },
+          "signature": "fn tsconfig_extends_resolves_inherited_aliases() {"
+        },
+        {
+          "name": "tsconfig_project_resolves_path_aliases",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 14,
+            "end": 86
+          },
+          "signature": "fn tsconfig_project_resolves_path_aliases() {"
+        }
+      ]
+    },
     "tests/fixtures/csharp-project/Data/UserRepository.cs": {
       "type": "source",
       "layer": "data",
@@ -13148,6 +13720,48 @@
         }
       ]
     },
+    "tests/fixtures/gomod_project/internal/auth/auth.go": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 5,
+      "hash": "5706c4e7c34a6222",
+      "exports": [],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "Authenticate",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 3,
+            "end": 5
+          },
+          "signature": "func Authenticate(user, pass string) bool {"
+        }
+      ]
+    },
+    "tests/fixtures/gomod_project/main.go": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 12,
+      "hash": "fc386089b13e212f",
+      "exports": [],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "main",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 9,
+            "end": 12
+          },
+          "signature": "func main() {"
+        }
+      ]
+    },
     "tests/fixtures/java-project/src/main/java/com/example/App.java": {
       "type": "source",
       "layer": "unknown",
@@ -13622,6 +14236,72 @@
             "end": 5
           },
           "signature": "def test_login_success():"
+        }
+      ]
+    },
+    "tests/fixtures/python_src_layout/src/mypackage/__init__.py": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 3,
+      "hash": "d1647b34f69109eb",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/python_src_layout/src/mypackage/main.py": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 11,
+      "hash": "07d6345378d4548a",
+      "exports": [
+        "run"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "run",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 4,
+            "end": 7
+          },
+          "signature": "def run():"
+        }
+      ]
+    },
+    "tests/fixtures/python_src_layout/src/mypackage/utils.py": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 5,
+      "hash": "11f804129df4bbc3",
+      "exports": [
+        "format_name",
+        "validate_email"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "format_name",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 1,
+            "end": 2
+          },
+          "signature": "def format_name(first, last):"
+        },
+        {
+          "name": "validate_email",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 4,
+            "end": 5
+          },
+          "signature": "def validate_email(email):"
         }
       ]
     },
@@ -14147,6 +14827,199 @@
           "parent": "UserController"
         }
       ]
+    },
+    "tests/fixtures/tsconfig_extends/lib/core.ts": {
+      "type": "source",
+      "layer": "util",
+      "arch_depth": 0,
+      "lines": 5,
+      "hash": "b4ce8c59202d67d3",
+      "exports": [
+        "VERSION",
+        "coreInit"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "VERSION",
+          "kind": "const",
+          "visibility": "public",
+          "span": {
+            "start": 5,
+            "end": 5
+          },
+          "signature": "const VERSION = '1.0.0';"
+        },
+        {
+          "name": "coreInit",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 1,
+            "end": 3
+          },
+          "signature": "function coreInit(): void {"
+        }
+      ]
+    },
+    "tests/fixtures/tsconfig_extends/src/main.ts": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 5,
+      "hash": "51dcf48e0a429e5d",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/tsconfig_extends/src/service.ts": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 3,
+      "hash": "29778cd703879087",
+      "exports": [
+        "startService"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "startService",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 1,
+            "end": 3
+          },
+          "signature": "function startService(): void {"
+        }
+      ]
+    },
+    "tests/fixtures/tsconfig_extends/tsconfig.base.json": {
+      "type": "config",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 8,
+      "hash": "d0453b8adc55cb7f",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/tsconfig_extends/tsconfig.json": {
+      "type": "config",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 8,
+      "hash": "4eb460f9d60558a9",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/tsconfig_project/src/app.ts": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 7,
+      "hash": "df194726fe95326d",
+      "exports": [
+        "main"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "main",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 4,
+            "end": 7
+          },
+          "signature": "function main(): void {"
+        }
+      ]
+    },
+    "tests/fixtures/tsconfig_project/src/components/Button.ts": {
+      "type": "source",
+      "layer": "component",
+      "arch_depth": 0,
+      "lines": 8,
+      "hash": "46810b1f25820692",
+      "exports": [
+        "Button",
+        "ButtonProps"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "Button",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 6,
+            "end": 8
+          },
+          "signature": "function Button(props: ButtonProps): void {"
+        },
+        {
+          "name": "ButtonProps",
+          "kind": "interface",
+          "visibility": "public",
+          "span": {
+            "start": 1,
+            "end": 4
+          },
+          "signature": "interface ButtonProps {"
+        }
+      ]
+    },
+    "tests/fixtures/tsconfig_project/src/index.ts": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 1,
+      "lines": 3,
+      "hash": "41a37886afbbcfa5",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/tsconfig_project/src/shared/lib/utils.ts": {
+      "type": "source",
+      "layer": "util",
+      "arch_depth": 0,
+      "lines": 7,
+      "hash": "0675050b39b8316c",
+      "exports": [
+        "capitalize",
+        "formatDate"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "capitalize",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 5,
+            "end": 7
+          },
+          "signature": "function capitalize(str: string): string {"
+        },
+        {
+          "name": "formatDate",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 1,
+            "end": 3
+          },
+          "signature": "function formatDate(date: Date): string {"
+        }
+      ]
+    },
+    "tests/fixtures/tsconfig_project/tsconfig.json": {
+      "type": "config",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 9,
+      "hash": "ef71ab1b295bcee4",
+      "exports": [],
+      "cluster": "tests"
     },
     "tests/fixtures/tsx-components/App.tsx": {
       "type": "source",
@@ -17846,6 +18719,80 @@
       ]
     ],
     [
+      "src/parser/config/mod.rs",
+      "src/diagnostic.rs",
+      "imports",
+      [
+        "DiagnosticCollector"
+      ]
+    ],
+    [
+      "src/parser/config/mod.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "FileSet"
+      ]
+    ],
+    [
+      "src/parser/config/mod.rs",
+      "src/parser/config/gomod.rs",
+      "imports",
+      [
+        "gomod"
+      ]
+    ],
+    [
+      "src/parser/config/mod.rs",
+      "src/parser/config/jsonc.rs",
+      "imports",
+      [
+        "jsonc"
+      ]
+    ],
+    [
+      "src/parser/config/mod.rs",
+      "src/parser/config/pyproject.rs",
+      "imports",
+      [
+        "pyproject"
+      ]
+    ],
+    [
+      "src/parser/config/mod.rs",
+      "src/parser/config/tsconfig.rs",
+      "imports",
+      [
+        "tsconfig"
+      ]
+    ],
+    [
+      "src/parser/config/tsconfig.rs",
+      "src/diagnostic.rs",
+      "imports",
+      [
+        "DiagnosticCollector",
+        "Warning",
+        "WarningCode"
+      ]
+    ],
+    [
+      "src/parser/config/tsconfig.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath"
+      ]
+    ],
+    [
+      "src/parser/config/tsconfig.rs",
+      "src/parser/mod.rs",
+      "imports",
+      [
+        "strip_jsonc_comments"
+      ]
+    ],
+    [
       "src/parser/csharp.rs",
       "src/model/mod.rs",
       "imports",
@@ -17919,6 +18866,14 @@
       "imports",
       [
         "WorkspaceInfo"
+      ]
+    ],
+    [
+      "src/parser/go.rs",
+      "src/parser/config/mod.rs",
+      "imports",
+      [
+        "GoModConfig"
       ]
     ],
     [
@@ -18052,6 +19007,14 @@
         "LanguageParser",
         "RawExport",
         "RawImport"
+      ]
+    ],
+    [
+      "src/parser/mod.rs",
+      "src/parser/config/mod.rs",
+      "imports",
+      [
+        "config"
       ]
     ],
     [
@@ -18188,6 +19151,14 @@
     ],
     [
       "src/parser/python.rs",
+      "src/parser/config/mod.rs",
+      "imports",
+      [
+        "PyProjectConfig"
+      ]
+    ],
+    [
+      "src/parser/python.rs",
       "src/parser/helpers.rs",
       "imports",
       [
@@ -18236,6 +19207,14 @@
       "imports",
       [
         "CanonicalPath"
+      ]
+    ],
+    [
+      "src/parser/registry.rs",
+      "src/parser/config/mod.rs",
+      "imports",
+      [
+        "ProjectConfig"
       ]
     ],
     [
@@ -18353,6 +19332,14 @@
       "imports",
       [
         "WorkspaceInfo"
+      ]
+    ],
+    [
+      "src/parser/typescript.rs",
+      "src/parser/config/mod.rs",
+      "imports",
+      [
+        "TsConfig"
       ]
     ],
     [
@@ -18513,6 +19500,14 @@
       "imports",
       [
         "SymbolDef"
+      ]
+    ],
+    [
+      "src/pipeline/mod.rs",
+      "src/parser/config/mod.rs",
+      "imports",
+      [
+        "discover_config"
       ]
     ],
     [
@@ -19514,6 +20509,14 @@
       "imports",
       [
         "format"
+      ]
+    ],
+    [
+      "tests/fixtures/tsconfig_project/src/index.ts",
+      "tests/fixtures/tsconfig_project/src/app.ts",
+      "imports",
+      [
+        "main"
       ]
     ],
     [

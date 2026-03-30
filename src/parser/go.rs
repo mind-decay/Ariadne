@@ -3,6 +3,7 @@ use crate::model::workspace::WorkspaceInfo;
 use crate::model::{CanonicalPath, FileSet};
 use crate::parser::helpers;
 use crate::parser::symbols::SymbolExtractor;
+use crate::parser::config::GoModConfig;
 use crate::parser::traits::{ImportKind, ImportResolver, LanguageParser, RawExport, RawImport};
 
 /// Go language parser.
@@ -298,22 +299,24 @@ fn extract_go_receiver_type(node: &tree_sitter::Node, source: &[u8]) -> Option<S
 }
 
 /// Go import resolver.
-struct GoResolver;
+struct GoResolver {
+    /// Go module config for resolving internal imports (D-118).
+    config: Option<GoModConfig>,
+}
 
 impl GoResolver {
-    /// Try to find the module path from go.mod by scanning known_files.
-    fn find_module_path(known_files: &FileSet) -> Option<String> {
-        // Look for go.mod in known_files
-        for file in known_files.iter() {
-            if file.file_name() == "go.mod" {
-                // We can't read file contents from FileSet, so we just know it exists.
-                // The module path discovery would require reading go.mod content,
-                // which we don't have access to here. Return None — the pipeline
-                // would need to supply this separately in the future.
-                return None;
-            }
-        }
-        None
+    fn new() -> Self {
+        Self { config: None }
+    }
+
+    /// Inject Go module configuration for config-aware resolution (D-118).
+    pub fn with_config(config: GoModConfig) -> Self {
+        Self { config: Some(config) }
+    }
+
+    /// Get the module path from injected config, falling back to file scanning.
+    fn module_path(&self) -> Option<&str> {
+        self.config.as_ref().map(|c| c.module_path.as_str())
     }
 
     /// Check if an import path looks like a standard library import.
@@ -352,7 +355,7 @@ impl ImportResolver for GoResolver {
             return None;
         }
 
-        let module_path = Self::find_module_path(known_files);
+        let module_path = self.module_path().map(|s| s.to_string());
 
         // Skip external imports
         if Self::is_external(import_path, module_path.as_deref()) {
@@ -399,7 +402,11 @@ pub(crate) fn parser() -> Box<dyn LanguageParser> {
 }
 
 pub(crate) fn resolver() -> Box<dyn ImportResolver> {
-    Box::new(GoResolver)
+    Box::new(GoResolver::new())
+}
+
+pub(crate) fn resolver_with_config(config: GoModConfig) -> Box<dyn ImportResolver> {
+    Box::new(GoResolver::with_config(config))
 }
 
 pub(crate) fn symbol_extractor() -> std::sync::Arc<dyn SymbolExtractor> {
@@ -528,5 +535,74 @@ func privateFunc() {}
     fn go_exports_empty_source() {
         let result = go_exports("package main");
         assert!(result.is_empty());
+    }
+}
+
+#[cfg(test)]
+mod config_resolution_tests {
+    use super::*;
+    use crate::parser::config::GoModConfig;
+
+    fn make_import(path: &str) -> RawImport {
+        RawImport {
+            path: path.to_string(),
+            symbols: vec![],
+            is_type_only: false,
+            kind: ImportKind::Regular,
+        }
+    }
+
+    #[test]
+    fn resolve_internal_import_with_config() {
+        let resolver = GoResolver::with_config(GoModConfig {
+            module_path: "github.com/user/repo".to_string(),
+        });
+        let known = FileSet::from_iter(vec![CanonicalPath::new("pkg/handler/main.go")]);
+
+        let import = make_import("github.com/user/repo/pkg/handler");
+        let from = CanonicalPath::new("cmd/server/main.go");
+
+        let result = resolver.resolve(&import, &from, &known, None);
+        assert_eq!(result, Some(CanonicalPath::new("pkg/handler/main.go")));
+    }
+
+    #[test]
+    fn external_import_with_config_returns_none() {
+        let resolver = GoResolver::with_config(GoModConfig {
+            module_path: "github.com/user/repo".to_string(),
+        });
+        let known = FileSet::new();
+
+        let import = make_import("github.com/other/lib");
+        let from = CanonicalPath::new("cmd/main.go");
+
+        let result = resolver.resolve(&import, &from, &known, None);
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn stdlib_import_with_config_returns_none() {
+        let resolver = GoResolver::with_config(GoModConfig {
+            module_path: "github.com/user/repo".to_string(),
+        });
+        let known = FileSet::new();
+
+        let import = make_import("fmt");
+        let from = CanonicalPath::new("cmd/main.go");
+
+        let result = resolver.resolve(&import, &from, &known, None);
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn no_config_preserves_existing_behavior() {
+        let resolver = GoResolver::new();
+        let known = FileSet::new();
+
+        let import = make_import("fmt");
+        let from = CanonicalPath::new("main.go");
+
+        let result = resolver.resolve(&import, &from, &known, None);
+        assert_eq!(result, None);
     }
 }

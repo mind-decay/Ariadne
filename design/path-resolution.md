@@ -198,6 +198,8 @@ resolve_import(import_path, source_file, project_root, workspace_info):
   1. CLASSIFY the import:
      - Starts with './' or '../' → RELATIVE
      - Starts with workspace package name → WORKSPACE
+     - Matches a config-defined alias (tsconfig paths) → CONFIG_ALIAS
+     - Matches go.mod module prefix → CONFIG_MODULE
      - Matches known standard library → STDLIB → skip
      - Everything else → EXTERNAL → skip
 
@@ -211,6 +213,18 @@ resolve_import(import_path, source_file, project_root, workspace_info):
        e. Case-insensitive fallback if on case-insensitive FS
        f. Match against walked file set → canonical path or None
 
+     CONFIG_ALIAS (TypeScript paths):
+       a. Match import against tsconfig paths patterns (nearest-ancestor tsconfig)
+       b. Expand alias: strip pattern prefix, apply mapped prefix
+       c. If baseUrl set, resolve relative to baseUrl directory
+       d. Try extensions + index files (same as RELATIVE steps c-f)
+       e. Match against walked file set → canonical path or None
+
+     CONFIG_MODULE (Go module path):
+       a. Strip go.mod module prefix from import path
+       b. Resolve remainder as relative path from project root
+       c. Match against walked file set → canonical path or None
+
      WORKSPACE:
        a. Look up package name in workspace member map
        b. Resolve to member's entry point
@@ -219,6 +233,12 @@ resolve_import(import_path, source_file, project_root, workspace_info):
 
      STDLIB / EXTERNAL:
        → None (no edge created)
+
+     FALLBACK (Python src-layout):
+       If standard resolution returns None and pyproject.toml src-layout detected:
+       a. Prepend src/ to the import path
+       b. Retry standard resolution
+       c. Match against walked file set → canonical path or None
 
   3. VALIDATE:
      - Resolved path exists in walked file set?
@@ -229,6 +249,47 @@ resolve_import(import_path, source_file, project_root, workspace_info):
      - Some(canonical_path) → edge created
      - None → unresolved (W006 in verbose mode)
 ```
+
+### Config-Aware Resolution (Phase 10)
+
+Before the main resolution pipeline runs, the `ConfigDiscovery` stage reads language-specific config files and produces a `ProjectConfig`. This config is injected into resolvers at construction time via `with_config()`, enabling resolution of imports that depend on project configuration.
+
+**Config file reading:**
+
+| Config file | Language | Data extracted |
+|------------|----------|----------------|
+| `tsconfig.json` | TypeScript/JS | `compilerOptions.paths`, `compilerOptions.baseUrl`, `extends` |
+| `go.mod` | Go | `module` path |
+| `pyproject.toml` | Python | `[tool.setuptools.package-dir]` src-layout |
+
+**TypeScript path alias resolution:**
+
+When `tsconfig.json` defines `paths` (e.g., `"@app/*": ["src/*"]`), the resolver:
+
+1. Check if import matches any path alias pattern (e.g., `@app/auth/login`)
+2. Expand the pattern: strip the alias prefix, apply the mapped prefix (e.g., `src/auth/login`)
+3. Resolve the expanded path using standard extension/index probing
+4. If `baseUrl` is set, resolve relative to `baseUrl` directory (not source file directory)
+5. If `extends` is specified, follow the chain to inherit parent config (circular detection via W031)
+
+For monorepos with multiple tsconfigs, nearest-ancestor lookup ensures each source file uses the correct config (D-121).
+
+**Go module path resolution:**
+
+When `go.mod` declares `module github.com/user/project`:
+
+1. Check if import path starts with the module prefix
+2. Strip the module prefix to get the relative path (e.g., `github.com/user/project/pkg/auth` → `pkg/auth`)
+3. Resolve the relative path against the project root
+
+**Python src-layout resolution:**
+
+When `pyproject.toml` declares `[tool.setuptools.package-dir] "" = "src"`:
+
+1. If standard resolution fails, retry with `src/` prefix prepended to the import path
+2. This handles the common Python `src`-layout where `import mypackage` resolves to `src/mypackage/`
+
+**Graceful degradation:** Config parsing failures (malformed JSON, missing files, circular extends) produce warnings (W030-W033) and fall back to non-config-aware resolution. The graph is always produced.
 
 ### Path Traversal Protection
 

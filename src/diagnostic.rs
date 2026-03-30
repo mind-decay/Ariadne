@@ -71,6 +71,10 @@ pub enum WarningCode {
     W027GitCommandFailed,
     W028TemporalAnalysisFailed,
     W029BoundaryOverflow,
+    W030ConfigParseError,
+    W031CircularExtends,
+    W032InvalidPathPattern,
+    W033ExtendsNotFound,
 }
 
 impl WarningCode {
@@ -105,6 +109,10 @@ impl WarningCode {
             Self::W027GitCommandFailed => "W027",
             Self::W028TemporalAnalysisFailed => "W028",
             Self::W029BoundaryOverflow => "W029",
+            Self::W030ConfigParseError => "W030",
+            Self::W031CircularExtends => "W031",
+            Self::W032InvalidPathPattern => "W032",
+            Self::W033ExtendsNotFound => "W033",
         }
     }
 }
@@ -346,6 +354,10 @@ impl DiagnosticCollector {
             WarningCode::W027GitCommandFailed => {}
             WarningCode::W028TemporalAnalysisFailed => {}
             WarningCode::W029BoundaryOverflow => {}
+            WarningCode::W030ConfigParseError => {}
+            WarningCode::W031CircularExtends => {}
+            WarningCode::W032InvalidPathPattern => {}
+            WarningCode::W033ExtendsNotFound => {}
         }
         guard.0.push(warning);
     }

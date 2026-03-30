@@ -1,7 +1,11 @@
+use std::collections::BTreeMap;
+use std::path::PathBuf;
+
 use crate::model::symbol::{LineSpan, SymbolDef, SymbolKind, Visibility};
 use crate::model::workspace::WorkspaceInfo;
 use crate::model::{CanonicalPath, FileSet};
 use crate::parser::helpers;
+use crate::parser::config::TsConfig;
 use crate::parser::symbols::SymbolExtractor;
 use crate::parser::traits::{ImportKind, ImportResolver, LanguageParser, RawExport, RawImport};
 
@@ -678,11 +682,22 @@ fn truncate_signature(sig: Option<&str>, max_len: usize) -> Option<String> {
 }
 
 /// TypeScript/JavaScript import resolver.
-pub(crate) struct TypeScriptResolver;
+pub(crate) struct TypeScriptResolver {
+    /// TypeScript path alias configs, keyed by directory containing tsconfig.json.
+    ts_configs: Option<BTreeMap<PathBuf, TsConfig>>,
+}
 
 impl TypeScriptResolver {
     pub fn new() -> Self {
-        Self
+        Self { ts_configs: None }
+    }
+
+    /// Inject tsconfig path alias configurations for config-aware resolution (D-118).
+    pub fn with_ts_configs(mut self, configs: BTreeMap<PathBuf, TsConfig>) -> Self {
+        if !configs.is_empty() {
+            self.ts_configs = Some(configs);
+        }
+        self
     }
 
     /// Check if a specifier is a bare module specifier (not relative).
@@ -770,6 +785,85 @@ impl TypeScriptResolver {
     }
 }
 
+impl TypeScriptResolver {
+    /// Try to resolve an import specifier via tsconfig path aliases (D-118).
+    ///
+    /// Finds the nearest tsconfig for the importing file, then:
+    /// 1. Tries `resolve_path_alias` to get candidate paths from paths mapping
+    /// 2. For each candidate, applies extension probing against known_files
+    /// 3. If no alias matches but baseUrl is set, tries baseUrl-relative resolution
+    ///
+    /// Returns None on failure (silent fallthrough to existing logic).
+    fn resolve_via_tsconfig(
+        &self,
+        specifier: &str,
+        from_file: &CanonicalPath,
+        known_files: &FileSet,
+        configs: &BTreeMap<PathBuf, TsConfig>,
+    ) -> Option<CanonicalPath> {
+        // Determine the directory of the importing file for nearest-tsconfig lookup.
+        // from_file is a CanonicalPath (project-relative), so we need to find
+        // the tsconfig whose config_dir is an ancestor.
+        let from_dir = from_file.parent().unwrap_or("");
+        let from_dir_path = PathBuf::from(from_dir);
+
+        let tsconfig = crate::parser::config::find_nearest_tsconfig(&from_dir_path, configs)?;
+
+        // Try path alias resolution
+        let candidates = crate::parser::config::tsconfig::resolve_path_alias(specifier, tsconfig);
+
+        for candidate_path in &candidates {
+            // Convert the absolute candidate path to a project-relative CanonicalPath.
+            // The candidate is config_dir-relative (absolute on disk), so we need to
+            // strip the config_dir prefix to get a project-relative path.
+            // However, since our known_files are project-relative and config_dir
+            // may be absolute, we convert candidates to strings and try probing.
+            let candidate_str = candidate_path.to_string_lossy();
+            // Normalize: strip leading ./ if present
+            let normalized = candidate_str
+                .strip_prefix("./")
+                .unwrap_or(&candidate_str);
+
+            if let Some(resolved) = Self::probe_ts_extensions(normalized, known_files) {
+                return Some(resolved);
+            }
+        }
+
+        None
+    }
+
+    /// Probe a base path with TypeScript/JavaScript extension variants.
+    ///
+    /// Tries: exact match, .ts, .tsx, .js, .jsx, .mjs, .cjs, then index files.
+    fn probe_ts_extensions(base: &str, known_files: &FileSet) -> Option<CanonicalPath> {
+        // 1. Exact match
+        let exact = CanonicalPath::new(base);
+        if known_files.contains(&exact) {
+            return Some(exact);
+        }
+
+        // 2. Extension probing
+        let extensions = &["ts", "tsx", "js", "jsx", "mjs", "cjs"];
+        for ext in extensions {
+            let candidate = CanonicalPath::new(format!("{}.{}", base, ext));
+            if known_files.contains(&candidate) {
+                return Some(candidate);
+            }
+        }
+
+        // 3. Index file probing
+        let index_extensions = &["ts", "tsx", "js", "jsx"];
+        for ext in index_extensions {
+            let candidate = CanonicalPath::new(format!("{}/index.{}", base, ext));
+            if known_files.contains(&candidate) {
+                return Some(candidate);
+            }
+        }
+
+        None
+    }
+}
+
 impl ImportResolver for TypeScriptResolver {
     fn resolve(
         &self,
@@ -790,6 +884,16 @@ impl ImportResolver for TypeScriptResolver {
             if let Some(resolved) =
                 self.resolve_workspace_import(specifier, from_file, known_files, ws)
             {
+                return Some(resolved);
+            }
+        }
+
+        // Try tsconfig path alias resolution for bare specifiers (D-118).
+        // This MUST come before the bare-specifier skip, because aliases like
+        // `@/components/Button` look like bare specifiers but should resolve
+        // via tsconfig paths.
+        if let Some(ref configs) = self.ts_configs {
+            if let Some(resolved) = self.resolve_via_tsconfig(specifier, from_file, known_files, configs) {
                 return Some(resolved);
             }
         }
@@ -1412,5 +1516,171 @@ export const Btn = ({ label }) => <button style={{ padding: '8px' }}>{label}</bu
         assert!(!tree.root_node().has_error(), ".jsx file should parse cleanly with TSX grammar");
         let exports = parser.extract_exports(&tree, source.as_bytes());
         assert!(exports.iter().any(|e| e.name == "Btn"));
+    }
+}
+
+#[cfg(test)]
+mod config_resolution_tests {
+    use super::*;
+    use crate::parser::config::TsConfig;
+
+    fn make_resolver_with_config(
+        config_dir: &str,
+        base_url: Option<&str>,
+        paths: Vec<(&str, Vec<&str>)>,
+    ) -> TypeScriptResolver {
+        let mut ts_configs = BTreeMap::new();
+        let mut paths_map = BTreeMap::new();
+        for (pattern, targets) in paths {
+            paths_map.insert(
+                pattern.to_string(),
+                targets.into_iter().map(|s| s.to_string()).collect(),
+            );
+        }
+        let config = TsConfig {
+            config_dir: PathBuf::from(config_dir),
+            base_url: base_url.map(|s| s.to_string()),
+            paths: paths_map,
+        };
+        ts_configs.insert(PathBuf::from(config_dir), config);
+        TypeScriptResolver::new().with_ts_configs(ts_configs)
+    }
+
+    fn make_import(path: &str) -> RawImport {
+        RawImport {
+            path: path.to_string(),
+            symbols: vec![],
+            is_type_only: false,
+            kind: ImportKind::Regular,
+        }
+    }
+
+    #[test]
+    fn resolve_via_path_alias() {
+        let resolver = make_resolver_with_config(
+            "",
+            Some("."),
+            vec![("@/*", vec!["src/*"])],
+        );
+        let known = FileSet::from_iter(vec![CanonicalPath::new("src/components/Button.ts")]);
+
+        let import = make_import("@/components/Button");
+        let from = CanonicalPath::new("src/app.ts");
+
+        let result = resolver.resolve(&import, &from, &known, None);
+        assert_eq!(
+            result,
+            Some(CanonicalPath::new("src/components/Button.ts"))
+        );
+    }
+
+    #[test]
+    fn resolve_via_base_url() {
+        let resolver = make_resolver_with_config(
+            "",
+            Some("src"),
+            vec![],
+        );
+        let known = FileSet::from_iter(vec![CanonicalPath::new("src/utils/helper.ts")]);
+
+        let import = make_import("utils/helper");
+        let from = CanonicalPath::new("src/app.ts");
+
+        let result = resolver.resolve(&import, &from, &known, None);
+        assert_eq!(
+            result,
+            Some(CanonicalPath::new("src/utils/helper.ts"))
+        );
+    }
+
+    #[test]
+    fn alias_fails_falls_through_to_standard() {
+        // Path alias maps to a file that doesn't exist, but the import
+        // is also a relative path that does exist via standard resolution.
+        let resolver = make_resolver_with_config(
+            "",
+            Some("."),
+            vec![("@/*", vec!["lib/*"])],
+        );
+        let known = FileSet::from_iter(vec![CanonicalPath::new("src/utils.ts")]);
+
+        // This is a relative import — alias won't match, standard will.
+        let import = make_import("./utils");
+        let from = CanonicalPath::new("src/app.ts");
+
+        let result = resolver.resolve(&import, &from, &known, None);
+        assert_eq!(result, Some(CanonicalPath::new("src/utils.ts")));
+    }
+
+    #[test]
+    fn no_config_preserves_existing_behavior() {
+        let resolver = TypeScriptResolver::new();
+        let known = FileSet::from_iter(vec![CanonicalPath::new("src/utils.ts")]);
+
+        let import = make_import("./utils");
+        let from = CanonicalPath::new("src/app.ts");
+
+        let result = resolver.resolve(&import, &from, &known, None);
+        assert_eq!(result, Some(CanonicalPath::new("src/utils.ts")));
+    }
+
+    #[test]
+    fn alias_with_extension_probing() {
+        // Alias resolves to path without extension — probing should find .tsx
+        let resolver = make_resolver_with_config(
+            "",
+            Some("."),
+            vec![("@components/*", vec!["src/components/*"])],
+        );
+        let known = FileSet::from_iter(vec![CanonicalPath::new("src/components/Button.tsx")]);
+
+        let import = make_import("@components/Button");
+        let from = CanonicalPath::new("src/pages/Home.tsx");
+
+        let result = resolver.resolve(&import, &from, &known, None);
+        assert_eq!(
+            result,
+            Some(CanonicalPath::new("src/components/Button.tsx"))
+        );
+    }
+
+    #[test]
+    fn alias_with_index_probing() {
+        // Alias resolves to directory — index probing should find index.ts
+        let resolver = make_resolver_with_config(
+            "",
+            Some("."),
+            vec![("@/*", vec!["src/*"])],
+        );
+        let known = FileSet::from_iter(vec![CanonicalPath::new("src/components/index.ts")]);
+
+        let import = make_import("@/components");
+        let from = CanonicalPath::new("src/app.ts");
+
+        let result = resolver.resolve(&import, &from, &known, None);
+        assert_eq!(
+            result,
+            Some(CanonicalPath::new("src/components/index.ts"))
+        );
+    }
+
+    #[test]
+    fn bare_specifier_without_config_skipped() {
+        // Without config, bare specifiers like "lodash" are skipped (npm packages)
+        let resolver = TypeScriptResolver::new();
+        let known = FileSet::new();
+
+        let import = make_import("lodash");
+        let from = CanonicalPath::new("src/app.ts");
+
+        let result = resolver.resolve(&import, &from, &known, None);
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn empty_configs_no_effect() {
+        // with_ts_configs with empty map should behave like no config
+        let resolver = TypeScriptResolver::new().with_ts_configs(BTreeMap::new());
+        assert!(resolver.ts_configs.is_none());
     }
 }

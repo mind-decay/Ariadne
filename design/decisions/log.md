@@ -1359,3 +1359,75 @@ Applies to: Brandes centrality (Phase 2), Louvain modularity (Phase 2b), PageRan
 **Decision:** 2D Pareto frontier sweep: O(n^2) dominance check over (effort_score, impact_score) pairs. Each recommendation tagged `pareto: true/false` with `dominated_by` reference.
 **Reasoning:** 2D sweep is sufficient — effort and impact are the only two ranking axes. The recommendation count is small (<100 typically), making O(n^2) trivially fast. More sophisticated approaches (NSGA-II, reference point methods) are unnecessary overhead.
 **Affects:** `src/recommend/pareto.rs`, `src/recommend/refactor.rs`.
+
+## D-118: Construction-Time Config Injection for Import Resolution
+
+**Date:** 2026-03-30
+**Status:** Accepted
+**Context:** Config-aware import resolution (tsconfig.json paths/baseUrl, go.mod module path, pyproject.toml src-layout) requires config data during resolution. The `ImportResolver` trait must not change — existing resolvers and all call sites depend on the current signature.
+**Decision:** Config injected at resolver construction time via `with_config()` methods on each language resolver. `ImportResolver::resolve()` signature unchanged. Each resolver stores `Option<LanguageConfig>` internally, using it during resolution if present.
+**Alternatives rejected:**
+- Adding config parameter to `ImportResolver::resolve()` — breaks trait signature, forces all resolvers to change, violates D-018 stability
+- Global config singleton — violates Rust ownership model, makes testing harder
+**Reasoning:** Construction-time injection follows the builder pattern. Resolvers that don't support config simply ignore it. Zero impact on existing call sites.
+**Affects:** `src/parser/typescript.rs`, `src/parser/go.rs`, `src/parser/python.rs`, `src/parser/config/mod.rs`.
+
+## D-119: JSONC Parsing via Comment Stripping + serde_json
+
+**Date:** 2026-03-30
+**Status:** Accepted
+**Context:** `tsconfig.json` files commonly contain comments (JSONC format). `serde_json` does not parse JSONC natively.
+**Decision:** Strip single-line (`//`) and multi-line (`/* */`) comments from file content before passing to `serde_json::from_str()`. No new crate dependency.
+**Alternatives rejected:**
+- `serde_jsonc` crate — adds a dependency for a single use case
+- `json5` crate — broader than needed, different semantics
+**Reasoning:** Comment stripping is ~30 lines of code. Avoids dependency for a narrow requirement. Handles the common case (developer comments in tsconfig.json).
+**Affects:** `src/parser/config/typescript.rs`.
+
+## D-120: ConfigDiscovery Pipeline Stage
+
+**Date:** 2026-03-30
+**Status:** Accepted
+**Context:** Config files (tsconfig.json, go.mod, pyproject.toml) must be discovered and parsed before import resolution can use them. The pipeline needs a stage between file walking and parsing/resolution.
+**Decision:** `ConfigDiscovery` runs after file walking, before parsing/resolution. It scans walked files for known config filenames, parses them, and produces a `ProjectConfig` that is passed to resolver construction. The stage is non-fatal — config parse failures produce warnings, not errors.
+**Alternatives rejected:**
+- Lazy config loading during resolution — non-deterministic (depends on resolution order), harder to report errors
+- Separate config walk pass — redundant I/O, files already walked
+**Reasoning:** Eager discovery ensures all config is available before any resolution. Leverages already-walked file list. Non-fatal design follows D-003 graceful degradation.
+**Affects:** `src/parser/config/mod.rs`, `src/parser/config/discovery.rs`, `src/pipeline/mod.rs`.
+
+## D-121: Nearest-Ancestor tsconfig Lookup for Monorepo Multi-tsconfig
+
+**Date:** 2026-03-30
+**Status:** Accepted
+**Context:** Monorepos may contain multiple `tsconfig.json` files at different directory levels. A source file must use the nearest ancestor tsconfig for correct path resolution.
+**Decision:** During config discovery, all tsconfig.json files are indexed by directory. During resolver construction for a given source file, the nearest ancestor tsconfig is selected by walking up the directory tree from the source file's location.
+**Alternatives rejected:**
+- Single root tsconfig only — breaks monorepo support
+- All tsconfigs merged — conflicting paths/baseUrl values would produce incorrect resolution
+**Reasoning:** Nearest-ancestor lookup mirrors TypeScript compiler behavior. Each source file gets the tsconfig that actually governs it.
+**Affects:** `src/parser/config/typescript.rs`, `src/parser/config/discovery.rs`.
+
+## D-122: Warning Codes W030-W033 for Config Errors
+
+**Date:** 2026-03-30
+**Status:** Accepted
+**Context:** Config file parsing can fail in several ways. These should be reported as warnings (not fatal errors) following D-003 graceful degradation.
+**Decision:** Four new warning codes: W030 (config parse error — malformed JSON/TOML), W031 (circular tsconfig extends chain), W032 (invalid glob pattern in tsconfig paths), W033 (tsconfig extends target not found). All are non-fatal — resolution falls back to non-config-aware behavior.
+**Alternatives rejected:**
+- Reusing existing warning codes — config errors are a distinct category, deserve their own range
+- Fatal errors — violates D-003; a broken tsconfig should not prevent graph building
+**Reasoning:** Follows the established warning taxonomy (E001-E005, W001-W029). Range W030-W033 reserved for config-related warnings. Non-fatal ensures the graph is always produced.
+**Affects:** `src/diagnostic.rs`, `src/parser/config/mod.rs`.
+
+## D-123: ProjectConfig as Language-Keyed Struct
+
+**Date:** 2026-03-30
+**Status:** Accepted
+**Context:** Config data from multiple languages must be aggregated and passed through the pipeline. Two approaches: trait object hierarchy (dynamic dispatch) or concrete struct with language-specific fields.
+**Decision:** `ProjectConfig` is a concrete struct with `typescript: Vec<TsConfig>`, `go: Option<GoConfig>`, `python: Option<PythonConfig>` fields. No trait objects, no dynamic dispatch.
+**Alternatives rejected:**
+- `Box<dyn LanguageConfig>` trait objects — requires downcasting, loses type safety, complicates serialization
+- HashMap<String, Value> — loses type safety entirely
+**Reasoning:** The set of supported languages is known at compile time and changes infrequently. Concrete struct provides full type safety, no downcasting, simple pattern matching. Adding a new language config = adding one field.
+**Affects:** `src/parser/config/mod.rs`, `src/parser/config/discovery.rs`.

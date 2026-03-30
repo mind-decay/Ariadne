@@ -3,6 +3,7 @@ use crate::model::workspace::WorkspaceInfo;
 use crate::model::{CanonicalPath, FileSet};
 use crate::parser::helpers;
 use crate::parser::symbols::SymbolExtractor;
+use crate::parser::config::PyProjectConfig;
 use crate::parser::traits::{ImportKind, ImportResolver, LanguageParser, RawExport, RawImport};
 
 /// Parser and resolver for Python files (.py, .pyi).
@@ -596,11 +597,19 @@ fn python_truncate_signature(
 }
 
 /// Python import resolver.
-pub(crate) struct PythonResolver;
+pub(crate) struct PythonResolver {
+    /// Python project config for src-layout resolution (D-118).
+    config: Option<PyProjectConfig>,
+}
 
 impl PythonResolver {
     pub fn new() -> Self {
-        Self
+        Self { config: None }
+    }
+
+    /// Inject Python project configuration for config-aware resolution (D-118).
+    pub fn with_config(config: PyProjectConfig) -> Self {
+        Self { config: Some(config) }
     }
 
     /// Check if a specifier is a relative import (starts with dots).
@@ -658,6 +667,19 @@ impl ImportResolver for PythonResolver {
         } else {
             // Absolute import — convert dots to path separators
             let path = specifier.replace('.', "/");
+
+            // If src-layout is configured (D-118), also try prepending "src/"
+            // before standard resolution. This handles projects where packages
+            // live under src/ but imports use bare package names.
+            if let Some(ref cfg) = self.config {
+                if cfg.src_layout {
+                    let src_path = format!("src/{}", path);
+                    if let Some(resolved) = Self::probe_python_path(&src_path, known_files) {
+                        return Some(resolved);
+                    }
+                }
+            }
+
             Self::probe_python_path(&path, known_files)
         }
     }
@@ -860,5 +882,93 @@ def public_func():
     fn exports_empty_source() {
         let result = exports("");
         assert!(result.is_empty());
+    }
+}
+
+#[cfg(test)]
+mod config_resolution_tests {
+    use super::*;
+    use crate::parser::config::PyProjectConfig;
+
+    fn make_import(path: &str) -> RawImport {
+        RawImport {
+            path: path.to_string(),
+            symbols: vec![],
+            is_type_only: false,
+            kind: ImportKind::Regular,
+        }
+    }
+
+    #[test]
+    fn resolve_src_layout_absolute_import() {
+        let resolver = PythonResolver::with_config(PyProjectConfig {
+            src_layout: true,
+            package_name: Some("myapp".to_string()),
+        });
+        let known = FileSet::from_iter(vec![CanonicalPath::new("src/myapp/utils.py")]);
+
+        let import = make_import("myapp.utils");
+        let from = CanonicalPath::new("src/myapp/main.py");
+
+        let result = resolver.resolve(&import, &from, &known, None);
+        assert_eq!(result, Some(CanonicalPath::new("src/myapp/utils.py")));
+    }
+
+    #[test]
+    fn resolve_src_layout_package_init() {
+        let resolver = PythonResolver::with_config(PyProjectConfig {
+            src_layout: true,
+            package_name: Some("myapp".to_string()),
+        });
+        let known = FileSet::from_iter(vec![CanonicalPath::new("src/myapp/__init__.py")]);
+
+        let import = make_import("myapp");
+        let from = CanonicalPath::new("tests/test_main.py");
+
+        let result = resolver.resolve(&import, &from, &known, None);
+        assert_eq!(result, Some(CanonicalPath::new("src/myapp/__init__.py")));
+    }
+
+    #[test]
+    fn no_src_layout_standard_resolution() {
+        let resolver = PythonResolver::with_config(PyProjectConfig {
+            src_layout: false,
+            package_name: Some("myapp".to_string()),
+        });
+        let known = FileSet::from_iter(vec![CanonicalPath::new("myapp/utils.py")]);
+
+        let import = make_import("myapp.utils");
+        let from = CanonicalPath::new("myapp/main.py");
+
+        let result = resolver.resolve(&import, &from, &known, None);
+        assert_eq!(result, Some(CanonicalPath::new("myapp/utils.py")));
+    }
+
+    #[test]
+    fn no_config_preserves_existing_behavior() {
+        let resolver = PythonResolver::new();
+        let known = FileSet::from_iter(vec![CanonicalPath::new("myapp/utils.py")]);
+
+        let import = make_import("myapp.utils");
+        let from = CanonicalPath::new("myapp/main.py");
+
+        let result = resolver.resolve(&import, &from, &known, None);
+        assert_eq!(result, Some(CanonicalPath::new("myapp/utils.py")));
+    }
+
+    #[test]
+    fn src_layout_fallback_to_standard() {
+        // src-layout configured but file is not under src/ — falls through
+        let resolver = PythonResolver::with_config(PyProjectConfig {
+            src_layout: true,
+            package_name: Some("myapp".to_string()),
+        });
+        let known = FileSet::from_iter(vec![CanonicalPath::new("myapp/utils.py")]);
+
+        let import = make_import("myapp.utils");
+        let from = CanonicalPath::new("tests/test_main.py");
+
+        let result = resolver.resolve(&import, &from, &known, None);
+        assert_eq!(result, Some(CanonicalPath::new("myapp/utils.py")));
     }
 }

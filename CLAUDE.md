@@ -12,7 +12,7 @@ Named after Ariadne of Greek mythology, who gave Theseus the thread to navigate 
 
 1. `design/ROADMAP.md` — implementation phases (1a-3c done), evolution plan (phases 4-10), Moira integration notes
 2. `design/architecture.md` — full system design (data model, parsers, CLI, formats)
-3. `design/decisions/log.md` — architectural decisions (D-001 through D-076)
+3. `design/decisions/log.md` — architectural decisions (D-001 through D-123)
 4. `design/path-resolution.md` — path normalization, case sensitivity, monorepo support
 5. `design/determinism.md` — byte-identical output strategy
 6. `design/error-handling.md` — error taxonomy (E001-E005, W001-W009), fault tolerance
@@ -96,7 +96,7 @@ ariadne/
 ├── design/              # Design documents (source of truth)
 │   ├── ROADMAP.md       # Implementation phases
 │   ├── architecture.md  # Full system design
-│   ├── decisions/       # Decision log (D-001 through D-076, planned D-077 through D-090)
+│   ├── decisions/       # Decision log (D-001 through D-123)
 │   ├── specs/           # Phase specs and plans
 │   └── reports/         # Architecture reviews, audit reports
 ├── src/                 # Rust source
@@ -104,6 +104,7 @@ ariadne/
 │   ├── lib.rs           # Public API re-exports
 │   ├── model/           # Data types, newtypes, enums (leaf module, no deps) (D-017, D-023)
 │   ├── parser/          # LanguageParser + ImportResolver traits, registry, per-language impls (D-018)
+│   │   └── config/      # Config-aware resolution: tsconfig.json, go.mod, pyproject.toml (D-118..D-123) [Phase 10]
 │   ├── pipeline/        # BuildPipeline, stage traits (FileWalker, FileReader), orchestration (D-019)
 │   ├── detect/          # File type detection + architectural layer inference
 │   ├── cluster/         # Directory-based clustering
@@ -112,8 +113,8 @@ ariadne/
 │   ├── analysis/        # Martin metrics, smell detection, structural diff (D-048) [Phase 3b]
 │   ├── mcp/             # MCP server, tools, state management (D-045) [Phase 3a]
 │   ├── serial/          # GraphSerializer + GraphReader traits, output types, JSON impl (D-022, D-032)
-│   ├── temporal/         # Git history engine: churn, co-change, hotspots [Phase 7, planned]
-│   ├── semantic/         # Boundary extraction: HTTP routes, events, DI [Phase 8, planned]
+│   ├── temporal/         # Git history engine: churn, co-change, hotspots [Phase 7]
+│   ├── semantic/         # Boundary extraction: HTTP routes, events, DI [Phase 8]
 │   ├── diagnostic.rs    # FatalError, Warning, DiagnosticCollector (D-021)
 │   └── hash.rs          # xxHash64 → ContentHash
 ├── tests/               # Integration tests, fixtures, snapshots

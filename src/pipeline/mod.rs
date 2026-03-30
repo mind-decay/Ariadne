@@ -16,6 +16,7 @@ use crate::model::*;
 use crate::model::semantic::Boundary;
 use crate::model::symbol::SymbolDef;
 use crate::parser::{ParseOutcome, ParserRegistry, RawExport, RawImport};
+use crate::parser::config::discover_config;
 use crate::semantic;
 use crate::serial::{
     self, ClusterEntryOutput, ClusterOutput, GraphOutput, GraphReader, GraphSerializer,
@@ -166,13 +167,25 @@ impl BuildPipeline {
             );
         }
 
+        // Config discovery (D-120): build FileSet from walked entries, discover configs,
+        // construct config-aware registry for resolvers that support it.
+        let walked_file_set: FileSet = entries
+            .iter()
+            .map(|e| {
+                let rel = e.path.strip_prefix(&abs_root).unwrap_or(&e.path);
+                CanonicalPath::new(rel.to_string_lossy())
+            })
+            .collect();
+        let project_config = discover_config(&abs_root, &walked_file_set, &diagnostics);
+        let registry = ParserRegistry::with_project_config(&project_config);
+
         // Stage 2: Read (with diagnostics)
         let read_start = Instant::now();
         let mut file_contents: Vec<FileContent> = Vec::new();
         let mut read_skipped: usize = 0;
         for entry in &entries {
             // Only read files with recognized parser extensions
-            if self.registry.parser_for(&entry.extension).is_none() {
+            if registry.parser_for(&entry.extension).is_none() {
                 continue;
             }
 
@@ -212,9 +225,9 @@ impl BuildPipeline {
             .par_iter()
             .filter_map(|fc| {
                 let extension = fc.path.extension().unwrap_or("");
-                let parser = self.registry.parser_for(extension)?;
+                let parser = registry.parser_for(extension)?;
 
-                match self.registry.parse_source(&fc.bytes, parser, extension, &fc.path) {
+                match registry.parse_source(&fc.bytes, parser, extension, &fc.path) {
                     Ok(ParseOutcome::Ok(imports, exports, symbols, boundaries)) => {
                         let symbols = self.apply_symbol_limits(symbols, fc, &diagnostics);
                         Some(ParsedFile {
@@ -301,7 +314,7 @@ impl BuildPipeline {
         let mut graph = build::resolve_and_build(
             &parsed_files,
             &file_contents,
-            &self.registry,
+            &registry,
             &diagnostics,
             &resolve_opts,
         );

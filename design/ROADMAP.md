@@ -647,16 +647,14 @@ Phase │ Name                    │ Effort │ Agent Value │ Moira Effort �
         Phase 5: Context Engine      Phase 7: Git Temporal (parallel)
             |                              |
         Phase 6: MCP Expansion       Phase 9: Recommendations
-            |                              |
-        Phase 8: Semantic            Phase 10: External Deps
+            |
+        Phase 8: Semantic
             Boundaries
 ```
 
 **Critical path:** Phase 4 → Phase 5 → Phase 6.
 
 **Parallel track:** Phase 7 (git temporal) can start alongside Phase 4.
-
-**Phase 10** (external deps) can start anytime — lowest dependency, quick win.
 
 ---
 
@@ -1686,68 +1684,46 @@ Output: [
 
 ---
 
-## Phase 10: External Dependency Intelligence [PLANNED]
+## Phase 10: Config-Aware Import Resolution [DONE]
 
-**Goal:** Map external package dependencies — which packages are used, where, how heavily. Complete the dependency picture beyond internal imports.
+**Goal:** Resolve imports using language-specific config files — TypeScript path aliases and baseUrl (tsconfig.json), Go module paths (go.mod), Python src-layout (pyproject.toml). Imports that were previously unresolved now produce correct edges.
 
-**Depends on:** Phase 1b (parser infrastructure). Independent of Phases 4-9.
+**Depends on:** Phase 1b (basic resolution pipeline). Independent of Phases 4-9.
 
-### D25: Package Manifest Parsing
+**Deliverables:**
 
-Parse `package.json`, `Cargo.toml`, `go.mod`, `requirements.txt`, `pom.xml`, `*.csproj`:
+- New module `src/parser/config/` with submodules:
+  - `mod.rs` — `ProjectConfig`, `ConfigDiscovery` trait, warning codes W030-W033
+  - `discovery.rs` — `FsConfigDiscovery` implementation, walks files for config filenames
+  - `typescript.rs` — tsconfig.json parsing (JSONC via comment stripping), `paths`/`baseUrl`/`extends` chain resolution, nearest-ancestor lookup for monorepos
+  - `go.rs` — go.mod parsing, module path extraction
+  - `python.rs` — pyproject.toml parsing, src-layout detection
+- ConfigDiscovery pipeline stage between file walking and parsing/resolution (D-120)
+- Construction-time config injection via `with_config()` on resolvers (D-118)
+- JSONC parsing without new crate dependency (D-119)
+- Nearest-ancestor tsconfig lookup for monorepo multi-tsconfig support (D-121)
+- Warning codes W030-W033 for config errors (D-122)
+- `ProjectConfig` as concrete language-keyed struct (D-123)
 
-```rust
-pub struct ExternalDep {
-    pub name: String,               // "express", "serde", "flask"
-    pub version: String,            // "^4.18.0", "1.0", ">=2.0"
-    pub dep_type: DepType,          // Runtime, Dev, Peer, Optional
-    pub import_sites: Vec<ImportSite>,  // where in code it's imported
-    pub import_count: u32,
-}
+**Languages supported:**
 
-pub struct ImportSite {
-    pub file: CanonicalPath,
-    pub line: u32,
-    pub symbols: Vec<String>,      // { Router } from "express"
-}
-```
+| Language | Config file | Features |
+|----------|-----------|----------|
+| TypeScript/JS | `tsconfig.json` | `paths` aliases, `baseUrl`, `extends` chain, JSONC comments |
+| Go | `go.mod` | Module path → directory mapping for intra-module imports |
+| Python | `pyproject.toml` | `src`-layout detection for `src/` prefix resolution |
 
-### D26: New MCP Tools
-
-| Tool | Input | Output |
-|------|-------|--------|
-| `ariadne_external_deps` | `dep_type?: DepType` | All external dependencies with usage stats |
-| `ariadne_package_usage` | `package: string` | Where and how a specific package is used |
-| `ariadne_unused_deps` | — | Declared but never imported packages |
-| `ariadne_heavy_deps` | `top?: u32` | Packages with most import sites |
-
-### Formal Methods & CS Foundations (Phase 10)
-
-#### FM-10.1: Transitive Dependency Analysis (Closure)
-
-**What:** Compute transitive closure of external dependencies: if project uses `express` which depends on `body-parser` which depends on `qs`, the full dependency tree exposes the project to vulnerabilities in `qs` even though it's never directly imported.
-
-**Application:** `ariadne_external_deps` could optionally show transitive depth and total transitive tree size per direct dependency. Heavy transitive trees = supply chain risk.
-
-**Evaluate:** Is transitive analysis useful without a vulnerability database? If it's just "this package has 200 transitive deps" without actionable context → limited value. Consider if pairing with known vulnerability data (npm audit, cargo audit) adds enough value to justify complexity.
-
-### Moira Integration Notes (Phase 10)
-
-| Moira Component | Change Needed | Priority |
-|----------------|--------------|----------|
-| **MCP Registry** | Register 4 external dep tools | MEDIUM |
-| **Knowledge: Project Model** | Auto-enrich with dependency profile (framework, ORM, test lib, etc.) | HIGH |
-| **Hermes (Explorer)** | Use `ariadne_package_usage` to understand how external libs are used in project | MEDIUM |
-| **Hephaestus (Implementer)** | Use `ariadne_external_deps` to know which packages are available before importing | MEDIUM |
-| **Analytical Pipeline** | `ariadne_unused_deps` + `ariadne_heavy_deps` in audit/weakness subtypes | MEDIUM |
-
-**Estimated Moira effort:** ~1-2 files changed (MCP registry, project model enrichment).
+**Decision log entries:** D-118 through D-123.
 
 **Success criteria:**
-1. Manifest parsing works for package.json, Cargo.toml, go.mod, requirements.txt, pom.xml, *.csproj
-2. Import sites correctly linked to declared packages
-3. `ariadne_unused_deps` detects declared-but-never-imported packages
-4. `ariadne_heavy_deps` correctly ranks by import site count
+1. TypeScript imports using `paths` aliases resolve to correct files
+2. TypeScript imports using `baseUrl` resolve relative to configured base
+3. tsconfig `extends` chains are followed (with circular detection, W031)
+4. Monorepo with multiple tsconfigs uses nearest-ancestor for each file
+5. Go module-qualified imports resolve within the module directory
+6. Python src-layout imports resolve through `src/` prefix
+7. Config parse failures produce warnings, not fatal errors (graceful degradation)
+8. All existing tests continue to pass (backward compatible)
 
 ---
 
@@ -1763,7 +1739,6 @@ pub struct ImportSite {
 | Phase 7 (Temporal) | ~Phase 18 | MCP registry + 4 agent roles + quality map + analytical baseline | MEDIUM |
 | Phase 8 (Semantic) | ~Phase 19 | MCP registry + 4 agent roles + project model | MEDIUM |
 | Phase 9 (Recommendations) | ~Phase 20 | MCP registry + Metis rewrite + Daedalus + Q2 gate | MEDIUM |
-| Phase 10 (External) | Bundled | MCP registry + project model | SMALL |
 
 ### Moira Constitutional Impact
 
@@ -1797,6 +1772,12 @@ None of the proposed changes violate Moira's 6 Constitution articles:
 | D-088 | HTTP route detection as first boundary pattern (Phase 8a) | 8 |
 | D-089 | Recommendation engine uses symbol call-graph clustering for split suggestions | 9 |
 | D-090 | External dep tracking via manifest parsing + import site matching | 10 |
+| D-118 | Construction-time config injection for ImportResolver | 10 |
+| D-119 | JSONC parsing via comment stripping (no new crate) | 10 |
+| D-120 | ConfigDiscovery pipeline stage | 10 |
+| D-121 | Nearest-ancestor tsconfig lookup for monorepos | 10 |
+| D-122 | Warning codes W030-W033 for config errors | 10 |
+| D-123 | ProjectConfig as language-keyed struct | 10 |
 
 ---
 
@@ -1870,7 +1851,92 @@ For each FM approach during implementation:
 
 ---
 
-## Future (Beyond Phase 10)
+## Phase 11: Deep Language Support — C# / .NET
+
+**Goal:** Full C# and .NET project support: `.csproj` project references, namespace-to-file resolution, NuGet package detection, and framework-aware patterns.
+
+**Depends on:** Phase 10 (config-aware resolution infrastructure).
+
+**Scope:**
+
+- Parse `.csproj` (MSBuild XML) for `<ProjectReference>`, `<PackageReference>`, output paths
+- Parse `.sln` for multi-project structure
+- Namespace-to-file mapping heuristics (convention-based: namespace segments → directory path)
+- Distinguish internal project references vs NuGet packages vs framework assemblies
+- Framework-aware patterns:
+  - **ASP.NET Core** — controller/service/middleware discovery, DI registration patterns, route detection
+  - **Entity Framework** — DbContext relationships, migration detection
+  - **Blazor** — component dependency graph (`.razor` files), `@inject` directives
+  - **MAUI / Xamarin** — platform-specific project structure
+  - **MinimalAPI** — endpoint mapping patterns
+
+**Deliverables:**
+- `src/parser/config/csproj.rs` — .csproj/.sln parsing
+- Enhanced `src/parser/csharp.rs` — namespace resolution with project context
+- Framework detection in `src/detect/` — identify ASP.NET, EF, Blazor patterns
+- Test fixtures for each framework pattern
+
+---
+
+## Phase 12: Deep Language Support — Java
+
+**Goal:** Full Java project support: Gradle/Maven build systems, classpath resolution, and framework-aware patterns.
+
+**Depends on:** Phase 10 (config-aware resolution infrastructure).
+
+**Scope:**
+
+- Parse `build.gradle` / `build.gradle.kts` for source sets, dependencies, multi-module structure
+- Parse `pom.xml` for dependencies, modules, parent POM inheritance
+- Classpath-aware resolution: map package imports to source directories via build config
+- Distinguish internal modules vs Maven Central/local dependencies
+- Framework-aware patterns:
+  - **Spring Boot** — `@Component`/`@Service`/`@Repository`/`@Controller` detection, `@Autowired` DI graph, `@RequestMapping` route extraction
+  - **Jakarta EE (ex-Java EE)** — CDI injection, JAX-RS endpoints, JPA entity relationships
+  - **Android** — activity/fragment lifecycle, manifest component registration, resource references
+  - **Micronaut** — compile-time DI, `@Controller` endpoints
+  - **Quarkus** — CDI extensions, REST endpoints
+
+**Deliverables:**
+- `src/parser/config/gradle.rs` — build.gradle parsing (Groovy/Kotlin DSL subset)
+- `src/parser/config/maven.rs` — pom.xml parsing
+- Enhanced `src/parser/java.rs` — classpath-aware resolution
+- Framework detection for Spring, Jakarta, Android patterns
+- Test fixtures for each build system and framework
+
+---
+
+## Phase 13: Deep Language Support — TypeScript/JavaScript Frameworks
+
+**Goal:** Framework-aware resolution and dependency extraction for the JS/TS ecosystem beyond basic tsconfig support.
+
+**Depends on:** Phase 10 (tsconfig resolution already done).
+
+**Scope:**
+
+- Bundler alias resolution:
+  - **Vite** — `vite.config.ts` `resolve.alias`
+  - **Webpack** — `webpack.config.js` `resolve.alias`, `resolve.modules`
+  - **Next.js** — `next.config.js` rewrites, automatic `app/` and `pages/` routing
+  - **Turbopack** — turbo.json pipeline dependencies
+- Framework-aware patterns:
+  - **React** — component tree extraction, hook dependency tracking, context provider/consumer graph
+  - **Next.js** — page routes from filesystem, server/client component boundaries (`"use client"`), API routes, middleware chain
+  - **Vue** — SFC (`.vue`) component parsing, composables, Pinia store dependencies
+  - **Angular** — module/component/service DI graph, `NgModule` declarations, lazy-loaded routes
+  - **Svelte/SvelteKit** — `.svelte` component parsing, load functions, route structure
+  - **Remix** — loader/action dependency graph, route modules
+  - **Astro** — `.astro` component parsing, island architecture boundaries
+
+**Deliverables:**
+- `src/parser/config/bundler.rs` — Vite/Webpack/Next.js config parsing
+- Enhanced `src/parser/typescript.rs` — bundler alias integration
+- Framework-specific parsers for Vue SFC, Angular modules, Svelte components
+- Test fixtures for each framework
+
+---
+
+## Future (Beyond Phase 13)
 
 - Tier 2/3 language parsers (Kotlin, Swift, C/C++, PHP, Ruby, Dart)
 - Config file (.ariadne.toml)

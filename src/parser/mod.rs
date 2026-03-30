@@ -1,3 +1,4 @@
+pub mod config;
 mod csharp;
 mod go;
 pub(crate) mod helpers;

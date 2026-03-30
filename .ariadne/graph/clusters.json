@@ -38,12 +38,11 @@
         ".claude/moira/project/rules/conventions.yaml",
         ".claude/moira/project/rules/patterns.yaml",
         ".claude/moira/project/rules/stack.yaml",
-        ".claude/moira/state/queue.yaml",
         ".claude/moira/state/reflection/deep-reflection-counter.yaml",
         ".claude/settings.json",
         ".claude/settings.local.json"
       ],
-      "file_count": 40,
+      "file_count": 39,
       "internal_edges": 0,
       "external_edges": 0,
       "cohesion": 1.0
@@ -233,11 +232,16 @@
       ],
       "file_count": 17,
       "internal_edges": 20,
-      "external_edges": 138,
-      "cohesion": 0.1266
+      "external_edges": 140,
+      "cohesion": 0.125
     },
     "parser": {
       "files": [
+        "src/parser/config/gomod.rs",
+        "src/parser/config/jsonc.rs",
+        "src/parser/config/mod.rs",
+        "src/parser/config/pyproject.rs",
+        "src/parser/config/tsconfig.rs",
         "src/parser/csharp.rs",
         "src/parser/go.rs",
         "src/parser/helpers.rs",
@@ -253,10 +257,10 @@
         "src/parser/typescript.rs",
         "src/parser/yaml.rs"
       ],
-      "file_count": 14,
-      "internal_edges": 32,
-      "external_edges": 42,
-      "cohesion": 0.4324
+      "file_count": 19,
+      "internal_edges": 42,
+      "external_edges": 47,
+      "cohesion": 0.4719
     },
     "pipeline": {
       "files": [
@@ -268,8 +272,8 @@
       ],
       "file_count": 5,
       "internal_edges": 4,
-      "external_edges": 31,
-      "cohesion": 0.1143
+      "external_edges": 32,
+      "cohesion": 0.1111
     },
     "recommend": {
       "files": [
@@ -298,8 +302,8 @@
       ],
       "file_count": 7,
       "internal_edges": 3,
-      "external_edges": 44,
-      "cohesion": 0.0638
+      "external_edges": 46,
+      "cohesion": 0.0612
     },
     "semantic": {
       "files": [
@@ -341,6 +345,7 @@
     "tests": {
       "files": [
         "tests/callgraph_tests.rs",
+        "tests/config_resolution_tests.rs",
         "tests/fixtures/csharp-project/Data/UserRepository.cs",
         "tests/fixtures/csharp-project/Program.cs",
         "tests/fixtures/csharp-project/Services/AuthService.cs",
@@ -367,6 +372,8 @@
         "tests/fixtures/go-service/internal/handler/handler.go",
         "tests/fixtures/go-service/internal/repository/repo.go",
         "tests/fixtures/go-service/internal/service/service.go",
+        "tests/fixtures/gomod_project/internal/auth/auth.go",
+        "tests/fixtures/gomod_project/main.go",
         "tests/fixtures/java-project/src/main/java/com/example/App.java",
         "tests/fixtures/java-project/src/main/java/com/example/data/UserRepo.java",
         "tests/fixtures/java-project/src/main/java/com/example/service/AuthService.java",
@@ -392,6 +399,9 @@
         "tests/fixtures/python-package/src/utils/helpers.py",
         "tests/fixtures/python-package/tests/conftest.py",
         "tests/fixtures/python-package/tests/test_auth.py",
+        "tests/fixtures/python_src_layout/src/mypackage/__init__.py",
+        "tests/fixtures/python_src_layout/src/mypackage/main.py",
+        "tests/fixtures/python_src_layout/src/mypackage/utils.py",
         "tests/fixtures/rust-crate/.ariadne/graph/clusters.json",
         "tests/fixtures/rust-crate/.ariadne/graph/graph.json",
         "tests/fixtures/rust-crate/src/auth/login.rs",
@@ -410,6 +420,16 @@
         "tests/fixtures/semantic/mixed_framework.ts",
         "tests/fixtures/semantic/no_boundaries.rs",
         "tests/fixtures/semantic/spring_routes.java",
+        "tests/fixtures/tsconfig_extends/lib/core.ts",
+        "tests/fixtures/tsconfig_extends/src/main.ts",
+        "tests/fixtures/tsconfig_extends/src/service.ts",
+        "tests/fixtures/tsconfig_extends/tsconfig.base.json",
+        "tests/fixtures/tsconfig_extends/tsconfig.json",
+        "tests/fixtures/tsconfig_project/src/app.ts",
+        "tests/fixtures/tsconfig_project/src/components/Button.ts",
+        "tests/fixtures/tsconfig_project/src/index.ts",
+        "tests/fixtures/tsconfig_project/src/shared/lib/utils.ts",
+        "tests/fixtures/tsconfig_project/tsconfig.json",
         "tests/fixtures/tsx-components/App.tsx",
         "tests/fixtures/tsx-components/components/Callback.tsx",
         "tests/fixtures/tsx-components/components/Card.tsx",
@@ -455,10 +475,10 @@
         "tests/symbol_tests.rs",
         "tests/temporal_integration.rs"
       ],
-      "file_count": 114,
-      "internal_edges": 34,
+      "file_count": 130,
+      "internal_edges": 35,
       "external_edges": 31,
-      "cohesion": 0.5231
+      "cohesion": 0.5303
     },
     "views": {
       "files": [
