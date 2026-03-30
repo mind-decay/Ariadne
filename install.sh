@@ -49,6 +49,19 @@ done
 
 # ── Determine install directory ───────────────────────────────────────
 determine_install_dir() {
+    # If ariadne already exists somewhere in PATH, install there to avoid
+    # shadow binaries (e.g., stale copy in ~/.cargo/bin vs new in /usr/local/bin).
+    local existing_path
+    existing_path="$(command -v ariadne 2>/dev/null || true)"
+    if [ -n "$existing_path" ]; then
+        INSTALL_DIR="$(dirname "$existing_path")"
+        if [ ! -w "$INSTALL_DIR" ]; then
+            USE_SUDO=1
+        fi
+        echo "  Updating existing installation in $INSTALL_DIR"
+        return
+    fi
+
     if [ -w /usr/local/bin ]; then
         INSTALL_DIR="/usr/local/bin"
     elif command -v sudo &>/dev/null && sudo -n true 2>/dev/null; then
@@ -67,13 +80,19 @@ determine_install_dir() {
 # ── Install binary to destination ─────────────────────────────────────
 install_binary() {
     local src="$1"
+    local dest="$INSTALL_DIR/ariadne"
     chmod +x "$src"
+    # Remove existing binary first to avoid "text file busy" on some systems,
+    # then copy new binary (cp, not mv, so source cache stays intact).
     if [ "${USE_SUDO:-}" = "1" ]; then
-        sudo mv "$src" "$INSTALL_DIR/ariadne"
+        sudo rm -f "$dest"
+        sudo cp "$src" "$dest"
     else
-        mv "$src" "$INSTALL_DIR/ariadne"
+        rm -f "$dest"
+        cp "$src" "$dest"
     fi
-    echo "[OK] Installed to $INSTALL_DIR/ariadne"
+    rm -f "$src"
+    echo "[OK] Installed to $dest"
 }
 
 # ── Mode 1: Build from source ────────────────────────────────────────
