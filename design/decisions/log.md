@@ -1278,3 +1278,84 @@ Applies to: Brandes centrality (Phase 2), Louvain modularity (Phase 2b), PageRan
 **Decision:** Three tiers: 1.0 for exact match, 0.8 for prefix match, no edge created for no match. No intermediate confidence levels.
 **Reasoning:** Simple, deterministic, and interpretable. Two non-zero tiers avoid the complexity of continuous confidence scoring while distinguishing exact from approximate matches.
 **Affects:** `src/semantic/mod.rs`.
+
+## D-109: Recommendation Engine in `src/recommend/` (Not `src/algo/`)
+
+**Date:** 2026-03-29
+**Status:** Accepted
+**Context:** Phase 9 recommendation engine needs a home module. `src/algo/` already has 12 files and would worsen its coupling surface.
+**Decision:** Create `src/recommend/` as a separate leaf-consumer module. Recommendations import from `algo/` and `model/` but are not imported by them.
+**Reasoning:** Avoid worsening the 12-file `algo/` circular dependency surface. Recommendations are leaf consumers of graph data, not core graph infrastructure. Separate module keeps blast radius contained.
+**Affects:** `src/recommend/`, `src/lib.rs`.
+
+## D-110: Recommendation Types in `src/recommend/types.rs` (Not `src/model/types.rs`)
+
+**Date:** 2026-03-29
+**Status:** Accepted
+**Context:** Recommendation output types (SplitAnalysis, PlacementSuggestion, RefactorAnalysis, etc.) need a home. `src/model/types.rs` is the project's highest blast-radius file (rank 1, score 0.694).
+**Decision:** All recommendation-specific types live in `src/recommend/types.rs`. No additions to `src/model/types.rs`.
+**Reasoning:** Avoid blast radius amplification on the most-connected file in the project. Recommendation types are only consumed by `recommend/` and `mcp/tools_recommend.rs`, not by the broader model.
+**Affects:** `src/recommend/types.rs`.
+
+## D-111: Stoer-Wagner Min-Cut Implemented In-House
+
+**Date:** 2026-03-29
+**Status:** Accepted
+**Context:** Phase 9 D22 (`suggest_split`) needs minimum cut on symbol graphs. Options: external graph crate or in-house implementation.
+**Decision:** Implement Stoer-Wagner global minimum cut in `src/recommend/min_cut.rs` (~130 lines). No external graph crate dependency.
+**Reasoning:** Symbol graphs are small (5-50 nodes typically, capped at 200). O(V^3) is trivially fast at this scale (<1ms for 50 nodes). The algorithm is well-understood and straightforward. Adding an external graph crate would bring transitive dependencies for marginal benefit.
+**Affects:** `src/recommend/min_cut.rs`.
+
+## D-112: MCP Tool Handlers in `src/mcp/tools_recommend.rs`
+
+**Date:** 2026-03-29
+**Status:** Accepted
+**Context:** Three new MCP tools (suggest_split, suggest_placement, refactor_opportunities) need handler implementations. Putting handler logic directly in `tools.rs` would worsen its god-file status.
+**Decision:** Handler logic lives in `src/mcp/tools_recommend.rs`, following the established split pattern (`tools_context.rs`, `tools_semantic.rs`, `tools_temporal.rs`). `tools.rs` gets only the `#[tool]` macro dispatch entries.
+**Reasoning:** Consistent with existing pattern. Keeps `tools.rs` as a dispatch hub rather than a logic container.
+**Affects:** `src/mcp/tools_recommend.rs`, `src/mcp/tools.rs`, `src/mcp/mod.rs`.
+
+## D-113: Graceful Degradation with DataQuality Enum
+
+**Date:** 2026-03-29
+**Status:** Accepted
+**Context:** Recommendations can leverage symbol index data, temporal data, and semantic data — but none of these are guaranteed to be available.
+**Decision:** `DataQuality` enum with three tiers: `Full` (symbol+temporal+semantic), `Structural` (file-level graph only), `Minimal` (graph only, no temporal). Every recommendation response includes a `data_quality` field.
+**Reasoning:** Users need to understand confidence level of recommendations. Graceful degradation means recommendations are always available (just less precise), rather than failing when optional data is missing.
+**Affects:** `src/recommend/types.rs`, `src/recommend/split.rs`, `src/recommend/placement.rs`, `src/recommend/refactor.rs`.
+
+## D-114: Defer Network Motif Profiles (FM-9.3)
+
+**Date:** 2026-03-30
+**Status:** Accepted
+**Context:** Phase 9 recommendation engine evaluation gate for FM-9.3. Evaluated whether network motif profiles (triangles, fan-out, fan-in, chains, mutual pairs) would provide actionable differentiation between healthy and unhealthy clusters.
+**Decision:** Defer implementation. Do not include in Phase 9.
+**Reasoning:** (1) Import dependency graphs are predominantly DAGs, limiting motif variety to fan-out/fan-in/chains — all already captured by existing degree, centrality, and smell metrics. (2) Triangles and mutual pairs only appear as circular dependencies, already detected by SCC analysis. (3) >90% signal redundancy with existing detectors in `find_refactor_opportunities()`. (4) Medium implementation cost (~1000 LOC) for very low marginal insight gain. (5) Motif profiles become valuable only with richer edge semantics (call graphs, data flow) not yet in the main graph model.
+**Affects:** None (deferred).
+
+## D-115: Defer Formal Concept Analysis (FM-9.4)
+
+**Date:** 2026-03-30
+**Status:** Accepted
+**Context:** FM-9.4 proposed using FCA to discover "natural modules" by computing the concept lattice over files and their dependencies. The ROADMAP flagged this as HIGH risk with an evaluate-first gate.
+**Decision:** Defer FCA to research backlog. Do not implement in Phase 9 or any near-term phase.
+**Reasoning:** (1) Lattice size is exponentially bounded and project-dependent; no reliable tractability guarantee without runtime guards. (2) Ariadne's actual dependency graph produces degenerate lattices (79 distinct import patterns for 117 importing files; mostly singleton concepts). (3) Existing Louvain clustering + directory clustering + recommendation tools already cover the use cases FCA would address. (4) Implementation cost is 2-3 weeks with ongoing maintenance risk, for marginal benefit.
+**Affects:** None (deferred).
+
+## D-116: Stoer-Wagner Min-Cut for File Decomposition
+
+**Date:** 2026-03-29
+**Status:** Accepted
+**Context:** File decomposition (D22) needs an algorithm to find optimal split points in symbol graphs. Options: Stoer-Wagner deterministic min-cut vs. spectral methods.
+**Decision:** Use Stoer-Wagner min-cut. Chosen over spectral methods for determinism guarantees.
+**Reasoning:** Stoer-Wagner produces identical results on identical input (no random initialization). Spectral methods involve eigenvalue decomposition which can have sign ambiguity and iteration-order sensitivity. Determinism is a core Ariadne invariant (design/determinism.md).
+**Affects:** `src/recommend/min_cut.rs`, `src/recommend/split.rs`.
+
+## D-117: Pareto Frontier for Multi-Objective Recommendation Ranking
+
+**Date:** 2026-03-29
+**Status:** Accepted
+**Context:** Refactoring opportunities (D24) have two objectives: minimize effort, maximize impact. Need to surface the best trade-offs.
+**Decision:** 2D Pareto frontier sweep: O(n^2) dominance check over (effort_score, impact_score) pairs. Each recommendation tagged `pareto: true/false` with `dominated_by` reference.
+**Reasoning:** 2D sweep is sufficient — effort and impact are the only two ranking axes. The recommendation count is small (<100 typically), making O(n^2) trivially fast. More sophisticated approaches (NSGA-II, reference point methods) are unnecessary overhead.
+**Affects:** `src/recommend/pareto.rs`, `src/recommend/refactor.rs`.

@@ -38,11 +38,12 @@
         ".claude/moira/project/rules/conventions.yaml",
         ".claude/moira/project/rules/patterns.yaml",
         ".claude/moira/project/rules/stack.yaml",
+        ".claude/moira/state/queue.yaml",
         ".claude/moira/state/reflection/deep-reflection-counter.yaml",
         ".claude/settings.json",
         ".claude/settings.local.json"
       ],
-      "file_count": 39,
+      "file_count": 40,
       "internal_edges": 0,
       "external_edges": 0,
       "cohesion": 1.0
@@ -79,8 +80,8 @@
       ],
       "file_count": 17,
       "internal_edges": 32,
-      "external_edges": 36,
-      "cohesion": 0.4706
+      "external_edges": 49,
+      "cohesion": 0.3951
     },
     "analysis": {
       "files": [
@@ -91,8 +92,8 @@
       ],
       "file_count": 4,
       "internal_edges": 6,
-      "external_edges": 12,
-      "cohesion": 0.3333
+      "external_edges": 15,
+      "cohesion": 0.2857
     },
     "benches": {
       "files": [
@@ -106,8 +107,8 @@
       ],
       "file_count": 7,
       "internal_edges": 0,
-      "external_edges": 0,
-      "cohesion": 1.0
+      "external_edges": 22,
+      "cohesion": 0.0
     },
     "cluster": {
       "files": [
@@ -136,6 +137,8 @@
         "design/reports/archive/2026-03-22-architectural-review.md",
         "design/reports/archive/2026-03-23-moira-violations.md",
         "design/reports/archive/2026-03-25-phase4d-formal-methods-evaluation.md",
+        "design/specs/2026-03-29-phase9-implementation-plan.md",
+        "design/specs/2026-03-29-phase9-recommendations.md",
         "design/specs/archive/2026-03-17-phase1-core-cli.md",
         "design/specs/archive/2026-03-17-phase1-implementation-plan.md",
         "design/specs/archive/2026-03-17-phase1a-implementation-plan.md",
@@ -157,7 +160,7 @@
         "design/specs/archive/2026-03-25-phase7-implementation-plan.md",
         "design/testing.md"
       ],
-      "file_count": 36,
+      "file_count": 38,
       "internal_edges": 0,
       "external_edges": 0,
       "cohesion": 1.0
@@ -197,14 +200,16 @@
         "src/mcp/state.rs",
         "src/mcp/tools.rs",
         "src/mcp/tools_context.rs",
+        "src/mcp/tools_recommend.rs",
+        "src/mcp/tools_semantic.rs",
         "src/mcp/tools_temporal.rs",
         "src/mcp/user_state.rs",
         "src/mcp/watch.rs"
       ],
-      "file_count": 14,
-      "internal_edges": 28,
-      "external_edges": 32,
-      "cohesion": 0.4667
+      "file_count": 16,
+      "internal_edges": 32,
+      "external_edges": 34,
+      "cohesion": 0.4848
     },
     "model": {
       "files": [
@@ -217,6 +222,7 @@
         "src/model/mod.rs",
         "src/model/node.rs",
         "src/model/query.rs",
+        "src/model/semantic.rs",
         "src/model/smell.rs",
         "src/model/stats.rs",
         "src/model/symbol.rs",
@@ -225,10 +231,10 @@
         "src/model/types.rs",
         "src/model/workspace.rs"
       ],
-      "file_count": 16,
-      "internal_edges": 19,
-      "external_edges": 93,
-      "cohesion": 0.1696
+      "file_count": 17,
+      "internal_edges": 20,
+      "external_edges": 138,
+      "cohesion": 0.1266
     },
     "parser": {
       "files": [
@@ -249,8 +255,8 @@
       ],
       "file_count": 14,
       "internal_edges": 32,
-      "external_edges": 32,
-      "cohesion": 0.5
+      "external_edges": 42,
+      "cohesion": 0.4324
     },
     "pipeline": {
       "files": [
@@ -262,8 +268,23 @@
       ],
       "file_count": 5,
       "internal_edges": 4,
-      "external_edges": 25,
-      "cohesion": 0.1379
+      "external_edges": 31,
+      "cohesion": 0.1143
+    },
+    "recommend": {
+      "files": [
+        "src/recommend/min_cut.rs",
+        "src/recommend/mod.rs",
+        "src/recommend/pareto.rs",
+        "src/recommend/placement.rs",
+        "src/recommend/refactor.rs",
+        "src/recommend/split.rs",
+        "src/recommend/types.rs"
+      ],
+      "file_count": 7,
+      "internal_edges": 11,
+      "external_edges": 23,
+      "cohesion": 0.3235
     },
     "root": {
       "files": [
@@ -276,9 +297,21 @@
         "src/main.rs"
       ],
       "file_count": 7,
-      "internal_edges": 2,
-      "external_edges": 28,
-      "cohesion": 0.0667
+      "internal_edges": 3,
+      "external_edges": 44,
+      "cohesion": 0.0638
+    },
+    "semantic": {
+      "files": [
+        "src/semantic/edges.rs",
+        "src/semantic/events.rs",
+        "src/semantic/http.rs",
+        "src/semantic/mod.rs"
+      ],
+      "file_count": 4,
+      "internal_edges": 5,
+      "external_edges": 17,
+      "cohesion": 0.2273
     },
     "serial": {
       "files": [
@@ -288,8 +321,8 @@
       ],
       "file_count": 3,
       "internal_edges": 2,
-      "external_edges": 11,
-      "cohesion": 0.1538
+      "external_edges": 20,
+      "cohesion": 0.0909
     },
     "temporal": {
       "files": [
@@ -302,8 +335,8 @@
       ],
       "file_count": 6,
       "internal_edges": 5,
-      "external_edges": 14,
-      "cohesion": 0.2632
+      "external_edges": 15,
+      "cohesion": 0.25
     },
     "tests": {
       "files": [
@@ -367,6 +400,16 @@
         "tests/fixtures/rust-crate/src/utils/format.rs",
         "tests/fixtures/rust-crate/src/utils/mod.rs",
         "tests/fixtures/rust-crate/tests/integration.rs",
+        "tests/fixtures/semantic/aspnet_routes.cs",
+        "tests/fixtures/semantic/dom_events.ts",
+        "tests/fixtures/semantic/event_emitters.ts",
+        "tests/fixtures/semantic/event_generic.py",
+        "tests/fixtures/semantic/express_routes.ts",
+        "tests/fixtures/semantic/fastapi_routes.py",
+        "tests/fixtures/semantic/go_routes.go",
+        "tests/fixtures/semantic/mixed_framework.ts",
+        "tests/fixtures/semantic/no_boundaries.rs",
+        "tests/fixtures/semantic/spring_routes.java",
         "tests/fixtures/tsx-components/App.tsx",
         "tests/fixtures/tsx-components/components/Callback.tsx",
         "tests/fixtures/tsx-components/components/Card.tsx",
@@ -408,13 +451,14 @@
         "tests/mcp_tests.rs",
         "tests/pipeline_tests.rs",
         "tests/properties.rs",
+        "tests/semantic_tests.rs",
         "tests/symbol_tests.rs",
         "tests/temporal_integration.rs"
       ],
-      "file_count": 103,
+      "file_count": 114,
       "internal_edges": 34,
-      "external_edges": 0,
-      "cohesion": 1.0
+      "external_edges": 31,
+      "cohesion": 0.5231
     },
     "views": {
       "files": [

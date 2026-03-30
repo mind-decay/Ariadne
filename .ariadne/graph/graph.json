@@ -1,8 +1,8 @@
 {
   "version": 1,
   "project_root": "/Users/minddecay/Documents/Projects/Ariadne",
-  "node_count": 284,
-  "edge_count": 322,
+  "node_count": 312,
+  "edge_count": 443,
   "nodes": {
     ".claude/CLAUDE.md": {
       "type": "doc",
@@ -328,6 +328,15 @@
       "exports": [],
       "cluster": ".claude"
     },
+    ".claude/moira/state/queue.yaml": {
+      "type": "data",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 3,
+      "hash": "d9817d8e46125970",
+      "exports": [],
+      "cluster": ".claude"
+    },
     ".claude/moira/state/reflection/deep-reflection-counter.yaml": {
       "type": "data",
       "layer": "unknown",
@@ -341,8 +350,8 @@
       "type": "data",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 19,
-      "hash": "98570e7dd0542123",
+      "lines": 139,
+      "hash": "e7d3f3faa2e5107f",
       "exports": [],
       "cluster": ".claude"
     },
@@ -403,9 +412,9 @@
     "benches/algo_bench.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 189,
-      "hash": "dfc75759d119dfe5",
+      "arch_depth": 8,
+      "lines": 243,
+      "hash": "3f157fe44c17302d",
       "exports": [],
       "cluster": "benches",
       "symbols": [
@@ -414,8 +423,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 66,
-            "end": 73
+            "start": 67,
+            "end": 74
           },
           "signature": "fn bench_blast_radius(c: &mut Criterion) {"
         },
@@ -424,8 +433,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 75,
-            "end": 81
+            "start": 76,
+            "end": 82
           },
           "signature": "fn bench_centrality(c: &mut Criterion) {"
         },
@@ -434,8 +443,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 90,
-            "end": 102
+            "start": 91,
+            "end": 103
           },
           "signature": "fn bench_combined_importance(c: &mut Criterion) {"
         },
@@ -444,8 +453,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 146,
-            "end": 151
+            "start": 147,
+            "end": 152
           },
           "signature": "fn bench_compression_l0(c: &mut Criterion) {"
         },
@@ -454,8 +463,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 153,
-            "end": 159
+            "start": 154,
+            "end": 160
           },
           "signature": "fn bench_compression_l1(c: &mut Criterion) {"
         },
@@ -464,8 +473,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 161,
-            "end": 167
+            "start": 162,
+            "end": 168
           },
           "signature": "fn bench_compression_l2(c: &mut Criterion) {"
         },
@@ -474,18 +483,28 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 83,
-            "end": 88
+            "start": 84,
+            "end": 89
           },
           "signature": "fn bench_pagerank(c: &mut Criterion) {"
+        },
+        {
+          "name": "bench_pareto_frontier",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 213,
+            "end": 225
+          },
+          "signature": "fn bench_pareto_frontier(c: &mut Criterion) {"
         },
         {
           "name": "bench_scc",
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 49,
-            "end": 55
+            "start": 50,
+            "end": 56
           },
           "signature": "fn bench_scc(c: &mut Criterion) {"
         },
@@ -494,18 +513,38 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 169,
-            "end": 174
+            "start": 170,
+            "end": 175
           },
           "signature": "fn bench_spectral(c: &mut Criterion) {"
+        },
+        {
+          "name": "bench_stoer_wagner_medium",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 195,
+            "end": 211
+          },
+          "signature": "fn bench_stoer_wagner_medium(c: &mut Criterion) {"
+        },
+        {
+          "name": "bench_stoer_wagner_small",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 177,
+            "end": 193
+          },
+          "signature": "fn bench_stoer_wagner_small(c: &mut Criterion) {"
         },
         {
           "name": "bench_topo_sort",
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 57,
-            "end": 64
+            "start": 58,
+            "end": 65
           },
           "signature": "fn bench_topo_sort(c: &mut Criterion) {"
         },
@@ -514,8 +553,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 11,
-            "end": 47
+            "start": 12,
+            "end": 48
           },
           "signature": "fn build_synthetic_graph(node_count: usize, edge_count: usize) -> ProjectGraph {"
         },
@@ -524,8 +563,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 104,
-            "end": 144
+            "start": 105,
+            "end": 145
           },
           "signature": "fn build_synthetic_graph_with_clusters("
         }
@@ -534,9 +573,9 @@
     "benches/analysis_bench.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
+      "arch_depth": 8,
       "lines": 194,
-      "hash": "76beac320811b72a",
+      "hash": "b421c3ff837670ee",
       "exports": [],
       "cluster": "benches",
       "symbols": [
@@ -605,7 +644,7 @@
     "benches/build_bench.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
+      "arch_depth": 8,
       "lines": 76,
       "hash": "303184474b961ba8",
       "exports": [],
@@ -699,9 +738,9 @@
     "benches/mcp_bench.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
+      "arch_depth": 7,
       "lines": 163,
-      "hash": "1e6173475f4cda59",
+      "hash": "56abfbc8ee3f4b05",
       "exports": [],
       "cluster": "benches",
       "symbols": [
@@ -770,9 +809,9 @@
     "benches/parser_bench.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 184,
-      "hash": "ffd9cdfccda91713",
+      "arch_depth": 6,
+      "lines": 185,
+      "hash": "46aa696a9af6584e",
       "exports": [],
       "cluster": "benches",
       "symbols": [
@@ -781,8 +820,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 76,
-            "end": 123
+            "start": 77,
+            "end": 124
           },
           "signature": "fn bench_clustering_3000(c: &mut Criterion) {"
         },
@@ -791,8 +830,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 66,
-            "end": 74
+            "start": 67,
+            "end": 75
           },
           "signature": "fn bench_hash_1mb(c: &mut Criterion) {"
         },
@@ -801,8 +840,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 28,
-            "end": 45
+            "start": 29,
+            "end": 46
           },
           "signature": "fn bench_parse_go(c: &mut Criterion) {"
         },
@@ -811,8 +850,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 47,
-            "end": 64
+            "start": 48,
+            "end": 65
           },
           "signature": "fn bench_parse_python(c: &mut Criterion) {"
         },
@@ -821,8 +860,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 8,
-            "end": 26
+            "start": 9,
+            "end": 27
           },
           "signature": "fn bench_parse_typescript(c: &mut Criterion) {"
         },
@@ -831,8 +870,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 125,
-            "end": 173
+            "start": 126,
+            "end": 174
           },
           "signature": "fn bench_serialization_3000(c: &mut Criterion) {"
         }
@@ -841,9 +880,9 @@
     "benches/symbol_bench.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 245,
-      "hash": "12ab7885f3884c43",
+      "arch_depth": 6,
+      "lines": 244,
+      "hash": "9501055c90f6efd8",
       "exports": [],
       "cluster": "benches",
       "symbols": [
@@ -852,8 +891,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 151,
-            "end": 160
+            "start": 150,
+            "end": 159
           },
           "signature": "fn bench_callees_of(c: &mut Criterion) {"
         },
@@ -862,8 +901,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 140,
-            "end": 149
+            "start": 139,
+            "end": 148
           },
           "signature": "fn bench_callers_of(c: &mut Criterion) {"
         },
@@ -872,8 +911,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 131,
-            "end": 138
+            "start": 130,
+            "end": 137
           },
           "signature": "fn bench_callgraph_build(c: &mut Criterion) {"
         },
@@ -882,8 +921,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 199,
-            "end": 231
+            "start": 198,
+            "end": 230
           },
           "signature": "fn bench_symbol_extraction_rust(c: &mut Criterion) {"
         },
@@ -892,8 +931,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 164,
-            "end": 197
+            "start": 163,
+            "end": 196
           },
           "signature": "fn bench_symbol_extraction_typescript(c: &mut Criterion) {"
         },
@@ -902,8 +941,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 93,
-            "end": 99
+            "start": 92,
+            "end": 98
           },
           "signature": "fn bench_symbol_index_build(c: &mut Criterion) {"
         },
@@ -912,8 +951,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 101,
-            "end": 108
+            "start": 100,
+            "end": 107
           },
           "signature": "fn bench_symbol_search(c: &mut Criterion) {"
         },
@@ -922,8 +961,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 110,
-            "end": 117
+            "start": 109,
+            "end": 116
           },
           "signature": "fn bench_symbol_search_with_kind(c: &mut Criterion) {"
         },
@@ -932,8 +971,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 119,
-            "end": 127
+            "start": 118,
+            "end": 126
           },
           "signature": "fn bench_symbols_for_file(c: &mut Criterion) {"
         },
@@ -942,8 +981,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 15,
-            "end": 89
+            "start": 14,
+            "end": 88
           },
           "signature": "fn build_graph_with_symbols(node_count: usize, symbols_per_file: usize) -> ProjectGraph {"
         }
@@ -954,7 +993,7 @@
       "layer": "unknown",
       "arch_depth": 0,
       "lines": 1885,
-      "hash": "724d6483d75d9c8c",
+      "hash": "95548ce4ddecc336",
       "exports": [],
       "cluster": "design"
     },
@@ -962,8 +1001,8 @@
       "type": "doc",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 1011,
-      "hash": "6bcd77504a8a6616",
+      "lines": 1024,
+      "hash": "096ab633343a5825",
       "exports": [],
       "cluster": "design"
     },
@@ -971,8 +1010,8 @@
       "type": "doc",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 1217,
-      "hash": "ee743c3d44452c3a",
+      "lines": 1361,
+      "hash": "c7f6ebac430f1a3e",
       "exports": [],
       "cluster": "design"
     },
@@ -1090,6 +1129,24 @@
       "arch_depth": 0,
       "lines": 234,
       "hash": "aec44bf47bbea171",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/specs/2026-03-29-phase9-implementation-plan.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 374,
+      "hash": "d8b298ef9adee7d8",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/specs/2026-03-29-phase9-recommendations.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 642,
+      "hash": "60cc9c16deb97df3",
       "exports": [],
       "cluster": "design"
     },
@@ -2395,7 +2452,7 @@
       "layer": "unknown",
       "arch_depth": 7,
       "lines": 612,
-      "hash": "40ff84c6af0d4389",
+      "hash": "94cd364e08f04d96",
       "exports": [
         "compute_structural_diff"
       ],
@@ -2633,8 +2690,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 6,
-      "lines": 816,
-      "hash": "eebc8657cd451ce3",
+      "lines": 879,
+      "hash": "1d8fff60421cd0c7",
       "exports": [
         "detect_smells"
       ],
@@ -2645,8 +2702,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 76,
-            "end": 94
+            "start": 82,
+            "end": 100
           },
           "signature": "fn detect_circular_dependencies(stats: &StatsOutput, smells: &mut Vec<ArchSmell>) {"
         },
@@ -2655,8 +2712,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 207,
-            "end": 256
+            "start": 213,
+            "end": 262
           },
           "signature": "fn detect_dead_clusters(graph: &ProjectGraph, clusters: &ClusterMap, smells: &mut Vec<ArchSmell>) {"
         },
@@ -2665,8 +2722,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 40,
-            "end": 73
+            "start": 46,
+            "end": 79
           },
           "signature": "fn detect_god_files("
         },
@@ -2675,8 +2732,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 126,
-            "end": 178
+            "start": 132,
+            "end": 184
           },
           "signature": "fn detect_hub_and_spoke(graph: &ProjectGraph, clusters: &ClusterMap, smells: &mut Vec<ArchSmell>) {"
         },
@@ -2685,18 +2742,28 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 97,
-            "end": 123
+            "start": 103,
+            "end": 129
           },
           "signature": "fn detect_layer_violations(graph: &ProjectGraph, smells: &mut Vec<ArchSmell>) {"
+        },
+        {
+          "name": "detect_orphan_boundaries",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 292,
+            "end": 346
+          },
+          "signature": "fn detect_orphan_boundaries(semantic: &SemanticState, smells: &mut Vec<ArchSmell>) {"
         },
         {
           "name": "detect_shotgun_surgery",
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 288,
-            "end": 326
+            "start": 351,
+            "end": 389
           },
           "signature": "fn detect_shotgun_surgery("
         },
@@ -2705,8 +2772,8 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 11,
-            "end": 37
+            "start": 13,
+            "end": 43
           },
           "signature": "pub fn detect_smells("
         },
@@ -2715,8 +2782,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 259,
-            "end": 283
+            "start": 265,
+            "end": 289
           },
           "signature": "fn detect_temporal_coupling_without_import("
         },
@@ -2725,8 +2792,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 181,
-            "end": 204
+            "start": 187,
+            "end": 210
           },
           "signature": "fn detect_unstable_foundations("
         },
@@ -2735,8 +2802,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 329,
-            "end": 816
+            "start": 392,
+            "end": 879
           }
         }
       ]
@@ -3119,8 +3186,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 3,
-      "lines": 541,
-      "hash": "f0b80e772ee6d728",
+      "lines": 544,
+      "hash": "4470127ea2d4fc01",
       "exports": [
         "DiagnosticCollector",
         "DiagnosticCounts",
@@ -3139,8 +3206,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 272,
-            "end": 274
+            "start": 274,
+            "end": 276
           },
           "signature": "pub struct DiagnosticCollector {"
         },
@@ -3149,8 +3216,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 251,
-            "end": 263
+            "start": 253,
+            "end": 265
           },
           "signature": "pub struct DiagnosticCounts {"
         },
@@ -3159,8 +3226,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 266,
-            "end": 269
+            "start": 268,
+            "end": 271
           },
           "signature": "pub struct DiagnosticReport {"
         },
@@ -3179,8 +3246,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 242,
-            "end": 247
+            "start": 244,
+            "end": 249
           },
           "signature": "pub struct Warning {"
         },
@@ -3190,7 +3257,7 @@
           "visibility": "public",
           "span": {
             "start": 44,
-            "end": 73
+            "end": 74
           },
           "signature": "pub enum WarningCode {"
         },
@@ -3199,8 +3266,8 @@
           "kind": "enum",
           "visibility": "public",
           "span": {
-            "start": 118,
-            "end": 121
+            "start": 120,
+            "end": 123
           },
           "signature": "pub enum WarningFormat {"
         },
@@ -3209,8 +3276,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 76,
-            "end": 107
+            "start": 77,
+            "end": 109
           },
           "signature": "pub fn code(&self) -> &'static str {",
           "parent": "WarningCode"
@@ -3220,8 +3287,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 367,
-            "end": 369
+            "start": 370,
+            "end": 372
           },
           "signature": "fn default() -> Self {",
           "parent": "Default"
@@ -3231,8 +3298,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 358,
-            "end": 363
+            "start": 361,
+            "end": 366
           },
           "signature": "pub fn drain(self) -> DiagnosticReport {",
           "parent": "DiagnosticCollector"
@@ -3242,8 +3309,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 111,
-            "end": 113
+            "start": 113,
+            "end": 115
           },
           "signature": "fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {",
           "parent": "WarningCode"
@@ -3253,8 +3320,8 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 165,
-            "end": 219
+            "start": 167,
+            "end": 221
           },
           "signature": "pub fn format_summary("
         },
@@ -3263,8 +3330,8 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 126,
-            "end": 162
+            "start": 128,
+            "end": 164
           },
           "signature": "pub fn format_warnings(report: &DiagnosticReport, format: WarningFormat, verbose: bool) -> String {"
         },
@@ -3273,8 +3340,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 352,
-            "end": 355
+            "start": 355,
+            "end": 358
           },
           "signature": "pub fn increment_unresolved(&self) {",
           "parent": "DiagnosticCollector"
@@ -3284,8 +3351,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 222,
-            "end": 238
+            "start": 224,
+            "end": 240
           },
           "signature": "fn json_escape(s: &str) -> String {"
         },
@@ -3294,8 +3361,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 277,
-            "end": 281
+            "start": 279,
+            "end": 283
           },
           "signature": "pub fn new() -> Self {",
           "parent": "DiagnosticCollector"
@@ -3305,8 +3372,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 373,
-            "end": 541
+            "start": 376,
+            "end": 544
           }
         },
         {
@@ -3314,8 +3381,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 284,
-            "end": 348
+            "start": 286,
+            "end": 351
           },
           "signature": "pub fn warn(&self, warning: Warning) {",
           "parent": "DiagnosticCollector"
@@ -3349,8 +3416,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 11,
-      "lines": 14,
-      "hash": "9bcc4ce518c2954b",
+      "lines": 16,
+      "hash": "fdaad35044d42499",
       "exports": [
         "algo",
         "analysis",
@@ -3362,6 +3429,8 @@
         "model",
         "parser",
         "pipeline",
+        "recommend",
+        "semantic",
         "serial",
         "temporal",
         "views"
@@ -3371,9 +3440,9 @@
     "src/main.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 1516,
-      "hash": "24ce1b91985ec2bb",
+      "arch_depth": 8,
+      "lines": 1875,
+      "hash": "8d1878d23c3c4a71",
       "exports": [],
       "cluster": "root",
       "symbols": [
@@ -3382,8 +3451,8 @@
           "kind": "struct",
           "visibility": "private",
           "span": {
-            "start": 24,
-            "end": 27
+            "start": 26,
+            "end": 29
           },
           "signature": "struct Cli {"
         },
@@ -3392,8 +3461,8 @@
           "kind": "enum",
           "visibility": "private",
           "span": {
-            "start": 30,
-            "end": 124
+            "start": 32,
+            "end": 136
           },
           "signature": "enum Commands {"
         },
@@ -3402,8 +3471,8 @@
           "kind": "enum",
           "visibility": "private",
           "span": {
-            "start": 127,
-            "end": 336
+            "start": 139,
+            "end": 389
           },
           "signature": "enum QueryCommands {"
         },
@@ -3412,8 +3481,8 @@
           "kind": "enum",
           "visibility": "private",
           "span": {
-            "start": 339,
-            "end": 349
+            "start": 392,
+            "end": 402
           },
           "signature": "enum ViewsCommands {"
         },
@@ -3422,8 +3491,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 450,
-            "end": 458
+            "start": 508,
+            "end": 516
           },
           "signature": "fn check_server_lock(output_dir: &std::path::Path) -> Result<(), FatalError> {"
         },
@@ -3432,18 +3501,28 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 679,
-            "end": 684
+            "start": 827,
+            "end": 832
           },
           "signature": "fn json_pretty<T: serde::Serialize>(value: &T) -> Result<String, FatalError> {"
+        },
+        {
+          "name": "load_boundaries",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 812,
+            "end": 822
+          },
+          "signature": "fn load_boundaries("
         },
         {
           "name": "load_clusters",
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 661,
-            "end": 674
+            "start": 797,
+            "end": 810
           },
           "signature": "fn load_clusters("
         },
@@ -3452,8 +3531,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 641,
-            "end": 651
+            "start": 777,
+            "end": 787
           },
           "signature": "fn load_graph(reader: &dyn GraphReader, dir: &std::path::Path) -> Result<ProjectGraph, FatalError> {"
         },
@@ -3462,8 +3541,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 653,
-            "end": 659
+            "start": 789,
+            "end": 795
           },
           "signature": "fn load_stats(reader: &dyn GraphReader, dir: &std::path::Path) -> Result<StatsOutput, FatalError> {"
         },
@@ -3472,8 +3551,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 351,
-            "end": 446
+            "start": 404,
+            "end": 504
           },
           "signature": "fn main() {"
         },
@@ -3482,8 +3561,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 1441,
-            "end": 1472
+            "start": 1800,
+            "end": 1831
           },
           "signature": "fn print_stats_md(stats: &StatsOutput) {"
         },
@@ -3492,8 +3571,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 461,
-            "end": 539
+            "start": 591,
+            "end": 672
           },
           "signature": "fn run_build("
         },
@@ -3502,8 +3581,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 624,
-            "end": 637
+            "start": 760,
+            "end": 773
           },
           "signature": "fn run_info() {"
         },
@@ -3512,18 +3591,28 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 686,
-            "end": 1421
+            "start": 834,
+            "end": 1780
           },
           "signature": "fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {"
+        },
+        {
+          "name": "run_restart",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 519,
+            "end": 588
+          },
+          "signature": "fn run_restart(project: PathBuf, output: Option<PathBuf>) -> Result<(), FatalError> {"
         },
         {
           "name": "run_update",
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 542,
-            "end": 622
+            "start": 675,
+            "end": 758
           },
           "signature": "fn run_update("
         },
@@ -3532,8 +3621,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 1423,
-            "end": 1439
+            "start": 1782,
+            "end": 1798
           },
           "signature": "fn run_views(cmd: ViewsCommands) -> Result<(), FatalError> {"
         },
@@ -3542,8 +3631,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 1475,
-            "end": 1516
+            "start": 1834,
+            "end": 1875
           },
           "signature": "fn serialize_subgraph_result(result: &ariadne_graph::model::SubgraphResult) -> serde_json::Value {"
         }
@@ -3745,14 +3834,15 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 4,
-      "lines": 167,
-      "hash": "9b95025e7bbc3447",
+      "lines": 198,
+      "hash": "db3294337a82e649",
       "exports": [
         "LockGuard",
         "LockStatus",
         "acquire_lock",
         "check_lock",
-        "release_lock"
+        "release_lock",
+        "terminate_process"
       ],
       "cluster": "mcp",
       "symbols": [
@@ -3896,8 +3986,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 163,
-            "end": 167
+            "start": 194,
+            "end": 198
           }
         },
         {
@@ -3909,6 +3999,16 @@
             "end": 82
           },
           "signature": "pub fn release_lock(lock_path: &Path) -> Result<(), FatalError> {"
+        },
+        {
+          "name": "terminate_process",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 164,
+            "end": 190
+          },
+          "signature": "pub fn terminate_process(pid: u32) -> Result<bool, std::io::Error> {"
         },
         {
           "name": "write_lock",
@@ -3926,8 +4026,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 10,
-      "lines": 13,
-      "hash": "cfcfcf61d8145a53",
+      "lines": 15,
+      "hash": "2c9a45b9ad328185",
       "exports": [
         "annotations",
         "bookmarks",
@@ -3939,6 +4039,8 @@
         "state",
         "tools",
         "tools_context",
+        "tools_recommend",
+        "tools_semantic",
         "tools_temporal",
         "user_state",
         "watch"
@@ -4064,8 +4166,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 7,
-      "lines": 730,
-      "hash": "2cc3cb8973a6ddab",
+      "lines": 732,
+      "hash": "ba17d7d6e141d76e",
       "exports": [
         "get_prompt_impl",
         "list_prompts_impl"
@@ -4077,8 +4179,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 464,
-            "end": 469
+            "start": 466,
+            "end": 471
           },
           "signature": "fn error_prompt(message: &str) -> GetPromptResult {"
         },
@@ -4118,7 +4220,7 @@
           "visibility": "private",
           "span": {
             "start": 254,
-            "end": 347
+            "end": 349
           },
           "signature": "fn prompt_find_refactoring("
         },
@@ -4137,8 +4239,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 349,
-            "end": 461
+            "start": 351,
+            "end": 463
           },
           "signature": "fn prompt_understand_module("
         },
@@ -4147,8 +4249,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 472,
-            "end": 730
+            "start": 474,
+            "end": 732
           }
         }
       ]
@@ -4157,8 +4259,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 7,
-      "lines": 544,
-      "hash": "251d3a80252dbee0",
+      "lines": 546,
+      "hash": "14f4e0f0010b0d61",
       "exports": [
         "list_resources_impl",
         "read_resource_impl"
@@ -4210,8 +4312,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 271,
-            "end": 280
+            "start": 273,
+            "end": 282
           },
           "signature": "fn read_freshness(state: &GraphState) -> String {"
         },
@@ -4220,8 +4322,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 245,
-            "end": 269
+            "start": 247,
+            "end": 271
           },
           "signature": "fn read_hotspots(state: &GraphState) -> String {"
         },
@@ -4251,7 +4353,7 @@
           "visibility": "private",
           "span": {
             "start": 214,
-            "end": 243
+            "end": 245
           },
           "signature": "fn read_smells(state: &GraphState) -> String {"
         },
@@ -4260,8 +4362,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 293,
-            "end": 544
+            "start": 295,
+            "end": 546
           }
         },
         {
@@ -4269,8 +4371,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 283,
-            "end": 290
+            "start": 285,
+            "end": 292
           },
           "signature": "fn to_json_string<T: serde::Serialize>(value: &T) -> String {"
         }
@@ -4324,8 +4426,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 6,
-      "lines": 236,
-      "hash": "16aa1ea61ca7a58c",
+      "lines": 244,
+      "hash": "952cd0f00991f872",
       "exports": [
         "FreshnessState",
         "GraphState",
@@ -4338,8 +4440,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 53,
-            "end": 67
+            "start": 55,
+            "end": 69
           },
           "signature": "pub struct FreshnessState {"
         },
@@ -4349,7 +4451,7 @@
           "visibility": "public",
           "span": {
             "start": 15,
-            "end": 49
+            "end": 51
           },
           "signature": "pub struct GraphState {"
         },
@@ -4358,8 +4460,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 175,
-            "end": 184
+            "start": 179,
+            "end": 188
           },
           "signature": "fn build_forward_index(graph: &ProjectGraph) -> BTreeMap<CanonicalPath, Vec<Edge>> {",
           "parent": "GraphState"
@@ -4369,8 +4471,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 186,
-            "end": 192
+            "start": 190,
+            "end": 196
           },
           "signature": "fn build_layer_index(graph: &ProjectGraph) -> BTreeMap<u32, Vec<CanonicalPath>> {",
           "parent": "GraphState"
@@ -4380,8 +4482,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 167,
-            "end": 173
+            "start": 171,
+            "end": 177
           },
           "signature": "fn build_reverse_index(graph: &ProjectGraph) -> BTreeMap<CanonicalPath, Vec<Edge>> {",
           "parent": "GraphState"
@@ -4391,8 +4493,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 104,
-            "end": 106
+            "start": 106,
+            "end": 108
           },
           "signature": "fn default() -> Self {",
           "parent": "Default"
@@ -4402,8 +4504,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 114,
-            "end": 165
+            "start": 116,
+            "end": 169
           },
           "signature": "pub fn from_loaded_data(",
           "parent": "GraphState"
@@ -4413,8 +4515,8 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 198,
-            "end": 236
+            "start": 202,
+            "end": 244
           },
           "signature": "pub fn load_graph_state("
         },
@@ -4423,8 +4525,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 71,
-            "end": 81
+            "start": 73,
+            "end": 83
           },
           "signature": "pub fn new() -> Self {",
           "parent": "FreshnessState"
@@ -4434,8 +4536,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 84,
-            "end": 100
+            "start": 86,
+            "end": 102
           },
           "signature": "pub fn recompute_confidence(&mut self, total_files: usize) {",
           "parent": "FreshnessState"
@@ -4445,9 +4547,9 @@
     "src/mcp/tools.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 7,
-      "lines": 2320,
-      "hash": "3797a854a0005e44",
+      "arch_depth": 8,
+      "lines": 2814,
+      "hash": "4d4eafd84a42cf2f",
       "exports": [
         "AnnotateParam",
         "AnnotationsParam",
@@ -4479,8 +4581,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 251,
-            "end": 262
+            "start": 258,
+            "end": 269
           },
           "signature": "pub struct AnnotateParam {"
         },
@@ -4489,8 +4591,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 265,
-            "end": 272
+            "start": 272,
+            "end": 279
           },
           "signature": "pub struct AnnotationsParam {"
         },
@@ -4499,8 +4601,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 31,
-            "end": 37
+            "start": 36,
+            "end": 42
           },
           "signature": "pub struct AriadneTools {"
         },
@@ -4509,8 +4611,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 133,
-            "end": 140
+            "start": 138,
+            "end": 147
           },
           "signature": "pub struct BlastRadiusParam {"
         },
@@ -4519,8 +4621,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 281,
-            "end": 288
+            "start": 288,
+            "end": 295
           },
           "signature": "pub struct BookmarkParam {"
         },
@@ -4529,8 +4631,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 241,
-            "end": 246
+            "start": 248,
+            "end": 253
           },
           "signature": "pub struct CalleesParam {"
         },
@@ -4539,8 +4641,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 233,
-            "end": 238
+            "start": 240,
+            "end": 245
           },
           "signature": "pub struct CallersParam {"
         },
@@ -4549,8 +4651,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 153,
-            "end": 156
+            "start": 160,
+            "end": 163
           },
           "signature": "pub struct CentralityParam {"
         },
@@ -4559,8 +4661,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 165,
-            "end": 168
+            "start": 172,
+            "end": 175
           },
           "signature": "pub struct ClusterParam {"
         },
@@ -4569,8 +4671,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 199,
-            "end": 206
+            "start": 206,
+            "end": 213
           },
           "signature": "pub struct CompressedParam {"
         },
@@ -4579,8 +4681,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 171,
-            "end": 176
+            "start": 178,
+            "end": 183
           },
           "signature": "pub struct DependenciesParam {"
         },
@@ -4589,8 +4691,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 127,
-            "end": 130
+            "start": 132,
+            "end": 135
           },
           "signature": "pub struct FileParam {"
         },
@@ -4599,8 +4701,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 193,
-            "end": 196
+            "start": 200,
+            "end": 203
           },
           "signature": "pub struct ImportanceParam {"
         },
@@ -4609,8 +4711,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 159,
-            "end": 162
+            "start": 166,
+            "end": 169
           },
           "signature": "pub struct LayerParam {"
         },
@@ -4619,8 +4721,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 275,
-            "end": 278
+            "start": 282,
+            "end": 285
           },
           "signature": "pub struct RemoveAnnotationParam {"
         },
@@ -4629,8 +4731,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 291,
-            "end": 294
+            "start": 298,
+            "end": 301
           },
           "signature": "pub struct RemoveBookmarkParam {"
         },
@@ -4639,8 +4741,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 187,
-            "end": 190
+            "start": 194,
+            "end": 197
           },
           "signature": "pub struct SmellsParam {"
         },
@@ -4649,8 +4751,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 143,
-            "end": 150
+            "start": 150,
+            "end": 157
           },
           "signature": "pub struct SubgraphParam {"
         },
@@ -4659,8 +4761,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 223,
-            "end": 230
+            "start": 230,
+            "end": 237
           },
           "signature": "pub struct SymbolBlastRadiusParam {"
         },
@@ -4669,8 +4771,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 215,
-            "end": 220
+            "start": 222,
+            "end": 227
           },
           "signature": "pub struct SymbolSearchParam {"
         },
@@ -4679,8 +4781,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 209,
-            "end": 212
+            "start": 216,
+            "end": 219
           },
           "signature": "pub struct SymbolsParam {"
         },
@@ -4689,8 +4791,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 179,
-            "end": 184
+            "start": 186,
+            "end": 191
           },
           "signature": "pub struct ViewsExportParam {"
         },
@@ -4699,8 +4801,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 1868,
-            "end": 1908
+            "start": 1973,
+            "end": 2013
           },
           "signature": "fn annotate(&self, Parameters(params): Parameters<AnnotateParam>) -> String {",
           "parent": "AriadneTools"
@@ -4710,8 +4812,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 1916,
-            "end": 1924
+            "start": 2021,
+            "end": 2029
           },
           "signature": "fn annotations(&self, Parameters(params): Parameters<AnnotationsParam>) -> String {",
           "parent": "AriadneTools"
@@ -4721,8 +4823,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 462,
-            "end": 521
+            "start": 494,
+            "end": 604
           },
           "signature": "fn blast_radius(&self, Parameters(params): Parameters<BlastRadiusParam>) -> String {",
           "parent": "AriadneTools"
@@ -4732,8 +4834,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 1948,
-            "end": 1961
+            "start": 2053,
+            "end": 2066
           },
           "signature": "fn bookmark(&self, Parameters(params): Parameters<BookmarkParam>) -> String {",
           "parent": "AriadneTools"
@@ -4743,10 +4845,32 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 1969,
-            "end": 1972
+            "start": 2074,
+            "end": 2077
           },
           "signature": "fn bookmarks(&self) -> String {",
+          "parent": "AriadneTools"
+        },
+        {
+          "name": "boundaries",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 2393,
+            "end": 2443
+          },
+          "signature": "fn boundaries(&self, Parameters(params): Parameters<BoundariesParam>) -> String {",
+          "parent": "AriadneTools"
+        },
+        {
+          "name": "boundary_for",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 2580,
+            "end": 2636
+          },
+          "signature": "fn boundary_for(&self, Parameters(params): Parameters<BoundaryForParam>) -> String {",
           "parent": "AriadneTools"
         },
         {
@@ -4754,8 +4878,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 1418,
-            "end": 1483
+            "start": 1523,
+            "end": 1588
           },
           "signature": "fn callees(&self, Parameters(params): Parameters<CalleesParam>) -> String {",
           "parent": "AriadneTools"
@@ -4765,8 +4889,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 1360,
-            "end": 1410
+            "start": 1465,
+            "end": 1515
           },
           "signature": "fn callers(&self, Parameters(params): Parameters<CallersParam>) -> String {",
           "parent": "AriadneTools"
@@ -4776,8 +4900,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 586,
-            "end": 608
+            "start": 669,
+            "end": 691
           },
           "signature": "fn centrality(&self, Parameters(params): Parameters<CentralityParam>) -> String {",
           "parent": "AriadneTools"
@@ -4787,8 +4911,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 1996,
-            "end": 2069
+            "start": 2101,
+            "end": 2174
           },
           "signature": "fn churn(&self, Parameters(params): Parameters<ChurnParam>) -> String {",
           "parent": "AriadneTools"
@@ -4798,8 +4922,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 659,
-            "end": 688
+            "start": 742,
+            "end": 771
           },
           "signature": "fn cluster(&self, Parameters(params): Parameters<ClusterParam>) -> String {",
           "parent": "AriadneTools"
@@ -4809,8 +4933,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 945,
-            "end": 1071
+            "start": 1050,
+            "end": 1176
           },
           "signature": "fn compressed(&self, Parameters(params): Parameters<CompressedParam>) -> String {",
           "parent": "AriadneTools"
@@ -4820,8 +4944,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 1491,
-            "end": 1614
+            "start": 1596,
+            "end": 1719
           },
           "signature": "fn context(&self, Parameters(params): Parameters<ContextParam>) -> String {",
           "parent": "AriadneTools"
@@ -4831,8 +4955,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 2077,
-            "end": 2127
+            "start": 2182,
+            "end": 2232
           },
           "signature": "fn coupling(&self, Parameters(params): Parameters<CouplingParam>) -> String {",
           "parent": "AriadneTools"
@@ -4842,8 +4966,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 616,
-            "end": 619
+            "start": 699,
+            "end": 702
           },
           "signature": "fn cycles(&self) -> String {",
           "parent": "AriadneTools"
@@ -4853,8 +4977,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 696,
-            "end": 786
+            "start": 779,
+            "end": 889
           },
           "signature": "fn dependencies(&self, Parameters(params): Parameters<DependenciesParam>) -> String {",
           "parent": "AriadneTools"
@@ -4864,8 +4988,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 858,
-            "end": 864
+            "start": 963,
+            "end": 969
           },
           "signature": "fn diff(&self) -> String {",
           "parent": "AriadneTools"
@@ -4875,18 +4999,29 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 2313,
-            "end": 2320
+            "start": 2807,
+            "end": 2814
           },
           "signature": "fn edge_to_json(e: &crate::model::Edge) -> serde_json::Value {"
+        },
+        {
+          "name": "event_map",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 2516,
+            "end": 2572
+          },
+          "signature": "fn event_map(&self, Parameters(_params): Parameters<EventMapParam>) -> String {",
+          "parent": "AriadneTools"
         },
         {
           "name": "file",
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 367,
-            "end": 454
+            "start": 374,
+            "end": 486
           },
           "signature": "fn file(&self, Parameters(params): Parameters<FileParam>) -> String {",
           "parent": "AriadneTools"
@@ -4896,8 +5031,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 794,
-            "end": 810
+            "start": 897,
+            "end": 913
           },
           "signature": "fn freshness(&self) -> String {",
           "parent": "AriadneTools"
@@ -4907,8 +5042,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 58,
-            "end": 67
+            "start": 63,
+            "end": 72
           },
           "signature": "fn get_info(&self) -> ServerInfo {",
           "parent": "ServerHandler"
@@ -4918,8 +5053,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 97,
-            "end": 121
+            "start": 102,
+            "end": 126
           },
           "signature": "fn get_prompt(",
           "parent": "ServerHandler"
@@ -4929,8 +5064,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 2240,
-            "end": 2280
+            "start": 2345,
+            "end": 2385
           },
           "signature": "fn hidden_deps(&self, Parameters(_params): Parameters<HiddenDepsParam>) -> String {",
           "parent": "AriadneTools"
@@ -4940,8 +5075,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 2135,
-            "end": 2173
+            "start": 2240,
+            "end": 2278
           },
           "signature": "fn hotspots(&self, Parameters(params): Parameters<HotspotsParam>) -> String {",
           "parent": "AriadneTools"
@@ -4951,8 +5086,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 872,
-            "end": 937
+            "start": 977,
+            "end": 1042
           },
           "signature": "fn importance(&self, Parameters(params): Parameters<ImportanceParam>) -> String {",
           "parent": "AriadneTools"
@@ -4962,8 +5097,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 627,
-            "end": 651
+            "start": 710,
+            "end": 734
           },
           "signature": "fn layers(&self, Parameters(params): Parameters<LayerParam>) -> String {",
           "parent": "AriadneTools"
@@ -4973,8 +5108,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 89,
-            "end": 95
+            "start": 94,
+            "end": 100
           },
           "signature": "fn list_prompts(",
           "parent": "ServerHandler"
@@ -4984,8 +5119,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 69,
-            "end": 76
+            "start": 74,
+            "end": 81
           },
           "signature": "fn list_resources(",
           "parent": "ServerHandler"
@@ -4995,8 +5130,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 818,
-            "end": 821
+            "start": 921,
+            "end": 924
           },
           "signature": "fn metrics(&self) -> String {",
           "parent": "AriadneTools"
@@ -5006,8 +5141,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 40,
-            "end": 53
+            "start": 45,
+            "end": 58
           },
           "signature": "pub fn new(",
           "parent": "AriadneTools"
@@ -5017,8 +5152,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 304,
-            "end": 359
+            "start": 311,
+            "end": 366
           },
           "signature": "fn overview(&self) -> String {",
           "parent": "AriadneTools"
@@ -5028,8 +5163,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 2181,
-            "end": 2232
+            "start": 2286,
+            "end": 2337
           },
           "signature": "fn ownership(&self, Parameters(params): Parameters<OwnershipParam>) -> String {",
           "parent": "AriadneTools"
@@ -5039,8 +5174,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 2294,
-            "end": 2310
+            "start": 2788,
+            "end": 2804
           },
           "signature": "fn parse_symbol_kind(s: &str) -> Option<crate::model::SymbolKind> {"
         },
@@ -5049,8 +5184,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 1741,
-            "end": 1814
+            "start": 1846,
+            "end": 1919
           },
           "signature": "fn plan_impact(&self, Parameters(params): Parameters<PlanImpactParam>) -> String {",
           "parent": "AriadneTools"
@@ -5060,8 +5195,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 78,
-            "end": 87
+            "start": 83,
+            "end": 92
           },
           "signature": "fn read_resource(",
           "parent": "ServerHandler"
@@ -5071,10 +5206,21 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 1678,
-            "end": 1733
+            "start": 1783,
+            "end": 1838
           },
           "signature": "fn reading_order(&self, Parameters(params): Parameters<ReadingOrderParam>) -> String {",
+          "parent": "AriadneTools"
+        },
+        {
+          "name": "refactor_opportunities",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 2644,
+            "end": 2713
+          },
+          "signature": "fn refactor_opportunities(",
           "parent": "AriadneTools"
         },
         {
@@ -5082,8 +5228,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 1932,
-            "end": 1940
+            "start": 2037,
+            "end": 2045
           },
           "signature": "fn remove_annotation(&self, Parameters(params): Parameters<RemoveAnnotationParam>) -> String {",
           "parent": "AriadneTools"
@@ -5093,10 +5239,21 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 1980,
-            "end": 1988
+            "start": 2085,
+            "end": 2093
           },
           "signature": "fn remove_bookmark(&self, Parameters(params): Parameters<RemoveBookmarkParam>) -> String {",
+          "parent": "AriadneTools"
+        },
+        {
+          "name": "route_map",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 2451,
+            "end": 2508
+          },
+          "signature": "fn route_map(&self, Parameters(_params): Parameters<RouteMapParam>) -> String {",
           "parent": "AriadneTools"
         },
         {
@@ -5104,8 +5261,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 829,
-            "end": 850
+            "start": 932,
+            "end": 955
           },
           "signature": "fn smells(&self, Parameters(params): Parameters<SmellsParam>) -> String {",
           "parent": "AriadneTools"
@@ -5115,8 +5272,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 1079,
-            "end": 1082
+            "start": 1184,
+            "end": 1187
           },
           "signature": "fn spectral(&self) -> String {",
           "parent": "AriadneTools"
@@ -5126,10 +5283,32 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 529,
-            "end": 578
+            "start": 612,
+            "end": 661
           },
           "signature": "fn subgraph(&self, Parameters(params): Parameters<SubgraphParam>) -> String {",
+          "parent": "AriadneTools"
+        },
+        {
+          "name": "suggest_placement",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 2746,
+            "end": 2774
+          },
+          "signature": "fn suggest_placement(",
+          "parent": "AriadneTools"
+        },
+        {
+          "name": "suggest_split",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 2721,
+            "end": 2738
+          },
+          "signature": "fn suggest_split(&self, Parameters(params): Parameters<SuggestSplitParam>) -> String {",
           "parent": "AriadneTools"
         },
         {
@@ -5137,8 +5316,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 1185,
-            "end": 1352
+            "start": 1290,
+            "end": 1457
           },
           "signature": "fn symbol_blast_radius(",
           "parent": "AriadneTools"
@@ -5148,8 +5327,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 1142,
-            "end": 1177
+            "start": 1247,
+            "end": 1282
           },
           "signature": "fn symbol_search(&self, Parameters(params): Parameters<SymbolSearchParam>) -> String {",
           "parent": "AriadneTools"
@@ -5159,8 +5338,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 1090,
-            "end": 1134
+            "start": 1195,
+            "end": 1239
           },
           "signature": "fn symbols(&self, Parameters(params): Parameters<SymbolsParam>) -> String {",
           "parent": "AriadneTools"
@@ -5170,8 +5349,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 1622,
-            "end": 1670
+            "start": 1727,
+            "end": 1775
           },
           "signature": "fn tests_for(&self, Parameters(params): Parameters<TestsForParam>) -> String {",
           "parent": "AriadneTools"
@@ -5181,8 +5360,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 2284,
-            "end": 2291
+            "start": 2778,
+            "end": 2785
           },
           "signature": "fn to_json<T: serde::Serialize>(value: &T) -> String {"
         },
@@ -5191,8 +5370,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 1822,
-            "end": 1860
+            "start": 1927,
+            "end": 1965
           },
           "signature": "fn views_export(&self, Parameters(params): Parameters<ViewsExportParam>) -> String {",
           "parent": "AriadneTools"
@@ -5273,6 +5452,107 @@
             "end": 49
           },
           "signature": "fn default_change_type() -> String {"
+        }
+      ]
+    },
+    "src/mcp/tools_recommend.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 32,
+      "hash": "306c903133f159db",
+      "exports": [
+        "RefactorOpportunitiesParam",
+        "SuggestPlacementParam",
+        "SuggestSplitParam"
+      ],
+      "cluster": "mcp",
+      "symbols": [
+        {
+          "name": "RefactorOpportunitiesParam",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 15,
+            "end": 20
+          },
+          "signature": "pub struct RefactorOpportunitiesParam {"
+        },
+        {
+          "name": "SuggestPlacementParam",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 24,
+            "end": 32
+          },
+          "signature": "pub struct SuggestPlacementParam {"
+        },
+        {
+          "name": "SuggestSplitParam",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 8,
+            "end": 11
+          },
+          "signature": "pub struct SuggestSplitParam {"
+        }
+      ]
+    },
+    "src/mcp/tools_semantic.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 24,
+      "hash": "ebd1fa87303db3fa",
+      "exports": [
+        "BoundariesParam",
+        "BoundaryForParam",
+        "EventMapParam",
+        "RouteMapParam"
+      ],
+      "cluster": "mcp",
+      "symbols": [
+        {
+          "name": "BoundariesParam",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 6,
+            "end": 9
+          },
+          "signature": "pub struct BoundariesParam {"
+        },
+        {
+          "name": "BoundaryForParam",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 21,
+            "end": 24
+          },
+          "signature": "pub struct BoundaryForParam {"
+        },
+        {
+          "name": "EventMapParam",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 17,
+            "end": 17
+          },
+          "signature": "pub struct EventMapParam {}"
+        },
+        {
+          "name": "RouteMapParam",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 13,
+            "end": 13
+          },
+          "signature": "pub struct RouteMapParam {}"
         }
       ]
     },
@@ -5886,8 +6166,8 @@
       "type": "source",
       "layer": "data",
       "arch_depth": 2,
-      "lines": 33,
-      "hash": "e42720bb3e8fda33",
+      "lines": 35,
+      "hash": "c7e0e9334803984e",
       "exports": [
         "Annotation",
         "AnnotationStore",
@@ -5896,6 +6176,9 @@
         "ArchSmell",
         "Bookmark",
         "BookmarkStore",
+        "Boundary",
+        "BoundaryKind",
+        "BoundaryRole",
         "CanonicalPath",
         "ChangeClassification",
         "ChurnMetrics",
@@ -5922,6 +6205,8 @@
         "Node",
         "OwnershipInfo",
         "ProjectGraph",
+        "SemanticEdge",
+        "SemanticState",
         "SmellMetrics",
         "SmellSeverity",
         "SmellType",
@@ -5949,6 +6234,7 @@
         "graph",
         "node",
         "query",
+        "semantic",
         "smell",
         "stats",
         "symbol",
@@ -6071,12 +6357,79 @@
         }
       ]
     },
+    "src/model/semantic.rs": {
+      "type": "source",
+      "layer": "data",
+      "arch_depth": 0,
+      "lines": 54,
+      "hash": "a3f3a94a8a98fb19",
+      "exports": [
+        "Boundary",
+        "BoundaryKind",
+        "BoundaryRole",
+        "SemanticEdge",
+        "SemanticState"
+      ],
+      "cluster": "model",
+      "symbols": [
+        {
+          "name": "Boundary",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 9,
+            "end": 17
+          },
+          "signature": "pub struct Boundary {"
+        },
+        {
+          "name": "BoundaryKind",
+          "kind": "enum",
+          "visibility": "public",
+          "span": {
+            "start": 21,
+            "end": 25
+          },
+          "signature": "pub enum BoundaryKind {"
+        },
+        {
+          "name": "BoundaryRole",
+          "kind": "enum",
+          "visibility": "public",
+          "span": {
+            "start": 29,
+            "end": 33
+          },
+          "signature": "pub enum BoundaryRole {"
+        },
+        {
+          "name": "SemanticEdge",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 37,
+            "end": 43
+          },
+          "signature": "pub struct SemanticEdge {"
+        },
+        {
+          "name": "SemanticState",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 47,
+            "end": 54
+          },
+          "signature": "pub struct SemanticState {"
+        }
+      ]
+    },
     "src/model/smell.rs": {
       "type": "source",
       "layer": "data",
       "arch_depth": 0,
-      "lines": 61,
-      "hash": "eaceab6a2c90ffe9",
+      "lines": 63,
+      "hash": "c8f1cf0276ad6bb8",
       "exports": [
         "ArchSmell",
         "SmellMetrics",
@@ -6121,7 +6474,7 @@
           "visibility": "public",
           "span": {
             "start": 52,
-            "end": 61
+            "end": 63
           },
           "signature": "pub enum SmellType {"
         },
@@ -8413,9 +8766,9 @@
     "src/parser/registry.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 1,
-      "lines": 262,
-      "hash": "b23bef2e3f86f6df",
+      "arch_depth": 3,
+      "lines": 309,
+      "hash": "a45d3a802e3ca977",
       "exports": [
         "ParseOutcome",
         "ParserRegistry"
@@ -8427,8 +8780,8 @@
           "kind": "enum",
           "visibility": "public",
           "span": {
-            "start": 18,
-            "end": 25
+            "start": 21,
+            "end": 28
           },
           "signature": "pub enum ParseOutcome {"
         },
@@ -8437,18 +8790,29 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 28,
-            "end": 34
+            "start": 31,
+            "end": 39
           },
           "signature": "pub struct ParserRegistry {"
+        },
+        {
+          "name": "boundary_extractors_for",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 98,
+            "end": 108
+          },
+          "signature": "pub fn boundary_extractors_for(&self, extension: &str) -> Vec<&dyn BoundaryExtractor> {",
+          "parent": "ParserRegistry"
         },
         {
           "name": "default",
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 229,
-            "end": 231
+            "start": 276,
+            "end": 278
           },
           "signature": "fn default() -> Self {",
           "parent": "Default"
@@ -8458,8 +8822,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 223,
-            "end": 225
+            "start": 270,
+            "end": 272
           },
           "signature": "pub fn language_names(&self) -> Vec<&str> {",
           "parent": "ParserRegistry"
@@ -8469,8 +8833,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 37,
-            "end": 45
+            "start": 42,
+            "end": 52
           },
           "signature": "pub fn new() -> Self {",
           "parent": "ParserRegistry"
@@ -8480,8 +8844,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 147,
-            "end": 202
+            "start": 180,
+            "end": 249
           },
           "signature": "pub fn parse_source(",
           "parent": "ParserRegistry"
@@ -8491,8 +8855,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 78,
-            "end": 82
+            "start": 111,
+            "end": 115
           },
           "signature": "pub fn parser_for(&self, extension: &str) -> Option<&dyn LanguageParser> {",
           "parent": "ParserRegistry"
@@ -8502,10 +8866,21 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 48,
-            "end": 55
+            "start": 55,
+            "end": 62
           },
           "signature": "pub fn register(&mut self, parser: Box<dyn LanguageParser>, resolver: Box<dyn ImportResolver>) {",
+          "parent": "ParserRegistry"
+        },
+        {
+          "name": "register_boundary_extractor",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 86,
+            "end": 95
+          },
+          "signature": "pub fn register_boundary_extractor(&mut self, extractor: Arc<dyn BoundaryExtractor>) {",
           "parent": "ParserRegistry"
         },
         {
@@ -8513,8 +8888,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 58,
-            "end": 68
+            "start": 65,
+            "end": 75
           },
           "signature": "pub fn register_symbol_extractor(",
           "parent": "ParserRegistry"
@@ -8524,8 +8899,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 206,
-            "end": 213
+            "start": 253,
+            "end": 260
           },
           "signature": "pub fn reparse_imports(&self, extension: &str, source: &[u8]) -> Option<Vec<RawImport>> {",
           "parent": "ParserRegistry"
@@ -8535,8 +8910,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 85,
-            "end": 89
+            "start": 118,
+            "end": 122
           },
           "signature": "pub fn resolver_for(&self, extension: &str) -> Option<&dyn ImportResolver> {",
           "parent": "ParserRegistry"
@@ -8546,8 +8921,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 216,
-            "end": 220
+            "start": 263,
+            "end": 267
           },
           "signature": "pub fn supported_extensions(&self) -> Vec<&str> {",
           "parent": "ParserRegistry"
@@ -8557,8 +8932,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 71,
-            "end": 75
+            "start": 78,
+            "end": 82
           },
           "signature": "pub fn symbol_extractor_for(&self, extension: &str) -> Option<&dyn SymbolExtractor> {",
           "parent": "ParserRegistry"
@@ -8568,8 +8943,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 235,
-            "end": 262
+            "start": 282,
+            "end": 309
           }
         },
         {
@@ -8577,8 +8952,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 92,
-            "end": 94
+            "start": 125,
+            "end": 127
           },
           "signature": "pub fn with_tier1() -> Self {",
           "parent": "ParserRegistry"
@@ -8588,8 +8963,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 98,
-            "end": 141
+            "start": 131,
+            "end": 174
           },
           "signature": "pub fn with_tier1_config(rust_crate_name: Option<String>) -> Self {",
           "parent": "ParserRegistry"
@@ -9488,8 +9863,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 7,
-      "lines": 764,
-      "hash": "4beca01a07d43b93",
+      "lines": 784,
+      "hash": "768bf250ab653553",
       "exports": [
         "BuildOptions",
         "BuildOutput",
@@ -9516,8 +9891,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 50,
-            "end": 57
+            "start": 53,
+            "end": 60
           },
           "signature": "pub struct BuildOptions<'a> {"
         },
@@ -9526,8 +9901,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 37,
-            "end": 46
+            "start": 40,
+            "end": 49
           },
           "signature": "pub struct BuildOutput {"
         },
@@ -9536,8 +9911,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 60,
-            "end": 65
+            "start": 63,
+            "end": 68
           },
           "signature": "pub struct BuildPipeline {"
         },
@@ -9546,8 +9921,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 28,
-            "end": 33
+            "start": 30,
+            "end": 36
           },
           "signature": "pub struct ParsedFile {"
         },
@@ -9556,8 +9931,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 102,
-            "end": 125
+            "start": 105,
+            "end": 128
           },
           "signature": "fn apply_symbol_limits(",
           "parent": "BuildPipeline"
@@ -9567,8 +9942,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 690,
-            "end": 709
+            "start": 710,
+            "end": 729
           },
           "signature": "fn cluster_map_to_output(cluster_map: &ClusterMap) -> ClusterOutput {"
         },
@@ -9577,8 +9952,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 726,
-            "end": 734
+            "start": 746,
+            "end": 754
           },
           "signature": "fn format_size(bytes: u64) -> String {"
         },
@@ -9587,8 +9962,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 712,
-            "end": 723
+            "start": 732,
+            "end": 743
           },
           "signature": "fn format_utc_timestamp() -> String {"
         },
@@ -9597,8 +9972,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 68,
-            "end": 80
+            "start": 71,
+            "end": 83
           },
           "signature": "pub fn new(",
           "parent": "BuildPipeline"
@@ -9608,8 +9983,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 642,
-            "end": 687
+            "start": 662,
+            "end": 707
           },
           "signature": "fn project_graph_to_output(graph: &ProjectGraph, project_root: &Path) -> GraphOutput {"
         },
@@ -9618,8 +9993,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 92,
-            "end": 98
+            "start": 95,
+            "end": 101
           },
           "signature": "pub fn reparse_imports(",
           "parent": "BuildPipeline"
@@ -9629,8 +10004,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 127,
-            "end": 129
+            "start": 130,
+            "end": 132
           },
           "signature": "pub fn run(&self, root: &Path, config: WalkConfig) -> Result<BuildOutput, FatalError> {",
           "parent": "BuildPipeline"
@@ -9640,8 +10015,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 131,
-            "end": 471
+            "start": 134,
+            "end": 491
           },
           "signature": "pub fn run_with_options(",
           "parent": "BuildPipeline"
@@ -9651,8 +10026,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 737,
-            "end": 764
+            "start": 757,
+            "end": 784
           },
           "signature": "fn skip_reason_to_warning(reason: &FileSkipReason) -> Warning {"
         },
@@ -9661,8 +10036,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 85,
-            "end": 87
+            "start": 88,
+            "end": 90
           },
           "signature": "pub fn supported_extensions(&self) -> Vec<&str> {",
           "parent": "BuildPipeline"
@@ -9672,8 +10047,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 480,
-            "end": 638
+            "start": 500,
+            "end": 658
           },
           "signature": "pub fn update(",
           "parent": "BuildPipeline"
@@ -9913,6 +10288,1263 @@
         }
       ]
     },
+    "src/recommend/min_cut.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 280,
+      "hash": "1fdb8c6bbd12088c",
+      "exports": [
+        "stoer_wagner"
+      ],
+      "cluster": "recommend",
+      "symbols": [
+        {
+          "name": "stoer_wagner",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 14,
+            "end": 126
+          },
+          "signature": "pub fn stoer_wagner(graph: &SymbolGraph) -> Option<MinCutResult> {"
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 129,
+            "end": 280
+          }
+        }
+      ]
+    },
+    "src/recommend/mod.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 7,
+      "lines": 13,
+      "hash": "e95889f08bc1340c",
+      "exports": [
+        "*",
+        "analyze_split",
+        "find_refactor_opportunities",
+        "min_cut",
+        "pareto",
+        "pareto_frontier",
+        "placement",
+        "refactor",
+        "split",
+        "stoer_wagner",
+        "suggest_placement",
+        "types"
+      ],
+      "cluster": "recommend"
+    },
+    "src/recommend/pareto.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 134,
+      "hash": "c99ddb6fc865a571",
+      "exports": [
+        "pareto_frontier"
+      ],
+      "cluster": "recommend",
+      "symbols": [
+        {
+          "name": "pareto_frontier",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 12,
+            "end": 47
+          },
+          "signature": "pub fn pareto_frontier(points: &[(f64, f64)]) -> Vec<(bool, Option<usize>)> {"
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 50,
+            "end": 134
+          }
+        }
+      ]
+    },
+    "src/recommend/placement.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 3,
+      "lines": 1343,
+      "hash": "a48f3f1600531402",
+      "exports": [
+        "suggest_placement"
+      ],
+      "cluster": "recommend",
+      "symbols": [
+        {
+          "name": "common_path_prefix",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 306,
+            "end": 342
+          },
+          "signature": "fn common_path_prefix(paths: &[&CanonicalPath]) -> String {"
+        },
+        {
+          "name": "most_common_extension",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 346,
+            "end": 359
+          },
+          "signature": "fn most_common_extension(paths: &[&CanonicalPath]) -> String {"
+        },
+        {
+          "name": "sanitize_to_filename",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 268,
+            "end": 302
+          },
+          "signature": "fn sanitize_to_filename(description: &str) -> String {"
+        },
+        {
+          "name": "suggest_placement",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 11,
+            "end": 264
+          },
+          "signature": "pub fn suggest_placement("
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 362,
+            "end": 1343
+          }
+        }
+      ]
+    },
+    "src/recommend/refactor.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 6,
+      "lines": 1400,
+      "hash": "0bd00657dea8d132",
+      "exports": [
+        "find_refactor_opportunities"
+      ],
+      "cluster": "recommend",
+      "symbols": [
+        {
+          "name": "MAX_RECOMMENDATIONS",
+          "kind": "const",
+          "visibility": "private",
+          "span": {
+            "start": 22,
+            "end": 22
+          },
+          "signature": "const MAX_RECOMMENDATIONS: usize = 50;"
+        },
+        {
+          "name": "detect_break_cycle",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 157,
+            "end": 218
+          },
+          "signature": "fn detect_break_cycle("
+        },
+        {
+          "name": "detect_extract_interface",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 494,
+            "end": 531
+          },
+          "signature": "fn detect_extract_interface("
+        },
+        {
+          "name": "detect_merge_modules",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 409,
+            "end": 492
+          },
+          "signature": "fn detect_merge_modules("
+        },
+        {
+          "name": "detect_reduce_coupling",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 295,
+            "end": 407
+          },
+          "signature": "fn detect_reduce_coupling("
+        },
+        {
+          "name": "detect_split_file",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 220,
+            "end": 293
+          },
+          "signature": "fn detect_split_file("
+        },
+        {
+          "name": "determine_data_quality",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 606,
+            "end": 615
+          },
+          "signature": "fn determine_data_quality("
+        },
+        {
+          "name": "find_refactor_opportunities",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 24,
+            "end": 155
+          },
+          "signature": "pub fn find_refactor_opportunities("
+        },
+        {
+          "name": "resolve_conflicts",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 553,
+            "end": 604
+          },
+          "signature": "fn resolve_conflicts(mut opps: Vec<RefactorOpportunity>) -> Vec<RefactorOpportunity> {"
+        },
+        {
+          "name": "score_to_effort",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 533,
+            "end": 541
+          },
+          "signature": "fn score_to_effort(score: f64) -> Effort {"
+        },
+        {
+          "name": "score_to_impact",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 543,
+            "end": 551
+          },
+          "signature": "fn score_to_impact(score: f64) -> Impact {"
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 618,
+            "end": 1400
+          }
+        }
+      ]
+    },
+    "src/recommend/split.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 5,
+      "lines": 1106,
+      "hash": "721d0168ff45e646",
+      "exports": [
+        "analyze_split"
+      ],
+      "cluster": "recommend",
+      "symbols": [
+        {
+          "name": "LARGE_FILE_SYMBOL_THRESHOLD",
+          "kind": "const",
+          "visibility": "private",
+          "span": {
+            "start": 34,
+            "end": 34
+          },
+          "signature": "const LARGE_FILE_SYMBOL_THRESHOLD: usize = 500;"
+        },
+        {
+          "name": "MAX_CUT_WEIGHT_FOR_SPLIT",
+          "kind": "const",
+          "visibility": "private",
+          "span": {
+            "start": 46,
+            "end": 46
+          },
+          "signature": "const MAX_CUT_WEIGHT_FOR_SPLIT: f64 = 3.0;"
+        },
+        {
+          "name": "MIN_SYMBOLS_FOR_SPLIT",
+          "kind": "const",
+          "visibility": "private",
+          "span": {
+            "start": 25,
+            "end": 25
+          },
+          "signature": "const MIN_SYMBOLS_FOR_SPLIT: usize = 6;"
+        },
+        {
+          "name": "MIN_SYMBOLS_PER_GROUP",
+          "kind": "const",
+          "visibility": "private",
+          "span": {
+            "start": 28,
+            "end": 28
+          },
+          "signature": "const MIN_SYMBOLS_PER_GROUP: usize = 3;"
+        },
+        {
+          "name": "TRIVIAL_PARTITION_THRESHOLD",
+          "kind": "const",
+          "visibility": "private",
+          "span": {
+            "start": 31,
+            "end": 31
+          },
+          "signature": "const TRIVIAL_PARTITION_THRESHOLD: f64 = 0.20;"
+        },
+        {
+          "name": "WEIGHT_CO_LOCATION",
+          "kind": "const",
+          "visibility": "private",
+          "span": {
+            "start": 40,
+            "end": 40
+          },
+          "signature": "const WEIGHT_CO_LOCATION: f64 = 0.5;"
+        },
+        {
+          "name": "WEIGHT_CO_USAGE",
+          "kind": "const",
+          "visibility": "private",
+          "span": {
+            "start": 37,
+            "end": 37
+          },
+          "signature": "const WEIGHT_CO_USAGE: f64 = 1.0;"
+        },
+        {
+          "name": "WEIGHT_TEMPORAL",
+          "kind": "const",
+          "visibility": "private",
+          "span": {
+            "start": 43,
+            "end": 43
+          },
+          "signature": "const WEIGHT_TEMPORAL: f64 = 0.3;"
+        },
+        {
+          "name": "analyze_split",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 57,
+            "end": 304
+          },
+          "signature": "pub fn analyze_split("
+        },
+        {
+          "name": "build_symbol_graph",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 353,
+            "end": 464
+          },
+          "signature": "fn build_symbol_graph("
+        },
+        {
+          "name": "derive_group_name",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 307,
+            "end": 332
+          },
+          "signature": "fn derive_group_name(syms: &[&SymbolDef], file_stem: &str, idx: usize) -> String {"
+        },
+        {
+          "name": "greedy_partition",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 466,
+            "end": 514
+          },
+          "signature": "fn greedy_partition(graph: &SymbolGraph, max_groups: usize) -> Vec<BTreeSet<usize>> {"
+        },
+        {
+          "name": "longest_common_prefix",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 335,
+            "end": 351
+          },
+          "signature": "fn longest_common_prefix(strings: &[&str]) -> String {"
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 517,
+            "end": 1106
+          }
+        },
+        {
+          "name": "zero_impact",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 48,
+            "end": 55
+          },
+          "signature": "fn zero_impact() -> SplitImpact {"
+        }
+      ]
+    },
+    "src/recommend/types.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 179,
+      "hash": "bb165c75db39fc66",
+      "exports": [
+        "DataQuality",
+        "Effort",
+        "Impact",
+        "MinCutResult",
+        "PlacementAlternative",
+        "PlacementSuggestion",
+        "RefactorAnalysis",
+        "RefactorOpportunity",
+        "RefactorType",
+        "SplitAnalysis",
+        "SplitGroup",
+        "SplitImpact",
+        "SymbolGraph"
+      ],
+      "cluster": "recommend",
+      "symbols": [
+        {
+          "name": "DataQuality",
+          "kind": "enum",
+          "visibility": "public",
+          "span": {
+            "start": 22,
+            "end": 26
+          },
+          "signature": "pub enum DataQuality {"
+        },
+        {
+          "name": "Effort",
+          "kind": "enum",
+          "visibility": "public",
+          "span": {
+            "start": 6,
+            "end": 10
+          },
+          "signature": "pub enum Effort {"
+        },
+        {
+          "name": "Impact",
+          "kind": "enum",
+          "visibility": "public",
+          "span": {
+            "start": 14,
+            "end": 18
+          },
+          "signature": "pub enum Impact {"
+        },
+        {
+          "name": "MinCutResult",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 112,
+            "end": 116
+          },
+          "signature": "pub struct MinCutResult {"
+        },
+        {
+          "name": "PlacementAlternative",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 77,
+            "end": 81
+          },
+          "signature": "pub struct PlacementAlternative {"
+        },
+        {
+          "name": "PlacementSuggestion",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 66,
+            "end": 74
+          },
+          "signature": "pub struct PlacementSuggestion {"
+        },
+        {
+          "name": "RefactorAnalysis",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 98,
+            "end": 103
+          },
+          "signature": "pub struct RefactorAnalysis {"
+        },
+        {
+          "name": "RefactorOpportunity",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 84,
+            "end": 95
+          },
+          "signature": "pub struct RefactorOpportunity {"
+        },
+        {
+          "name": "RefactorType",
+          "kind": "enum",
+          "visibility": "public",
+          "span": {
+            "start": 30,
+            "end": 36
+          },
+          "signature": "pub enum RefactorType {"
+        },
+        {
+          "name": "SplitAnalysis",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 47,
+            "end": 55
+          },
+          "signature": "pub struct SplitAnalysis {"
+        },
+        {
+          "name": "SplitGroup",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 39,
+            "end": 44
+          },
+          "signature": "pub struct SplitGroup {"
+        },
+        {
+          "name": "SplitImpact",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 58,
+            "end": 63
+          },
+          "signature": "pub struct SplitImpact {"
+        },
+        {
+          "name": "SymbolGraph",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 106,
+            "end": 109
+          },
+          "signature": "pub struct SymbolGraph {"
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 119,
+            "end": 179
+          }
+        }
+      ]
+    },
+    "src/semantic/edges.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 1,
+      "lines": 468,
+      "hash": "1270244f627873b4",
+      "exports": [
+        "build_semantic_edges"
+      ],
+      "cluster": "semantic",
+      "symbols": [
+        {
+          "name": "build_semantic_edges",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 18,
+            "end": 169
+          },
+          "signature": "pub fn build_semantic_edges("
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 172,
+            "end": 468
+          }
+        }
+      ]
+    },
+    "src/semantic/events.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 2,
+      "lines": 618,
+      "hash": "d12acaaa36df9cfd",
+      "exports": [
+        "EventExtractor"
+      ],
+      "cluster": "semantic",
+      "symbols": [
+        {
+          "name": "DOM_EVENTS",
+          "kind": "const",
+          "visibility": "private",
+          "span": {
+            "start": 10,
+            "end": 48
+          },
+          "signature": "const DOM_EVENTS: &[&str] = &["
+        },
+        {
+          "name": "EventExtractor",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 60,
+            "end": 60
+          },
+          "signature": "pub struct EventExtractor;"
+        },
+        {
+          "name": "MAX_BOUNDARIES_PER_FILE",
+          "kind": "const",
+          "visibility": "private",
+          "span": {
+            "start": 6,
+            "end": 6
+          },
+          "signature": "const MAX_BOUNDARIES_PER_FILE: usize = 500;"
+        },
+        {
+          "name": "extensions",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 63,
+            "end": 65
+          },
+          "signature": "fn extensions(&self) -> &[&str] {",
+          "parent": "BoundaryExtractor"
+        },
+        {
+          "name": "extract",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 67,
+            "end": 82
+          },
+          "signature": "fn extract(",
+          "parent": "BoundaryExtractor"
+        },
+        {
+          "name": "extract_js_events",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 123,
+            "end": 131
+          },
+          "signature": "fn extract_js_events("
+        },
+        {
+          "name": "extract_python_events",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 269,
+            "end": 277
+          },
+          "signature": "fn extract_python_events("
+        },
+        {
+          "name": "first_python_string_arg",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 355,
+            "end": 366
+          },
+          "signature": "fn first_python_string_arg<'a>("
+        },
+        {
+          "name": "first_string_arg",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 228,
+            "end": 244
+          },
+          "signature": "fn first_string_arg<'a>("
+        },
+        {
+          "name": "is_dom_event",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 51,
+            "end": 53
+          },
+          "signature": "fn is_dom_event(name: &str) -> bool {"
+        },
+        {
+          "name": "js_event_framework",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 111,
+            "end": 117
+          },
+          "signature": "fn js_event_framework(name: &str) -> &'static str {"
+        },
+        {
+          "name": "js_event_role",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 99,
+            "end": 108
+          },
+          "signature": "fn js_event_role(name: &str) -> Option<BoundaryRole> {"
+        },
+        {
+          "name": "python_event_framework",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 262,
+            "end": 267
+          },
+          "signature": "fn python_event_framework(name: &str) -> &'static str {"
+        },
+        {
+          "name": "python_event_role",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 251,
+            "end": 259
+          },
+          "signature": "fn python_event_role(name: &str) -> Option<BoundaryRole> {"
+        },
+        {
+          "name": "strip_quotes",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 86,
+            "end": 96
+          },
+          "signature": "fn strip_quotes(text: &str) -> &str {"
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 369,
+            "end": 618
+          }
+        },
+        {
+          "name": "try_extract_js_event_call",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 156,
+            "end": 224
+          },
+          "signature": "fn try_extract_js_event_call("
+        },
+        {
+          "name": "try_extract_python_event_call",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 302,
+            "end": 352
+          },
+          "signature": "fn try_extract_python_event_call("
+        },
+        {
+          "name": "walk_js_event_node",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 133,
+            "end": 154
+          },
+          "signature": "fn walk_js_event_node("
+        },
+        {
+          "name": "walk_python_event_node",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 279,
+            "end": 300
+          },
+          "signature": "fn walk_python_event_node("
+        }
+      ]
+    },
+    "src/semantic/http.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 2,
+      "lines": 899,
+      "hash": "c928650d383be02b",
+      "exports": [
+        "HttpRouteExtractor"
+      ],
+      "cluster": "semantic",
+      "symbols": [
+        {
+          "name": "HTTP_METHODS",
+          "kind": "const",
+          "visibility": "private",
+          "span": {
+            "start": 52,
+            "end": 52
+          },
+          "signature": "const HTTP_METHODS: &[&str] = &[\"get\", \"post\", \"put\", \"delete\", \"patch\"];"
+        },
+        {
+          "name": "HttpRouteExtractor",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 13,
+            "end": 13
+          },
+          "signature": "pub struct HttpRouteExtractor;"
+        },
+        {
+          "name": "MAX_BOUNDARIES_PER_FILE",
+          "kind": "const",
+          "visibility": "private",
+          "span": {
+            "start": 6,
+            "end": 6
+          },
+          "signature": "const MAX_BOUNDARIES_PER_FILE: usize = 500;"
+        },
+        {
+          "name": "aspnet_method",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 618,
+            "end": 628
+          },
+          "signature": "fn aspnet_method(attr_name: &str) -> Option<Option<&'static str>> {"
+        },
+        {
+          "name": "extensions",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 16,
+            "end": 24
+          },
+          "signature": "fn extensions(&self) -> &[&str] {",
+          "parent": "BoundaryExtractor"
+        },
+        {
+          "name": "extract",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 26,
+            "end": 48
+          },
+          "signature": "fn extract(",
+          "parent": "BoundaryExtractor"
+        },
+        {
+          "name": "extract_csharp_routes",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 584,
+            "end": 592
+          },
+          "signature": "fn extract_csharp_routes("
+        },
+        {
+          "name": "extract_go_routes",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 468,
+            "end": 476
+          },
+          "signature": "fn extract_go_routes("
+        },
+        {
+          "name": "extract_java_routes",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 346,
+            "end": 354
+          },
+          "signature": "fn extract_java_routes("
+        },
+        {
+          "name": "extract_js_routes",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 71,
+            "end": 79
+          },
+          "signature": "fn extract_js_routes("
+        },
+        {
+          "name": "extract_python_routes",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 238,
+            "end": 246
+          },
+          "signature": "fn extract_python_routes("
+        },
+        {
+          "name": "first_csharp_string_arg",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 675,
+            "end": 697
+          },
+          "signature": "fn first_csharp_string_arg<'a>("
+        },
+        {
+          "name": "first_go_string_arg",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 567,
+            "end": 578
+          },
+          "signature": "fn first_go_string_arg<'a>("
+        },
+        {
+          "name": "first_java_string_arg",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 438,
+            "end": 462
+          },
+          "signature": "fn first_java_string_arg<'a>("
+        },
+        {
+          "name": "first_python_string_arg",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 328,
+            "end": 340
+          },
+          "signature": "fn first_python_string_arg<'a>("
+        },
+        {
+          "name": "first_string_arg",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 216,
+            "end": 232
+          },
+          "signature": "fn first_string_arg<'a>("
+        },
+        {
+          "name": "spring_method",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 380,
+            "end": 390
+          },
+          "signature": "fn spring_method(annotation_name: &str) -> Option<Option<&'static str>> {"
+        },
+        {
+          "name": "strip_quotes",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 55,
+            "end": 65
+          },
+          "signature": "fn strip_quotes(text: &str) -> &str {"
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 700,
+            "end": 899
+          }
+        },
+        {
+          "name": "try_extract_csharp_attribute",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 630,
+            "end": 672
+          },
+          "signature": "fn try_extract_csharp_attribute("
+        },
+        {
+          "name": "try_extract_go_call",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 501,
+            "end": 564
+          },
+          "signature": "fn try_extract_go_call("
+        },
+        {
+          "name": "try_extract_java_annotation",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 392,
+            "end": 435
+          },
+          "signature": "fn try_extract_java_annotation("
+        },
+        {
+          "name": "try_extract_js_call",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 104,
+            "end": 212
+          },
+          "signature": "fn try_extract_js_call("
+        },
+        {
+          "name": "try_extract_python_decorator",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 272,
+            "end": 325
+          },
+          "signature": "fn try_extract_python_decorator("
+        },
+        {
+          "name": "walk_csharp_node",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 594,
+            "end": 615
+          },
+          "signature": "fn walk_csharp_node("
+        },
+        {
+          "name": "walk_go_node",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 478,
+            "end": 499
+          },
+          "signature": "fn walk_go_node("
+        },
+        {
+          "name": "walk_java_node",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 356,
+            "end": 377
+          },
+          "signature": "fn walk_java_node("
+        },
+        {
+          "name": "walk_js_node",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 81,
+            "end": 102
+          },
+          "signature": "fn walk_js_node("
+        },
+        {
+          "name": "walk_python_node",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 248,
+            "end": 270
+          },
+          "signature": "fn walk_python_node("
+        }
+      ]
+    },
+    "src/semantic/mod.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 2,
+      "lines": 129,
+      "hash": "a9eac99d940cc2f5",
+      "exports": [
+        "BoundaryExtractor",
+        "ExtractorRegistry",
+        "analyze",
+        "edges",
+        "events",
+        "http"
+      ],
+      "cluster": "semantic",
+      "symbols": [
+        {
+          "name": "BoundaryExtractor",
+          "kind": "trait",
+          "visibility": "public",
+          "span": {
+            "start": 15,
+            "end": 26
+          },
+          "signature": "pub trait BoundaryExtractor: Send + Sync {"
+        },
+        {
+          "name": "ExtractorRegistry",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 32,
+            "end": 35
+          },
+          "signature": "pub struct ExtractorRegistry {"
+        },
+        {
+          "name": "analyze",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 84,
+            "end": 108
+          },
+          "signature": "pub fn analyze(file_boundaries: BTreeMap<CanonicalPath, Vec<Boundary>>) -> SemanticState {"
+        },
+        {
+          "name": "default",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 72,
+            "end": 74
+          },
+          "signature": "fn default() -> Self {",
+          "parent": "Default"
+        },
+        {
+          "name": "extractors_for",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 58,
+            "end": 68
+          },
+          "signature": "pub fn extractors_for(&self, extension: &str) -> Vec<&dyn BoundaryExtractor> {",
+          "parent": "ExtractorRegistry"
+        },
+        {
+          "name": "new",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 38,
+            "end": 43
+          },
+          "signature": "pub fn new() -> Self {",
+          "parent": "ExtractorRegistry"
+        },
+        {
+          "name": "register",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 46,
+            "end": 55
+          },
+          "signature": "pub fn register(&mut self, extractor: Box<dyn BoundaryExtractor>) {",
+          "parent": "ExtractorRegistry"
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 111,
+            "end": 129
+          }
+        }
+      ]
+    },
     "src/serial/convert.rs": {
       "type": "source",
       "layer": "unknown",
@@ -10021,8 +11653,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 4,
-      "lines": 147,
-      "hash": "2da8862e73e715f2",
+      "lines": 183,
+      "hash": "b33e800868f9996f",
       "exports": [
         "JsonSerializer"
       ],
@@ -10033,8 +11665,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 12,
-            "end": 12
+            "start": 14,
+            "end": 14
           },
           "signature": "pub struct JsonSerializer;"
         },
@@ -10043,8 +11675,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 116,
-            "end": 147
+            "start": 152,
+            "end": 183
           },
           "signature": "fn atomic_write<T: serde::Serialize>("
         },
@@ -10053,18 +11685,29 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 108,
-            "end": 113
+            "start": 144,
+            "end": 149
           },
           "signature": "fn ensure_dir(dir: &Path) -> Result<(), FatalError> {"
+        },
+        {
+          "name": "read_boundaries",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 117,
+            "end": 140
+          },
+          "signature": "fn read_boundaries(",
+          "parent": "GraphReader"
         },
         {
           "name": "read_clusters",
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 53,
-            "end": 63
+            "start": 64,
+            "end": 74
           },
           "signature": "fn read_clusters(&self, dir: &Path) -> Result<ClusterOutput, FatalError> {",
           "parent": "GraphReader"
@@ -10074,8 +11717,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 41,
-            "end": 51
+            "start": 52,
+            "end": 62
           },
           "signature": "fn read_graph(&self, dir: &Path) -> Result<GraphOutput, FatalError> {",
           "parent": "GraphReader"
@@ -10085,8 +11728,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 87,
-            "end": 104
+            "start": 98,
+            "end": 115
           },
           "signature": "fn read_raw_imports(",
           "parent": "GraphReader"
@@ -10096,19 +11739,30 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 65,
-            "end": 85
+            "start": 76,
+            "end": 96
           },
           "signature": "fn read_stats(&self, dir: &Path) -> Result<Option<StatsOutput>, FatalError> {",
           "parent": "GraphReader"
+        },
+        {
+          "name": "write_boundaries",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 41,
+            "end": 48
+          },
+          "signature": "fn write_boundaries(",
+          "parent": "GraphSerializer"
         },
         {
           "name": "write_clusters",
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 20,
-            "end": 23
+            "start": 22,
+            "end": 25
           },
           "signature": "fn write_clusters(&self, clusters: &ClusterOutput, dir: &Path) -> Result<(), FatalError> {",
           "parent": "GraphSerializer"
@@ -10118,8 +11772,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 15,
-            "end": 18
+            "start": 17,
+            "end": 20
           },
           "signature": "fn write_graph(&self, output: &GraphOutput, dir: &Path) -> Result<(), FatalError> {",
           "parent": "GraphSerializer"
@@ -10129,8 +11783,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 30,
-            "end": 37
+            "start": 32,
+            "end": 39
           },
           "signature": "fn write_raw_imports(",
           "parent": "GraphSerializer"
@@ -10140,8 +11794,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 25,
-            "end": 28
+            "start": 27,
+            "end": 30
           },
           "signature": "fn write_stats(&self, stats: &StatsOutput, dir: &Path) -> Result<(), FatalError> {",
           "parent": "GraphSerializer"
@@ -10152,9 +11806,11 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 5,
-      "lines": 100,
-      "hash": "6383a4c8d38738ac",
+      "lines": 254,
+      "hash": "7f13316b02df2d7e",
       "exports": [
+        "BoundaryEntry",
+        "BoundaryOutput",
         "ClusterEntryOutput",
         "ClusterOutput",
         "FileQueryOutput",
@@ -10163,18 +11819,41 @@
         "GraphSerializer",
         "NodeOutput",
         "RawImportOutput",
+        "SemanticEdgeEntry",
+        "boundary_output_to_semantic_state",
         "convert",
-        "json"
+        "json",
+        "semantic_state_to_boundary_output"
       ],
       "cluster": "serial",
       "symbols": [
+        {
+          "name": "BoundaryEntry",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 94,
+            "end": 101
+          },
+          "signature": "pub struct BoundaryEntry {"
+        },
+        {
+          "name": "BoundaryOutput",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 82,
+            "end": 90
+          },
+          "signature": "pub struct BoundaryOutput {"
+        },
         {
           "name": "ClusterEntryOutput",
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 51,
-            "end": 57
+            "start": 53,
+            "end": 59
           },
           "signature": "pub struct ClusterEntryOutput {"
         },
@@ -10183,8 +11862,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 45,
-            "end": 47
+            "start": 47,
+            "end": 49
           },
           "signature": "pub struct ClusterOutput {"
         },
@@ -10193,8 +11872,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 61,
-            "end": 68
+            "start": 63,
+            "end": 70
           },
           "signature": "pub struct FileQueryOutput {"
         },
@@ -10203,8 +11882,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 15,
-            "end": 24
+            "start": 17,
+            "end": 26
           },
           "signature": "pub struct GraphOutput {"
         },
@@ -10213,8 +11892,8 @@
           "kind": "trait",
           "visibility": "public",
           "span": {
-            "start": 92,
-            "end": 100
+            "start": 132,
+            "end": 144
           },
           "signature": "pub trait GraphReader: Send + Sync {"
         },
@@ -10223,8 +11902,8 @@
           "kind": "trait",
           "visibility": "public",
           "span": {
-            "start": 79,
-            "end": 88
+            "start": 114,
+            "end": 128
           },
           "signature": "pub trait GraphSerializer: Send + Sync {"
         },
@@ -10233,8 +11912,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 28,
-            "end": 41
+            "start": 30,
+            "end": 43
           },
           "signature": "pub struct NodeOutput {"
         },
@@ -10243,10 +11922,60 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 72,
-            "end": 76
+            "start": 74,
+            "end": 78
           },
           "signature": "pub struct RawImportOutput {"
+        },
+        {
+          "name": "SemanticEdgeEntry",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 105,
+            "end": 111
+          },
+          "signature": "pub struct SemanticEdgeEntry {"
+        },
+        {
+          "name": "boundary_output_to_semantic_state",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 195,
+            "end": 237
+          },
+          "signature": "pub fn boundary_output_to_semantic_state(output: &BoundaryOutput) -> SemanticState {"
+        },
+        {
+          "name": "parse_boundary_kind",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 239,
+            "end": 245
+          },
+          "signature": "fn parse_boundary_kind(s: &str) -> BoundaryKind {"
+        },
+        {
+          "name": "parse_boundary_role",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 247,
+            "end": 254
+          },
+          "signature": "fn parse_boundary_role(s: &str) -> BoundaryRole {"
+        },
+        {
+          "name": "semantic_state_to_boundary_output",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 147,
+            "end": 188
+          },
+          "signature": "pub fn semantic_state_to_boundary_output(state: &SemanticState) -> BoundaryOutput {"
         }
       ]
     },
@@ -10398,8 +12127,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 4,
-      "lines": 551,
-      "hash": "89c49f4f1ff7eb4a",
+      "lines": 552,
+      "hash": "74ac64ab2e47a42a",
       "exports": [
         "CommitData",
         "FileChange",
@@ -10414,7 +12143,7 @@
           "visibility": "internal",
           "span": {
             "start": 10,
-            "end": 15
+            "end": 16
           },
           "signature": "pub(crate) struct CommitData {"
         },
@@ -10423,8 +12152,8 @@
           "kind": "struct",
           "visibility": "internal",
           "span": {
-            "start": 19,
-            "end": 24
+            "start": 20,
+            "end": 25
           },
           "signature": "pub(crate) struct FileChange {"
         },
@@ -10433,8 +12162,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 254,
-            "end": 291
+            "start": 255,
+            "end": 292
           },
           "signature": "fn build_rename_map(commits: &[CommitData], project_root: &Path) -> BTreeMap<String, CanonicalPath> {"
         },
@@ -10443,8 +12172,8 @@
           "kind": "function",
           "visibility": "internal",
           "span": {
-            "start": 31,
-            "end": 132
+            "start": 32,
+            "end": 133
           },
           "signature": "pub(crate) fn parse_git_log("
         },
@@ -10453,8 +12182,8 @@
           "kind": "function",
           "visibility": "internal",
           "span": {
-            "start": 138,
-            "end": 181
+            "start": 139,
+            "end": 182
           },
           "signature": "pub(crate) fn parse_git_output(output: &str) -> Vec<CommitData> {"
         },
@@ -10463,8 +12192,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 188,
-            "end": 215
+            "start": 189,
+            "end": 216
           },
           "signature": "fn parse_numstat_line(line: &str) -> Option<FileChange> {"
         },
@@ -10473,8 +12202,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 225,
-            "end": 250
+            "start": 226,
+            "end": 251
           },
           "signature": "fn parse_rename_path(path: &str) -> (String, Option<String>) {"
         },
@@ -10483,8 +12212,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 294,
-            "end": 551
+            "start": 295,
+            "end": 552
           }
         }
       ]
@@ -12050,6 +13779,375 @@
         }
       ]
     },
+    "tests/fixtures/semantic/aspnet_routes.cs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 29,
+      "hash": "fb3bd3c373bb3fb3",
+      "exports": [
+        "ProductsController"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "Create",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 18,
+            "end": 22
+          },
+          "signature": "[HttpPost(\"/api/products\")]",
+          "parent": "ProductsController"
+        },
+        {
+          "name": "Delete",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 24,
+            "end": 28
+          },
+          "signature": "[HttpDelete(\"/api/products/{id}\")]",
+          "parent": "ProductsController"
+        },
+        {
+          "name": "GetAll",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 12,
+            "end": 16
+          },
+          "signature": "[HttpGet(\"/api/products\")]",
+          "parent": "ProductsController"
+        },
+        {
+          "name": "ProductsController",
+          "kind": "class",
+          "visibility": "public",
+          "span": {
+            "start": 9,
+            "end": 29
+          },
+          "signature": "[Route(\"/api/products\")]"
+        }
+      ]
+    },
+    "tests/fixtures/semantic/dom_events.ts": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 15,
+      "hash": "92abd976cd93c2df",
+      "exports": [],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "button",
+          "kind": "variable",
+          "visibility": "private",
+          "span": {
+            "start": 7,
+            "end": 7
+          },
+          "signature": "const button = document.getElementById(\"btn\");"
+        }
+      ]
+    },
+    "tests/fixtures/semantic/event_emitters.ts": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 29,
+      "hash": "a88fc55b21fcf5d5",
+      "exports": [],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "emitter",
+          "kind": "variable",
+          "visibility": "private",
+          "span": {
+            "start": 9,
+            "end": 9
+          },
+          "signature": "const emitter = new EventEmitter();"
+        }
+      ]
+    },
+    "tests/fixtures/semantic/event_generic.py": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 22,
+      "hash": "004241b23ef9e752",
+      "exports": [
+        "EventBus"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "EventBus",
+          "kind": "class",
+          "visibility": "public",
+          "span": {
+            "start": 7,
+            "end": 8
+          },
+          "signature": "class EventBus:"
+        }
+      ]
+    },
+    "tests/fixtures/semantic/express_routes.ts": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 39,
+      "hash": "3fabf1ed3995df92",
+      "exports": [],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "app",
+          "kind": "variable",
+          "visibility": "private",
+          "span": {
+            "start": 9,
+            "end": 9
+          },
+          "signature": "const app = express();"
+        },
+        {
+          "name": "loadUser",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 36,
+            "end": 39
+          },
+          "signature": "async function loadUser(id: string) {"
+        },
+        {
+          "name": "loadUsers",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 30,
+            "end": 33
+          },
+          "signature": "async function loadUsers() {"
+        }
+      ]
+    },
+    "tests/fixtures/semantic/fastapi_routes.py": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 21,
+      "hash": "192423e61308dce8",
+      "exports": [
+        "create_user",
+        "delete_user",
+        "list_users"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "create_user",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 15,
+            "end": 17
+          },
+          "signature": "def create_user(user: dict):"
+        },
+        {
+          "name": "delete_user",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 19,
+            "end": 21
+          },
+          "signature": "def delete_user(user_id: int):"
+        },
+        {
+          "name": "list_users",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 11,
+            "end": 13
+          },
+          "signature": "def list_users():"
+        }
+      ]
+    },
+    "tests/fixtures/semantic/go_routes.go": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 23,
+      "hash": "d9f506f612970227",
+      "exports": [],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "main",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 14,
+            "end": 23
+          },
+          "signature": "func main() {"
+        }
+      ]
+    },
+    "tests/fixtures/semantic/mixed_framework.ts": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 28,
+      "hash": "aff8538aa4b861a9",
+      "exports": [],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "app",
+          "kind": "variable",
+          "visibility": "private",
+          "span": {
+            "start": 11,
+            "end": 11
+          },
+          "signature": "const app = express();"
+        },
+        {
+          "name": "emitter",
+          "kind": "variable",
+          "visibility": "private",
+          "span": {
+            "start": 12,
+            "end": 12
+          },
+          "signature": "const emitter = new EventEmitter();"
+        }
+      ]
+    },
+    "tests/fixtures/semantic/no_boundaries.rs": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 33,
+      "hash": "390cb630d7d51d91",
+      "exports": [
+        "Config",
+        "compute"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "Config",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 11,
+            "end": 14
+          },
+          "signature": "pub struct Config {"
+        },
+        {
+          "name": "compute",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 7,
+            "end": 9
+          },
+          "signature": "pub fn compute(input: &[u8]) -> Vec<u8> {"
+        },
+        {
+          "name": "new",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 17,
+            "end": 22
+          },
+          "signature": "pub fn new() -> Self {",
+          "parent": "Config"
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 26,
+            "end": 33
+          }
+        }
+      ]
+    },
+    "tests/fixtures/semantic/spring_routes.java": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 28,
+      "hash": "fb4f194a10028cb7",
+      "exports": [
+        "UserController"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "UserController",
+          "kind": "class",
+          "visibility": "public",
+          "span": {
+            "start": 11,
+            "end": 28
+          },
+          "signature": "@RequestMapping(\"/api\")"
+        },
+        {
+          "name": "createUser",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 19,
+            "end": 22
+          },
+          "signature": "@PostMapping(\"/api/users\")",
+          "parent": "UserController"
+        },
+        {
+          "name": "deleteUser",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 24,
+            "end": 27
+          },
+          "signature": "@DeleteMapping(\"/api/users/{id}\")",
+          "parent": "UserController"
+        },
+        {
+          "name": "getUsers",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 14,
+            "end": 17
+          },
+          "signature": "@GetMapping(\"/api/users\")",
+          "parent": "UserController"
+        }
+      ]
+    },
     "tests/fixtures/tsx-components/App.tsx": {
       "type": "source",
       "layer": "unknown",
@@ -12989,7 +15087,7 @@
       "layer": "unknown",
       "arch_depth": 0,
       "lines": 808,
-      "hash": "036bc2a1c98e1a71",
+      "hash": "65983bdd4393c98f",
       "exports": [],
       "cluster": "tests",
       "symbols": [
@@ -13279,6 +15377,357 @@
             "end": 93
           },
           "signature": "fn warning_codes_display_as_w0xx() {"
+        }
+      ]
+    },
+    "tests/semantic_tests.rs": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 809,
+      "hash": "7a54efa8956fe8e6",
+      "exports": [],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "ac12_boundary_output_round_trip",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 459,
+            "end": 530
+          },
+          "signature": "fn ac12_boundary_output_round_trip() {"
+        },
+        {
+          "name": "ac12_round_trip_preserves_counts",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 533,
+            "end": 569
+          },
+          "signature": "fn ac12_round_trip_preserves_counts() {"
+        },
+        {
+          "name": "ac12_round_trip_preserves_orphans",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 572,
+            "end": 608
+          },
+          "signature": "fn ac12_round_trip_preserves_orphans() {"
+        },
+        {
+          "name": "ac1_aspnet_routes_fixture",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 152,
+            "end": 163
+          },
+          "signature": "fn ac1_aspnet_routes_fixture() {"
+        },
+        {
+          "name": "ac1_express_routes_fixture",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 76,
+            "end": 107
+          },
+          "signature": "fn ac1_express_routes_fixture() {"
+        },
+        {
+          "name": "ac1_fastapi_routes_fixture",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 110,
+            "end": 121
+          },
+          "signature": "fn ac1_fastapi_routes_fixture() {"
+        },
+        {
+          "name": "ac1_go_routes_fixture",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 138,
+            "end": 149
+          },
+          "signature": "fn ac1_go_routes_fixture() {"
+        },
+        {
+          "name": "ac1_spring_routes_fixture",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 124,
+            "end": 135
+          },
+          "signature": "fn ac1_spring_routes_fixture() {"
+        },
+        {
+          "name": "ac2_event_emitters_fixture",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 170,
+            "end": 196
+          },
+          "signature": "fn ac2_event_emitters_fixture() {"
+        },
+        {
+          "name": "ac2_event_generic_python_fixture",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 199,
+            "end": 222
+          },
+          "signature": "fn ac2_event_generic_python_fixture() {"
+        },
+        {
+          "name": "ac5_dom_events_zero_boundaries",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 229,
+            "end": 245
+          },
+          "signature": "fn ac5_dom_events_zero_boundaries() {"
+        },
+        {
+          "name": "ac5_false_positive_rate_within_threshold",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 270,
+            "end": 289
+          },
+          "signature": "fn ac5_false_positive_rate_within_threshold() {"
+        },
+        {
+          "name": "ac5_no_boundaries_rust_fixture",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 248,
+            "end": 263
+          },
+          "signature": "fn ac5_no_boundaries_rust_fixture() {"
+        },
+        {
+          "name": "ac7_orphan_event_detection",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 320,
+            "end": 341
+          },
+          "signature": "fn ac7_orphan_event_detection() {"
+        },
+        {
+          "name": "ac7_orphan_route_detection",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 296,
+            "end": 317
+          },
+          "signature": "fn ac7_orphan_route_detection() {"
+        },
+        {
+          "name": "ac8_mixed_framework_fixture",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 348,
+            "end": 368
+          },
+          "signature": "fn ac8_mixed_framework_fixture() {"
+        },
+        {
+          "name": "ac9_deterministic_analyze",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 434,
+            "end": 452
+          },
+          "signature": "fn ac9_deterministic_analyze() {"
+        },
+        {
+          "name": "ac9_deterministic_edge_construction",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 392,
+            "end": 431
+          },
+          "signature": "fn ac9_deterministic_edge_construction() {"
+        },
+        {
+          "name": "ac9_deterministic_extraction",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 375,
+            "end": 389
+          },
+          "signature": "fn ac9_deterministic_extraction() {"
+        },
+        {
+          "name": "cs_lang",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 67,
+            "end": 69
+          },
+          "signature": "fn cs_lang() -> tree_sitter::Language {"
+        },
+        {
+          "name": "edge_prefix_match_parameterized_route",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 615,
+            "end": 650
+          },
+          "signature": "fn edge_prefix_match_parameterized_route() {"
+        },
+        {
+          "name": "edge_self_loop_excluded",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 653,
+            "end": 682
+          },
+          "signature": "fn edge_self_loop_excluded() {"
+        },
+        {
+          "name": "extract_events",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 42,
+            "end": 49
+          },
+          "signature": "fn extract_events(source: &str, ext: &str, lang: tree_sitter::Language) -> Vec<Boundary> {"
+        },
+        {
+          "name": "extract_http_routes",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 32,
+            "end": 39
+          },
+          "signature": "fn extract_http_routes(source: &str, ext: &str, lang: tree_sitter::Language) -> Vec<Boundary> {"
+        },
+        {
+          "name": "extractor_registry_multiple_extractors_per_extension",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 689,
+            "end": 711
+          },
+          "signature": "fn extractor_registry_multiple_extractors_per_extension() {"
+        },
+        {
+          "name": "fixture_dir",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 18,
+            "end": 23
+          },
+          "signature": "fn fixture_dir() -> PathBuf {"
+        },
+        {
+          "name": "go_lang",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 63,
+            "end": 65
+          },
+          "signature": "fn go_lang() -> tree_sitter::Language {"
+        },
+        {
+          "name": "integration_all_fixtures_parse_without_panic",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 718,
+            "end": 739
+          },
+          "signature": "fn integration_all_fixtures_parse_without_panic() {"
+        },
+        {
+          "name": "integration_edge_construction_from_fixtures",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 742,
+            "end": 787
+          },
+          "signature": "fn integration_edge_construction_from_fixtures() {"
+        },
+        {
+          "name": "java_lang",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 59,
+            "end": 61
+          },
+          "signature": "fn java_lang() -> tree_sitter::Language {"
+        },
+        {
+          "name": "line_numbers_match_fixture_positions",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 794,
+            "end": 809
+          },
+          "signature": "fn line_numbers_match_fixture_positions() {"
+        },
+        {
+          "name": "py_lang",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 55,
+            "end": 57
+          },
+          "signature": "fn py_lang() -> tree_sitter::Language {"
+        },
+        {
+          "name": "read_fixture",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 25,
+            "end": 29
+          },
+          "signature": "fn read_fixture(name: &str) -> String {"
+        },
+        {
+          "name": "ts_lang",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 51,
+            "end": 53
+          },
+          "signature": "fn ts_lang() -> tree_sitter::Language {"
         }
       ]
     },
@@ -13639,6 +16088,189 @@
     }
   },
   "edges": [
+    [
+      "benches/algo_bench.rs",
+      "src/algo/mod.rs",
+      "imports",
+      [
+        "algo"
+      ]
+    ],
+    [
+      "benches/algo_bench.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "*"
+      ]
+    ],
+    [
+      "benches/algo_bench.rs",
+      "src/recommend/mod.rs",
+      "imports",
+      [
+        "recommend"
+      ]
+    ],
+    [
+      "benches/analysis_bench.rs",
+      "src/algo/mod.rs",
+      "imports",
+      [
+        "algo"
+      ]
+    ],
+    [
+      "benches/analysis_bench.rs",
+      "src/analysis/diff.rs",
+      "imports",
+      [
+        "compute_structural_diff"
+      ]
+    ],
+    [
+      "benches/analysis_bench.rs",
+      "src/analysis/metrics.rs",
+      "imports",
+      [
+        "compute_martin_metrics"
+      ]
+    ],
+    [
+      "benches/analysis_bench.rs",
+      "src/analysis/smells.rs",
+      "imports",
+      [
+        "detect_smells"
+      ]
+    ],
+    [
+      "benches/analysis_bench.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "*"
+      ]
+    ],
+    [
+      "benches/build_bench.rs",
+      "src/parser/mod.rs",
+      "imports",
+      [
+        "ParserRegistry"
+      ]
+    ],
+    [
+      "benches/build_bench.rs",
+      "src/pipeline/mod.rs",
+      "imports",
+      [
+        "BuildOptions",
+        "BuildPipeline",
+        "FsReader",
+        "FsWalker",
+        "WalkConfig"
+      ]
+    ],
+    [
+      "benches/build_bench.rs",
+      "src/serial/json.rs",
+      "imports",
+      [
+        "JsonSerializer"
+      ]
+    ],
+    [
+      "benches/mcp_bench.rs",
+      "src/algo/mod.rs",
+      "imports",
+      [
+        "algo"
+      ]
+    ],
+    [
+      "benches/mcp_bench.rs",
+      "src/mcp/state.rs",
+      "imports",
+      [
+        "GraphState"
+      ]
+    ],
+    [
+      "benches/mcp_bench.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "*"
+      ]
+    ],
+    [
+      "benches/parser_bench.rs",
+      "src/hash.rs",
+      "imports",
+      [
+        "hash_content"
+      ]
+    ],
+    [
+      "benches/parser_bench.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath"
+      ]
+    ],
+    [
+      "benches/parser_bench.rs",
+      "src/parser/mod.rs",
+      "imports",
+      [
+        "ParserRegistry"
+      ]
+    ],
+    [
+      "benches/symbol_bench.rs",
+      "src/algo/callgraph.rs",
+      "imports",
+      [
+        "CallGraph"
+      ]
+    ],
+    [
+      "benches/symbol_bench.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "*"
+      ]
+    ],
+    [
+      "benches/symbol_bench.rs",
+      "src/model/symbol.rs",
+      "imports",
+      [
+        "LineSpan",
+        "SymbolDef",
+        "SymbolKind",
+        "Visibility"
+      ]
+    ],
+    [
+      "benches/symbol_bench.rs",
+      "src/model/symbol_index.rs",
+      "imports",
+      [
+        "SymbolIndex"
+      ]
+    ],
+    [
+      "benches/symbol_bench.rs",
+      "src/parser/mod.rs",
+      "imports",
+      [
+        "ParserRegistry"
+      ]
+    ],
     [
       "src/algo/blast_radius.rs",
       "src/algo/mod.rs",
@@ -14389,6 +17021,22 @@
     ],
     [
       "src/lib.rs",
+      "src/recommend/mod.rs",
+      "imports",
+      [
+        "recommend"
+      ]
+    ],
+    [
+      "src/lib.rs",
+      "src/semantic/mod.rs",
+      "imports",
+      [
+        "semantic"
+      ]
+    ],
+    [
+      "src/lib.rs",
       "src/serial/mod.rs",
       "imports",
       [
@@ -14409,6 +17057,90 @@
       "imports",
       [
         "views"
+      ]
+    ],
+    [
+      "src/main.rs",
+      "src/algo/mod.rs",
+      "imports",
+      [
+        "algo"
+      ]
+    ],
+    [
+      "src/main.rs",
+      "src/diagnostic.rs",
+      "imports",
+      [
+        "DiagnosticReport",
+        "FatalError",
+        "WarningFormat",
+        "format_summary",
+        "format_warnings"
+      ]
+    ],
+    [
+      "src/main.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath",
+        "ClusterMap",
+        "ProjectGraph",
+        "StatsOutput"
+      ]
+    ],
+    [
+      "src/main.rs",
+      "src/parser/mod.rs",
+      "imports",
+      [
+        "ParserRegistry"
+      ]
+    ],
+    [
+      "src/main.rs",
+      "src/pipeline/mod.rs",
+      "imports",
+      [
+        "BuildPipeline",
+        "FsReader",
+        "FsWalker",
+        "WalkConfig"
+      ]
+    ],
+    [
+      "src/main.rs",
+      "src/semantic/events.rs",
+      "imports",
+      [
+        "EventExtractor"
+      ]
+    ],
+    [
+      "src/main.rs",
+      "src/semantic/http.rs",
+      "imports",
+      [
+        "HttpRouteExtractor"
+      ]
+    ],
+    [
+      "src/main.rs",
+      "src/serial/json.rs",
+      "imports",
+      [
+        "JsonSerializer"
+      ]
+    ],
+    [
+      "src/main.rs",
+      "src/serial/mod.rs",
+      "imports",
+      [
+        "BoundaryEntry",
+        "BoundaryOutput",
+        "GraphReader"
       ]
     ],
     [
@@ -14532,6 +17264,22 @@
       "imports",
       [
         "tools_context"
+      ]
+    ],
+    [
+      "src/mcp/mod.rs",
+      "src/mcp/tools_recommend.rs",
+      "imports",
+      [
+        "tools_recommend"
+      ]
+    ],
+    [
+      "src/mcp/mod.rs",
+      "src/mcp/tools_semantic.rs",
+      "imports",
+      [
+        "tools_semantic"
       ]
     ],
     [
@@ -14744,6 +17492,7 @@
       "src/serial/mod.rs",
       "imports",
       [
+        "BoundaryOutput",
         "RawImportOutput"
       ]
     ],
@@ -14817,6 +17566,27 @@
     ],
     [
       "src/mcp/tools.rs",
+      "src/mcp/tools_recommend.rs",
+      "imports",
+      [
+        "RefactorOpportunitiesParam",
+        "SuggestPlacementParam",
+        "SuggestSplitParam"
+      ]
+    ],
+    [
+      "src/mcp/tools.rs",
+      "src/mcp/tools_semantic.rs",
+      "imports",
+      [
+        "BoundariesParam",
+        "BoundaryForParam",
+        "EventMapParam",
+        "RouteMapParam"
+      ]
+    ],
+    [
+      "src/mcp/tools.rs",
       "src/mcp/tools_temporal.rs",
       "imports",
       [
@@ -14842,6 +17612,14 @@
       [
         "AnnotationTarget",
         "CanonicalPath"
+      ]
+    ],
+    [
+      "src/mcp/tools.rs",
+      "src/recommend/mod.rs",
+      "imports",
+      [
+        "recommend"
       ]
     ],
     [
@@ -14967,6 +17745,14 @@
       "imports",
       [
         "query"
+      ]
+    ],
+    [
+      "src/model/mod.rs",
+      "src/model/semantic.rs",
+      "imports",
+      [
+        "semantic"
       ]
     ],
     [
@@ -15430,10 +18216,34 @@
     ],
     [
       "src/parser/registry.rs",
+      "src/model/semantic.rs",
+      "imports",
+      [
+        "Boundary"
+      ]
+    ],
+    [
+      "src/parser/registry.rs",
       "src/model/symbol.rs",
       "imports",
       [
         "SymbolDef"
+      ]
+    ],
+    [
+      "src/parser/registry.rs",
+      "src/model/types.rs",
+      "imports",
+      [
+        "CanonicalPath"
+      ]
+    ],
+    [
+      "src/parser/registry.rs",
+      "src/semantic/mod.rs",
+      "imports",
+      [
+        "BoundaryExtractor"
       ]
     ],
     [
@@ -15691,6 +18501,14 @@
     ],
     [
       "src/pipeline/mod.rs",
+      "src/model/semantic.rs",
+      "imports",
+      [
+        "Boundary"
+      ]
+    ],
+    [
+      "src/pipeline/mod.rs",
       "src/model/symbol.rs",
       "imports",
       [
@@ -15742,6 +18560,14 @@
     ],
     [
       "src/pipeline/mod.rs",
+      "src/semantic/mod.rs",
+      "imports",
+      [
+        "semantic"
+      ]
+    ],
+    [
+      "src/pipeline/mod.rs",
       "src/serial/mod.rs",
       "imports",
       [
@@ -15751,7 +18577,8 @@
         "GraphReader",
         "GraphSerializer",
         "NodeOutput",
-        "RawImportOutput"
+        "RawImportOutput",
+        "serial"
       ]
     ],
     [
@@ -15832,6 +18659,384 @@
       ]
     ],
     [
+      "src/recommend/mod.rs",
+      "src/recommend/min_cut.rs",
+      "imports",
+      [
+        "min_cut"
+      ]
+    ],
+    [
+      "src/recommend/mod.rs",
+      "src/recommend/pareto.rs",
+      "imports",
+      [
+        "pareto"
+      ]
+    ],
+    [
+      "src/recommend/mod.rs",
+      "src/recommend/placement.rs",
+      "imports",
+      [
+        "placement"
+      ]
+    ],
+    [
+      "src/recommend/mod.rs",
+      "src/recommend/refactor.rs",
+      "imports",
+      [
+        "refactor"
+      ]
+    ],
+    [
+      "src/recommend/mod.rs",
+      "src/recommend/split.rs",
+      "imports",
+      [
+        "split"
+      ]
+    ],
+    [
+      "src/recommend/mod.rs",
+      "src/recommend/types.rs",
+      "imports",
+      [
+        "types"
+      ]
+    ],
+    [
+      "src/recommend/placement.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "ArchLayer",
+        "CanonicalPath",
+        "Cluster",
+        "ClusterId",
+        "Node"
+      ]
+    ],
+    [
+      "src/recommend/refactor.rs",
+      "src/algo/blast_radius.rs",
+      "imports",
+      [
+        "blast_radius"
+      ]
+    ],
+    [
+      "src/recommend/refactor.rs",
+      "src/algo/callgraph.rs",
+      "imports",
+      [
+        "CallGraph"
+      ]
+    ],
+    [
+      "src/recommend/refactor.rs",
+      "src/algo/mod.rs",
+      "imports",
+      [
+        "AdjacencyIndex",
+        "round4"
+      ]
+    ],
+    [
+      "src/recommend/refactor.rs",
+      "src/algo/scc.rs",
+      "imports",
+      [
+        "find_sccs"
+      ]
+    ],
+    [
+      "src/recommend/refactor.rs",
+      "src/model/graph.rs",
+      "imports",
+      [
+        "ProjectGraph"
+      ]
+    ],
+    [
+      "src/recommend/refactor.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath"
+      ]
+    ],
+    [
+      "src/recommend/refactor.rs",
+      "src/model/smell.rs",
+      "imports",
+      [
+        "ArchSmell",
+        "SmellType"
+      ]
+    ],
+    [
+      "src/recommend/refactor.rs",
+      "src/model/symbol_index.rs",
+      "imports",
+      [
+        "SymbolIndex"
+      ]
+    ],
+    [
+      "src/recommend/refactor.rs",
+      "src/model/temporal.rs",
+      "imports",
+      [
+        "TemporalState"
+      ]
+    ],
+    [
+      "src/recommend/refactor.rs",
+      "src/recommend/pareto.rs",
+      "imports",
+      [
+        "pareto_frontier"
+      ]
+    ],
+    [
+      "src/recommend/refactor.rs",
+      "src/recommend/split.rs",
+      "imports",
+      [
+        "analyze_split"
+      ]
+    ],
+    [
+      "src/recommend/refactor.rs",
+      "src/recommend/types.rs",
+      "imports",
+      [
+        "DataQuality",
+        "Effort",
+        "Impact",
+        "RefactorAnalysis",
+        "RefactorOpportunity",
+        "RefactorType"
+      ]
+    ],
+    [
+      "src/recommend/split.rs",
+      "src/algo/blast_radius.rs",
+      "imports",
+      [
+        "blast_radius"
+      ]
+    ],
+    [
+      "src/recommend/split.rs",
+      "src/algo/callgraph.rs",
+      "imports",
+      [
+        "CallGraph"
+      ]
+    ],
+    [
+      "src/recommend/split.rs",
+      "src/algo/mod.rs",
+      "imports",
+      [
+        "AdjacencyIndex",
+        "round4"
+      ]
+    ],
+    [
+      "src/recommend/split.rs",
+      "src/model/edge.rs",
+      "imports",
+      [
+        "Edge",
+        "EdgeType"
+      ]
+    ],
+    [
+      "src/recommend/split.rs",
+      "src/model/graph.rs",
+      "imports",
+      [
+        "ProjectGraph"
+      ]
+    ],
+    [
+      "src/recommend/split.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath"
+      ]
+    ],
+    [
+      "src/recommend/split.rs",
+      "src/model/node.rs",
+      "imports",
+      [
+        "FileType"
+      ]
+    ],
+    [
+      "src/recommend/split.rs",
+      "src/model/symbol.rs",
+      "imports",
+      [
+        "SymbolDef"
+      ]
+    ],
+    [
+      "src/recommend/split.rs",
+      "src/model/symbol_index.rs",
+      "imports",
+      [
+        "SymbolIndex"
+      ]
+    ],
+    [
+      "src/recommend/split.rs",
+      "src/model/temporal.rs",
+      "imports",
+      [
+        "TemporalState"
+      ]
+    ],
+    [
+      "src/recommend/split.rs",
+      "src/recommend/min_cut.rs",
+      "imports",
+      [
+        "stoer_wagner"
+      ]
+    ],
+    [
+      "src/recommend/split.rs",
+      "src/recommend/types.rs",
+      "imports",
+      [
+        "DataQuality",
+        "SplitAnalysis",
+        "SplitGroup",
+        "SplitImpact",
+        "SymbolGraph"
+      ]
+    ],
+    [
+      "src/semantic/edges.rs",
+      "src/model/semantic.rs",
+      "imports",
+      [
+        "Boundary",
+        "BoundaryKind",
+        "BoundaryRole",
+        "SemanticEdge"
+      ]
+    ],
+    [
+      "src/semantic/edges.rs",
+      "src/model/types.rs",
+      "imports",
+      [
+        "CanonicalPath"
+      ]
+    ],
+    [
+      "src/semantic/events.rs",
+      "src/model/semantic.rs",
+      "imports",
+      [
+        "Boundary",
+        "BoundaryKind",
+        "BoundaryRole"
+      ]
+    ],
+    [
+      "src/semantic/events.rs",
+      "src/model/types.rs",
+      "imports",
+      [
+        "CanonicalPath"
+      ]
+    ],
+    [
+      "src/semantic/events.rs",
+      "src/semantic/mod.rs",
+      "imports",
+      [
+        "BoundaryExtractor"
+      ]
+    ],
+    [
+      "src/semantic/http.rs",
+      "src/model/semantic.rs",
+      "imports",
+      [
+        "Boundary",
+        "BoundaryKind",
+        "BoundaryRole"
+      ]
+    ],
+    [
+      "src/semantic/http.rs",
+      "src/model/types.rs",
+      "imports",
+      [
+        "CanonicalPath"
+      ]
+    ],
+    [
+      "src/semantic/http.rs",
+      "src/semantic/mod.rs",
+      "imports",
+      [
+        "BoundaryExtractor"
+      ]
+    ],
+    [
+      "src/semantic/mod.rs",
+      "src/model/semantic.rs",
+      "imports",
+      [
+        "Boundary",
+        "BoundaryKind",
+        "SemanticState"
+      ]
+    ],
+    [
+      "src/semantic/mod.rs",
+      "src/model/types.rs",
+      "imports",
+      [
+        "CanonicalPath"
+      ]
+    ],
+    [
+      "src/semantic/mod.rs",
+      "src/semantic/edges.rs",
+      "imports",
+      [
+        "edges"
+      ]
+    ],
+    [
+      "src/semantic/mod.rs",
+      "src/semantic/events.rs",
+      "imports",
+      [
+        "events"
+      ]
+    ],
+    [
+      "src/semantic/mod.rs",
+      "src/semantic/http.rs",
+      "imports",
+      [
+        "http"
+      ]
+    ],
+    [
       "src/serial/convert.rs",
       "src/model/mod.rs",
       "imports",
@@ -15873,10 +19078,30 @@
     ],
     [
       "src/serial/mod.rs",
+      "src/model/semantic.rs",
+      "imports",
+      [
+        "Boundary",
+        "BoundaryKind",
+        "BoundaryRole",
+        "SemanticEdge",
+        "SemanticState"
+      ]
+    ],
+    [
+      "src/serial/mod.rs",
       "src/model/symbol.rs",
       "imports",
       [
         "SymbolDef"
+      ]
+    ],
+    [
+      "src/serial/mod.rs",
+      "src/model/types.rs",
+      "imports",
+      [
+        "CanonicalPath"
       ]
     ],
     [
@@ -16114,6 +19339,63 @@
       "imports",
       [
         "index"
+      ]
+    ],
+    [
+      "tests/callgraph_tests.rs",
+      "src/algo/callgraph.rs",
+      "tests",
+      [
+        "CallEdgeKind",
+        "CallGraph"
+      ]
+    ],
+    [
+      "tests/callgraph_tests.rs",
+      "src/model/edge.rs",
+      "tests",
+      [
+        "Edge",
+        "EdgeType"
+      ]
+    ],
+    [
+      "tests/callgraph_tests.rs",
+      "src/model/node.rs",
+      "tests",
+      [
+        "ArchLayer",
+        "FileType",
+        "Node"
+      ]
+    ],
+    [
+      "tests/callgraph_tests.rs",
+      "src/model/symbol.rs",
+      "tests",
+      [
+        "LineSpan",
+        "SymbolDef",
+        "Visibility"
+      ]
+    ],
+    [
+      "tests/callgraph_tests.rs",
+      "src/model/symbol_index.rs",
+      "tests",
+      [
+        "SymbolIndex"
+      ]
+    ],
+    [
+      "tests/callgraph_tests.rs",
+      "src/model/types.rs",
+      "tests",
+      [
+        "CanonicalPath",
+        "ClusterId",
+        "ContentHash",
+        "Symbol"
       ]
     ],
     [
@@ -16380,6 +19662,231 @@
       "re_exports",
       [
         "format"
+      ]
+    ],
+    [
+      "tests/graph_tests.rs",
+      "src/diagnostic.rs",
+      "tests",
+      [
+        "WarningCode"
+      ]
+    ],
+    [
+      "tests/helpers.rs",
+      "src/parser/mod.rs",
+      "tests",
+      [
+        "ParserRegistry"
+      ]
+    ],
+    [
+      "tests/helpers.rs",
+      "src/pipeline/mod.rs",
+      "tests",
+      [
+        "BuildOutput",
+        "BuildPipeline",
+        "FsReader",
+        "FsWalker",
+        "WalkConfig"
+      ]
+    ],
+    [
+      "tests/helpers.rs",
+      "src/serial/json.rs",
+      "tests",
+      [
+        "JsonSerializer"
+      ]
+    ],
+    [
+      "tests/pipeline_tests.rs",
+      "src/diagnostic.rs",
+      "tests",
+      [
+        "DiagnosticCollector",
+        "Warning",
+        "WarningCode"
+      ]
+    ],
+    [
+      "tests/pipeline_tests.rs",
+      "src/model/mod.rs",
+      "tests",
+      [
+        "CanonicalPath"
+      ]
+    ],
+    [
+      "tests/pipeline_tests.rs",
+      "src/parser/mod.rs",
+      "tests",
+      [
+        "ParserRegistry"
+      ]
+    ],
+    [
+      "tests/pipeline_tests.rs",
+      "src/pipeline/mod.rs",
+      "tests",
+      [
+        "BuildOptions",
+        "BuildPipeline",
+        "FileWalker",
+        "FsReader",
+        "FsWalker",
+        "WalkConfig"
+      ]
+    ],
+    [
+      "tests/pipeline_tests.rs",
+      "src/serial/json.rs",
+      "tests",
+      [
+        "JsonSerializer"
+      ]
+    ],
+    [
+      "tests/pipeline_tests.rs",
+      "src/serial/mod.rs",
+      "tests",
+      [
+        "GraphReader",
+        "RawImportOutput"
+      ]
+    ],
+    [
+      "tests/properties.rs",
+      "src/diagnostic.rs",
+      "tests",
+      [
+        "WarningCode"
+      ]
+    ],
+    [
+      "tests/properties.rs",
+      "src/hash.rs",
+      "tests",
+      [
+        "hash_content"
+      ]
+    ],
+    [
+      "tests/properties.rs",
+      "src/model/mod.rs",
+      "tests",
+      [
+        "CanonicalPath"
+      ]
+    ],
+    [
+      "tests/semantic_tests.rs",
+      "src/model/semantic.rs",
+      "tests",
+      [
+        "Boundary",
+        "BoundaryKind",
+        "BoundaryRole"
+      ]
+    ],
+    [
+      "tests/semantic_tests.rs",
+      "src/model/types.rs",
+      "tests",
+      [
+        "CanonicalPath"
+      ]
+    ],
+    [
+      "tests/semantic_tests.rs",
+      "src/semantic/edges.rs",
+      "tests",
+      [
+        "build_semantic_edges"
+      ]
+    ],
+    [
+      "tests/semantic_tests.rs",
+      "src/semantic/events.rs",
+      "tests",
+      [
+        "EventExtractor"
+      ]
+    ],
+    [
+      "tests/semantic_tests.rs",
+      "src/semantic/http.rs",
+      "tests",
+      [
+        "HttpRouteExtractor"
+      ]
+    ],
+    [
+      "tests/semantic_tests.rs",
+      "src/semantic/mod.rs",
+      "tests",
+      [
+        "BoundaryExtractor"
+      ]
+    ],
+    [
+      "tests/semantic_tests.rs",
+      "src/serial/mod.rs",
+      "tests",
+      [
+        "serial"
+      ]
+    ],
+    [
+      "tests/symbol_tests.rs",
+      "src/model/symbol.rs",
+      "tests",
+      [
+        "LineSpan",
+        "SymbolDef",
+        "SymbolKind",
+        "Visibility"
+      ]
+    ],
+    [
+      "tests/symbol_tests.rs",
+      "src/parser/mod.rs",
+      "tests",
+      [
+        "SymbolExtractor"
+      ]
+    ],
+    [
+      "tests/temporal_integration.rs",
+      "src/diagnostic.rs",
+      "tests",
+      [
+        "DiagnosticCollector"
+      ]
+    ],
+    [
+      "tests/temporal_integration.rs",
+      "src/model/mod.rs",
+      "tests",
+      [
+        "ArchLayer",
+        "CanonicalPath",
+        "ClusterId",
+        "ContentHash",
+        "Edge",
+        "EdgeType",
+        "FileType",
+        "Node",
+        "ProjectGraph"
+      ]
+    ],
+    [
+      "tests/temporal_integration.rs",
+      "src/temporal/mod.rs",
+      "tests",
+      [
+        "temporal"
       ]
     ]
   ]

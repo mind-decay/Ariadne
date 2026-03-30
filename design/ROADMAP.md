@@ -1505,7 +1505,7 @@ pub struct SemanticEdge {
 
 ---
 
-## Phase 9: Recommendation Engine [PLANNED]
+## Phase 9: Recommendation Engine [DONE]
 
 **Goal:** Move from "here is data" to "here is what you should do." Ariadne suggests concrete actions based on graph analysis.
 

@@ -511,6 +511,14 @@ src/
 ├── semantic/            # Depends on model/, diagnostic.rs [Phase 8]
 │   ├── mod.rs           # SemanticState, BoundaryExtractor trait, edge construction
 │   └── extractors/      # Per-pattern extractors (HTTP routes, events)
+├── recommend/           # Depends on model/, algo/, analysis/ [Phase 9]
+│   ├── mod.rs           # Re-exports: stoer_wagner, pareto_frontier, analyze_split, suggest_placement, find_refactor_opportunities
+│   ├── types.rs         # Recommendation types: SplitAnalysis, PlacementSuggestion, RefactorAnalysis, DataQuality, Effort, Impact, SymbolGraph, MinCutResult
+│   ├── min_cut.rs       # Stoer-Wagner global minimum cut on weighted undirected graphs (D-111, D-116)
+│   ├── pareto.rs        # 2D Pareto frontier computation for effort/impact ranking (D-117)
+│   ├── split.rs         # D22: File decomposition analysis via symbol clustering + min-cut
+│   ├── placement.rs     # D23: New file placement suggestion via cluster/layer scoring
+│   └── refactor.rs      # D24: Refactoring opportunity scan + Pareto ranking
 ├── diagnostic.rs        # FatalError (thiserror), Warning, DiagnosticCollector (D-021)
 └── hash.rs              # xxHash64 wrapper → ContentHash
 ```
@@ -528,7 +536,8 @@ src/
 | `views/` | `model/`, `diagnostic.rs` (for `FatalError`) | `parser/`, `pipeline/`, `algo/`, `serial/` |
 | `analysis/` | `model/`, `algo/` | `serial/`, `pipeline/`, `parser/`, `views/`, `mcp/` |
 | `semantic/` | `model/`, `diagnostic.rs` | `pipeline/`, `mcp/`, `serial/`, `algo/`, `parser/` (except trait consumed by parser) |
-| `mcp/` | `model/`, `algo/`, `analysis/`, `semantic/`, `serial/`, `pipeline/` | `parser/` |
+| `recommend/` | `model/`, `algo/`, `analysis/` | `mcp/`, `serial/`, `pipeline/`, `parser/` |
+| `mcp/` | `model/`, `algo/`, `analysis/`, `semantic/`, `recommend/`, `serial/`, `pipeline/` | `parser/` |
 | `serial/` | `model/`, `diagnostic.rs` (for `FatalError`) | `parser/`, `pipeline/`, `detect/`, `cluster/` |
 | `diagnostic.rs` | `model/` (for `CanonicalPath` in warnings) | everything else |
 | `hash.rs` | `model/` (returns `ContentHash`) | everything else |
