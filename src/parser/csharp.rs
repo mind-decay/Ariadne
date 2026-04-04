@@ -1,6 +1,11 @@
+use std::collections::{BTreeMap, BTreeSet};
+use std::path::{Path, PathBuf};
+
 use crate::model::symbol::{LineSpan, SymbolDef, SymbolKind, Visibility};
 use crate::model::workspace::WorkspaceInfo;
 use crate::model::{CanonicalPath, FileSet};
+use crate::parser::config::csproj::CsprojConfig;
+use crate::parser::config::find_nearest_csproj;
 use crate::parser::symbols::SymbolExtractor;
 use crate::parser::traits::{ImportKind, ImportResolver, LanguageParser, RawExport, RawImport};
 
@@ -13,7 +18,7 @@ impl LanguageParser for CSharpParser {
     }
 
     fn extensions(&self) -> &[&str] {
-        &["cs"]
+        &["cs", "razor"]
     }
 
     fn tree_sitter_language(&self) -> tree_sitter::Language {
@@ -21,6 +26,15 @@ impl LanguageParser for CSharpParser {
     }
 
     fn extract_imports(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Vec<RawImport> {
+        let source_str = std::str::from_utf8(source).unwrap_or("");
+
+        // Detect .razor content: these files use Razor directives (@using, @inject, etc.)
+        // which are not valid C#. tree-sitter C# parser will produce ERROR nodes for them,
+        // so we use regex-based extraction instead.
+        if is_razor_content(source_str) {
+            return extract_razor_imports(source_str);
+        }
+
         let mut imports = Vec::new();
         let root = tree.root_node();
 
@@ -37,6 +51,66 @@ impl LanguageParser for CSharpParser {
 
         exports
     }
+}
+
+/// Detect whether source content is a .razor file by checking for Razor directives.
+///
+/// .razor files typically start with @-prefixed directives (@page, @using, @inject, etc.).
+/// We check if the first non-empty line starts with '@'.
+fn is_razor_content(source: &str) -> bool {
+    source
+        .lines()
+        .find(|line| !line.trim().is_empty())
+        .map(|line| line.trim_start().starts_with('@'))
+        .unwrap_or(false)
+}
+
+/// Extract imports from .razor file content using text-based parsing.
+///
+/// Handles these Razor directives:
+/// - `@using Namespace` — namespace import
+/// - `@inject ServiceType PropertyName` — DI injection (import the service type)
+/// - `@inherits BaseType` — base type import
+fn extract_razor_imports(source: &str) -> Vec<RawImport> {
+    let mut imports = Vec::new();
+    for line in source.lines() {
+        let trimmed = line.trim();
+        if let Some(ns) = trimmed.strip_prefix("@using ") {
+            let ns = ns.trim().trim_end_matches(';');
+            if !ns.is_empty() {
+                imports.push(RawImport {
+                    path: ns.to_string(),
+                    symbols: Vec::new(),
+                    is_type_only: false,
+                    kind: ImportKind::Regular,
+                });
+            }
+        } else if let Some(rest) = trimmed.strip_prefix("@inject ") {
+            // @inject ServiceType PropertyName
+            let parts: Vec<&str> = rest.trim().splitn(2, ' ').collect();
+            if let Some(&service_type) = parts.first() {
+                if !service_type.is_empty() {
+                    imports.push(RawImport {
+                        path: service_type.to_string(),
+                        symbols: Vec::new(),
+                        is_type_only: false,
+                        kind: ImportKind::Regular,
+                    });
+                }
+            }
+        } else if let Some(rest) = trimmed.strip_prefix("@inherits ") {
+            let base = rest.trim();
+            if !base.is_empty() {
+                imports.push(RawImport {
+                    path: base.to_string(),
+                    symbols: Vec::new(),
+                    is_type_only: false,
+                    kind: ImportKind::Regular,
+                });
+            }
+        }
+    }
+    imports
 }
 
 /// Recursively collect using directives from the tree.
@@ -398,20 +472,55 @@ fn csharp_truncate_signature(
     }
 }
 
-/// C# import resolver.
-struct CSharpResolver;
+/// C# import resolver with optional .csproj configuration awareness.
+struct CSharpResolver {
+    /// .csproj configs, keyed by project-relative directory.
+    csproj_configs: BTreeMap<PathBuf, CsprojConfig>,
+    /// Known NuGet package names (from all .csproj PackageReferences).
+    known_packages: BTreeSet<String>,
+    /// Known framework namespace prefixes.
+    framework_prefixes: &'static [&'static str],
+}
 
-impl ImportResolver for CSharpResolver {
-    fn resolve(
+impl CSharpResolver {
+    fn new() -> Self {
+        Self {
+            csproj_configs: BTreeMap::new(),
+            known_packages: BTreeSet::new(),
+            framework_prefixes: &["System", "Microsoft", "Windows", "Mono"],
+        }
+    }
+
+    fn with_csproj_configs(mut self, configs: BTreeMap<PathBuf, CsprojConfig>) -> Self {
+        // Build known_packages from all PackageReferences across all configs
+        for config in configs.values() {
+            for pkg in &config.package_references {
+                self.known_packages.insert(pkg.name.clone());
+            }
+        }
+        self.csproj_configs = configs;
+        self
+    }
+
+    /// Check if namespace starts with a known framework prefix.
+    fn is_framework_namespace(&self, namespace: &str) -> bool {
+        let first_segment = namespace.split('.').next().unwrap_or("");
+        self.framework_prefixes.contains(&first_segment)
+    }
+
+    /// Check if namespace first segment matches a known NuGet package.
+    fn is_nuget_package(&self, namespace: &str) -> bool {
+        let first_segment = namespace.split('.').next().unwrap_or("");
+        self.known_packages.contains(first_segment)
+    }
+
+    /// Naive resolution: namespace dots to path separators, scan known_files.
+    /// This is the original resolution logic, preserved as fallback.
+    fn resolve_naive(
         &self,
-        import: &RawImport,
-        _from_file: &CanonicalPath,
+        namespace: &str,
         known_files: &FileSet,
-        _workspace: Option<&WorkspaceInfo>,
     ) -> Option<CanonicalPath> {
-        let namespace = &import.path;
-
-        // Convert namespace dots to path separators
         let path_from_ns = namespace.replace('.', "/");
 
         // Try as a direct .cs file
@@ -420,10 +529,7 @@ impl ImportResolver for CSharpResolver {
             return Some(direct);
         }
 
-        // Try with the last segment as the filename within the namespace directory
-        // e.g., MyApp.Services.FooService -> MyApp/Services/FooService.cs
-        // Already covered above, but also try the directory pattern:
-        // namespace may map to a directory containing files
+        // Try directory pattern: namespace may map to a directory containing files
         let dir_prefix = format!("{}/", path_from_ns);
         for file in known_files.iter() {
             let file_str = file.as_str();
@@ -437,6 +543,122 @@ impl ImportResolver for CSharpResolver {
 
         None
     }
+
+    /// Config-aware resolution using .csproj data.
+    fn resolve_with_config(
+        &self,
+        namespace: &str,
+        from_file: &CanonicalPath,
+        known_files: &FileSet,
+    ) -> Option<CanonicalPath> {
+        // Find the nearest .csproj for the importing file
+        let from_dir = Path::new(from_file.as_str())
+            .parent()
+            .unwrap_or(Path::new(""));
+        let nearest_csproj = find_nearest_csproj(from_dir, &self.csproj_configs);
+
+        // Namespace-to-path mapping with root namespace stripping
+        if let Some(config) = nearest_csproj {
+            // Try with root namespace stripping
+            if let Some(ref root_ns) = config.root_namespace {
+                if let Some(rest) = namespace.strip_prefix(root_ns) {
+                    let stripped = rest.strip_prefix('.').unwrap_or(rest);
+                    if !stripped.is_empty() {
+                        let relative_path = stripped.replace('.', "/");
+                        let candidate_str = format!(
+                            "{}/{}.cs",
+                            config.project_dir.display(),
+                            relative_path
+                        );
+                        let candidate = CanonicalPath::new(&candidate_str);
+                        if known_files.contains(&candidate) {
+                            return Some(candidate);
+                        }
+                    }
+                }
+            }
+
+            // Try direct namespace-to-path within the project directory
+            let ns_path = namespace.replace('.', "/");
+            let candidate_str = format!("{}/{}.cs", config.project_dir.display(), ns_path);
+            let candidate = CanonicalPath::new(&candidate_str);
+            if known_files.contains(&candidate) {
+                return Some(candidate);
+            }
+
+            // Cross-project resolution via ProjectReference paths
+            for proj_ref in &config.project_references {
+                if let Some(ref resolved_path) = proj_ref.resolved_path {
+                    let ref_dir = resolved_path
+                        .parent()
+                        .unwrap_or(Path::new(""));
+                    // Check if a referenced project's csproj config exists
+                    if let Some(ref_config) = self.csproj_configs.get(ref_dir) {
+                        // Check if namespace matches referenced project's root namespace
+                        let matches_ref = ref_config
+                            .root_namespace
+                            .as_ref()
+                            .map(|rns| namespace.starts_with(rns.as_str()))
+                            .unwrap_or(false);
+
+                        if matches_ref {
+                            if let Some(ref root_ns) = ref_config.root_namespace {
+                                let rest = namespace
+                                    .strip_prefix(root_ns.as_str())
+                                    .unwrap_or(namespace);
+                                let stripped = rest.strip_prefix('.').unwrap_or(rest);
+                                if !stripped.is_empty() {
+                                    let relative_path = stripped.replace('.', "/");
+                                    let candidate_str = format!(
+                                        "{}/{}.cs",
+                                        ref_config.project_dir.display(),
+                                        relative_path
+                                    );
+                                    let candidate = CanonicalPath::new(&candidate_str);
+                                    if known_files.contains(&candidate) {
+                                        return Some(candidate);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Fallback: naive scan
+        self.resolve_naive(namespace, known_files)
+    }
+}
+
+impl ImportResolver for CSharpResolver {
+    fn resolve(
+        &self,
+        import: &RawImport,
+        from_file: &CanonicalPath,
+        known_files: &FileSet,
+        _workspace: Option<&WorkspaceInfo>,
+    ) -> Option<CanonicalPath> {
+        let namespace = &import.path;
+
+        // 1. Framework filter
+        if self.is_framework_namespace(namespace) {
+            return None;
+        }
+
+        // 2. NuGet filter
+        if self.is_nuget_package(namespace) {
+            return None;
+        }
+
+        // 3. If no csproj configs, use naive resolution (backward compat)
+        if self.csproj_configs.is_empty() {
+            return self.resolve_naive(namespace, known_files);
+        }
+
+        // 4-6. Config-aware resolution
+        self.resolve_with_config(namespace, from_file, known_files)
+    }
 }
 
 pub(crate) fn parser() -> Box<dyn LanguageParser> {
@@ -444,7 +666,11 @@ pub(crate) fn parser() -> Box<dyn LanguageParser> {
 }
 
 pub(crate) fn resolver() -> Box<dyn ImportResolver> {
-    Box::new(CSharpResolver)
+    Box::new(CSharpResolver::new())
+}
+
+pub(crate) fn resolver_with_config(configs: BTreeMap<PathBuf, CsprojConfig>) -> Box<dyn ImportResolver> {
+    Box::new(CSharpResolver::new().with_csproj_configs(configs))
 }
 
 pub(crate) fn symbol_extractor() -> std::sync::Arc<dyn SymbolExtractor> {
@@ -580,5 +806,192 @@ namespace MyApp {
     fn empty_source_no_exports() {
         let result = cs_exports("");
         assert!(result.is_empty());
+    }
+
+    // ---- Resolver tests ----
+
+    fn make_import(path: &str) -> RawImport {
+        RawImport {
+            path: path.to_string(),
+            symbols: Vec::new(),
+            is_type_only: false,
+            kind: ImportKind::Regular,
+        }
+    }
+
+    fn make_from_file(path: &str) -> CanonicalPath {
+        CanonicalPath::new(path)
+    }
+
+    #[test]
+    fn test_resolver_filters_system_namespace() {
+        let resolver = CSharpResolver::new();
+        let files = FileSet::new();
+        let import = make_import("System.Collections.Generic");
+        let result = resolver.resolve(&import, &make_from_file("src/App.cs"), &files, None);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_resolver_filters_microsoft_namespace() {
+        let resolver = CSharpResolver::new();
+        let files = FileSet::new();
+        let import = make_import("Microsoft.Extensions.DependencyInjection");
+        let result = resolver.resolve(&import, &make_from_file("src/App.cs"), &files, None);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_resolver_filters_nuget_package() {
+        use crate::parser::config::csproj::PackageRef;
+
+        let config = CsprojConfig {
+            project_path: PathBuf::from("App.csproj"),
+            project_dir: PathBuf::from(""),
+            target_framework: None,
+            root_namespace: None,
+            assembly_name: None,
+            project_references: Vec::new(),
+            package_references: vec![PackageRef {
+                name: "Newtonsoft".to_string(),
+                version: None,
+            }],
+        };
+        let mut configs = BTreeMap::new();
+        configs.insert(PathBuf::from(""), config);
+        let resolver = CSharpResolver::new().with_csproj_configs(configs);
+
+        let files = FileSet::new();
+        let import = make_import("Newtonsoft.Json");
+        let result = resolver.resolve(&import, &make_from_file("src/App.cs"), &files, None);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_resolver_namespace_to_path() {
+        let resolver = CSharpResolver::new();
+        let files = FileSet::from_iter(vec![
+            CanonicalPath::new("MyApp/Services/UserService.cs"),
+        ]);
+
+        let import = make_import("MyApp.Services.UserService");
+        let result = resolver.resolve(&import, &make_from_file("src/App.cs"), &files, None);
+        assert_eq!(
+            result,
+            Some(CanonicalPath::new("MyApp/Services/UserService.cs"))
+        );
+    }
+
+    #[test]
+    fn test_resolver_with_root_namespace_stripping() {
+        let config = CsprojConfig {
+            project_path: PathBuf::from("src/MyApp/MyApp.csproj"),
+            project_dir: PathBuf::from("src/MyApp"),
+            target_framework: Some("net8.0".to_string()),
+            root_namespace: Some("MyApp".to_string()),
+            assembly_name: Some("MyApp".to_string()),
+            project_references: Vec::new(),
+            package_references: Vec::new(),
+        };
+        let mut configs = BTreeMap::new();
+        configs.insert(PathBuf::from("src/MyApp"), config);
+
+        let resolver = CSharpResolver::new().with_csproj_configs(configs);
+        let files = FileSet::from_iter(vec![
+            CanonicalPath::new("src/MyApp/Services/Foo.cs"),
+        ]);
+
+        let import = make_import("MyApp.Services.Foo");
+        let result = resolver.resolve(
+            &import,
+            &make_from_file("src/MyApp/Program.cs"),
+            &files,
+            None,
+        );
+        assert_eq!(
+            result,
+            Some(CanonicalPath::new("src/MyApp/Services/Foo.cs"))
+        );
+    }
+
+    #[test]
+    fn test_resolver_fallback_without_config() {
+        let resolver = CSharpResolver::new();
+        let files = FileSet::from_iter(vec![
+            CanonicalPath::new("Models/User.cs"),
+        ]);
+
+        let import = make_import("Models.User");
+        let result = resolver.resolve(&import, &make_from_file("src/App.cs"), &files, None);
+        assert_eq!(result, Some(CanonicalPath::new("Models/User.cs")));
+    }
+
+    // ---- Razor tests ----
+
+    #[test]
+    fn test_razor_using_directive() {
+        let source = "@using MyApp.Models\n<h1>Hello</h1>";
+        let tree = parse(source);
+        let imports = CSharpParser.extract_imports(&tree, source.as_bytes());
+        assert_eq!(imports.len(), 1);
+        assert_eq!(imports[0].path, "MyApp.Models");
+    }
+
+    #[test]
+    fn test_razor_inject_directive() {
+        let source = "@inject IUserService UserService\n<p>@UserService.Name</p>";
+        let tree = parse(source);
+        let imports = CSharpParser.extract_imports(&tree, source.as_bytes());
+        assert_eq!(imports.len(), 1);
+        assert_eq!(imports[0].path, "IUserService");
+    }
+
+    #[test]
+    fn test_razor_inherits_directive() {
+        let source = "@inherits LayoutComponentBase\n<div>@Body</div>";
+        let tree = parse(source);
+        let imports = CSharpParser.extract_imports(&tree, source.as_bytes());
+        assert_eq!(imports.len(), 1);
+        assert_eq!(imports[0].path, "LayoutComponentBase");
+    }
+
+    #[test]
+    fn test_razor_mixed_content() {
+        let source = r#"@page "/counter"
+@using MyApp.Data
+@inject WeatherService Weather
+
+<h1>Counter</h1>
+<p>Current count: @count</p>
+<button @onclick="Increment">Click me</button>
+
+@code {
+    private int count = 0;
+    private void Increment() { count++; }
+}
+"#;
+        let tree = parse(source);
+        let imports = CSharpParser.extract_imports(&tree, source.as_bytes());
+        // Should extract @using and @inject, but not @page or @code
+        assert_eq!(imports.len(), 2);
+        assert_eq!(imports[0].path, "MyApp.Data");
+        assert_eq!(imports[1].path, "WeatherService");
+    }
+
+    #[test]
+    fn test_cs_file_not_detected_as_razor() {
+        // Regular C# file starting with "using" should NOT be detected as razor
+        let source = r#"using System;
+using System.Linq;
+
+namespace MyApp {
+    public class Foo {}
+}
+"#;
+        let tree = parse(source);
+        let imports = CSharpParser.extract_imports(&tree, source.as_bytes());
+        assert_eq!(imports.len(), 2);
+        assert_eq!(imports[0].path, "System");
+        assert_eq!(imports[1].path, "System.Linq");
     }
 }

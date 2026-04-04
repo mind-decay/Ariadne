@@ -123,6 +123,7 @@ fn parse_edge_type(s: &str) -> Result<EdgeType, String> {
         "re_exports" => Ok(EdgeType::ReExports),
         "type_imports" => Ok(EdgeType::TypeImports),
         "references" => Ok(EdgeType::References),
+        "project_ref" => Ok(EdgeType::ProjectRef),
         other => Err(format!("unknown edge type: {}", other)),
     }
 }

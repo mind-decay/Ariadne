@@ -91,11 +91,19 @@ Config-aware import resolution reads language-specific config files to resolve i
 - **Go:** `go.mod` — module path extracted, intra-module imports resolved by stripping module prefix and mapping to filesystem. E.g., `github.com/user/project/pkg/auth` → `pkg/auth/`.
 - **Python:** `pyproject.toml` — detects `src`-layout (`[tool.setuptools.package-dir] "" = "src"`) and resolves imports through `src/` prefix.
 
-Config injection uses construction-time `with_config()` methods on resolvers (D-118). The `ImportResolver` trait signature is unchanged — resolvers that support config store it internally. Config discovery runs as a pipeline stage after file walking, before parsing (D-120). Config parse failures produce warnings (W030-W033), not fatal errors.
+Config injection uses construction-time `with_config()` methods on resolvers (D-118). The `ImportResolver` trait signature is unchanged — resolvers that support config store it internally. Config discovery runs as a pipeline stage after file walking, before parsing (D-120). Config parse failures produce warnings (W030-W033, W034-W037), not fatal errors.
+
+**C#/.NET config-aware resolution (Phase 11):**
+
+- **`.csproj`:** Parsed with `roxmltree` (D-124). Extracts `<ProjectReference>`, `<PackageReference>`, `<TargetFramework>`, `<RootNamespace>`, `<AssemblyName>`. MSBuild `Condition` attributes are ignored — all elements processed unconditionally (D-133).
+- **`.sln`:** Line-based parsing (D-126) for multi-project solution structure. `DotnetSolutionInfo` tracked separately from `WorkspaceInfo` (D-127).
+- **Namespace resolution:** Framework prefix filter (`System`, `Microsoft`, `Windows`, `Mono`) → NuGet package filter → nearest-project lookup → namespace-to-path mapping with root namespace stripping → cross-project resolution → file set scan fallback.
+- **`.razor` files:** Directive extraction via regex (D-130) — `@using`, `@inject`, `@inherits`, `@page` directives mapped to `RawImport` and `Boundary` entries.
+- **Cross-project edges:** `ImportKind::ProjectReference` → `EdgeType::ProjectRef` (`"project_ref"`) for `.csproj` `<ProjectReference>` entries (D-132).
+- **Warning codes:** W034 (CsprojParseError), W035 (SlnParseError), W036 (ProjectRefNotFound), W037 (MultipleSlnFiles) (D-131).
 
 **Phase 1a resolution limitations:**
 
-- **C#:** Namespace-to-path heuristic. C# namespaces don't map to filesystem paths; low accuracy.
 - **Java:** Package-to-path heuristic with hardcoded `src/main/java/` prefix.
 
 **Tier 2 (future):** Kotlin, Swift, C/C++, PHP, Ruby, Dart.
@@ -314,6 +322,7 @@ BuildOutput {
 - `tests` — test file covers source file (inferred from naming + imports)
 - `re_exports` — barrel file re-exports (index.ts pattern)
 - `type_imports` — compile-time only dependency (TypeScript `import type`, Python `TYPE_CHECKING`)
+- `project_ref` — cross-project dependency (.csproj `<ProjectReference>`) (D-132) [Phase 11]
 
 ### File Type Detection (`detect/filetype.rs`)
 
@@ -482,11 +491,12 @@ src/
 │   ├── traits.rs        # LanguageParser, ImportResolver, RawImport, RawExport
 │   ├── registry.rs      # ParserRegistry (register, lookup by extension)
 │   ├── config/          # Config-aware resolution (D-118 through D-123) [Phase 10]
-│   │   ├── mod.rs       # ProjectConfig, ConfigDiscovery trait, warning codes W030-W033
+│   │   ├── mod.rs       # ProjectConfig, ConfigDiscovery trait, warning codes W030-W037
 │   │   ├── discovery.rs # FsConfigDiscovery: scans walked files for config filenames
 │   │   ├── typescript.rs # tsconfig.json: paths, baseUrl, extends, JSONC, nearest-ancestor
 │   │   ├── go.rs        # go.mod: module path extraction
-│   │   └── python.rs    # pyproject.toml: src-layout detection
+│   │   ├── python.rs    # pyproject.toml: src-layout detection
+│   │   └── csproj.rs    # .csproj (roxmltree) + .sln parsing, CsprojConfig, DotnetSolutionInfo [Phase 11]
 │   ├── typescript.rs    # TS/JS parser + resolver
 │   ├── go.rs            # Go parser + resolver
 │   ├── python.rs        # Python parser + resolver
@@ -502,7 +512,8 @@ src/
 ├── detect/              # Depends on model/ only
 │   ├── mod.rs           # Re-exports
 │   ├── filetype.rs      # FileType detection from path/extension
-│   └── layer.rs         # ArchLayer inference from directory names + FSD detection/classification (D-031)
+│   ├── layer.rs         # ArchLayer inference from directory names + FSD detection/classification (D-031)
+│   └── framework.rs     # DotnetFrameworkHints: ASP.NET, EF, Blazor, MAUI, MinimalAPI detection (D-129) [Phase 11]
 ├── cluster/             # Depends on model/ only
 │   └── mod.rs           # Directory-based clustering: assign_clusters() + compute_cohesion()
 ├── serial/              # Depends on model/ only
@@ -525,7 +536,8 @@ src/
 │   └── impact.rs        # L2 on-demand impact reports
 ├── semantic/            # Depends on model/, diagnostic.rs [Phase 8]
 │   ├── mod.rs           # SemanticState, BoundaryExtractor trait, edge construction
-│   └── extractors/      # Per-pattern extractors (HTTP routes, events)
+│   ├── extractors/      # Per-pattern extractors (HTTP routes, events)
+│   └── dotnet.rs        # .NET boundary extractors: EF DbContext, DI registration, Blazor @inject (D-129) [Phase 11]
 ├── recommend/           # Depends on model/, algo/, analysis/ [Phase 9]
 │   ├── mod.rs           # Re-exports: stoer_wagner, pareto_frontier, analyze_split, suggest_placement, find_refactor_opportunities
 │   ├── types.rs         # Recommendation types: SplitAnalysis, PlacementSuggestion, RefactorAnalysis, DataQuality, Effort, Impact, SymbolGraph, MinCutResult

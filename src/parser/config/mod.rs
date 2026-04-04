@@ -1,3 +1,4 @@
+pub mod csproj;
 pub mod gomod;
 pub mod jsonc;
 pub mod pyproject;
@@ -6,9 +7,10 @@ pub mod tsconfig;
 use std::collections::BTreeMap;
 use std::path::Path;
 
-use crate::diagnostic::DiagnosticCollector;
-use crate::model::FileSet;
+use crate::diagnostic::{DiagnosticCollector, Warning, WarningCode};
+use crate::model::{CanonicalPath, FileSet};
 
+pub use csproj::{CsprojConfig, DotnetSolutionInfo};
 pub use gomod::GoModConfig;
 pub use pyproject::PyProjectConfig;
 pub use tsconfig::TsConfig;
@@ -21,6 +23,10 @@ pub struct ProjectConfig {
     pub go_config: Option<GoModConfig>,
     /// Python project config.
     pub py_config: Option<PyProjectConfig>,
+    /// C# project configs, keyed by project-relative directory of the .csproj.
+    pub csproj_configs: BTreeMap<std::path::PathBuf, CsprojConfig>,
+    /// .NET solution info (from .sln file).
+    pub dotnet_solution: Option<DotnetSolutionInfo>,
 }
 
 /// Discover and parse all project configuration files.
@@ -36,11 +42,15 @@ pub fn discover_config(
     let ts_configs = discover_tsconfigs(project_root, known_files, diagnostics);
     let go_config = discover_go_config(project_root);
     let py_config = discover_py_config(project_root);
+    let csproj_configs = discover_csproj_configs(project_root, known_files, diagnostics);
+    let dotnet_solution = discover_dotnet_solution(project_root, known_files, diagnostics);
 
     ProjectConfig {
         ts_configs,
         go_config,
         py_config,
+        csproj_configs,
+        dotnet_solution,
     }
 }
 
@@ -95,6 +105,104 @@ fn discover_py_config(project_root: &Path) -> Option<PyProjectConfig> {
         Ok(content) => pyproject::parse_pyproject(&content),
         Err(_) => None,
     }
+}
+
+/// Scan known_files for .csproj files, parse each, and return keyed by project-relative directory.
+fn discover_csproj_configs(
+    project_root: &Path,
+    known_files: &FileSet,
+    diagnostics: &DiagnosticCollector,
+) -> BTreeMap<std::path::PathBuf, CsprojConfig> {
+    let mut configs = BTreeMap::new();
+
+    for file in known_files.iter() {
+        let file_str = file.as_str();
+        if !file_str.ends_with(".csproj") {
+            continue;
+        }
+
+        let full_path = project_root.join(file_str);
+        let content = match std::fs::read_to_string(&full_path) {
+            Ok(c) => c,
+            Err(_) => continue,
+        };
+
+        // Use the project-relative path for parsing
+        let rel_path = std::path::PathBuf::from(file_str);
+        if let Some(config) = csproj::parse_csproj(&content, &rel_path, diagnostics) {
+            let rel_dir = rel_path
+                .parent()
+                .unwrap_or(Path::new(""))
+                .to_path_buf();
+            configs.insert(rel_dir, config);
+        }
+    }
+
+    configs
+}
+
+/// Scan known_files for .sln files. If multiple found, emit W037 and use first alphabetically.
+fn discover_dotnet_solution(
+    project_root: &Path,
+    known_files: &FileSet,
+    diagnostics: &DiagnosticCollector,
+) -> Option<DotnetSolutionInfo> {
+    let mut sln_files: Vec<String> = Vec::new();
+
+    for file in known_files.iter() {
+        let file_str = file.as_str();
+        if file_str.ends_with(".sln") {
+            sln_files.push(file_str.to_string());
+        }
+    }
+
+    if sln_files.is_empty() {
+        return None;
+    }
+
+    // Sort for determinism (BTreeSet-like behavior)
+    sln_files.sort();
+
+    if sln_files.len() > 1 {
+        diagnostics.warn(Warning {
+            code: WarningCode::W037MultipleSlnFiles,
+            path: CanonicalPath::new(sln_files[0].clone()),
+            message: format!(
+                "multiple .sln files found ({}), using first alphabetically: {}",
+                sln_files.len(),
+                sln_files[0]
+            ),
+            detail: None,
+        });
+    }
+
+    let sln_path_str = &sln_files[0];
+    let full_path = project_root.join(sln_path_str);
+    let content = match std::fs::read_to_string(&full_path) {
+        Ok(c) => c,
+        Err(_) => return None,
+    };
+
+    let rel_path = std::path::PathBuf::from(sln_path_str);
+    csproj::parse_sln(&content, &rel_path, diagnostics)
+}
+
+/// Find the nearest .csproj config for a given file directory.
+///
+/// Walks up from `file_dir`, checking if each ancestor is a key in `csproj_configs`.
+/// Returns the first match (nearest ancestor).
+pub fn find_nearest_csproj<'a>(
+    file_dir: &Path,
+    csproj_configs: &'a BTreeMap<std::path::PathBuf, CsprojConfig>,
+) -> Option<&'a CsprojConfig> {
+    let mut current = Some(file_dir);
+    while let Some(dir) = current {
+        if let Some(config) = csproj_configs.get(dir) {
+            return Some(config);
+        }
+        current = dir.parent();
+    }
+    None
 }
 
 /// Find the nearest tsconfig.json for a given file directory (D-121).
@@ -203,6 +311,8 @@ mod tests {
         assert!(config.ts_configs.is_empty());
         assert!(config.go_config.is_none());
         assert!(config.py_config.is_none());
+        assert!(config.csproj_configs.is_empty());
+        assert!(config.dotnet_solution.is_none());
     }
 
     #[test]

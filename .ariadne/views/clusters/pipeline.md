@@ -5,8 +5,8 @@
 | File | Type | Layer | In | Out | Centrality |
 |------|------|------:|---:|----:|-----------:|
 | `src/pipeline/build.rs` | config | 6 | 1 | 5 | 0.0000 |
-| `src/pipeline/mod.rs` | source | 7 | 5 | 12 | 0.0019 |
-| `src/pipeline/read.rs` | source | 4 | 1 | 2 | 0.0001 |
+| `src/pipeline/mod.rs` | source | 7 | 3 | 15 | 0.0013 |
+| `src/pipeline/read.rs` | source | 4 | 1 | 2 | 0.0000 |
 | `src/pipeline/resolve.rs` | source | 6 | 1 | 5 | 0.0000 |
 | `src/pipeline/walk.rs` | source | 4 | 1 | 2 | 0.0000 |
 
@@ -29,8 +29,11 @@
 - `src/pipeline/mod.rs` → `src/detect/mod.rs` (imports)
 - `src/pipeline/mod.rs` → `src/diagnostic.rs` (imports)
 - `src/pipeline/mod.rs` → `src/model/mod.rs` (imports)
+- `src/pipeline/mod.rs` → `src/model/semantic.rs` (imports)
 - `src/pipeline/mod.rs` → `src/model/symbol.rs` (imports)
+- `src/pipeline/mod.rs` → `src/parser/config/mod.rs` (imports)
 - `src/pipeline/mod.rs` → `src/parser/mod.rs` (imports)
+- `src/pipeline/mod.rs` → `src/semantic/mod.rs` (imports)
 - `src/pipeline/mod.rs` → `src/serial/mod.rs` (imports)
 - `src/pipeline/read.rs` → `src/hash.rs` (imports)
 - `src/pipeline/read.rs` → `src/model/mod.rs` (imports)
@@ -44,14 +47,7 @@
 
 ## External Dependents
 
-- `src/pipeline/mod.rs` ← `benches/build_bench.rs` (imports)
 - `src/pipeline/mod.rs` ← `src/lib.rs` (imports)
-- `src/pipeline/mod.rs` ← `src/main.rs` (imports)
 - `src/pipeline/mod.rs` ← `src/mcp/server.rs` (imports)
 - `src/pipeline/mod.rs` ← `src/mcp/watch.rs` (imports)
-
-## Tests
-
-- `tests/helpers.rs` tests `src/pipeline/mod.rs`
-- `tests/pipeline_tests.rs` tests `src/pipeline/mod.rs`
 

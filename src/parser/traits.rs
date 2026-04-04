@@ -10,6 +10,8 @@ pub enum ImportKind {
     ModDeclaration,
     /// Markdown link reference — path is a relative file link
     Link,
+    /// .csproj <ProjectReference> cross-project edge
+    ProjectReference,
 }
 
 /// Raw import extracted from AST (unresolved).

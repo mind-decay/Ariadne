@@ -1,3 +1,4 @@
+pub mod dotnet;
 pub mod edges;
 pub mod events;
 pub mod http;

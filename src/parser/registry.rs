@@ -168,8 +168,13 @@ impl ParserRegistry {
         registry.register_symbol_extractor(vec!["rs"], rust_extractor);
         registry.register_symbol_extractor(vec!["go"], go_extractor);
         registry.register_symbol_extractor(vec!["py", "pyi"], python_extractor);
-        registry.register_symbol_extractor(vec!["cs"], csharp_extractor);
+        registry.register_symbol_extractor(vec!["cs", "razor"], csharp_extractor);
         registry.register_symbol_extractor(vec!["java"], java_extractor);
+
+        // Register boundary extractors
+        registry.register_boundary_extractor(Arc::new(
+            crate::semantic::dotnet::DotnetBoundaryExtractor,
+        ));
 
         registry
     }
@@ -216,7 +221,15 @@ impl ParserRegistry {
             registry.register(go::parser(), go::resolver());
         }
 
-        registry.register(csharp::parser(), csharp::resolver());
+        // C#: inject .csproj config if discovered (D-128)
+        if !config.csproj_configs.is_empty() {
+            registry.register(
+                csharp::parser(),
+                csharp::resolver_with_config(config.csproj_configs.clone()),
+            );
+        } else {
+            registry.register(csharp::parser(), csharp::resolver());
+        }
         registry.register(java::parser(), java::resolver());
         registry.register(markdown::parser(), markdown::resolver());
         registry.register(json_lang::parser(), json_lang::resolver());
@@ -230,8 +243,13 @@ impl ParserRegistry {
         registry.register_symbol_extractor(vec!["rs"], rust_extractor);
         registry.register_symbol_extractor(vec!["go"], go_extractor);
         registry.register_symbol_extractor(vec!["py", "pyi"], python_extractor);
-        registry.register_symbol_extractor(vec!["cs"], csharp_extractor);
+        registry.register_symbol_extractor(vec!["cs", "razor"], csharp_extractor);
         registry.register_symbol_extractor(vec!["java"], java_extractor);
+
+        // Register boundary extractors
+        registry.register_boundary_extractor(Arc::new(
+            crate::semantic::dotnet::DotnetBoundaryExtractor,
+        ));
 
         registry
     }

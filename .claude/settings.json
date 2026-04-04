@@ -1,5 +1,51 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(bash */.moira/**)",
+      "Bash(cat */.moira/**)",
+      "Bash(chmod */.moira/**)",
+      "Bash(cp */.moira/**)",
+      "Bash(cp -r */.moira/**)",
+      "Bash(cp -rp */.moira/**)",
+      "Bash(echo */.moira/**)",
+      "Bash(ls */.moira/**)",
+      "Bash(ls -* */.moira/**)",
+      "Bash(mkdir */.moira/**)",
+      "Bash(mkdir -p */.moira/**)",
+      "Bash(mv */.moira/**)",
+      "Bash(mv -f */.moira/**)",
+      "Bash(rm */.moira/**)",
+      "Bash(rm -f */.moira/**)",
+      "Bash(rm -r */.moira/**)",
+      "Bash(rm -rf */.moira/**)",
+      "Bash(touch */.moira/**)",
+      "Edit(/.moira/**)",
+      "Edit(*/.moira/**)",
+      "Glob(/.moira/**)",
+      "Glob(*/.moira/**)",
+      "Grep(/.moira/**)",
+      "Grep(*/.moira/**)",
+      "Read(/.moira/**)",
+      "Read(*/.moira/**)",
+      "Write(/.moira/**)",
+      "Write(*/.moira/**)"
+    ]
+  },
   "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/moira/hooks/task-submit.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash ~/.claude/moira/hooks/gate-context.sh"
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "",
@@ -11,6 +57,113 @@
           {
             "type": "command",
             "command": "bash ~/.claude/moira/hooks/budget-track.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/moira/hooks/graph-update.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/moira/hooks/pipeline-tracker.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/moira/hooks/pipeline-dispatch.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/moira/hooks/guard-prevent.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/moira/hooks/pipeline-stop-guard.sh"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/moira/hooks/compact-reinject.sh"
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/moira/hooks/agent-inject.sh"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/moira/hooks/agent-output-validate.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash ~/.claude/moira/hooks/artifact-validate.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash ~/.claude/moira/hooks/agent-done.sh"
+          }
+        ]
+      }
+    ],
+    "TaskCompleted": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/moira/hooks/graph-validate.sh"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/moira/hooks/session-cleanup.sh"
           }
         ]
       }

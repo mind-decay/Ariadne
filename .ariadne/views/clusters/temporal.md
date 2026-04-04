@@ -8,7 +8,7 @@
 | `src/temporal/coupling.rs` | source | 3 | 1 | 2 | 0.0000 |
 | `src/temporal/git.rs` | source | 4 | 1 | 2 | 0.0000 |
 | `src/temporal/hotspot.rs` | source | 1 | 1 | 2 | 0.0000 |
-| `src/temporal/mod.rs` | source | 5 | 1 | 8 | 0.0001 |
+| `src/temporal/mod.rs` | source | 5 | 1 | 8 | 0.0000 |
 | `src/temporal/ownership.rs` | source | 3 | 1 | 2 | 0.0000 |
 
 ## Internal Dependencies
@@ -38,8 +38,4 @@
 ## External Dependents
 
 - `src/temporal/mod.rs` ← `src/lib.rs` (imports)
-
-## Tests
-
-- `tests/temporal_integration.rs` tests `src/temporal/mod.rs`
 

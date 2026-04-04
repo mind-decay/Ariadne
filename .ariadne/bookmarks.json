@@ -1,0 +1,56 @@
+[
+  {
+    "name": "config-phase1-foundation",
+    "paths": [
+      "src/diagnostic.rs",
+      "src/parser/mod.rs",
+      "src/parser/helpers.rs",
+      "src/parser/traits.rs",
+      "src/model/types.rs"
+    ],
+    "description": "Phase 1: JSONC, gomod, pyproject, diagnostics - independent new files",
+    "created_at": "2026-03-30T19:14:02Z"
+  },
+  {
+    "name": "config-phase2-tsconfig",
+    "paths": [
+      "src/parser/mod.rs",
+      "src/parser/typescript.rs",
+      "src/parser/traits.rs",
+      "src/diagnostic.rs",
+      "src/model/types.rs"
+    ],
+    "description": "Phase 2: TsConfig parsing and config/mod.rs - depends on Phase 1",
+    "created_at": "2026-03-30T19:14:03Z"
+  },
+  {
+    "name": "config-phase3-resolvers",
+    "paths": [
+      "src/parser/typescript.rs",
+      "src/parser/go.rs",
+      "src/parser/python.rs",
+      "src/parser/registry.rs",
+      "src/parser/traits.rs",
+      "src/parser/mod.rs",
+      "src/diagnostic.rs"
+    ],
+    "description": "Phase 3: Resolver updates in typescript.rs, go.rs, python.rs",
+    "created_at": "2026-03-30T19:14:05Z"
+  },
+  {
+    "name": "config-phase4-integration",
+    "paths": [
+      "src/pipeline/mod.rs",
+      "src/pipeline/build.rs",
+      "src/pipeline/walk.rs",
+      "src/pipeline/resolve.rs",
+      "src/parser/registry.rs",
+      "src/parser/mod.rs",
+      "src/diagnostic.rs",
+      "src/lib.rs",
+      "src/main.rs"
+    ],
+    "description": "Phase 4: Pipeline integration, registry wiring",
+    "created_at": "2026-03-30T19:14:06Z"
+  }
+]

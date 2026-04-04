@@ -11,6 +11,7 @@ pub enum EdgeType {
     ReExports,
     TypeImports,
     References,
+    ProjectRef,
 }
 
 impl EdgeType {
@@ -21,6 +22,7 @@ impl EdgeType {
             Self::ReExports => "re_exports",
             Self::TypeImports => "type_imports",
             Self::References => "references",
+            Self::ProjectRef => "project_ref",
         }
     }
 }
@@ -29,7 +31,7 @@ impl EdgeType {
     /// Whether this edge type represents an architectural dependency.
     /// Excludes test edges per D-034.
     pub fn is_architectural(self) -> bool {
-        matches!(self, Self::Imports | Self::ReExports | Self::TypeImports)
+        matches!(self, Self::Imports | Self::ReExports | Self::TypeImports | Self::ProjectRef)
     }
 }
 

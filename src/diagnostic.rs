@@ -75,6 +75,10 @@ pub enum WarningCode {
     W031CircularExtends,
     W032InvalidPathPattern,
     W033ExtendsNotFound,
+    W034CsprojParseError,
+    W035SlnParseError,
+    W036ProjectRefNotFound,
+    W037MultipleSlnFiles,
 }
 
 impl WarningCode {
@@ -113,6 +117,10 @@ impl WarningCode {
             Self::W031CircularExtends => "W031",
             Self::W032InvalidPathPattern => "W032",
             Self::W033ExtendsNotFound => "W033",
+            Self::W034CsprojParseError => "W034",
+            Self::W035SlnParseError => "W035",
+            Self::W036ProjectRefNotFound => "W036",
+            Self::W037MultipleSlnFiles => "W037",
         }
     }
 }
@@ -358,6 +366,10 @@ impl DiagnosticCollector {
             WarningCode::W031CircularExtends => {}
             WarningCode::W032InvalidPathPattern => {}
             WarningCode::W033ExtendsNotFound => {}
+            WarningCode::W034CsprojParseError => {}
+            WarningCode::W035SlnParseError => {}
+            WarningCode::W036ProjectRefNotFound => {}
+            WarningCode::W037MultipleSlnFiles => {}
         }
         guard.0.push(warning);
     }

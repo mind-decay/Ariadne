@@ -1851,7 +1851,7 @@ For each FM approach during implementation:
 
 ---
 
-## Phase 11: Deep Language Support — C# / .NET
+## Phase 11: Deep Language Support — C# / .NET [DONE]
 
 **Goal:** Full C# and .NET project support: `.csproj` project references, namespace-to-file resolution, NuGet package detection, and framework-aware patterns.
 
@@ -1871,10 +1871,14 @@ For each FM approach during implementation:
   - **MinimalAPI** — endpoint mapping patterns
 
 **Deliverables:**
-- `src/parser/config/csproj.rs` — .csproj/.sln parsing
-- Enhanced `src/parser/csharp.rs` — namespace resolution with project context
-- Framework detection in `src/detect/` — identify ASP.NET, EF, Blazor patterns
-- Test fixtures for each framework pattern
+- `src/parser/config/csproj.rs` — .csproj/.sln parsing (roxmltree for XML, line-based for .sln)
+- Enhanced `src/parser/csharp.rs` — config-aware namespace resolution with project context, .razor support
+- `src/detect/framework.rs` — .NET framework detection (ASP.NET, EF, Blazor, MAUI, MinimalAPI, DI, Middleware)
+- `src/semantic/dotnet.rs` — .NET boundary extractors (EF DbContext, DI registration)
+- `ImportKind::ProjectReference` + `EdgeType::ProjectRef` for cross-project edges
+- Warning codes W034-W037 for .NET config errors
+- Test fixtures: dotnet-webapi, dotnet-blazor, dotnet-efcore, dotnet-maui
+- Decisions D-124 through D-133
 
 ---
 

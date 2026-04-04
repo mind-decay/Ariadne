@@ -1431,3 +1431,117 @@ Applies to: Brandes centrality (Phase 2), Louvain modularity (Phase 2b), PageRan
 - HashMap<String, Value> — loses type safety entirely
 **Reasoning:** The set of supported languages is known at compile time and changes infrequently. Concrete struct provides full type safety, no downcasting, simple pattern matching. Adding a new language config = adding one field.
 **Affects:** `src/parser/config/mod.rs`, `src/parser/config/discovery.rs`.
+
+## D-124: roxmltree for .csproj XML Parsing
+
+**Date:** 2026-04-04
+**Status:** Accepted
+**Context:** Phase 11 adds .csproj parsing for C#/.NET config-aware resolution. .csproj files are MSBuild XML with attributes, namespaces, entities, and CDATA — genuine XML complexity that makes hand-rolling fragile.
+**Decision:** Use `roxmltree 0.21` for .csproj parsing. DOM API matches the traversal use case. Zero transitive dependencies, `#[forbid(unsafe_code)]`, ~2.5k lines.
+**Alternatives rejected:**
+- Hand-rolled string parsing for XML — XML has genuine complexity (attributes, namespaces, entities, CDATA, comments) that makes hand-rolling fragile and error-prone
+**Reasoning:** Unlike go.mod (simple key-value) and pnpm-workspace.yaml (line-oriented list), XML is structurally complex enough that a proper parser is warranted. roxmltree adds minimal weight and is the standard choice in the Rust ecosystem for read-only XML.
+**Affects:** `Cargo.toml`, `src/parser/config/csproj.rs`.
+
+## D-125: CsprojConfig as Flat Data Struct
+
+**Date:** 2026-04-04
+**Status:** Accepted
+**Context:** Parsed .csproj data needs a struct representation. Phase 10 established a pattern for config structs (TsConfig, GoModConfig, PyProjectConfig).
+**Decision:** `CsprojConfig` follows the Phase 10 config struct pattern. Flat struct with parsed fields (`target_framework`, `root_namespace`, `assembly_name`, `project_references`, `package_references`), no lazy evaluation.
+**Alternatives rejected:**
+- Lazy parsing — inconsistent with Phase 10 pattern; eager parsing is simpler and more predictable
+**Reasoning:** Consistency with existing config struct pattern. All fields populated at parse time.
+**Affects:** `src/parser/config/csproj.rs`.
+
+## D-126: Line-Based .sln Parsing
+
+**Date:** 2026-04-04
+**Status:** Accepted
+**Context:** .sln (Visual Studio solution) files need parsing for multi-project structure discovery. Despite living alongside .csproj XML, .sln uses a line-oriented format.
+**Decision:** .sln files parsed with line-based string matching. No XML parser needed.
+**Alternatives rejected:**
+- Using roxmltree — .sln is not XML; it is a proprietary line-oriented format
+**Reasoning:** The .sln format is line-oriented and stable. Follows the precedent of go.mod line-based parsing.
+**Affects:** `src/parser/config/csproj.rs`.
+
+## D-127: DotnetSolutionInfo Separate from WorkspaceInfo
+
+**Date:** 2026-04-04
+**Status:** Accepted
+**Context:** .NET solutions serve a similar role to npm/yarn/pnpm workspaces but have fundamentally different structure. `WorkspaceInfo` is currently npm/yarn/pnpm-specific (members with paths, package names).
+**Decision:** .NET solutions tracked as `DotnetSolutionInfo`, not merged into `WorkspaceInfo`. Separate struct with .NET-specific fields (project GUIDs, type GUIDs).
+**Alternatives rejected:**
+- Merging into WorkspaceInfo — would require adding .NET-specific fields to a JavaScript-focused struct, muddying the abstraction
+**Reasoning:** Different ecosystems have different workspace semantics. Keeping them separate preserves type safety and clarity.
+**Affects:** `src/parser/config/csproj.rs`, `src/parser/config/mod.rs`.
+
+## D-128: Construction-Time .csproj Injection into CSharpResolver
+
+**Date:** 2026-04-04
+**Status:** Accepted
+**Context:** CSharpResolver needs access to parsed .csproj data for config-aware namespace resolution. The ImportResolver trait signature must not change (D-118).
+**Decision:** Follows D-118 pattern. `CSharpResolver` receives `CsprojConfig` at construction time via `with_csproj_configs()`. The `ImportResolver::resolve()` signature is unchanged.
+**Alternatives rejected:**
+- Adding config parameter to resolve() — breaks trait signature (D-118)
+- Global config singleton — violates Rust ownership model
+**Reasoning:** Consistent with TypeScript/Go/Python resolver config injection pattern established in Phase 10.
+**Affects:** `src/parser/csharp.rs`, `src/parser/registry.rs`.
+
+## D-129: Framework Detection Split — File-Level in detect/, Boundary-Level in semantic/
+
+**Date:** 2026-04-04
+**Status:** Accepted
+**Context:** .NET framework detection serves two purposes: file-level classification (is this an ASP.NET controller?) and boundary extraction (what DI services are registered?). These are different concerns at different abstraction levels.
+**Decision:** File-level hints (`DotnetFrameworkHints`) in `src/detect/framework.rs`. Boundary extraction (EF DbContext, DI registration) in `src/semantic/dotnet.rs`.
+**Alternatives rejected:**
+- All detection in detect/ — boundary extraction depends on semantic analysis concepts not available in detect/
+- All detection in semantic/ — file-level classification is a detection concern, not a semantic one
+**Reasoning:** Follows the existing separation: detect/ classifies files, semantic/ extracts cross-file relationships.
+**Affects:** `src/detect/framework.rs`, `src/semantic/dotnet.rs`.
+
+## D-130: .razor Directive Extraction via Regex
+
+**Date:** 2026-04-04
+**Status:** Accepted
+**Context:** `.razor` files (Blazor components) contain `@using`, `@inject`, `@inherits`, `@page` directives that represent imports and boundaries. No tree-sitter grammar exists for Razor.
+**Decision:** Directives extracted via line-based regex. The CSharpParser checks file extension and dispatches to either the tree-sitter AST path (.cs) or the regex directive path (.razor).
+**Alternatives rejected:**
+- Treating .razor as plain C# — would miss directives and produce incorrect AST
+- Writing a custom tree-sitter grammar — excessive effort for directive extraction
+**Reasoning:** Razor directives are always at line start with `@` prefix; well-documented, stable syntax. Regex is reliable for this narrow extraction task.
+**Affects:** `src/parser/csharp.rs`.
+
+## D-131: Warning Codes W034-W037 for .NET Config Errors
+
+**Date:** 2026-04-04
+**Status:** Accepted
+**Context:** .NET config parsing (.csproj, .sln) can fail in several ways. Following D-003 graceful degradation, these should be warnings, not fatal errors.
+**Decision:** W034 CsprojParseError (malformed .csproj XML), W035 SlnParseError (malformed .sln file), W036 ProjectRefNotFound (ProjectReference target .csproj not found), W037 MultipleSlnFiles (multiple .sln files; using first alphabetically). All non-fatal — resolution falls back gracefully.
+**Alternatives rejected:**
+- Reusing W030-W033 — those are for Phase 10 config errors (tsconfig, go.mod, pyproject.toml); .NET deserves its own range
+**Reasoning:** Continues the established warning taxonomy. Range W034-W037 reserved for .NET-specific config warnings.
+**Affects:** `src/diagnostic.rs`.
+
+## D-132: ImportKind::ProjectReference for Cross-Project Edges
+
+**Date:** 2026-04-04
+**Status:** Accepted
+**Context:** .csproj `<ProjectReference>` entries represent cross-project dependencies that are semantically distinct from within-project namespace imports.
+**Decision:** New `ImportKind::ProjectReference` variant. Serializes as `EdgeType::ProjectRef` (`"project_ref"`) in graph.json.
+**Alternatives rejected:**
+- Reusing ImportKind::Regular — loses the semantic distinction between namespace imports and project references
+**Reasoning:** Preserving edge type semantics enables framework-specific analysis and visualization of solution-level architecture.
+**Affects:** `src/parser/traits.rs`, `src/model/edge.rs`, `src/serial/output.rs`.
+
+## D-133: MSBuild Condition Attributes Ignored
+
+**Date:** 2026-04-04
+**Status:** Accepted
+**Context:** MSBuild .csproj files use `Condition` attributes on `<PropertyGroup>` and `<ItemGroup>` elements for platform-conditional compilation. Evaluating conditions requires MSBuild property resolution.
+**Decision:** All PropertyGroup/ItemGroup elements processed regardless of Condition attributes. MSBuild condition evaluation is out of scope.
+**Alternatives rejected:**
+- Implementing MSBuild condition evaluation — enormous complexity for marginal accuracy gain
+- Skipping elements with Condition attributes — would miss legitimate references in conditional groups
+**Reasoning:** Over-approximation (including all references) is safer than under-approximation for structural analysis. May include platform-conditional references, which is acceptable.
+**Affects:** `src/parser/config/csproj.rs`.

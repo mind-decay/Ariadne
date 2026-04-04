@@ -42,6 +42,11 @@ pub fn csharp_symbol_extractor() -> impl SymbolExtractor {
     csharp::CSharpParser
 }
 
+/// Create a C# language parser for testing.
+pub fn csharp_parser() -> Box<dyn LanguageParser> {
+    csharp::parser()
+}
+
 /// Create a Java symbol extractor for testing.
 pub fn java_symbol_extractor() -> impl SymbolExtractor {
     java::JavaParser

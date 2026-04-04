@@ -15,3 +15,5 @@
 .claude/moira/state/violations.log
 .claude/moira/state/tool-usage.log
 .claude/moira/state/budget-tool-usage.log
+
+.moira/state/

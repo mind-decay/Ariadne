@@ -4,19 +4,19 @@
 
 | File | Type | Layer | In | Out | Centrality |
 |------|------|------:|---:|----:|-----------:|
-| `src/algo/blast_radius.rs` | source | 4 | 2 | 2 | 0.0000 |
-| `src/algo/callgraph.rs` | source | 2 | 3 | 3 | 0.0001 |
+| `src/algo/blast_radius.rs` | source | 4 | 4 | 2 | 0.0000 |
+| `src/algo/callgraph.rs` | source | 2 | 4 | 3 | 0.0000 |
 | `src/algo/centrality.rs` | source | 4 | 1 | 2 | 0.0000 |
 | `src/algo/compress.rs` | source | 3 | 2 | 2 | 0.0000 |
 | `src/algo/context.rs` | source | 4 | 3 | 2 | 0.0000 |
 | `src/algo/delta.rs` | source | 3 | 1 | 1 | 0.0000 |
 | `src/algo/impact.rs` | source | 4 | 2 | 5 | 0.0000 |
 | `src/algo/louvain.rs` | source | 3 | 1 | 1 | 0.0000 |
-| `src/algo/mod.rs` | source | 4 | 23 | 17 | 0.0054 |
-| `src/algo/pagerank.rs` | source | 4 | 2 | 2 | 0.0001 |
+| `src/algo/mod.rs` | source | 4 | 20 | 17 | 0.0037 |
+| `src/algo/pagerank.rs` | source | 4 | 2 | 2 | 0.0000 |
 | `src/algo/reading_order.rs` | source | 4 | 3 | 4 | 0.0001 |
-| `src/algo/scc.rs` | source | 4 | 2 | 2 | 0.0000 |
-| `src/algo/spectral.rs` | source | 4 | 2 | 2 | 0.0001 |
+| `src/algo/scc.rs` | source | 4 | 3 | 2 | 0.0000 |
+| `src/algo/spectral.rs` | source | 4 | 2 | 2 | 0.0000 |
 | `src/algo/stats.rs` | source | 4 | 1 | 2 | 0.0000 |
 | `src/algo/subgraph.rs` | source | 3 | 1 | 1 | 0.0000 |
 | `src/algo/test_map.rs` | source | 4 | 3 | 2 | 0.0000 |
@@ -82,16 +82,10 @@
 
 ## External Dependents
 
-- `src/algo/mod.rs` ← `benches/algo_bench.rs` (imports)
-- `src/algo/mod.rs` ← `benches/analysis_bench.rs` (imports)
-- `src/algo/mod.rs` ← `benches/mcp_bench.rs` (imports)
-- `src/algo/callgraph.rs` ← `benches/symbol_bench.rs` (imports)
-- `src/algo/mod.rs` ← `benches/symbol_bench.rs` (imports)
 - `src/algo/mod.rs` ← `src/analysis/diff.rs` (imports)
 - `src/algo/mod.rs` ← `src/analysis/metrics.rs` (imports)
 - `src/algo/mod.rs` ← `src/analysis/smells.rs` (imports)
 - `src/algo/mod.rs` ← `src/lib.rs` (imports)
-- `src/algo/mod.rs` ← `src/main.rs` (imports)
 - `src/algo/reading_order.rs` ← `src/mcp/prompts.rs` (imports)
 - `src/algo/callgraph.rs` ← `src/mcp/state.rs` (imports)
 - `src/algo/compress.rs` ← `src/mcp/state.rs` (imports)
@@ -103,9 +97,12 @@
 - `src/algo/reading_order.rs` ← `src/mcp/tools.rs` (imports)
 - `src/algo/test_map.rs` ← `src/mcp/tools.rs` (imports)
 - `src/algo/mod.rs` ← `src/pipeline/mod.rs` (imports)
+- `src/algo/blast_radius.rs` ← `src/recommend/refactor.rs` (imports)
+- `src/algo/callgraph.rs` ← `src/recommend/refactor.rs` (imports)
+- `src/algo/mod.rs` ← `src/recommend/refactor.rs` (imports)
+- `src/algo/scc.rs` ← `src/recommend/refactor.rs` (imports)
+- `src/algo/blast_radius.rs` ← `src/recommend/split.rs` (imports)
+- `src/algo/callgraph.rs` ← `src/recommend/split.rs` (imports)
+- `src/algo/mod.rs` ← `src/recommend/split.rs` (imports)
 - `src/algo/mod.rs` ← `src/temporal/mod.rs` (imports)
-
-## Tests
-
-- `tests/callgraph_tests.rs` tests `src/algo/callgraph.rs`
 

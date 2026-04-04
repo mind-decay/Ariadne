@@ -1,15 +1,15 @@
 {
   "version": 1,
   "project_root": "/Users/minddecay/Documents/Projects/Ariadne",
-  "node_count": 332,
-  "edge_count": 459,
+  "node_count": 351,
+  "edge_count": 411,
   "nodes": {
     ".claude/CLAUDE.md": {
       "type": "doc",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 43,
-      "hash": "3ef22d9cf121e05f",
+      "lines": 53,
+      "hash": "b09e420cc7b250d6",
       "exports": [],
       "cluster": ".claude"
     },
@@ -58,291 +58,12 @@
       "exports": [],
       "cluster": ".claude"
     },
-    ".claude/moira/config.yaml": {
-      "type": "data",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 64,
-      "hash": "a2d836ee6c47cb72",
-      "exports": [],
-      "cluster": ".claude"
-    },
-    ".claude/moira/config/budgets.yaml": {
-      "type": "data",
-      "layer": "config",
-      "arch_depth": 0,
-      "lines": 26,
-      "hash": "2f5380fcd2a771a6",
-      "exports": [],
-      "cluster": ".claude"
-    },
-    ".claude/moira/config/mcp-registry.yaml": {
-      "type": "data",
-      "layer": "config",
-      "arch_depth": 0,
-      "lines": 157,
-      "hash": "80a621f6464c46ed",
-      "exports": [],
-      "cluster": ".claude"
-    },
-    ".claude/moira/knowledge/architecture/full.md": {
-      "type": "doc",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 524,
-      "hash": "44bc08f30fdaac98",
-      "exports": [],
-      "cluster": ".claude"
-    },
-    ".claude/moira/knowledge/conventions/full.md": {
-      "type": "doc",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 222,
-      "hash": "8192aa014f92b994",
-      "exports": [],
-      "cluster": ".claude"
-    },
-    ".claude/moira/knowledge/conventions/index.md": {
-      "type": "doc",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 10,
-      "hash": "462e15e064abe76a",
-      "exports": [],
-      "cluster": ".claude"
-    },
-    ".claude/moira/knowledge/conventions/summary.md": {
-      "type": "doc",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 16,
-      "hash": "54c27c64f39783c1",
-      "exports": [],
-      "cluster": ".claude"
-    },
-    ".claude/moira/knowledge/decisions/full.md": {
-      "type": "doc",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 14,
-      "hash": "11f8173ca0ab494a",
-      "exports": [],
-      "cluster": ".claude"
-    },
-    ".claude/moira/knowledge/decisions/index.md": {
-      "type": "doc",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 8,
-      "hash": "47d0b6e2a19e867b",
-      "exports": [],
-      "cluster": ".claude"
-    },
-    ".claude/moira/knowledge/decisions/summary.md": {
-      "type": "doc",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 6,
-      "hash": "96ce79d87b31e326",
-      "exports": [],
-      "cluster": ".claude"
-    },
-    ".claude/moira/knowledge/dependencies/full.md": {
-      "type": "doc",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 191,
-      "hash": "526ad50d2e6aa0b2",
-      "exports": [],
-      "cluster": ".claude"
-    },
-    ".claude/moira/knowledge/failures/full.md": {
-      "type": "doc",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 13,
-      "hash": "04fb01d4d0ba6ac2",
-      "exports": [],
-      "cluster": ".claude"
-    },
-    ".claude/moira/knowledge/failures/index.md": {
-      "type": "doc",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 7,
-      "hash": "1b5dc667d089b179",
-      "exports": [],
-      "cluster": ".claude"
-    },
-    ".claude/moira/knowledge/failures/summary.md": {
-      "type": "doc",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 8,
-      "hash": "f653471628589a59",
-      "exports": [],
-      "cluster": ".claude"
-    },
-    ".claude/moira/knowledge/libraries/index.md": {
-      "type": "doc",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 8,
-      "hash": "aa43f98b22245473",
-      "exports": [],
-      "cluster": ".claude"
-    },
-    ".claude/moira/knowledge/libraries/summary.md": {
-      "type": "doc",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 7,
-      "hash": "b2cd0ebf83130b41",
-      "exports": [],
-      "cluster": ".claude"
-    },
-    ".claude/moira/knowledge/patterns/full.md": {
-      "type": "doc",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 189,
-      "hash": "c23d9b425c52375d",
-      "exports": [],
-      "cluster": ".claude"
-    },
-    ".claude/moira/knowledge/patterns/index.md": {
-      "type": "doc",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 17,
-      "hash": "88a86f0a2e9dff36",
-      "exports": [],
-      "cluster": ".claude"
-    },
-    ".claude/moira/knowledge/patterns/summary.md": {
-      "type": "doc",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 18,
-      "hash": "b7df489697d013c3",
-      "exports": [],
-      "cluster": ".claude"
-    },
-    ".claude/moira/knowledge/project-model/full.md": {
-      "type": "doc",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 208,
-      "hash": "c16184f397a0ad52",
-      "exports": [],
-      "cluster": ".claude"
-    },
-    ".claude/moira/knowledge/project-model/index.md": {
-      "type": "doc",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 15,
-      "hash": "615be8bddcbbed31",
-      "exports": [],
-      "cluster": ".claude"
-    },
-    ".claude/moira/knowledge/project-model/summary.md": {
-      "type": "doc",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 19,
-      "hash": "72f96a5585487492",
-      "exports": [],
-      "cluster": ".claude"
-    },
-    ".claude/moira/knowledge/quality-map/full.md": {
-      "type": "doc",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 16,
-      "hash": "a87a1852a7e642ea",
-      "exports": [],
-      "cluster": ".claude"
-    },
-    ".claude/moira/knowledge/quality-map/summary.md": {
-      "type": "doc",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 15,
-      "hash": "d544b37e57b1f72b",
-      "exports": [],
-      "cluster": ".claude"
-    },
-    ".claude/moira/knowledge/security/full.md": {
-      "type": "doc",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 176,
-      "hash": "312c5efa448936ec",
-      "exports": [],
-      "cluster": ".claude"
-    },
-    ".claude/moira/knowledge/testing/full.md": {
-      "type": "doc",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 237,
-      "hash": "0b577625b15f6f36",
-      "exports": [],
-      "cluster": ".claude"
-    },
-    ".claude/moira/project/rules/boundaries.yaml": {
-      "type": "data",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 12,
-      "hash": "1ae93c670d0e41fc",
-      "exports": [],
-      "cluster": ".claude"
-    },
-    ".claude/moira/project/rules/conventions.yaml": {
-      "type": "data",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 22,
-      "hash": "4be7a15e07f3ffe2",
-      "exports": [],
-      "cluster": ".claude"
-    },
-    ".claude/moira/project/rules/patterns.yaml": {
-      "type": "data",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 11,
-      "hash": "55ae2a39badab473",
-      "exports": [],
-      "cluster": ".claude"
-    },
-    ".claude/moira/project/rules/stack.yaml": {
-      "type": "data",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 6,
-      "hash": "23a9c980d878fe4d",
-      "exports": [],
-      "cluster": ".claude"
-    },
-    ".claude/moira/state/reflection/deep-reflection-counter.yaml": {
-      "type": "data",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 2,
-      "hash": "b18dcb4f3cb948df",
-      "exports": [],
-      "cluster": ".claude"
-    },
     ".claude/settings.json": {
       "type": "data",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 139,
-      "hash": "e7d3f3faa2e5107f",
+      "lines": 172,
+      "hash": "3366f6ca517da421",
       "exports": [],
       "cluster": ".claude"
     },
@@ -382,6 +103,285 @@
       "exports": [],
       "cluster": "root"
     },
+    ".moira/config.yaml": {
+      "type": "data",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 65,
+      "hash": "f70f687acf970a5c",
+      "exports": [],
+      "cluster": ".moira"
+    },
+    ".moira/config/budgets.yaml": {
+      "type": "data",
+      "layer": "config",
+      "arch_depth": 0,
+      "lines": 26,
+      "hash": "2f5380fcd2a771a6",
+      "exports": [],
+      "cluster": ".moira"
+    },
+    ".moira/config/mcp-registry.yaml": {
+      "type": "data",
+      "layer": "config",
+      "arch_depth": 0,
+      "lines": 731,
+      "hash": "0ec164867b307b6e",
+      "exports": [],
+      "cluster": ".moira"
+    },
+    ".moira/knowledge/architecture/full.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 364,
+      "hash": "0239607ceaa60b10",
+      "exports": [],
+      "cluster": ".moira"
+    },
+    ".moira/knowledge/conventions/full.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 117,
+      "hash": "c1021e1b5602961a",
+      "exports": [],
+      "cluster": ".moira"
+    },
+    ".moira/knowledge/conventions/index.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 9,
+      "hash": "c5881cef63ba49fb",
+      "exports": [],
+      "cluster": ".moira"
+    },
+    ".moira/knowledge/conventions/summary.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 13,
+      "hash": "f0a5bb3805fdc061",
+      "exports": [],
+      "cluster": ".moira"
+    },
+    ".moira/knowledge/decisions/full.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 14,
+      "hash": "11f8173ca0ab494a",
+      "exports": [],
+      "cluster": ".moira"
+    },
+    ".moira/knowledge/decisions/index.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 8,
+      "hash": "47d0b6e2a19e867b",
+      "exports": [],
+      "cluster": ".moira"
+    },
+    ".moira/knowledge/decisions/summary.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 6,
+      "hash": "96ce79d87b31e326",
+      "exports": [],
+      "cluster": ".moira"
+    },
+    ".moira/knowledge/dependencies/full.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 259,
+      "hash": "7d62cdcf96879055",
+      "exports": [],
+      "cluster": ".moira"
+    },
+    ".moira/knowledge/failures/full.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 13,
+      "hash": "04fb01d4d0ba6ac2",
+      "exports": [],
+      "cluster": ".moira"
+    },
+    ".moira/knowledge/failures/index.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 7,
+      "hash": "1b5dc667d089b179",
+      "exports": [],
+      "cluster": ".moira"
+    },
+    ".moira/knowledge/failures/summary.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 8,
+      "hash": "f653471628589a59",
+      "exports": [],
+      "cluster": ".moira"
+    },
+    ".moira/knowledge/libraries/index.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 8,
+      "hash": "aa43f98b22245473",
+      "exports": [],
+      "cluster": ".moira"
+    },
+    ".moira/knowledge/libraries/summary.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 7,
+      "hash": "b2cd0ebf83130b41",
+      "exports": [],
+      "cluster": ".moira"
+    },
+    ".moira/knowledge/patterns/full.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 76,
+      "hash": "376694bfa0ab04be",
+      "exports": [],
+      "cluster": ".moira"
+    },
+    ".moira/knowledge/patterns/index.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 7,
+      "hash": "96cd558b7432448c",
+      "exports": [],
+      "cluster": ".moira"
+    },
+    ".moira/knowledge/patterns/summary.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 9,
+      "hash": "8a8d77a7c8dff909",
+      "exports": [],
+      "cluster": ".moira"
+    },
+    ".moira/knowledge/project-model/full.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 250,
+      "hash": "818568a24a93ff3d",
+      "exports": [],
+      "cluster": ".moira"
+    },
+    ".moira/knowledge/project-model/index.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 18,
+      "hash": "d9dc858b6cd239be",
+      "exports": [],
+      "cluster": ".moira"
+    },
+    ".moira/knowledge/project-model/summary.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 25,
+      "hash": "8b8b41e93a8d2bab",
+      "exports": [],
+      "cluster": ".moira"
+    },
+    ".moira/knowledge/quality-map/full.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 2053,
+      "hash": "42835f26375cd748",
+      "exports": [],
+      "cluster": ".moira"
+    },
+    ".moira/knowledge/quality-map/index.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 9,
+      "hash": "73f6aa2fe508d539",
+      "exports": [],
+      "cluster": ".moira"
+    },
+    ".moira/knowledge/quality-map/summary.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 38,
+      "hash": "6e464b0d1c474417",
+      "exports": [],
+      "cluster": ".moira"
+    },
+    ".moira/knowledge/security/full.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 173,
+      "hash": "078f2621add8687b",
+      "exports": [],
+      "cluster": ".moira"
+    },
+    ".moira/knowledge/testing/full.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 231,
+      "hash": "14d48f51453e5da3",
+      "exports": [],
+      "cluster": ".moira"
+    },
+    ".moira/project/rules/boundaries.yaml": {
+      "type": "data",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 12,
+      "hash": "91306d79117165b9",
+      "exports": [],
+      "cluster": ".moira"
+    },
+    ".moira/project/rules/conventions.yaml": {
+      "type": "data",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 26,
+      "hash": "7f9a6f30b7e40312",
+      "exports": [],
+      "cluster": ".moira"
+    },
+    ".moira/project/rules/patterns.yaml": {
+      "type": "data",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 6,
+      "hash": "c4584fb9f7cb2297",
+      "exports": [],
+      "cluster": ".moira"
+    },
+    ".moira/project/rules/stack.yaml": {
+      "type": "data",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 6,
+      "hash": "92498ad679fd8450",
+      "exports": [],
+      "cluster": ".moira"
+    },
     "CLAUDE.md": {
       "type": "doc",
       "layer": "unknown",
@@ -403,7 +403,7 @@
     "benches/algo_bench.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 8,
+      "arch_depth": 0,
       "lines": 243,
       "hash": "3f157fe44c17302d",
       "exports": [],
@@ -564,7 +564,7 @@
     "benches/analysis_bench.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 8,
+      "arch_depth": 0,
       "lines": 194,
       "hash": "b421c3ff837670ee",
       "exports": [],
@@ -635,7 +635,7 @@
     "benches/build_bench.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 8,
+      "arch_depth": 0,
       "lines": 76,
       "hash": "303184474b961ba8",
       "exports": [],
@@ -729,7 +729,7 @@
     "benches/mcp_bench.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 7,
+      "arch_depth": 0,
       "lines": 163,
       "hash": "56abfbc8ee3f4b05",
       "exports": [],
@@ -800,7 +800,7 @@
     "benches/parser_bench.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 6,
+      "arch_depth": 0,
       "lines": 185,
       "hash": "46aa696a9af6584e",
       "exports": [],
@@ -871,7 +871,7 @@
     "benches/symbol_bench.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 6,
+      "arch_depth": 0,
       "lines": 244,
       "hash": "9501055c90f6efd8",
       "exports": [],
@@ -983,8 +983,8 @@
       "type": "doc",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 1951,
-      "hash": "47a3b7dab4ee2b8b",
+      "lines": 1955,
+      "hash": "ea95149adfeae964",
       "exports": [],
       "cluster": "design"
     },
@@ -992,8 +992,8 @@
       "type": "doc",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 1040,
-      "hash": "6ee58ecb13f08457",
+      "lines": 1052,
+      "hash": "6641c188141b92c4",
       "exports": [],
       "cluster": "design"
     },
@@ -1001,8 +1001,8 @@
       "type": "doc",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 1433,
-      "hash": "b3010081abdd10af",
+      "lines": 1547,
+      "hash": "09cb179620def63f",
       "exports": [],
       "cluster": "design"
     },
@@ -1138,6 +1138,24 @@
       "arch_depth": 0,
       "lines": 642,
       "hash": "60cc9c16deb97df3",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/specs/2026-04-04-phase11-csharp-dotnet.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 133,
+      "hash": "7ae2e07abf5015dd",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/specs/2026-04-04-phase11-implementation-plan.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 125,
+      "hash": "678c94382c0e25e5",
       "exports": [],
       "cluster": "design"
     },
@@ -1320,15 +1338,6 @@
       "hash": "0f8eed7f34f944ac",
       "exports": [],
       "cluster": "design"
-    },
-    "docs/superpowers/plans/2026-03-19-architecture-review-fixes.md": {
-      "type": "doc",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 516,
-      "hash": "be0b1216e35e92cf",
-      "exports": [],
-      "cluster": "docs"
     },
     "src/algo/blast_radius.rs": {
       "type": "source",
@@ -2986,6 +2995,119 @@
         }
       ]
     },
+    "src/detect/framework.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 444,
+      "hash": "c814cdc5738268ac",
+      "exports": [
+        "DotnetFrameworkHints",
+        "detect_dotnet_framework"
+      ],
+      "cluster": "detect",
+      "symbols": [
+        {
+          "name": "DotnetFrameworkHints",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 9,
+            "end": 18
+          },
+          "signature": "pub struct DotnetFrameworkHints {"
+        },
+        {
+          "name": "check_attribute_list_node",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 108,
+            "end": 128
+          },
+          "signature": "fn check_attribute_list_node("
+        },
+        {
+          "name": "check_base_class",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 92,
+            "end": 106
+          },
+          "signature": "fn check_base_class(base_text: &str, hints: &mut DotnetFrameworkHints) {"
+        },
+        {
+          "name": "check_class_methods",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 131,
+            "end": 167
+          },
+          "signature": "fn check_class_methods(body: &tree_sitter::Node, source: &[u8], hints: &mut DotnetFrameworkHints) {"
+        },
+        {
+          "name": "detect_class_patterns",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 41,
+            "end": 89
+          },
+          "signature": "fn detect_class_patterns("
+        },
+        {
+          "name": "detect_dotnet_framework",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 21,
+            "end": 25
+          },
+          "signature": "pub fn detect_dotnet_framework(tree: &tree_sitter::Tree, source: &[u8]) -> DotnetFrameworkHints {"
+        },
+        {
+          "name": "detect_invocation_patterns",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 172,
+            "end": 215
+          },
+          "signature": "fn detect_invocation_patterns("
+        },
+        {
+          "name": "extract_member_name",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 222,
+            "end": 241
+          },
+          "signature": "fn extract_member_name<'a>("
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 244,
+            "end": 444
+          }
+        },
+        {
+          "name": "walk_node",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 27,
+            "end": 38
+          },
+          "signature": "fn walk_node(node: &tree_sitter::Node, source: &[u8], hints: &mut DotnetFrameworkHints) {"
+        }
+      ]
+    },
     "src/detect/layer.rs": {
       "type": "source",
       "layer": "unknown",
@@ -3063,8 +3185,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 5,
-      "lines": 9,
-      "hash": "309470664e32e76d",
+      "lines": 10,
+      "hash": "7a878bbab386e4fb",
       "exports": [
         "case_sensitivity",
         "detect_file_type",
@@ -3073,6 +3195,7 @@
         "detect_workspace",
         "filetype",
         "find_case_insensitive",
+        "framework",
         "infer_arch_layer",
         "is_case_insensitive",
         "layer",
@@ -3177,8 +3300,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 3,
-      "lines": 556,
-      "hash": "8b0bc98331b7536c",
+      "lines": 568,
+      "hash": "a6b3375559693a53",
       "exports": [
         "DiagnosticCollector",
         "DiagnosticCounts",
@@ -3197,8 +3320,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 282,
-            "end": 284
+            "start": 290,
+            "end": 292
           },
           "signature": "pub struct DiagnosticCollector {"
         },
@@ -3207,8 +3330,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 261,
-            "end": 273
+            "start": 269,
+            "end": 281
           },
           "signature": "pub struct DiagnosticCounts {"
         },
@@ -3217,8 +3340,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 276,
-            "end": 279
+            "start": 284,
+            "end": 287
           },
           "signature": "pub struct DiagnosticReport {"
         },
@@ -3237,8 +3360,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 252,
-            "end": 257
+            "start": 260,
+            "end": 265
           },
           "signature": "pub struct Warning {"
         },
@@ -3248,7 +3371,7 @@
           "visibility": "public",
           "span": {
             "start": 44,
-            "end": 78
+            "end": 82
           },
           "signature": "pub enum WarningCode {"
         },
@@ -3257,8 +3380,8 @@
           "kind": "enum",
           "visibility": "public",
           "span": {
-            "start": 128,
-            "end": 131
+            "start": 136,
+            "end": 139
           },
           "signature": "pub enum WarningFormat {"
         },
@@ -3267,8 +3390,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 81,
-            "end": 117
+            "start": 85,
+            "end": 125
           },
           "signature": "pub fn code(&self) -> &'static str {",
           "parent": "WarningCode"
@@ -3278,8 +3401,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 382,
-            "end": 384
+            "start": 394,
+            "end": 396
           },
           "signature": "fn default() -> Self {",
           "parent": "Default"
@@ -3289,8 +3412,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 373,
-            "end": 378
+            "start": 385,
+            "end": 390
           },
           "signature": "pub fn drain(self) -> DiagnosticReport {",
           "parent": "DiagnosticCollector"
@@ -3300,8 +3423,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 121,
-            "end": 123
+            "start": 129,
+            "end": 131
           },
           "signature": "fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {",
           "parent": "WarningCode"
@@ -3311,8 +3434,8 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 175,
-            "end": 229
+            "start": 183,
+            "end": 237
           },
           "signature": "pub fn format_summary("
         },
@@ -3321,8 +3444,8 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 136,
-            "end": 172
+            "start": 144,
+            "end": 180
           },
           "signature": "pub fn format_warnings(report: &DiagnosticReport, format: WarningFormat, verbose: bool) -> String {"
         },
@@ -3331,8 +3454,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 367,
-            "end": 370
+            "start": 379,
+            "end": 382
           },
           "signature": "pub fn increment_unresolved(&self) {",
           "parent": "DiagnosticCollector"
@@ -3342,8 +3465,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 232,
-            "end": 248
+            "start": 240,
+            "end": 256
           },
           "signature": "fn json_escape(s: &str) -> String {"
         },
@@ -3352,8 +3475,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 287,
-            "end": 291
+            "start": 295,
+            "end": 299
           },
           "signature": "pub fn new() -> Self {",
           "parent": "DiagnosticCollector"
@@ -3363,8 +3486,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 388,
-            "end": 556
+            "start": 400,
+            "end": 568
           }
         },
         {
@@ -3372,8 +3495,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 294,
-            "end": 363
+            "start": 302,
+            "end": 375
           },
           "signature": "pub fn warn(&self, warning: Warning) {",
           "parent": "DiagnosticCollector"
@@ -3431,9 +3554,9 @@
     "src/main.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 8,
-      "lines": 1875,
-      "hash": "8d1878d23c3c4a71",
+      "arch_depth": 0,
+      "lines": 1879,
+      "hash": "6fe956f8394b25a0",
       "exports": [],
       "cluster": "root",
       "symbols": [
@@ -3442,8 +3565,8 @@
           "kind": "struct",
           "visibility": "private",
           "span": {
-            "start": 26,
-            "end": 29
+            "start": 27,
+            "end": 30
           },
           "signature": "struct Cli {"
         },
@@ -3452,8 +3575,8 @@
           "kind": "enum",
           "visibility": "private",
           "span": {
-            "start": 32,
-            "end": 136
+            "start": 33,
+            "end": 137
           },
           "signature": "enum Commands {"
         },
@@ -3462,8 +3585,8 @@
           "kind": "enum",
           "visibility": "private",
           "span": {
-            "start": 139,
-            "end": 389
+            "start": 140,
+            "end": 390
           },
           "signature": "enum QueryCommands {"
         },
@@ -3472,8 +3595,8 @@
           "kind": "enum",
           "visibility": "private",
           "span": {
-            "start": 392,
-            "end": 402
+            "start": 393,
+            "end": 403
           },
           "signature": "enum ViewsCommands {"
         },
@@ -3482,8 +3605,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 508,
-            "end": 516
+            "start": 510,
+            "end": 518
           },
           "signature": "fn check_server_lock(output_dir: &std::path::Path) -> Result<(), FatalError> {"
         },
@@ -3492,8 +3615,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 827,
-            "end": 832
+            "start": 831,
+            "end": 836
           },
           "signature": "fn json_pretty<T: serde::Serialize>(value: &T) -> Result<String, FatalError> {"
         },
@@ -3502,8 +3625,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 812,
-            "end": 822
+            "start": 816,
+            "end": 826
           },
           "signature": "fn load_boundaries("
         },
@@ -3512,8 +3635,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 797,
-            "end": 810
+            "start": 801,
+            "end": 814
           },
           "signature": "fn load_clusters("
         },
@@ -3522,8 +3645,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 777,
-            "end": 787
+            "start": 781,
+            "end": 791
           },
           "signature": "fn load_graph(reader: &dyn GraphReader, dir: &std::path::Path) -> Result<ProjectGraph, FatalError> {"
         },
@@ -3532,8 +3655,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 789,
-            "end": 795
+            "start": 793,
+            "end": 799
           },
           "signature": "fn load_stats(reader: &dyn GraphReader, dir: &std::path::Path) -> Result<StatsOutput, FatalError> {"
         },
@@ -3542,8 +3665,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 404,
-            "end": 504
+            "start": 405,
+            "end": 506
           },
           "signature": "fn main() {"
         },
@@ -3552,8 +3675,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 1800,
-            "end": 1831
+            "start": 1804,
+            "end": 1835
           },
           "signature": "fn print_stats_md(stats: &StatsOutput) {"
         },
@@ -3562,8 +3685,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 591,
-            "end": 672
+            "start": 593,
+            "end": 675
           },
           "signature": "fn run_build("
         },
@@ -3572,8 +3695,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 760,
-            "end": 773
+            "start": 764,
+            "end": 777
           },
           "signature": "fn run_info() {"
         },
@@ -3582,8 +3705,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 834,
-            "end": 1780
+            "start": 838,
+            "end": 1784
           },
           "signature": "fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {"
         },
@@ -3592,8 +3715,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 519,
-            "end": 588
+            "start": 521,
+            "end": 590
           },
           "signature": "fn run_restart(project: PathBuf, output: Option<PathBuf>) -> Result<(), FatalError> {"
         },
@@ -3602,8 +3725,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 675,
-            "end": 758
+            "start": 678,
+            "end": 762
           },
           "signature": "fn run_update("
         },
@@ -3612,8 +3735,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 1782,
-            "end": 1798
+            "start": 1786,
+            "end": 1802
           },
           "signature": "fn run_views(cmd: ViewsCommands) -> Result<(), FatalError> {"
         },
@@ -3622,8 +3745,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 1834,
-            "end": 1875
+            "start": 1838,
+            "end": 1879
           },
           "signature": "fn serialize_subgraph_result(result: &ariadne_graph::model::SubgraphResult) -> serde_json::Value {"
         }
@@ -6056,8 +6179,8 @@
       "type": "source",
       "layer": "data",
       "arch_depth": 0,
-      "lines": 43,
-      "hash": "3d7f20f90e9661b6",
+      "lines": 45,
+      "hash": "89e3efc126dbba29",
       "exports": [
         "Edge",
         "EdgeType"
@@ -6069,8 +6192,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 38,
-            "end": 43
+            "start": 40,
+            "end": 45
           },
           "signature": "pub struct Edge {"
         },
@@ -6080,7 +6203,7 @@
           "visibility": "public",
           "span": {
             "start": 8,
-            "end": 14
+            "end": 15
           },
           "signature": "pub enum EdgeType {"
         },
@@ -6089,8 +6212,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 17,
-            "end": 25
+            "start": 18,
+            "end": 27
           },
           "signature": "pub fn as_str(&self) -> &'static str {",
           "parent": "EdgeType"
@@ -6100,8 +6223,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 31,
-            "end": 33
+            "start": 33,
+            "end": 35
           },
           "signature": "pub fn is_architectural(self) -> bool {",
           "parent": "EdgeType"
@@ -7221,6 +7344,144 @@
         }
       ]
     },
+    "src/parser/config/csproj.rs": {
+      "type": "source",
+      "layer": "config",
+      "arch_depth": 4,
+      "lines": 511,
+      "hash": "f5de35621c8aeaec",
+      "exports": [
+        "CsprojConfig",
+        "DotnetSolutionInfo",
+        "PackageRef",
+        "ProjectRef",
+        "SlnProjectEntry",
+        "parse_csproj",
+        "parse_sln"
+      ],
+      "cluster": "parser",
+      "symbols": [
+        {
+          "name": "CsprojConfig",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 8,
+            "end": 23
+          },
+          "signature": "pub struct CsprojConfig {"
+        },
+        {
+          "name": "DotnetSolutionInfo",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 45,
+            "end": 50
+          },
+          "signature": "pub struct DotnetSolutionInfo {"
+        },
+        {
+          "name": "PackageRef",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 36,
+            "end": 41
+          },
+          "signature": "pub struct PackageRef {"
+        },
+        {
+          "name": "ProjectRef",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 27,
+            "end": 32
+          },
+          "signature": "pub struct ProjectRef {"
+        },
+        {
+          "name": "SOLUTION_FOLDER_GUID",
+          "kind": "const",
+          "visibility": "private",
+          "span": {
+            "start": 64,
+            "end": 64
+          },
+          "signature": "const SOLUTION_FOLDER_GUID: &str = \"{2150E333-8FDC-42A3-9474-1A3956D46DE8}\";"
+        },
+        {
+          "name": "SlnProjectEntry",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 54,
+            "end": 61
+          },
+          "signature": "pub struct SlnProjectEntry {"
+        },
+        {
+          "name": "extract_quoted_fields",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 270,
+            "end": 287
+          },
+          "signature": "fn extract_quoted_fields(s: &str) -> Vec<String> {"
+        },
+        {
+          "name": "normalize_relative_path",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 185,
+            "end": 200
+          },
+          "signature": "fn normalize_relative_path(path: &Path) -> PathBuf {"
+        },
+        {
+          "name": "parse_csproj",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 69,
+            "end": 180
+          },
+          "signature": "pub fn parse_csproj("
+        },
+        {
+          "name": "parse_sln",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 209,
+            "end": 235
+          },
+          "signature": "pub fn parse_sln("
+        },
+        {
+          "name": "parse_sln_project_line",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 241,
+            "end": 267
+          },
+          "signature": "fn parse_sln_project_line(line: &str) -> Option<SlnProjectEntry> {"
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 290,
+            "end": 511
+          }
+        }
+      ]
+    },
     "src/parser/config/gomod.rs": {
       "type": "source",
       "layer": "config",
@@ -7310,14 +7571,18 @@
       "type": "source",
       "layer": "config",
       "arch_depth": 5,
-      "lines": 247,
-      "hash": "67364cedde4872e8",
+      "lines": 357,
+      "hash": "d8c6f8b108ad7404",
       "exports": [
+        "CsprojConfig",
+        "DotnetSolutionInfo",
         "GoModConfig",
         "ProjectConfig",
         "PyProjectConfig",
         "TsConfig",
+        "csproj",
         "discover_config",
+        "find_nearest_csproj",
         "find_nearest_tsconfig",
         "gomod",
         "jsonc",
@@ -7331,8 +7596,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 17,
-            "end": 24
+            "start": 19,
+            "end": 30
           },
           "signature": "pub struct ProjectConfig {"
         },
@@ -7341,18 +7606,38 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 31,
-            "end": 45
+            "start": 37,
+            "end": 55
           },
           "signature": "pub fn discover_config("
+        },
+        {
+          "name": "discover_csproj_configs",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 111,
+            "end": 142
+          },
+          "signature": "fn discover_csproj_configs("
+        },
+        {
+          "name": "discover_dotnet_solution",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 145,
+            "end": 188
+          },
+          "signature": "fn discover_dotnet_solution("
         },
         {
           "name": "discover_go_config",
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 83,
-            "end": 89
+            "start": 93,
+            "end": 99
           },
           "signature": "fn discover_go_config(project_root: &Path) -> Option<GoModConfig> {"
         },
@@ -7361,8 +7646,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 92,
-            "end": 98
+            "start": 102,
+            "end": 108
           },
           "signature": "fn discover_py_config(project_root: &Path) -> Option<PyProjectConfig> {"
         },
@@ -7371,18 +7656,28 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 48,
-            "end": 80
+            "start": 58,
+            "end": 90
           },
           "signature": "fn discover_tsconfigs("
+        },
+        {
+          "name": "find_nearest_csproj",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 194,
+            "end": 206
+          },
+          "signature": "pub fn find_nearest_csproj<'a>("
         },
         {
           "name": "find_nearest_tsconfig",
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 104,
-            "end": 116
+            "start": 212,
+            "end": 224
           },
           "signature": "pub fn find_nearest_tsconfig<'a>("
         },
@@ -7391,8 +7686,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 119,
-            "end": 247
+            "start": 227,
+            "end": 357
           }
         }
       ]
@@ -7588,13 +7883,14 @@
     "src/parser/csharp.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 4,
-      "lines": 584,
-      "hash": "710b1775c76e07da",
+      "arch_depth": 5,
+      "lines": 997,
+      "hash": "c62de0e96200ab38",
       "exports": [
         "CSharpParser",
         "parser",
         "resolver",
+        "resolver_with_config",
         "symbol_extractor"
       ],
       "cluster": "parser",
@@ -7604,8 +7900,8 @@
           "kind": "struct",
           "visibility": "internal",
           "span": {
-            "start": 8,
-            "end": 8
+            "start": 13,
+            "end": 13
           },
           "signature": "pub(crate) struct CSharpParser;"
         },
@@ -7614,18 +7910,18 @@
           "kind": "struct",
           "visibility": "private",
           "span": {
-            "start": 402,
-            "end": 402
+            "start": 476,
+            "end": 483
           },
-          "signature": "struct CSharpResolver;"
+          "signature": "struct CSharpResolver {"
         },
         {
           "name": "collect_public_declarations",
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 129,
-            "end": 165
+            "start": 203,
+            "end": 239
           },
           "signature": "fn collect_public_declarations("
         },
@@ -7634,8 +7930,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 43,
-            "end": 70
+            "start": 117,
+            "end": 144
           },
           "signature": "fn collect_using_directives(node: &tree_sitter::Node, source: &[u8], imports: &mut Vec<RawImport>) {"
         },
@@ -7644,8 +7940,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 378,
-            "end": 383
+            "start": 452,
+            "end": 457
           },
           "signature": "fn csharp_node_span(node: &tree_sitter::Node) -> LineSpan {"
         },
@@ -7654,8 +7950,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 386,
-            "end": 399
+            "start": 460,
+            "end": 473
           },
           "signature": "fn csharp_truncate_signature("
         },
@@ -7664,8 +7960,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 342,
-            "end": 360
+            "start": 416,
+            "end": 434
           },
           "signature": "fn csharp_visibility(node: &tree_sitter::Node, source: &[u8]) -> Visibility {"
         },
@@ -7674,8 +7970,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 15,
-            "end": 17
+            "start": 20,
+            "end": 22
           },
           "signature": "fn extensions(&self) -> &[&str] {",
           "parent": "LanguageParser"
@@ -7685,8 +7981,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 307,
-            "end": 339
+            "start": 381,
+            "end": 413
           },
           "signature": "fn extract_csharp_field_names("
         },
@@ -7695,8 +7991,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 209,
-            "end": 304
+            "start": 283,
+            "end": 378
           },
           "signature": "fn extract_csharp_symbols_from_node("
         },
@@ -7705,8 +8001,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 32,
-            "end": 39
+            "start": 46,
+            "end": 53
           },
           "signature": "fn extract_exports(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Vec<RawExport> {",
           "parent": "LanguageParser"
@@ -7716,19 +8012,29 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 23,
-            "end": 30
+            "start": 28,
+            "end": 44
           },
           "signature": "fn extract_imports(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Vec<RawImport> {",
           "parent": "LanguageParser"
+        },
+        {
+          "name": "extract_razor_imports",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 74,
+            "end": 114
+          },
+          "signature": "fn extract_razor_imports(source: &str) -> Vec<RawImport> {"
         },
         {
           "name": "extract_symbols",
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 200,
-            "end": 205
+            "start": 274,
+            "end": 279
           },
           "signature": "fn extract_symbols(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Vec<SymbolDef> {",
           "parent": "SymbolExtractor"
@@ -7738,8 +8044,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 78,
-            "end": 126
+            "start": 152,
+            "end": 200
           },
           "signature": "fn extract_using_directive(node: &tree_sitter::Node, source: &[u8]) -> Option<RawImport> {"
         },
@@ -7748,8 +8054,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 183,
-            "end": 197
+            "start": 257,
+            "end": 271
           },
           "signature": "fn find_declaration_name(node: &tree_sitter::Node, source: &[u8]) -> Option<String> {"
         },
@@ -7758,39 +8064,82 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 363,
-            "end": 375
+            "start": 437,
+            "end": 449
           },
           "signature": "fn has_modifier(node: &tree_sitter::Node, source: &[u8], modifier: &str) -> bool {"
+        },
+        {
+          "name": "is_framework_namespace",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 506,
+            "end": 509
+          },
+          "signature": "fn is_framework_namespace(&self, namespace: &str) -> bool {",
+          "parent": "CSharpResolver"
+        },
+        {
+          "name": "is_nuget_package",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 512,
+            "end": 515
+          },
+          "signature": "fn is_nuget_package(&self, namespace: &str) -> bool {",
+          "parent": "CSharpResolver"
         },
         {
           "name": "is_public",
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 168,
-            "end": 180
+            "start": 242,
+            "end": 254
           },
           "signature": "fn is_public(node: &tree_sitter::Node, source: &[u8]) -> bool {"
+        },
+        {
+          "name": "is_razor_content",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 60,
+            "end": 66
+          },
+          "signature": "fn is_razor_content(source: &str) -> bool {"
         },
         {
           "name": "language",
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 11,
-            "end": 13
+            "start": 16,
+            "end": 18
           },
           "signature": "fn language(&self) -> &str {",
           "parent": "LanguageParser"
+        },
+        {
+          "name": "new",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 486,
+            "end": 492
+          },
+          "signature": "fn new() -> Self {",
+          "parent": "CSharpResolver"
         },
         {
           "name": "parser",
           "kind": "function",
           "visibility": "internal",
           "span": {
-            "start": 442,
-            "end": 444
+            "start": 664,
+            "end": 666
           },
           "signature": "pub(crate) fn parser() -> Box<dyn LanguageParser> {"
         },
@@ -7799,29 +8148,61 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 405,
-            "end": 439
+            "start": 635,
+            "end": 661
           },
           "signature": "fn resolve(",
           "parent": "ImportResolver"
+        },
+        {
+          "name": "resolve_naive",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 519,
+            "end": 545
+          },
+          "signature": "fn resolve_naive(",
+          "parent": "CSharpResolver"
+        },
+        {
+          "name": "resolve_with_config",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 548,
+            "end": 631
+          },
+          "signature": "fn resolve_with_config(",
+          "parent": "CSharpResolver"
         },
         {
           "name": "resolver",
           "kind": "function",
           "visibility": "internal",
           "span": {
-            "start": 446,
-            "end": 448
+            "start": 668,
+            "end": 670
           },
           "signature": "pub(crate) fn resolver() -> Box<dyn ImportResolver> {"
+        },
+        {
+          "name": "resolver_with_config",
+          "kind": "function",
+          "visibility": "internal",
+          "span": {
+            "start": 672,
+            "end": 674
+          },
+          "signature": "pub(crate) fn resolver_with_config(configs: BTreeMap<PathBuf, CsprojConfig>) -> Box<dyn ImportResolver> {"
         },
         {
           "name": "symbol_extractor",
           "kind": "function",
           "visibility": "internal",
           "span": {
-            "start": 450,
-            "end": 452
+            "start": 676,
+            "end": 678
           },
           "signature": "pub(crate) fn symbol_extractor() -> std::sync::Arc<dyn SymbolExtractor> {"
         },
@@ -7830,8 +8211,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 455,
-            "end": 584
+            "start": 681,
+            "end": 997
           }
         },
         {
@@ -7839,11 +8220,22 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 19,
-            "end": 21
+            "start": 24,
+            "end": 26
           },
           "signature": "fn tree_sitter_language(&self) -> tree_sitter::Language {",
           "parent": "LanguageParser"
+        },
+        {
+          "name": "with_csproj_configs",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 494,
+            "end": 503
+          },
+          "signature": "fn with_csproj_configs(mut self, configs: BTreeMap<PathBuf, CsprojConfig>) -> Self {",
+          "parent": "CSharpResolver"
         }
       ]
     },
@@ -8772,8 +9164,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 5,
-      "lines": 48,
-      "hash": "dd4c0b121a25ddb8",
+      "lines": 53,
+      "hash": "baf34a091b180bf6",
       "exports": [
         "ImportKind",
         "ImportResolver",
@@ -8784,6 +9176,7 @@
         "RawImport",
         "SymbolExtractor",
         "config",
+        "csharp_parser",
         "csharp_symbol_extractor",
         "go_symbol_extractor",
         "helpers",
@@ -8797,6 +9190,16 @@
       ],
       "cluster": "parser",
       "symbols": [
+        {
+          "name": "csharp_parser",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 46,
+            "end": 48
+          },
+          "signature": "pub fn csharp_parser() -> Box<dyn LanguageParser> {"
+        },
         {
           "name": "csharp_symbol_extractor",
           "kind": "function",
@@ -8822,8 +9225,8 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 46,
-            "end": 48
+            "start": 51,
+            "end": 53
           },
           "signature": "pub fn java_symbol_extractor() -> impl SymbolExtractor {"
         },
@@ -9185,8 +9588,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 5,
-      "lines": 372,
-      "hash": "376f2b710437cc20",
+      "lines": 390,
+      "hash": "feb4bbfd5274f0bb",
       "exports": [
         "ParseOutcome",
         "ParserRegistry"
@@ -9229,8 +9632,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 339,
-            "end": 341
+            "start": 357,
+            "end": 359
           },
           "signature": "fn default() -> Self {",
           "parent": "Default"
@@ -9240,8 +9643,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 333,
-            "end": 335
+            "start": 351,
+            "end": 353
           },
           "signature": "pub fn language_names(&self) -> Vec<&str> {",
           "parent": "ParserRegistry"
@@ -9262,8 +9665,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 243,
-            "end": 312
+            "start": 261,
+            "end": 330
           },
           "signature": "pub fn parse_source(",
           "parent": "ParserRegistry"
@@ -9317,8 +9720,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 316,
-            "end": 323
+            "start": 334,
+            "end": 341
           },
           "signature": "pub fn reparse_imports(&self, extension: &str, source: &[u8]) -> Option<Vec<RawImport>> {",
           "parent": "ParserRegistry"
@@ -9339,8 +9742,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 326,
-            "end": 330
+            "start": 344,
+            "end": 348
           },
           "signature": "pub fn supported_extensions(&self) -> Vec<&str> {",
           "parent": "ParserRegistry"
@@ -9361,8 +9764,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 345,
-            "end": 372
+            "start": 363,
+            "end": 390
           }
         },
         {
@@ -9370,8 +9773,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 178,
-            "end": 237
+            "start": 183,
+            "end": 255
           },
           "signature": "pub fn with_project_config(config: &ProjectConfig) -> Self {",
           "parent": "ParserRegistry"
@@ -9393,7 +9796,7 @@
           "visibility": "public",
           "span": {
             "start": 132,
-            "end": 175
+            "end": 180
           },
           "signature": "pub fn with_tier1_config(rust_crate_name: Option<String>) -> Self {",
           "parent": "ParserRegistry"
@@ -9720,8 +10123,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 3,
-      "lines": 55,
-      "hash": "e906e6daebf5039c",
+      "lines": 57,
+      "hash": "58a87eaeab101192",
       "exports": [
         "ImportKind",
         "ImportResolver",
@@ -9737,7 +10140,7 @@
           "visibility": "public",
           "span": {
             "start": 6,
-            "end": 13
+            "end": 15
           },
           "signature": "pub enum ImportKind {"
         },
@@ -9746,8 +10149,8 @@
           "kind": "trait",
           "visibility": "public",
           "span": {
-            "start": 47,
-            "end": 55
+            "start": 49,
+            "end": 57
           },
           "signature": "pub trait ImportResolver: Send + Sync {"
         },
@@ -9756,8 +10159,8 @@
           "kind": "trait",
           "visibility": "public",
           "span": {
-            "start": 33,
-            "end": 44
+            "start": 35,
+            "end": 46
           },
           "signature": "pub trait LanguageParser: Send + Sync {"
         },
@@ -9766,8 +10169,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 26,
-            "end": 30
+            "start": 28,
+            "end": 32
           },
           "signature": "pub struct RawExport {"
         },
@@ -9776,8 +10179,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 17,
-            "end": 22
+            "start": 19,
+            "end": 24
           },
           "signature": "pub struct RawImport {"
         }
@@ -10270,8 +10673,8 @@
       "type": "config",
       "layer": "unknown",
       "arch_depth": 6,
-      "lines": 367,
-      "hash": "b127758167253f93",
+      "lines": 372,
+      "hash": "9604f9c4a2915893",
       "exports": [
         "ResolveOptions",
         "resolve_and_build"
@@ -10294,7 +10697,7 @@
           "visibility": "private",
           "span": {
             "start": 192,
-            "end": 219
+            "end": 224
           },
           "signature": "fn classify_edge_type("
         },
@@ -10303,8 +10706,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 335,
-            "end": 367
+            "start": 340,
+            "end": 372
           },
           "signature": "fn deduplicate_edges(edges: &mut Vec<Edge>) {"
         },
@@ -10313,8 +10716,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 223,
-            "end": 332
+            "start": 228,
+            "end": 337
           },
           "signature": "fn infer_test_edges_by_naming("
         },
@@ -11365,6 +11768,100 @@
         }
       ]
     },
+    "src/semantic/dotnet.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 2,
+      "lines": 285,
+      "hash": "c73d918728ada316",
+      "exports": [
+        "DotnetBoundaryExtractor"
+      ],
+      "cluster": "semantic",
+      "symbols": [
+        {
+          "name": "DotnetBoundaryExtractor",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 14,
+            "end": 14
+          },
+          "signature": "pub struct DotnetBoundaryExtractor;"
+        },
+        {
+          "name": "MAX_BOUNDARIES_PER_FILE",
+          "kind": "const",
+          "visibility": "private",
+          "span": {
+            "start": 11,
+            "end": 11
+          },
+          "signature": "const MAX_BOUNDARIES_PER_FILE: usize = 500;"
+        },
+        {
+          "name": "extensions",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 17,
+            "end": 19
+          },
+          "signature": "fn extensions(&self) -> &[&str] {",
+          "parent": "BoundaryExtractor"
+        },
+        {
+          "name": "extract",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 21,
+            "end": 30
+          },
+          "signature": "fn extract(",
+          "parent": "BoundaryExtractor"
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 219,
+            "end": 285
+          }
+        },
+        {
+          "name": "try_extract_dbset_property",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 66,
+            "end": 125
+          },
+          "signature": "fn try_extract_dbset_property("
+        },
+        {
+          "name": "try_extract_di_registration",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 135,
+            "end": 216
+          },
+          "signature": "fn try_extract_di_registration("
+        },
+        {
+          "name": "walk_node",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 33,
+            "end": 60
+          },
+          "signature": "fn walk_node("
+        }
+      ]
+    },
     "src/semantic/edges.rs": {
       "type": "source",
       "layer": "unknown",
@@ -11919,12 +12416,13 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 2,
-      "lines": 129,
-      "hash": "a9eac99d940cc2f5",
+      "lines": 130,
+      "hash": "fa8899b5129eecf7",
       "exports": [
         "BoundaryExtractor",
         "ExtractorRegistry",
         "analyze",
+        "dotnet",
         "edges",
         "events",
         "http"
@@ -11936,8 +12434,8 @@
           "kind": "trait",
           "visibility": "public",
           "span": {
-            "start": 15,
-            "end": 26
+            "start": 16,
+            "end": 27
           },
           "signature": "pub trait BoundaryExtractor: Send + Sync {"
         },
@@ -11946,8 +12444,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 32,
-            "end": 35
+            "start": 33,
+            "end": 36
           },
           "signature": "pub struct ExtractorRegistry {"
         },
@@ -11956,8 +12454,8 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 84,
-            "end": 108
+            "start": 85,
+            "end": 109
           },
           "signature": "pub fn analyze(file_boundaries: BTreeMap<CanonicalPath, Vec<Boundary>>) -> SemanticState {"
         },
@@ -11966,8 +12464,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 72,
-            "end": 74
+            "start": 73,
+            "end": 75
           },
           "signature": "fn default() -> Self {",
           "parent": "Default"
@@ -11977,8 +12475,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 58,
-            "end": 68
+            "start": 59,
+            "end": 69
           },
           "signature": "pub fn extractors_for(&self, extension: &str) -> Vec<&dyn BoundaryExtractor> {",
           "parent": "ExtractorRegistry"
@@ -11988,8 +12486,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 38,
-            "end": 43
+            "start": 39,
+            "end": 44
           },
           "signature": "pub fn new() -> Self {",
           "parent": "ExtractorRegistry"
@@ -11999,8 +12497,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 46,
-            "end": 55
+            "start": 47,
+            "end": 56
           },
           "signature": "pub fn register(&mut self, extractor: Box<dyn BoundaryExtractor>) {",
           "parent": "ExtractorRegistry"
@@ -12010,8 +12508,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 111,
-            "end": 129
+            "start": 112,
+            "end": 130
           }
         }
       ]
@@ -12020,8 +12518,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 3,
-      "lines": 221,
-      "hash": "c84f778f49a40b49",
+      "lines": 222,
+      "hash": "abe3daa9f6969a99",
       "exports": [],
       "cluster": "serial",
       "symbols": [
@@ -12063,7 +12561,7 @@
           "visibility": "private",
           "span": {
             "start": 119,
-            "end": 128
+            "end": 129
           },
           "signature": "fn parse_edge_type(s: &str) -> Result<EdgeType, String> {"
         },
@@ -12092,8 +12590,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 131,
-            "end": 221
+            "start": 132,
+            "end": 222
           }
         },
         {
@@ -13175,6 +13673,227 @@
         }
       ]
     },
+    "tests/dotnet_integration_tests.rs": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 278,
+      "hash": "49f82b05255e69bc",
+      "exports": [],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "dotnet_blazor_counter_no_imports",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 157,
+            "end": 168
+          },
+          "signature": "fn dotnet_blazor_counter_no_imports() {"
+        },
+        {
+          "name": "dotnet_blazor_extracts_inherits",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 143,
+            "end": 154
+          },
+          "signature": "fn dotnet_blazor_extracts_inherits() {"
+        },
+        {
+          "name": "dotnet_blazor_extracts_razor_imports",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 124,
+            "end": 140
+          },
+          "signature": "fn dotnet_blazor_extracts_razor_imports() {"
+        },
+        {
+          "name": "dotnet_blazor_pipeline_runs",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 112,
+            "end": 121
+          },
+          "signature": "fn dotnet_blazor_pipeline_runs() {"
+        },
+        {
+          "name": "dotnet_efcore_detects_dbcontext",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 185,
+            "end": 193
+          },
+          "signature": "fn dotnet_efcore_detects_dbcontext() {"
+        },
+        {
+          "name": "dotnet_efcore_detects_migration",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 196,
+            "end": 204
+          },
+          "signature": "fn dotnet_efcore_detects_migration() {"
+        },
+        {
+          "name": "dotnet_efcore_extracts_dbset_boundaries",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 207,
+            "end": 224
+          },
+          "signature": "fn dotnet_efcore_extracts_dbset_boundaries() {"
+        },
+        {
+          "name": "dotnet_efcore_graph_has_edges",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 227,
+            "end": 233
+          },
+          "signature": "fn dotnet_efcore_graph_has_edges() {"
+        },
+        {
+          "name": "dotnet_efcore_pipeline_runs",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 175,
+            "end": 182
+          },
+          "signature": "fn dotnet_efcore_pipeline_runs() {"
+        },
+        {
+          "name": "dotnet_maui_detects_content_page",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 250,
+            "end": 258
+          },
+          "signature": "fn dotnet_maui_detects_content_page() {"
+        },
+        {
+          "name": "dotnet_maui_detects_content_view",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 261,
+            "end": 269
+          },
+          "signature": "fn dotnet_maui_detects_content_view() {"
+        },
+        {
+          "name": "dotnet_maui_graph_has_edges",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 272,
+            "end": 278
+          },
+          "signature": "fn dotnet_maui_graph_has_edges() {"
+        },
+        {
+          "name": "dotnet_maui_pipeline_runs",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 240,
+            "end": 247
+          },
+          "signature": "fn dotnet_maui_pipeline_runs() {"
+        },
+        {
+          "name": "dotnet_webapi_detects_controller",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 53,
+            "end": 61
+          },
+          "signature": "fn dotnet_webapi_detects_controller() {"
+        },
+        {
+          "name": "dotnet_webapi_detects_minimal_api",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 64,
+            "end": 77
+          },
+          "signature": "fn dotnet_webapi_detects_minimal_api() {"
+        },
+        {
+          "name": "dotnet_webapi_extracts_imports",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 80,
+            "end": 96
+          },
+          "signature": "fn dotnet_webapi_extracts_imports() {"
+        },
+        {
+          "name": "dotnet_webapi_graph_has_edges",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 99,
+            "end": 105
+          },
+          "signature": "fn dotnet_webapi_graph_has_edges() {"
+        },
+        {
+          "name": "dotnet_webapi_pipeline_runs",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 41,
+            "end": 50
+          },
+          "signature": "fn dotnet_webapi_pipeline_runs() {"
+        },
+        {
+          "name": "fixture_dir",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 15,
+            "end": 20
+          },
+          "signature": "fn fixture_dir(name: &str) -> PathBuf {"
+        },
+        {
+          "name": "parse_csharp",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 28,
+            "end": 34
+          },
+          "signature": "fn parse_csharp(source: &str) -> tree_sitter::Tree {"
+        },
+        {
+          "name": "read_fixture_file",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 22,
+            "end": 26
+          },
+          "signature": "fn read_fixture_file(fixture: &str, path: &str) -> String {"
+        }
+      ]
+    },
     "tests/fixtures/csharp-project/Data/UserRepository.cs": {
       "type": "source",
       "layer": "data",
@@ -13375,6 +14094,413 @@
       "hash": "27bbbc14921d2ace",
       "exports": [],
       "cluster": "tests"
+    },
+    "tests/fixtures/dotnet-blazor/BlazorApp/Data/WeatherService.cs": {
+      "type": "source",
+      "layer": "data",
+      "arch_depth": 0,
+      "lines": 19,
+      "hash": "eec915ab0774d5df",
+      "exports": [
+        "WeatherForecast",
+        "WeatherService"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "GetForecastAsync",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 11,
+            "end": 18
+          },
+          "signature": "public Task<WeatherForecast> GetForecastAsync()",
+          "parent": "WeatherService"
+        },
+        {
+          "name": "WeatherForecast",
+          "kind": "class",
+          "visibility": "public",
+          "span": {
+            "start": 3,
+            "end": 7
+          },
+          "signature": "public class WeatherForecast"
+        },
+        {
+          "name": "WeatherService",
+          "kind": "class",
+          "visibility": "public",
+          "span": {
+            "start": 9,
+            "end": 19
+          },
+          "signature": "public class WeatherService"
+        }
+      ]
+    },
+    "tests/fixtures/dotnet-efcore/DataApp/Data/AppDbContext.cs": {
+      "type": "source",
+      "layer": "data",
+      "arch_depth": 0,
+      "lines": 15,
+      "hash": "d7068a92941e4c9f",
+      "exports": [
+        "AppDbContext"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "AppDbContext",
+          "kind": "class",
+          "visibility": "public",
+          "span": {
+            "start": 6,
+            "end": 15
+          },
+          "signature": "public class AppDbContext : DbContext"
+        },
+        {
+          "name": "OnConfiguring",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 11,
+            "end": 14
+          },
+          "signature": "protected override void OnConfiguring(DbContextOptionsBuilder options)",
+          "parent": "AppDbContext"
+        }
+      ]
+    },
+    "tests/fixtures/dotnet-efcore/DataApp/Migrations/20240101_Init.cs": {
+      "type": "source",
+      "layer": "data",
+      "arch_depth": 0,
+      "lines": 23,
+      "hash": "f903c7189a99052c",
+      "exports": [
+        "InitialCreate"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "Down",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 19,
+            "end": 22
+          },
+          "signature": "protected override void Down(MigrationBuilder migrationBuilder)",
+          "parent": "InitialCreate"
+        },
+        {
+          "name": "InitialCreate",
+          "kind": "class",
+          "visibility": "public",
+          "span": {
+            "start": 5,
+            "end": 23
+          },
+          "signature": "public class InitialCreate : Migration"
+        },
+        {
+          "name": "Up",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 7,
+            "end": 17
+          },
+          "signature": "protected override void Up(MigrationBuilder migrationBuilder)",
+          "parent": "InitialCreate"
+        }
+      ]
+    },
+    "tests/fixtures/dotnet-efcore/DataApp/Models/Order.cs": {
+      "type": "source",
+      "layer": "data",
+      "arch_depth": 0,
+      "lines": 8,
+      "hash": "6b7daa87bb26ddb8",
+      "exports": [
+        "Order"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "Order",
+          "kind": "class",
+          "visibility": "public",
+          "span": {
+            "start": 3,
+            "end": 8
+          },
+          "signature": "public class Order"
+        }
+      ]
+    },
+    "tests/fixtures/dotnet-efcore/DataApp/Models/User.cs": {
+      "type": "source",
+      "layer": "data",
+      "arch_depth": 0,
+      "lines": 8,
+      "hash": "f99e3afbf40c6828",
+      "exports": [
+        "User"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "User",
+          "kind": "class",
+          "visibility": "public",
+          "span": {
+            "start": 3,
+            "end": 8
+          },
+          "signature": "public class User"
+        }
+      ]
+    },
+    "tests/fixtures/dotnet-maui/MauiApp/Pages/MainPage.cs": {
+      "type": "source",
+      "layer": "component",
+      "arch_depth": 0,
+      "lines": 16,
+      "hash": "bda02900e7d26cc3",
+      "exports": [
+        "MainPage"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "MainPage",
+          "kind": "class",
+          "visibility": "public",
+          "span": {
+            "start": 6,
+            "end": 16
+          },
+          "signature": "public class MainPage : ContentPage"
+        }
+      ]
+    },
+    "tests/fixtures/dotnet-maui/MauiApp/Pages/SettingsPage.cs": {
+      "type": "source",
+      "layer": "component",
+      "arch_depth": 0,
+      "lines": 15,
+      "hash": "6d9f62967efa7a9b",
+      "exports": [
+        "SettingsPage"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "SettingsPage",
+          "kind": "class",
+          "visibility": "public",
+          "span": {
+            "start": 6,
+            "end": 15
+          },
+          "signature": "public class SettingsPage : ContentView"
+        }
+      ]
+    },
+    "tests/fixtures/dotnet-maui/MauiApp/Services/ISettingsService.cs": {
+      "type": "source",
+      "layer": "service",
+      "arch_depth": 0,
+      "lines": 6,
+      "hash": "3d06e494142d8548",
+      "exports": [
+        "ISettingsService"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "GetSetting",
+          "kind": "method",
+          "visibility": "internal",
+          "span": {
+            "start": 5,
+            "end": 5
+          },
+          "signature": "string GetSetting(string key);",
+          "parent": "ISettingsService"
+        },
+        {
+          "name": "ISettingsService",
+          "kind": "interface",
+          "visibility": "public",
+          "span": {
+            "start": 3,
+            "end": 6
+          },
+          "signature": "public interface ISettingsService"
+        }
+      ]
+    },
+    "tests/fixtures/dotnet-maui/MauiApp/ViewModels/MainViewModel.cs": {
+      "type": "source",
+      "layer": "component",
+      "arch_depth": 0,
+      "lines": 15,
+      "hash": "5c23b6fdcdd91ba7",
+      "exports": [
+        "MainViewModel"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "MainViewModel",
+          "kind": "class",
+          "visibility": "public",
+          "span": {
+            "start": 5,
+            "end": 15
+          },
+          "signature": "public class MainViewModel"
+        }
+      ]
+    },
+    "tests/fixtures/dotnet-webapi/MyApi/Controllers/WeatherController.cs": {
+      "type": "source",
+      "layer": "api",
+      "arch_depth": 0,
+      "lines": 23,
+      "hash": "9b4a6cfae752da5a",
+      "exports": [
+        "WeatherController"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "Get",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 18,
+            "end": 22
+          },
+          "signature": "[HttpGet]",
+          "parent": "WeatherController"
+        },
+        {
+          "name": "WeatherController",
+          "kind": "class",
+          "visibility": "public",
+          "span": {
+            "start": 7,
+            "end": 23
+          },
+          "signature": "[ApiController]"
+        }
+      ]
+    },
+    "tests/fixtures/dotnet-webapi/MyApi/Models/WeatherForecast.cs": {
+      "type": "source",
+      "layer": "data",
+      "arch_depth": 0,
+      "lines": 8,
+      "hash": "dd4a85a339a36a11",
+      "exports": [
+        "WeatherForecast"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "WeatherForecast",
+          "kind": "class",
+          "visibility": "public",
+          "span": {
+            "start": 3,
+            "end": 8
+          },
+          "signature": "public class WeatherForecast"
+        }
+      ]
+    },
+    "tests/fixtures/dotnet-webapi/MyApi/Program.cs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 12,
+      "hash": "68d854c051485b1a",
+      "exports": [],
+      "cluster": "tests"
+    },
+    "tests/fixtures/dotnet-webapi/MyApi/Services/IWeatherService.cs": {
+      "type": "source",
+      "layer": "service",
+      "arch_depth": 0,
+      "lines": 8,
+      "hash": "fa867dbd54cee1c3",
+      "exports": [
+        "IWeatherService"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "GetForecast",
+          "kind": "method",
+          "visibility": "internal",
+          "span": {
+            "start": 7,
+            "end": 7
+          },
+          "signature": "WeatherForecast GetForecast();",
+          "parent": "IWeatherService"
+        },
+        {
+          "name": "IWeatherService",
+          "kind": "interface",
+          "visibility": "public",
+          "span": {
+            "start": 5,
+            "end": 8
+          },
+          "signature": "public interface IWeatherService"
+        }
+      ]
+    },
+    "tests/fixtures/dotnet-webapi/MyApi/Services/WeatherService.cs": {
+      "type": "source",
+      "layer": "service",
+      "arch_depth": 0,
+      "lines": 16,
+      "hash": "c1beb001ffaa9243",
+      "exports": [
+        "WeatherService"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "GetForecast",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 7,
+            "end": 15
+          },
+          "signature": "public WeatherForecast GetForecast()",
+          "parent": "WeatherService"
+        },
+        {
+          "name": "WeatherService",
+          "kind": "class",
+          "visibility": "public",
+          "span": {
+            "start": 5,
+            "end": 16
+          },
+          "signature": "public class WeatherService : IWeatherService"
+        }
+      ]
     },
     "tests/fixtures/edge-cases/.ariadne/graph/clusters.json": {
       "type": "data",
@@ -14865,7 +15991,7 @@
     "tests/fixtures/tsconfig_extends/src/main.ts": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
+      "arch_depth": 1,
       "lines": 5,
       "hash": "51dcf48e0a429e5d",
       "exports": [],
@@ -14915,7 +16041,7 @@
     "tests/fixtures/tsconfig_project/src/app.ts": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 0,
+      "arch_depth": 1,
       "lines": 7,
       "hash": "df194726fe95326d",
       "exports": [
@@ -14972,7 +16098,7 @@
     "tests/fixtures/tsconfig_project/src/index.ts": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 1,
+      "arch_depth": 2,
       "lines": 3,
       "hash": "41a37886afbbcfa5",
       "exports": [],
@@ -16962,189 +18088,6 @@
   },
   "edges": [
     [
-      "benches/algo_bench.rs",
-      "src/algo/mod.rs",
-      "imports",
-      [
-        "algo"
-      ]
-    ],
-    [
-      "benches/algo_bench.rs",
-      "src/model/mod.rs",
-      "imports",
-      [
-        "*"
-      ]
-    ],
-    [
-      "benches/algo_bench.rs",
-      "src/recommend/mod.rs",
-      "imports",
-      [
-        "recommend"
-      ]
-    ],
-    [
-      "benches/analysis_bench.rs",
-      "src/algo/mod.rs",
-      "imports",
-      [
-        "algo"
-      ]
-    ],
-    [
-      "benches/analysis_bench.rs",
-      "src/analysis/diff.rs",
-      "imports",
-      [
-        "compute_structural_diff"
-      ]
-    ],
-    [
-      "benches/analysis_bench.rs",
-      "src/analysis/metrics.rs",
-      "imports",
-      [
-        "compute_martin_metrics"
-      ]
-    ],
-    [
-      "benches/analysis_bench.rs",
-      "src/analysis/smells.rs",
-      "imports",
-      [
-        "detect_smells"
-      ]
-    ],
-    [
-      "benches/analysis_bench.rs",
-      "src/model/mod.rs",
-      "imports",
-      [
-        "*"
-      ]
-    ],
-    [
-      "benches/build_bench.rs",
-      "src/parser/mod.rs",
-      "imports",
-      [
-        "ParserRegistry"
-      ]
-    ],
-    [
-      "benches/build_bench.rs",
-      "src/pipeline/mod.rs",
-      "imports",
-      [
-        "BuildOptions",
-        "BuildPipeline",
-        "FsReader",
-        "FsWalker",
-        "WalkConfig"
-      ]
-    ],
-    [
-      "benches/build_bench.rs",
-      "src/serial/json.rs",
-      "imports",
-      [
-        "JsonSerializer"
-      ]
-    ],
-    [
-      "benches/mcp_bench.rs",
-      "src/algo/mod.rs",
-      "imports",
-      [
-        "algo"
-      ]
-    ],
-    [
-      "benches/mcp_bench.rs",
-      "src/mcp/state.rs",
-      "imports",
-      [
-        "GraphState"
-      ]
-    ],
-    [
-      "benches/mcp_bench.rs",
-      "src/model/mod.rs",
-      "imports",
-      [
-        "*"
-      ]
-    ],
-    [
-      "benches/parser_bench.rs",
-      "src/hash.rs",
-      "imports",
-      [
-        "hash_content"
-      ]
-    ],
-    [
-      "benches/parser_bench.rs",
-      "src/model/mod.rs",
-      "imports",
-      [
-        "CanonicalPath"
-      ]
-    ],
-    [
-      "benches/parser_bench.rs",
-      "src/parser/mod.rs",
-      "imports",
-      [
-        "ParserRegistry"
-      ]
-    ],
-    [
-      "benches/symbol_bench.rs",
-      "src/algo/callgraph.rs",
-      "imports",
-      [
-        "CallGraph"
-      ]
-    ],
-    [
-      "benches/symbol_bench.rs",
-      "src/model/mod.rs",
-      "imports",
-      [
-        "*"
-      ]
-    ],
-    [
-      "benches/symbol_bench.rs",
-      "src/model/symbol.rs",
-      "imports",
-      [
-        "LineSpan",
-        "SymbolDef",
-        "SymbolKind",
-        "Visibility"
-      ]
-    ],
-    [
-      "benches/symbol_bench.rs",
-      "src/model/symbol_index.rs",
-      "imports",
-      [
-        "SymbolIndex"
-      ]
-    ],
-    [
-      "benches/symbol_bench.rs",
-      "src/parser/mod.rs",
-      "imports",
-      [
-        "ParserRegistry"
-      ]
-    ],
-    [
       "src/algo/blast_radius.rs",
       "src/algo/mod.rs",
       "imports",
@@ -17754,6 +18697,14 @@
     ],
     [
       "src/detect/mod.rs",
+      "src/detect/framework.rs",
+      "imports",
+      [
+        "framework"
+      ]
+    ],
+    [
+      "src/detect/mod.rs",
       "src/detect/layer.rs",
       "imports",
       [
@@ -17930,90 +18881,6 @@
       "imports",
       [
         "views"
-      ]
-    ],
-    [
-      "src/main.rs",
-      "src/algo/mod.rs",
-      "imports",
-      [
-        "algo"
-      ]
-    ],
-    [
-      "src/main.rs",
-      "src/diagnostic.rs",
-      "imports",
-      [
-        "DiagnosticReport",
-        "FatalError",
-        "WarningFormat",
-        "format_summary",
-        "format_warnings"
-      ]
-    ],
-    [
-      "src/main.rs",
-      "src/model/mod.rs",
-      "imports",
-      [
-        "CanonicalPath",
-        "ClusterMap",
-        "ProjectGraph",
-        "StatsOutput"
-      ]
-    ],
-    [
-      "src/main.rs",
-      "src/parser/mod.rs",
-      "imports",
-      [
-        "ParserRegistry"
-      ]
-    ],
-    [
-      "src/main.rs",
-      "src/pipeline/mod.rs",
-      "imports",
-      [
-        "BuildPipeline",
-        "FsReader",
-        "FsWalker",
-        "WalkConfig"
-      ]
-    ],
-    [
-      "src/main.rs",
-      "src/semantic/events.rs",
-      "imports",
-      [
-        "EventExtractor"
-      ]
-    ],
-    [
-      "src/main.rs",
-      "src/semantic/http.rs",
-      "imports",
-      [
-        "HttpRouteExtractor"
-      ]
-    ],
-    [
-      "src/main.rs",
-      "src/serial/json.rs",
-      "imports",
-      [
-        "JsonSerializer"
-      ]
-    ],
-    [
-      "src/main.rs",
-      "src/serial/mod.rs",
-      "imports",
-      [
-        "BoundaryEntry",
-        "BoundaryOutput",
-        "GraphReader"
       ]
     ],
     [
@@ -18719,11 +19586,31 @@
       ]
     ],
     [
+      "src/parser/config/csproj.rs",
+      "src/diagnostic.rs",
+      "imports",
+      [
+        "DiagnosticCollector",
+        "Warning",
+        "WarningCode"
+      ]
+    ],
+    [
+      "src/parser/config/csproj.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath"
+      ]
+    ],
+    [
       "src/parser/config/mod.rs",
       "src/diagnostic.rs",
       "imports",
       [
-        "DiagnosticCollector"
+        "DiagnosticCollector",
+        "Warning",
+        "WarningCode"
       ]
     ],
     [
@@ -18731,7 +19618,16 @@
       "src/model/mod.rs",
       "imports",
       [
+        "CanonicalPath",
         "FileSet"
+      ]
+    ],
+    [
+      "src/parser/config/mod.rs",
+      "src/parser/config/csproj.rs",
+      "imports",
+      [
+        "csproj"
       ]
     ],
     [
@@ -18818,6 +19714,22 @@
       "imports",
       [
         "WorkspaceInfo"
+      ]
+    ],
+    [
+      "src/parser/csharp.rs",
+      "src/parser/config/csproj.rs",
+      "imports",
+      [
+        "CsprojConfig"
+      ]
+    ],
+    [
+      "src/parser/csharp.rs",
+      "src/parser/config/mod.rs",
+      "imports",
+      [
+        "find_nearest_csproj"
       ]
     ],
     [
@@ -19919,6 +20831,32 @@
       ]
     ],
     [
+      "src/semantic/dotnet.rs",
+      "src/model/semantic.rs",
+      "imports",
+      [
+        "Boundary",
+        "BoundaryKind",
+        "BoundaryRole"
+      ]
+    ],
+    [
+      "src/semantic/dotnet.rs",
+      "src/model/types.rs",
+      "imports",
+      [
+        "CanonicalPath"
+      ]
+    ],
+    [
+      "src/semantic/dotnet.rs",
+      "src/semantic/mod.rs",
+      "imports",
+      [
+        "BoundaryExtractor"
+      ]
+    ],
+    [
       "src/semantic/edges.rs",
       "src/model/semantic.rs",
       "imports",
@@ -20005,6 +20943,14 @@
       "imports",
       [
         "CanonicalPath"
+      ]
+    ],
+    [
+      "src/semantic/mod.rs",
+      "src/semantic/dotnet.rs",
+      "imports",
+      [
+        "dotnet"
       ]
     ],
     [
@@ -20337,63 +21283,6 @@
       ]
     ],
     [
-      "tests/callgraph_tests.rs",
-      "src/algo/callgraph.rs",
-      "tests",
-      [
-        "CallEdgeKind",
-        "CallGraph"
-      ]
-    ],
-    [
-      "tests/callgraph_tests.rs",
-      "src/model/edge.rs",
-      "tests",
-      [
-        "Edge",
-        "EdgeType"
-      ]
-    ],
-    [
-      "tests/callgraph_tests.rs",
-      "src/model/node.rs",
-      "tests",
-      [
-        "ArchLayer",
-        "FileType",
-        "Node"
-      ]
-    ],
-    [
-      "tests/callgraph_tests.rs",
-      "src/model/symbol.rs",
-      "tests",
-      [
-        "LineSpan",
-        "SymbolDef",
-        "Visibility"
-      ]
-    ],
-    [
-      "tests/callgraph_tests.rs",
-      "src/model/symbol_index.rs",
-      "tests",
-      [
-        "SymbolIndex"
-      ]
-    ],
-    [
-      "tests/callgraph_tests.rs",
-      "src/model/types.rs",
-      "tests",
-      [
-        "CanonicalPath",
-        "ClusterId",
-        "ContentHash",
-        "Symbol"
-      ]
-    ],
-    [
       "tests/fixtures/edge-cases/circular-a.ts",
       "tests/fixtures/edge-cases/circular-b.ts",
       "imports",
@@ -20509,6 +21398,38 @@
       "imports",
       [
         "format"
+      ]
+    ],
+    [
+      "tests/fixtures/tsconfig_extends/src/main.ts",
+      "tests/fixtures/tsconfig_extends/lib/core.ts",
+      "imports",
+      [
+        "coreInit"
+      ]
+    ],
+    [
+      "tests/fixtures/tsconfig_extends/src/main.ts",
+      "tests/fixtures/tsconfig_extends/src/service.ts",
+      "imports",
+      [
+        "startService"
+      ]
+    ],
+    [
+      "tests/fixtures/tsconfig_project/src/app.ts",
+      "tests/fixtures/tsconfig_project/src/components/Button.ts",
+      "imports",
+      [
+        "Button"
+      ]
+    ],
+    [
+      "tests/fixtures/tsconfig_project/src/app.ts",
+      "tests/fixtures/tsconfig_project/src/shared/lib/utils.ts",
+      "imports",
+      [
+        "formatDate"
       ]
     ],
     [
@@ -20665,231 +21586,6 @@
       "re_exports",
       [
         "format"
-      ]
-    ],
-    [
-      "tests/graph_tests.rs",
-      "src/diagnostic.rs",
-      "tests",
-      [
-        "WarningCode"
-      ]
-    ],
-    [
-      "tests/helpers.rs",
-      "src/parser/mod.rs",
-      "tests",
-      [
-        "ParserRegistry"
-      ]
-    ],
-    [
-      "tests/helpers.rs",
-      "src/pipeline/mod.rs",
-      "tests",
-      [
-        "BuildOutput",
-        "BuildPipeline",
-        "FsReader",
-        "FsWalker",
-        "WalkConfig"
-      ]
-    ],
-    [
-      "tests/helpers.rs",
-      "src/serial/json.rs",
-      "tests",
-      [
-        "JsonSerializer"
-      ]
-    ],
-    [
-      "tests/pipeline_tests.rs",
-      "src/diagnostic.rs",
-      "tests",
-      [
-        "DiagnosticCollector",
-        "Warning",
-        "WarningCode"
-      ]
-    ],
-    [
-      "tests/pipeline_tests.rs",
-      "src/model/mod.rs",
-      "tests",
-      [
-        "CanonicalPath"
-      ]
-    ],
-    [
-      "tests/pipeline_tests.rs",
-      "src/parser/mod.rs",
-      "tests",
-      [
-        "ParserRegistry"
-      ]
-    ],
-    [
-      "tests/pipeline_tests.rs",
-      "src/pipeline/mod.rs",
-      "tests",
-      [
-        "BuildOptions",
-        "BuildPipeline",
-        "FileWalker",
-        "FsReader",
-        "FsWalker",
-        "WalkConfig"
-      ]
-    ],
-    [
-      "tests/pipeline_tests.rs",
-      "src/serial/json.rs",
-      "tests",
-      [
-        "JsonSerializer"
-      ]
-    ],
-    [
-      "tests/pipeline_tests.rs",
-      "src/serial/mod.rs",
-      "tests",
-      [
-        "GraphReader",
-        "RawImportOutput"
-      ]
-    ],
-    [
-      "tests/properties.rs",
-      "src/diagnostic.rs",
-      "tests",
-      [
-        "WarningCode"
-      ]
-    ],
-    [
-      "tests/properties.rs",
-      "src/hash.rs",
-      "tests",
-      [
-        "hash_content"
-      ]
-    ],
-    [
-      "tests/properties.rs",
-      "src/model/mod.rs",
-      "tests",
-      [
-        "CanonicalPath"
-      ]
-    ],
-    [
-      "tests/semantic_tests.rs",
-      "src/model/semantic.rs",
-      "tests",
-      [
-        "Boundary",
-        "BoundaryKind",
-        "BoundaryRole"
-      ]
-    ],
-    [
-      "tests/semantic_tests.rs",
-      "src/model/types.rs",
-      "tests",
-      [
-        "CanonicalPath"
-      ]
-    ],
-    [
-      "tests/semantic_tests.rs",
-      "src/semantic/edges.rs",
-      "tests",
-      [
-        "build_semantic_edges"
-      ]
-    ],
-    [
-      "tests/semantic_tests.rs",
-      "src/semantic/events.rs",
-      "tests",
-      [
-        "EventExtractor"
-      ]
-    ],
-    [
-      "tests/semantic_tests.rs",
-      "src/semantic/http.rs",
-      "tests",
-      [
-        "HttpRouteExtractor"
-      ]
-    ],
-    [
-      "tests/semantic_tests.rs",
-      "src/semantic/mod.rs",
-      "tests",
-      [
-        "BoundaryExtractor"
-      ]
-    ],
-    [
-      "tests/semantic_tests.rs",
-      "src/serial/mod.rs",
-      "tests",
-      [
-        "serial"
-      ]
-    ],
-    [
-      "tests/symbol_tests.rs",
-      "src/model/symbol.rs",
-      "tests",
-      [
-        "LineSpan",
-        "SymbolDef",
-        "SymbolKind",
-        "Visibility"
-      ]
-    ],
-    [
-      "tests/symbol_tests.rs",
-      "src/parser/mod.rs",
-      "tests",
-      [
-        "SymbolExtractor"
-      ]
-    ],
-    [
-      "tests/temporal_integration.rs",
-      "src/diagnostic.rs",
-      "tests",
-      [
-        "DiagnosticCollector"
-      ]
-    ],
-    [
-      "tests/temporal_integration.rs",
-      "src/model/mod.rs",
-      "tests",
-      [
-        "ArchLayer",
-        "CanonicalPath",
-        "ClusterId",
-        "ContentHash",
-        "Edge",
-        "EdgeType",
-        "FileType",
-        "Node",
-        "ProjectGraph"
-      ]
-    ],
-    [
-      "tests/temporal_integration.rs",
-      "src/temporal/mod.rs",
-      "tests",
-      [
-        "temporal"
       ]
     ]
   ]

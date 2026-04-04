@@ -8,41 +8,10 @@
         ".claude/commands/review-plan.md",
         ".claude/commands/review-spec.md",
         ".claude/commands/write-spec.md",
-        ".claude/moira/config.yaml",
-        ".claude/moira/config/budgets.yaml",
-        ".claude/moira/config/mcp-registry.yaml",
-        ".claude/moira/knowledge/architecture/full.md",
-        ".claude/moira/knowledge/conventions/full.md",
-        ".claude/moira/knowledge/conventions/index.md",
-        ".claude/moira/knowledge/conventions/summary.md",
-        ".claude/moira/knowledge/decisions/full.md",
-        ".claude/moira/knowledge/decisions/index.md",
-        ".claude/moira/knowledge/decisions/summary.md",
-        ".claude/moira/knowledge/dependencies/full.md",
-        ".claude/moira/knowledge/failures/full.md",
-        ".claude/moira/knowledge/failures/index.md",
-        ".claude/moira/knowledge/failures/summary.md",
-        ".claude/moira/knowledge/libraries/index.md",
-        ".claude/moira/knowledge/libraries/summary.md",
-        ".claude/moira/knowledge/patterns/full.md",
-        ".claude/moira/knowledge/patterns/index.md",
-        ".claude/moira/knowledge/patterns/summary.md",
-        ".claude/moira/knowledge/project-model/full.md",
-        ".claude/moira/knowledge/project-model/index.md",
-        ".claude/moira/knowledge/project-model/summary.md",
-        ".claude/moira/knowledge/quality-map/full.md",
-        ".claude/moira/knowledge/quality-map/summary.md",
-        ".claude/moira/knowledge/security/full.md",
-        ".claude/moira/knowledge/testing/full.md",
-        ".claude/moira/project/rules/boundaries.yaml",
-        ".claude/moira/project/rules/conventions.yaml",
-        ".claude/moira/project/rules/patterns.yaml",
-        ".claude/moira/project/rules/stack.yaml",
-        ".claude/moira/state/reflection/deep-reflection-counter.yaml",
         ".claude/settings.json",
         ".claude/settings.local.json"
       ],
-      "file_count": 39,
+      "file_count": 8,
       "internal_edges": 0,
       "external_edges": 0,
       "cohesion": 1.0
@@ -53,6 +22,45 @@
         ".github/workflows/release.yml"
       ],
       "file_count": 2,
+      "internal_edges": 0,
+      "external_edges": 0,
+      "cohesion": 1.0
+    },
+    ".moira": {
+      "files": [
+        ".moira/config.yaml",
+        ".moira/config/budgets.yaml",
+        ".moira/config/mcp-registry.yaml",
+        ".moira/knowledge/architecture/full.md",
+        ".moira/knowledge/conventions/full.md",
+        ".moira/knowledge/conventions/index.md",
+        ".moira/knowledge/conventions/summary.md",
+        ".moira/knowledge/decisions/full.md",
+        ".moira/knowledge/decisions/index.md",
+        ".moira/knowledge/decisions/summary.md",
+        ".moira/knowledge/dependencies/full.md",
+        ".moira/knowledge/failures/full.md",
+        ".moira/knowledge/failures/index.md",
+        ".moira/knowledge/failures/summary.md",
+        ".moira/knowledge/libraries/index.md",
+        ".moira/knowledge/libraries/summary.md",
+        ".moira/knowledge/patterns/full.md",
+        ".moira/knowledge/patterns/index.md",
+        ".moira/knowledge/patterns/summary.md",
+        ".moira/knowledge/project-model/full.md",
+        ".moira/knowledge/project-model/index.md",
+        ".moira/knowledge/project-model/summary.md",
+        ".moira/knowledge/quality-map/full.md",
+        ".moira/knowledge/quality-map/index.md",
+        ".moira/knowledge/quality-map/summary.md",
+        ".moira/knowledge/security/full.md",
+        ".moira/knowledge/testing/full.md",
+        ".moira/project/rules/boundaries.yaml",
+        ".moira/project/rules/conventions.yaml",
+        ".moira/project/rules/patterns.yaml",
+        ".moira/project/rules/stack.yaml"
+      ],
+      "file_count": 31,
       "internal_edges": 0,
       "external_edges": 0,
       "cohesion": 1.0
@@ -79,8 +87,8 @@
       ],
       "file_count": 17,
       "internal_edges": 32,
-      "external_edges": 49,
-      "cohesion": 0.3951
+      "external_edges": 43,
+      "cohesion": 0.4267
     },
     "analysis": {
       "files": [
@@ -91,8 +99,8 @@
       ],
       "file_count": 4,
       "internal_edges": 6,
-      "external_edges": 15,
-      "cohesion": 0.2857
+      "external_edges": 12,
+      "cohesion": 0.3333
     },
     "benches": {
       "files": [
@@ -106,8 +114,8 @@
       ],
       "file_count": 7,
       "internal_edges": 0,
-      "external_edges": 22,
-      "cohesion": 0.0
+      "external_edges": 0,
+      "cohesion": 1.0
     },
     "cluster": {
       "files": [
@@ -138,6 +146,8 @@
         "design/reports/archive/2026-03-25-phase4d-formal-methods-evaluation.md",
         "design/specs/2026-03-29-phase9-implementation-plan.md",
         "design/specs/2026-03-29-phase9-recommendations.md",
+        "design/specs/2026-04-04-phase11-csharp-dotnet.md",
+        "design/specs/2026-04-04-phase11-implementation-plan.md",
         "design/specs/archive/2026-03-17-phase1-core-cli.md",
         "design/specs/archive/2026-03-17-phase1-implementation-plan.md",
         "design/specs/archive/2026-03-17-phase1a-implementation-plan.md",
@@ -159,7 +169,7 @@
         "design/specs/archive/2026-03-25-phase7-implementation-plan.md",
         "design/testing.md"
       ],
-      "file_count": 38,
+      "file_count": 40,
       "internal_edges": 0,
       "external_edges": 0,
       "cohesion": 1.0
@@ -168,23 +178,15 @@
       "files": [
         "src/detect/case_sensitivity.rs",
         "src/detect/filetype.rs",
+        "src/detect/framework.rs",
         "src/detect/layer.rs",
         "src/detect/mod.rs",
         "src/detect/workspace.rs"
       ],
-      "file_count": 5,
-      "internal_edges": 4,
+      "file_count": 6,
+      "internal_edges": 5,
       "external_edges": 10,
-      "cohesion": 0.2857
-    },
-    "docs": {
-      "files": [
-        "docs/superpowers/plans/2026-03-19-architecture-review-fixes.md"
-      ],
-      "file_count": 1,
-      "internal_edges": 0,
-      "external_edges": 0,
-      "cohesion": 1.0
+      "cohesion": 0.3333
     },
     "mcp": {
       "files": [
@@ -207,8 +209,8 @@
       ],
       "file_count": 16,
       "internal_edges": 32,
-      "external_edges": 34,
-      "cohesion": 0.4848
+      "external_edges": 33,
+      "cohesion": 0.4923
     },
     "model": {
       "files": [
@@ -232,11 +234,12 @@
       ],
       "file_count": 17,
       "internal_edges": 20,
-      "external_edges": 140,
-      "cohesion": 0.125
+      "external_edges": 124,
+      "cohesion": 0.1389
     },
     "parser": {
       "files": [
+        "src/parser/config/csproj.rs",
         "src/parser/config/gomod.rs",
         "src/parser/config/jsonc.rs",
         "src/parser/config/mod.rs",
@@ -257,10 +260,10 @@
         "src/parser/typescript.rs",
         "src/parser/yaml.rs"
       ],
-      "file_count": 19,
-      "internal_edges": 42,
-      "external_edges": 47,
-      "cohesion": 0.4719
+      "file_count": 20,
+      "internal_edges": 45,
+      "external_edges": 42,
+      "cohesion": 0.5172
     },
     "pipeline": {
       "files": [
@@ -272,8 +275,8 @@
       ],
       "file_count": 5,
       "internal_edges": 4,
-      "external_edges": 32,
-      "cohesion": 0.1111
+      "external_edges": 28,
+      "cohesion": 0.125
     },
     "recommend": {
       "files": [
@@ -287,8 +290,8 @@
       ],
       "file_count": 7,
       "internal_edges": 11,
-      "external_edges": 23,
-      "cohesion": 0.3235
+      "external_edges": 22,
+      "cohesion": 0.3333
     },
     "root": {
       "files": [
@@ -301,21 +304,22 @@
         "src/main.rs"
       ],
       "file_count": 7,
-      "internal_edges": 3,
-      "external_edges": 46,
-      "cohesion": 0.0612
+      "internal_edges": 2,
+      "external_edges": 33,
+      "cohesion": 0.0571
     },
     "semantic": {
       "files": [
+        "src/semantic/dotnet.rs",
         "src/semantic/edges.rs",
         "src/semantic/events.rs",
         "src/semantic/http.rs",
         "src/semantic/mod.rs"
       ],
-      "file_count": 4,
-      "internal_edges": 5,
-      "external_edges": 17,
-      "cohesion": 0.2273
+      "file_count": 5,
+      "internal_edges": 7,
+      "external_edges": 13,
+      "cohesion": 0.35
     },
     "serial": {
       "files": [
@@ -325,8 +329,8 @@
       ],
       "file_count": 3,
       "internal_edges": 2,
-      "external_edges": 20,
-      "cohesion": 0.0909
+      "external_edges": 13,
+      "cohesion": 0.1333
     },
     "temporal": {
       "files": [
@@ -339,13 +343,14 @@
       ],
       "file_count": 6,
       "internal_edges": 5,
-      "external_edges": 15,
-      "cohesion": 0.25
+      "external_edges": 14,
+      "cohesion": 0.2632
     },
     "tests": {
       "files": [
         "tests/callgraph_tests.rs",
         "tests/config_resolution_tests.rs",
+        "tests/dotnet_integration_tests.rs",
         "tests/fixtures/csharp-project/Data/UserRepository.cs",
         "tests/fixtures/csharp-project/Program.cs",
         "tests/fixtures/csharp-project/Services/AuthService.cs",
@@ -355,6 +360,20 @@
         "tests/fixtures/data-files/sample.json",
         "tests/fixtures/data-files/sample.yaml",
         "tests/fixtures/data-files/sample.yml",
+        "tests/fixtures/dotnet-blazor/BlazorApp/Data/WeatherService.cs",
+        "tests/fixtures/dotnet-efcore/DataApp/Data/AppDbContext.cs",
+        "tests/fixtures/dotnet-efcore/DataApp/Migrations/20240101_Init.cs",
+        "tests/fixtures/dotnet-efcore/DataApp/Models/Order.cs",
+        "tests/fixtures/dotnet-efcore/DataApp/Models/User.cs",
+        "tests/fixtures/dotnet-maui/MauiApp/Pages/MainPage.cs",
+        "tests/fixtures/dotnet-maui/MauiApp/Pages/SettingsPage.cs",
+        "tests/fixtures/dotnet-maui/MauiApp/Services/ISettingsService.cs",
+        "tests/fixtures/dotnet-maui/MauiApp/ViewModels/MainViewModel.cs",
+        "tests/fixtures/dotnet-webapi/MyApi/Controllers/WeatherController.cs",
+        "tests/fixtures/dotnet-webapi/MyApi/Models/WeatherForecast.cs",
+        "tests/fixtures/dotnet-webapi/MyApi/Program.cs",
+        "tests/fixtures/dotnet-webapi/MyApi/Services/IWeatherService.cs",
+        "tests/fixtures/dotnet-webapi/MyApi/Services/WeatherService.cs",
         "tests/fixtures/edge-cases/.ariadne/graph/clusters.json",
         "tests/fixtures/edge-cases/.ariadne/graph/graph.json",
         "tests/fixtures/edge-cases/circular-a.ts",
@@ -475,10 +494,10 @@
         "tests/symbol_tests.rs",
         "tests/temporal_integration.rs"
       ],
-      "file_count": 130,
-      "internal_edges": 35,
-      "external_edges": 31,
-      "cohesion": 0.5303
+      "file_count": 145,
+      "internal_edges": 39,
+      "external_edges": 0,
+      "cohesion": 1.0
     },
     "views": {
       "files": [

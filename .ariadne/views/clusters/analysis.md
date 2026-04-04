@@ -4,10 +4,10 @@
 
 | File | Type | Layer | In | Out | Centrality |
 |------|------|------:|---:|----:|-----------:|
-| `src/analysis/diff.rs` | source | 7 | 3 | 4 | 0.0003 |
-| `src/analysis/metrics.rs` | source | 5 | 5 | 2 | 0.0002 |
+| `src/analysis/diff.rs` | source | 7 | 2 | 4 | 0.0002 |
+| `src/analysis/metrics.rs` | source | 5 | 4 | 2 | 0.0002 |
 | `src/analysis/mod.rs` | source | 8 | 1 | 3 | 0.0000 |
-| `src/analysis/smells.rs` | source | 6 | 6 | 3 | 0.0005 |
+| `src/analysis/smells.rs` | source | 6 | 5 | 3 | 0.0004 |
 
 ## Internal Dependencies
 
@@ -29,9 +29,6 @@
 
 ## External Dependents
 
-- `src/analysis/diff.rs` ← `benches/analysis_bench.rs` (imports)
-- `src/analysis/metrics.rs` ← `benches/analysis_bench.rs` (imports)
-- `src/analysis/smells.rs` ← `benches/analysis_bench.rs` (imports)
 - `src/analysis/mod.rs` ← `src/lib.rs` (imports)
 - `src/analysis/smells.rs` ← `src/mcp/prompts.rs` (imports)
 - `src/analysis/smells.rs` ← `src/mcp/resources.rs` (imports)

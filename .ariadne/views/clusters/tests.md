@@ -5,6 +5,7 @@
 | File | Type | Layer | In | Out | Centrality |
 |------|------|------:|---:|----:|-----------:|
 | `tests/callgraph_tests.rs` | test | 0 | 0 | 0 | 0.0000 |
+| `tests/config_resolution_tests.rs` | test | 0 | 0 | 0 | 0.0000 |
 | `tests/fixtures/csharp-project/Data/UserRepository.cs` | source | 0 | 0 | 0 | 0.0000 |
 | `tests/fixtures/csharp-project/Program.cs` | source | 0 | 0 | 0 | 0.0000 |
 | `tests/fixtures/csharp-project/Services/AuthService.cs` | source | 0 | 0 | 0 | 0.0000 |
@@ -31,6 +32,8 @@
 | `tests/fixtures/go-service/internal/handler/handler.go` | source | 0 | 0 | 0 | 0.0000 |
 | `tests/fixtures/go-service/internal/repository/repo.go` | source | 0 | 0 | 0 | 0.0000 |
 | `tests/fixtures/go-service/internal/service/service.go` | source | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/gomod_project/internal/auth/auth.go` | source | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/gomod_project/main.go` | source | 0 | 0 | 0 | 0.0000 |
 | `tests/fixtures/java-project/src/main/java/com/example/App.java` | source | 0 | 0 | 0 | 0.0000 |
 | `tests/fixtures/java-project/src/main/java/com/example/data/UserRepo.java` | source | 0 | 0 | 0 | 0.0000 |
 | `tests/fixtures/java-project/src/main/java/com/example/service/AuthService.java` | source | 0 | 0 | 0 | 0.0000 |
@@ -56,6 +59,9 @@
 | `tests/fixtures/python-package/src/utils/helpers.py` | test | 0 | 2 | 0 | 0.0000 |
 | `tests/fixtures/python-package/tests/conftest.py` | test | 0 | 0 | 0 | 0.0000 |
 | `tests/fixtures/python-package/tests/test_auth.py` | test | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/python_src_layout/src/mypackage/__init__.py` | test | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/python_src_layout/src/mypackage/main.py` | test | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/python_src_layout/src/mypackage/utils.py` | test | 0 | 0 | 0 | 0.0000 |
 | `tests/fixtures/rust-crate/.ariadne/graph/clusters.json` | data | 0 | 0 | 0 | 0.0000 |
 | `tests/fixtures/rust-crate/.ariadne/graph/graph.json` | data | 0 | 0 | 0 | 0.0000 |
 | `tests/fixtures/rust-crate/src/auth/login.rs` | test | 0 | 1 | 0 | 0.0000 |
@@ -64,6 +70,26 @@
 | `tests/fixtures/rust-crate/src/utils/format.rs` | test | 0 | 1 | 0 | 0.0000 |
 | `tests/fixtures/rust-crate/src/utils/mod.rs` | test | 1 | 1 | 1 | 0.0000 |
 | `tests/fixtures/rust-crate/tests/integration.rs` | test | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/semantic/aspnet_routes.cs` | source | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/semantic/dom_events.ts` | source | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/semantic/event_emitters.ts` | source | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/semantic/event_generic.py` | test | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/semantic/express_routes.ts` | source | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/semantic/fastapi_routes.py` | test | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/semantic/go_routes.go` | source | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/semantic/mixed_framework.ts` | source | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/semantic/no_boundaries.rs` | test | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/semantic/spring_routes.java` | source | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/tsconfig_extends/lib/core.ts` | source | 0 | 1 | 0 | 0.0000 |
+| `tests/fixtures/tsconfig_extends/src/main.ts` | source | 1 | 0 | 2 | 0.0000 |
+| `tests/fixtures/tsconfig_extends/src/service.ts` | source | 0 | 1 | 0 | 0.0000 |
+| `tests/fixtures/tsconfig_extends/tsconfig.base.json` | config | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/tsconfig_extends/tsconfig.json` | config | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/tsconfig_project/src/app.ts` | source | 1 | 1 | 2 | 0.0000 |
+| `tests/fixtures/tsconfig_project/src/components/Button.ts` | source | 0 | 1 | 0 | 0.0000 |
+| `tests/fixtures/tsconfig_project/src/index.ts` | source | 2 | 0 | 1 | 0.0000 |
+| `tests/fixtures/tsconfig_project/src/shared/lib/utils.ts` | source | 0 | 1 | 0 | 0.0000 |
+| `tests/fixtures/tsconfig_project/tsconfig.json` | config | 0 | 0 | 0 | 0.0000 |
 | `tests/fixtures/tsx-components/App.tsx` | source | 1 | 0 | 10 | 0.0000 |
 | `tests/fixtures/tsx-components/components/Callback.tsx` | source | 0 | 1 | 0 | 0.0000 |
 | `tests/fixtures/tsx-components/components/Card.tsx` | source | 0 | 1 | 0 | 0.0000 |
@@ -105,6 +131,7 @@
 | `tests/mcp_tests.rs` | test | 0 | 0 | 0 | 0.0000 |
 | `tests/pipeline_tests.rs` | test | 0 | 0 | 0 | 0.0000 |
 | `tests/properties.rs` | test | 0 | 0 | 0 | 0.0000 |
+| `tests/semantic_tests.rs` | test | 0 | 0 | 0 | 0.0000 |
 | `tests/symbol_tests.rs` | test | 0 | 0 | 0 | 0.0000 |
 | `tests/temporal_integration.rs` | test | 0 | 0 | 0 | 0.0000 |
 
@@ -121,6 +148,11 @@
 - `tests/fixtures/rust-crate/src/lib.rs` → `tests/fixtures/rust-crate/src/auth/mod.rs` (imports)
 - `tests/fixtures/rust-crate/src/lib.rs` → `tests/fixtures/rust-crate/src/utils/mod.rs` (imports)
 - `tests/fixtures/rust-crate/src/utils/mod.rs` → `tests/fixtures/rust-crate/src/utils/format.rs` (imports)
+- `tests/fixtures/tsconfig_extends/src/main.ts` → `tests/fixtures/tsconfig_extends/lib/core.ts` (imports)
+- `tests/fixtures/tsconfig_extends/src/main.ts` → `tests/fixtures/tsconfig_extends/src/service.ts` (imports)
+- `tests/fixtures/tsconfig_project/src/app.ts` → `tests/fixtures/tsconfig_project/src/components/Button.ts` (imports)
+- `tests/fixtures/tsconfig_project/src/app.ts` → `tests/fixtures/tsconfig_project/src/shared/lib/utils.ts` (imports)
+- `tests/fixtures/tsconfig_project/src/index.ts` → `tests/fixtures/tsconfig_project/src/app.ts` (imports)
 - `tests/fixtures/tsx-components/App.tsx` → `tests/fixtures/tsx-components/components/Callback.tsx` (imports)
 - `tests/fixtures/tsx-components/App.tsx` → `tests/fixtures/tsx-components/components/Card.tsx` (imports)
 - `tests/fixtures/tsx-components/App.tsx` → `tests/fixtures/tsx-components/components/Conditional.tsx` (imports)
@@ -141,29 +173,5 @@
 
 ## Tests
 
-- `tests/callgraph_tests.rs` tests `src/algo/callgraph.rs`
-- `tests/callgraph_tests.rs` tests `src/model/edge.rs`
-- `tests/callgraph_tests.rs` tests `src/model/node.rs`
-- `tests/callgraph_tests.rs` tests `src/model/symbol.rs`
-- `tests/callgraph_tests.rs` tests `src/model/symbol_index.rs`
-- `tests/callgraph_tests.rs` tests `src/model/types.rs`
 - `tests/fixtures/typescript-app/src/__tests__/login.test.ts` tests `tests/fixtures/typescript-app/src/auth/login.ts`
-- `tests/graph_tests.rs` tests `src/diagnostic.rs`
-- `tests/helpers.rs` tests `src/parser/mod.rs`
-- `tests/helpers.rs` tests `src/pipeline/mod.rs`
-- `tests/helpers.rs` tests `src/serial/json.rs`
-- `tests/pipeline_tests.rs` tests `src/diagnostic.rs`
-- `tests/pipeline_tests.rs` tests `src/model/mod.rs`
-- `tests/pipeline_tests.rs` tests `src/parser/mod.rs`
-- `tests/pipeline_tests.rs` tests `src/pipeline/mod.rs`
-- `tests/pipeline_tests.rs` tests `src/serial/json.rs`
-- `tests/pipeline_tests.rs` tests `src/serial/mod.rs`
-- `tests/properties.rs` tests `src/diagnostic.rs`
-- `tests/properties.rs` tests `src/hash.rs`
-- `tests/properties.rs` tests `src/model/mod.rs`
-- `tests/symbol_tests.rs` tests `src/model/symbol.rs`
-- `tests/symbol_tests.rs` tests `src/parser/mod.rs`
-- `tests/temporal_integration.rs` tests `src/diagnostic.rs`
-- `tests/temporal_integration.rs` tests `src/model/mod.rs`
-- `tests/temporal_integration.rs` tests `src/temporal/mod.rs`
 

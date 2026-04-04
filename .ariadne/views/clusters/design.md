@@ -12,7 +12,6 @@
 | `design/error-handling.md` | doc | 0 | 0 | 0 | 0.0000 |
 | `design/path-resolution.md` | doc | 0 | 0 | 0 | 0.0000 |
 | `design/performance.md` | doc | 0 | 0 | 0 | 0.0000 |
-| `design/reports/2026-03-25-phase4d-formal-methods-evaluation.md` | doc | 0 | 0 | 0 | 0.0000 |
 | `design/reports/archive/2026-03-17-doc-audit.md` | doc | 0 | 0 | 0 | 0.0000 |
 | `design/reports/archive/2026-03-18-architecture-review.md` | doc | 0 | 0 | 0 | 0.0000 |
 | `design/reports/archive/2026-03-18-v2-architecture-review.md` | doc | 0 | 0 | 0 | 0.0000 |
@@ -20,8 +19,9 @@
 | `design/reports/archive/2026-03-19-v2-architecture-review.md` | doc | 0 | 0 | 0 | 0.0000 |
 | `design/reports/archive/2026-03-22-architectural-review.md` | doc | 0 | 0 | 0 | 0.0000 |
 | `design/reports/archive/2026-03-23-moira-violations.md` | doc | 0 | 0 | 0 | 0.0000 |
-| `design/specs/2026-03-25-phase7-git-temporal-analysis.md` | doc | 0 | 0 | 0 | 0.0000 |
-| `design/specs/2026-03-25-phase7-implementation-plan.md` | doc | 0 | 0 | 0 | 0.0000 |
+| `design/reports/archive/2026-03-25-phase4d-formal-methods-evaluation.md` | doc | 0 | 0 | 0 | 0.0000 |
+| `design/specs/2026-03-29-phase9-implementation-plan.md` | doc | 0 | 0 | 0 | 0.0000 |
+| `design/specs/2026-03-29-phase9-recommendations.md` | doc | 0 | 0 | 0 | 0.0000 |
 | `design/specs/archive/2026-03-17-phase1-core-cli.md` | doc | 0 | 0 | 0 | 0.0000 |
 | `design/specs/archive/2026-03-17-phase1-implementation-plan.md` | doc | 0 | 0 | 0 | 0.0000 |
 | `design/specs/archive/2026-03-17-phase1a-implementation-plan.md` | doc | 0 | 0 | 0 | 0.0000 |
@@ -39,5 +39,7 @@
 | `design/specs/archive/2026-03-19-phase3b-implementation-plan.md` | doc | 0 | 0 | 0 | 0.0000 |
 | `design/specs/archive/2026-03-19-phase3c-advanced-graph-analytics.md` | doc | 0 | 0 | 0 | 0.0000 |
 | `design/specs/archive/2026-03-19-phase3c-implementation-plan.md` | doc | 0 | 0 | 0 | 0.0000 |
+| `design/specs/archive/2026-03-25-phase7-git-temporal-analysis.md` | doc | 0 | 0 | 0 | 0.0000 |
+| `design/specs/archive/2026-03-25-phase7-implementation-plan.md` | doc | 0 | 0 | 0 | 0.0000 |
 | `design/testing.md` | doc | 0 | 0 | 0 | 0.0000 |
 

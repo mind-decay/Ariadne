@@ -1,5 +1,6 @@
 pub mod case_sensitivity;
 pub mod filetype;
+pub mod framework;
 pub mod layer;
 pub mod workspace;
 

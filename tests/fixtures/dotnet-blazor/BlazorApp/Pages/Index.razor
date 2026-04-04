@@ -1,0 +1,16 @@
+@page "/"
+@using BlazorApp.Data
+@inject WeatherService Weather
+
+<h1>Weather</h1>
+
+<p>Temperature: @forecast?.TemperatureC</p>
+
+@code {
+    private WeatherForecast forecast;
+
+    protected override async Task OnInitializedAsync()
+    {
+        forecast = await Weather.GetForecastAsync();
+    }
+}

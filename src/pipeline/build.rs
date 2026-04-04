@@ -195,6 +195,11 @@ fn classify_edge_type(
     is_type_only: bool,
     import_kind: &ImportKind,
 ) -> EdgeType {
+    // .csproj ProjectReference → project_ref edge (D-132)
+    if matches!(import_kind, ImportKind::ProjectReference) {
+        return EdgeType::ProjectRef;
+    }
+
     // Markdown link references → references edge (D-069)
     if matches!(import_kind, ImportKind::Link) {
         return EdgeType::References;

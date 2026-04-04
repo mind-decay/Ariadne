@@ -5,9 +5,9 @@
 | File | Type | Layer | In | Out | Centrality |
 |------|------|------:|---:|----:|-----------:|
 | `src/detect/case_sensitivity.rs` | source | 1 | 1 | 1 | 0.0000 |
-| `src/detect/filetype.rs` | source | 3 | 1 | 1 | 0.0001 |
-| `src/detect/layer.rs` | source | 3 | 1 | 1 | 0.0001 |
-| `src/detect/mod.rs` | source | 5 | 4 | 4 | 0.0005 |
+| `src/detect/filetype.rs` | source | 3 | 1 | 1 | 0.0000 |
+| `src/detect/layer.rs` | source | 3 | 1 | 1 | 0.0000 |
+| `src/detect/mod.rs` | source | 5 | 4 | 4 | 0.0003 |
 | `src/detect/workspace.rs` | source | 4 | 1 | 3 | 0.0001 |
 
 ## Internal Dependencies

@@ -12,6 +12,7 @@ use ariadne_graph::model::StatsOutput;
 use ariadne_graph::model::{CanonicalPath, ClusterMap, ProjectGraph};
 use ariadne_graph::parser::ParserRegistry;
 use ariadne_graph::pipeline::{BuildPipeline, FsReader, FsWalker, WalkConfig};
+use ariadne_graph::semantic::dotnet::DotnetBoundaryExtractor;
 use ariadne_graph::semantic::events::EventExtractor;
 use ariadne_graph::semantic::http::HttpRouteExtractor;
 use ariadne_graph::serial::json::JsonSerializer;
@@ -447,6 +448,7 @@ fn main() {
             let mut registry = ParserRegistry::with_tier1_config(rust_crate_name);
             registry.register_boundary_extractor(std::sync::Arc::new(HttpRouteExtractor));
             registry.register_boundary_extractor(std::sync::Arc::new(EventExtractor));
+            registry.register_boundary_extractor(std::sync::Arc::new(DotnetBoundaryExtractor));
             let pipeline = std::sync::Arc::new(BuildPipeline::new(
                 Box::new(FsWalker::new()),
                 Box::new(FsReader::new()),
@@ -620,6 +622,7 @@ fn run_build(
     let mut registry = ParserRegistry::with_tier1_config(rust_crate_name.clone());
     registry.register_boundary_extractor(std::sync::Arc::new(HttpRouteExtractor));
     registry.register_boundary_extractor(std::sync::Arc::new(EventExtractor));
+    registry.register_boundary_extractor(std::sync::Arc::new(DotnetBoundaryExtractor));
     let pipeline = BuildPipeline::new(
         Box::new(FsWalker::new()),
         Box::new(FsReader::new()),
@@ -704,6 +707,7 @@ fn run_update(
     let mut registry = ParserRegistry::with_tier1_config(rust_crate_name.clone());
     registry.register_boundary_extractor(std::sync::Arc::new(HttpRouteExtractor));
     registry.register_boundary_extractor(std::sync::Arc::new(EventExtractor));
+    registry.register_boundary_extractor(std::sync::Arc::new(DotnetBoundaryExtractor));
     let pipeline = BuildPipeline::new(
         Box::new(FsWalker::new()),
         Box::new(FsReader::new()),

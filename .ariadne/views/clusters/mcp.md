@@ -7,14 +7,16 @@
 | `src/mcp/annotations.rs` | source | 4 | 1 | 2 | 0.0000 |
 | `src/mcp/bookmarks.rs` | source | 4 | 1 | 2 | 0.0000 |
 | `src/mcp/lock.rs` | source | 4 | 2 | 1 | 0.0000 |
-| `src/mcp/mod.rs` | source | 10 | 1 | 13 | 0.0002 |
+| `src/mcp/mod.rs` | source | 10 | 1 | 15 | 0.0001 |
 | `src/mcp/persist.rs` | source | 0 | 2 | 0 | 0.0000 |
 | `src/mcp/prompts.rs` | source | 7 | 1 | 4 | 0.0000 |
 | `src/mcp/resources.rs` | source | 7 | 1 | 2 | 0.0000 |
 | `src/mcp/server.rs` | source | 9 | 1 | 8 | 0.0002 |
-| `src/mcp/state.rs` | source | 6 | 7 | 9 | 0.0009 |
-| `src/mcp/tools.rs` | source | 7 | 2 | 11 | 0.0004 |
+| `src/mcp/state.rs` | source | 6 | 6 | 9 | 0.0006 |
+| `src/mcp/tools.rs` | source | 8 | 2 | 14 | 0.0004 |
 | `src/mcp/tools_context.rs` | source | 0 | 2 | 0 | 0.0000 |
+| `src/mcp/tools_recommend.rs` | source | 0 | 2 | 0 | 0.0000 |
+| `src/mcp/tools_semantic.rs` | source | 0 | 2 | 0 | 0.0000 |
 | `src/mcp/tools_temporal.rs` | source | 0 | 2 | 0 | 0.0000 |
 | `src/mcp/user_state.rs` | source | 3 | 5 | 2 | 0.0001 |
 | `src/mcp/watch.rs` | source | 8 | 2 | 5 | 0.0002 |
@@ -33,6 +35,8 @@
 - `src/mcp/mod.rs` → `src/mcp/state.rs` (imports)
 - `src/mcp/mod.rs` → `src/mcp/tools.rs` (imports)
 - `src/mcp/mod.rs` → `src/mcp/tools_context.rs` (imports)
+- `src/mcp/mod.rs` → `src/mcp/tools_recommend.rs` (imports)
+- `src/mcp/mod.rs` → `src/mcp/tools_semantic.rs` (imports)
 - `src/mcp/mod.rs` → `src/mcp/tools_temporal.rs` (imports)
 - `src/mcp/mod.rs` → `src/mcp/user_state.rs` (imports)
 - `src/mcp/mod.rs` → `src/mcp/watch.rs` (imports)
@@ -45,6 +49,8 @@
 - `src/mcp/server.rs` → `src/mcp/watch.rs` (imports)
 - `src/mcp/tools.rs` → `src/mcp/state.rs` (imports)
 - `src/mcp/tools.rs` → `src/mcp/tools_context.rs` (imports)
+- `src/mcp/tools.rs` → `src/mcp/tools_recommend.rs` (imports)
+- `src/mcp/tools.rs` → `src/mcp/tools_semantic.rs` (imports)
 - `src/mcp/tools.rs` → `src/mcp/tools_temporal.rs` (imports)
 - `src/mcp/tools.rs` → `src/mcp/user_state.rs` (imports)
 - `src/mcp/user_state.rs` → `src/mcp/persist.rs` (imports)
@@ -78,6 +84,7 @@
 - `src/mcp/tools.rs` → `src/algo/test_map.rs` (imports)
 - `src/mcp/tools.rs` → `src/analysis/smells.rs` (imports)
 - `src/mcp/tools.rs` → `src/model/mod.rs` (imports)
+- `src/mcp/tools.rs` → `src/recommend/mod.rs` (imports)
 - `src/mcp/user_state.rs` → `src/model/mod.rs` (imports)
 - `src/mcp/watch.rs` → `src/analysis/diff.rs` (imports)
 - `src/mcp/watch.rs` → `src/diagnostic.rs` (imports)
@@ -86,6 +93,5 @@
 
 ## External Dependents
 
-- `src/mcp/state.rs` ← `benches/mcp_bench.rs` (imports)
 - `src/mcp/mod.rs` ← `src/lib.rs` (imports)
 
