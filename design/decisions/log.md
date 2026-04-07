@@ -1545,3 +1545,136 @@ Applies to: Brandes centrality (Phase 2), Louvain modularity (Phase 2b), PageRan
 - Skipping elements with Condition attributes — would miss legitimate references in conditional groups
 **Reasoning:** Over-approximation (including all references) is safer than under-approximation for structural analysis. May include platform-conditional references, which is acceptable.
 **Affects:** `src/parser/config/csproj.rs`.
+
+## D-134: roxmltree for pom.xml Parsing
+
+**Date:** 2026-04-05
+**Status:** Accepted
+**Context:** Phase 12 adds `pom.xml` parsing. pom.xml is standard XML with the Maven POM schema — attributes, nested elements, optional `<parent>` inheritance.
+**Decision:** Reuse `roxmltree 0.21` (already a dependency from D-124 for .csproj parsing) for pom.xml parsing.
+**Alternatives rejected:**
+- Hand-rolled string parsing — XML has genuine complexity; same reasoning as D-124
+- serde_xml_rs — heavier dependency, deserialization model doesn't fit partial/tolerant parsing
+**Reasoning:** Zero new dependencies. Proven pattern from Phase 11. DOM API allows selective element extraction without full schema deserialization.
+**Affects:** `src/parser/config/maven.rs`.
+
+## D-135: Line-Based Gradle DSL Subset Parsing
+
+**Date:** 2026-04-05
+**Status:** Accepted
+**Context:** `build.gradle` (Groovy DSL) and `build.gradle.kts` (Kotlin DSL) need parsing for source sets and dependencies. Full Groovy/Kotlin parsing is out of scope.
+**Decision:** Line-based text scanning with block tracking (brace depth counting). Extract: `dependencies { }` block (dependency declarations via regex patterns for both Groovy and Kotlin syntax), `sourceSets { }` block (custom source directory declarations), and top-level `group` and `version` assignments.
+**Alternatives rejected:**
+- tree-sitter-groovy / tree-sitter-kotlin — adds new grammar dependencies for config file parsing; these grammars are less mature than tree-sitter-java
+- Full Groovy evaluator — enormous scope, Gradle DSL uses dynamic dispatch
+- Only supporting Kotlin DSL — many projects still use Groovy DSL
+**Reasoning:** Follows the `parse_sln` precedent (D-126). Gradle files have predictable structure in practice. Line-based parsing with brace counting captures the structural information Ariadne needs without attempting full language evaluation. This is the same over-approximation principle as D-133.
+**Affects:** `src/parser/config/gradle.rs`.
+
+## D-136: settings.gradle/settings.gradle.kts for Multi-Module Discovery
+
+**Date:** 2026-04-05
+**Status:** Accepted
+**Context:** Gradle multi-module projects declare subprojects in `settings.gradle` via `include 'subproject-name'` directives.
+**Decision:** Parse `settings.gradle` / `settings.gradle.kts` using line-based regex to extract `include(...)` / `include '...'` directives. Map included project names to filesystem directories (Gradle convention: project `:app` maps to `./app/`). Store as `Vec<GradleSubproject>` in `GradleConfig`.
+**Alternatives rejected:**
+- Ignoring multi-module — many real Java projects are multi-module; resolver would fail to find cross-module imports
+- Using WorkspaceInfo — same reasoning as D-127; Java/Gradle workspace semantics differ from npm
+**Reasoning:** `settings.gradle` has a simple, predictable structure. Line-based extraction is sufficient.
+**Affects:** `src/parser/config/gradle.rs`.
+
+## D-137: GradleConfig and MavenConfig as Flat Data Structs
+
+**Date:** 2026-04-05
+**Status:** Accepted
+**Context:** Parsed build config needs struct representations following the Phase 10 pattern (D-125).
+**Decision:** Two flat config structs: `GradleConfig { config_dir, group, version, source_dirs, dependencies, subprojects }` and `MavenConfig { config_path, group_id, artifact_id, version, packaging, source_directory, modules, dependencies, parent }`. Both are eager-parsed, no lazy evaluation. Follow the `CsprojConfig` pattern exactly.
+**Alternatives rejected:**
+- Single `JavaBuildConfig` enum — would complicate all consumer code with match arms; a project can have both Gradle and Maven (rare but possible in migrations)
+- Lazy parsing — inconsistent with Phase 10 pattern (D-125)
+**Reasoning:** Separate structs allow independent discovery and evolution. `ProjectConfig` holds both as optional fields.
+**Affects:** `src/parser/config/gradle.rs`, `src/parser/config/maven.rs`, `src/parser/config/mod.rs`.
+
+## D-138: JavaBuildConfig Enum for Resolver Injection
+
+**Date:** 2026-04-05
+**Status:** Accepted
+**Context:** `JavaResolver` needs build config at construction time (D-118 pattern). A Java project uses either Gradle or Maven (or neither), but not typically both.
+**Decision:** Construction-time injection via `JavaResolver::with_build_config(config: JavaBuildConfig)` where `JavaBuildConfig` is an enum with variants `Gradle`, `Maven`, and `Both`. The `Both` variant handles migration scenarios. Resolution priority: Gradle over Maven when both exist.
+**Alternatives rejected:**
+- Two separate optional parameters — messier API, multiple None/Some combinations
+- Always preferring Maven — Gradle is more common in greenfield Java projects
+**Reasoning:** Enum captures the mutual-exclusivity intent while handling the edge case. Follows `CSharpResolver::with_csproj_configs()` pattern.
+**Affects:** `src/parser/java.rs`, `src/parser/registry.rs`.
+
+## D-139: Nearest-Ancestor Gradle Lookup for Multi-Module
+
+**Date:** 2026-04-05
+**Status:** Accepted
+**Context:** In a multi-module Gradle project, a Java file at `app/src/main/java/com/example/App.java` needs to find the `app/build.gradle` config to know its source roots and dependencies.
+**Decision:** Add `find_nearest_gradle()` in `src/parser/config/mod.rs` following the `find_nearest_csproj()` and `find_nearest_tsconfig()` pattern. Walks up from file directory, checks each ancestor against `BTreeMap<PathBuf, GradleConfig>`. For Maven, add `find_nearest_maven()` with the same pattern.
+**Alternatives rejected:**
+- Single lookup at project root only — breaks multi-module projects
+- Pre-computing a file-to-config mapping — unnecessary complexity; ancestor walk is O(depth) and depth is small
+**Reasoning:** Proven pattern. Phase 10/11 established this as the standard approach.
+**Affects:** `src/parser/config/mod.rs`.
+
+## D-140: Defer BoundaryKind::DiBinding — Use EventChannel with DI: Prefix
+
+**Date:** 2026-04-05
+**Status:** Accepted
+**Context:** Java DI extraction (Spring `@Autowired`, `@Component`, Jakarta CDI `@Inject`) needs a BoundaryKind. `BoundaryKind::DiBinding` is listed as future scope (Phase 8b comment). Adding it now would change the enum, affecting serialization, `analyze()` counts, and all MCP tools that display boundary data.
+**Decision:** Reuse `BoundaryKind::EventChannel` with name prefix convention `"DI:ServiceName"` — exactly as the .NET `DotnetBoundaryExtractor` does for DI registration. This maintains consistency with the established pattern.
+**Alternatives rejected:**
+- Adding `BoundaryKind::DiBinding` now — increases blast radius (model change + serialization + analyze() + MCP tools); should be a separate Phase 8b effort
+- Skipping DI boundary extraction entirely — loses valuable architectural information for Spring/Jakarta projects
+**Reasoning:** The .NET precedent already uses `EventChannel` for DI. Following the same convention means zero model changes and consistent behavior across languages.
+**Affects:** `src/semantic/java.rs`.
+
+## D-141: Java Framework Detection in Separate File
+
+**Date:** 2026-04-05
+**Status:** Accepted
+**Context:** `src/detect/framework.rs` currently contains `DotnetFrameworkHints` (244 lines). Adding Java framework detection for 5 frameworks would approximately double the file size.
+**Decision:** Create `src/detect/java_framework.rs` with `JavaFrameworkHints` struct and `detect_java_framework()` function. Keep `src/detect/framework.rs` for .NET only. Re-export both from `src/detect/mod.rs`.
+**Alternatives rejected:**
+- Adding to existing `framework.rs` — would exceed 500 lines, violating the God-object heuristic (Q2-05)
+- Generic `FrameworkHints` trait — premature abstraction; .NET and Java hints have completely different field sets
+**Reasoning:** Single Responsibility (Q2-02). Each file has one reason to change.
+**Affects:** `src/detect/java_framework.rs`, `src/detect/mod.rs`.
+
+## D-142: Android Manifest Parsing — Minimal Scope
+
+**Date:** 2026-04-05
+**Status:** Accepted
+**Context:** Android projects have `AndroidManifest.xml` declaring activities, services, receivers, and providers. The ROADMAP lists "manifest component registration" in scope.
+**Decision:** Parse `AndroidManifest.xml` with roxmltree for `<activity>`, `<service>`, `<receiver>`, `<provider>` element names only. Map these to source files via the `android:name` attribute. If `AndroidManifest.xml` is not found, Android detection still works via annotation scanning.
+**Alternatives rejected:**
+- Full manifest parsing (permissions, intent filters, etc.) — out of scope
+- Skipping manifest entirely — loses the authoritative component registration list
+**Reasoning:** The manifest provides ground truth for which classes are Android components. Minimal extraction keeps complexity low while adding high-value information.
+**Affects:** `src/detect/java_framework.rs`.
+
+## D-143: Warning Codes W038-W042 for Java Build Config Errors
+
+**Date:** 2026-04-05
+**Status:** Accepted
+**Context:** Java build config parsing (Gradle, Maven) can fail in several ways. Following D-003 graceful degradation and D-131 pattern.
+**Decision:** W038 GradleParseError, W039 MavenParseError, W040 MavenModuleNotFound, W041 GradleSubprojectNotFound, W042 AndroidManifestParseError. All non-fatal. Resolution falls back to hardcoded `src/main/java/` prefix.
+**Alternatives rejected:**
+- Reusing W034-W037 — those are .NET-specific (D-131)
+- Reusing W030 (generic ConfigParseError) — loses diagnostic specificity
+**Reasoning:** Continues the established warning taxonomy pattern. Each build system gets distinct codes for targeted troubleshooting.
+**Affects:** `src/diagnostic.rs`.
+
+## D-144: Classpath-Aware Resolution Strategy
+
+**Date:** 2026-04-05
+**Status:** Accepted
+**Context:** The current `JavaResolver` only tries `src/main/java/{path}.java` and `{path}.java`. With build config, it can know the actual source directories.
+**Decision:** Resolution order in config-aware `JavaResolver`: (1) If build config provides source directories, try each `{source_dir}/{path}.java`. (2) If multi-module, also try `{subproject_dir}/{source_dir}/{path}.java`. (3) If no config or no match, fall back to existing heuristic. For `groupId`-based filtering: if the import package starts with the project's `groupId`, treat as internal; otherwise, skip resolution.
+**Alternatives rejected:**
+- Only using config-provided source dirs (no fallback) — breaks projects with non-standard layouts
+- Resolving external dependencies to Maven Central — out of scope
+**Reasoning:** Layered resolution with fallback maintains backward compatibility. Projects that don't use Gradle/Maven still get the existing heuristic resolution.
+**Affects:** `src/parser/java.rs`, `src/parser/registry.rs`.

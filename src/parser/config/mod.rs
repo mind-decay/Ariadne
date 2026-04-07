@@ -1,17 +1,21 @@
 pub mod csproj;
 pub mod gomod;
+pub mod gradle;
 pub mod jsonc;
+pub mod maven;
 pub mod pyproject;
 pub mod tsconfig;
 
 use std::collections::BTreeMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::diagnostic::{DiagnosticCollector, Warning, WarningCode};
 use crate::model::{CanonicalPath, FileSet};
 
 pub use csproj::{CsprojConfig, DotnetSolutionInfo};
 pub use gomod::GoModConfig;
+pub use gradle::{GradleConfig, GradleDep, GradleDepScope, GradleSubproject};
+pub use maven::{MavenConfig, MavenDep, MavenParentRef};
 pub use pyproject::PyProjectConfig;
 pub use tsconfig::TsConfig;
 
@@ -27,6 +31,10 @@ pub struct ProjectConfig {
     pub csproj_configs: BTreeMap<std::path::PathBuf, CsprojConfig>,
     /// .NET solution info (from .sln file).
     pub dotnet_solution: Option<DotnetSolutionInfo>,
+    /// Gradle build configs, keyed by directory containing build.gradle.
+    pub gradle_configs: BTreeMap<std::path::PathBuf, GradleConfig>,
+    /// Maven POM configs, keyed by directory containing pom.xml.
+    pub maven_configs: BTreeMap<std::path::PathBuf, MavenConfig>,
 }
 
 /// Discover and parse all project configuration files.
@@ -44,6 +52,8 @@ pub fn discover_config(
     let py_config = discover_py_config(project_root);
     let csproj_configs = discover_csproj_configs(project_root, known_files, diagnostics);
     let dotnet_solution = discover_dotnet_solution(project_root, known_files, diagnostics);
+    let gradle_configs = discover_gradle_configs(project_root, known_files, diagnostics);
+    let maven_configs = discover_maven_configs(project_root, known_files, diagnostics);
 
     ProjectConfig {
         ts_configs,
@@ -51,6 +61,8 @@ pub fn discover_config(
         py_config,
         csproj_configs,
         dotnet_solution,
+        gradle_configs,
+        maven_configs,
     }
 }
 
@@ -187,6 +199,138 @@ fn discover_dotnet_solution(
     csproj::parse_sln(&content, &rel_path, diagnostics)
 }
 
+/// Scan known_files for build.gradle / build.gradle.kts, parse each, and return keyed by directory.
+fn discover_gradle_configs(
+    project_root: &Path,
+    known_files: &FileSet,
+    diagnostics: &DiagnosticCollector,
+) -> BTreeMap<PathBuf, GradleConfig> {
+    let mut configs = BTreeMap::new();
+
+    for file in known_files.iter() {
+        let file_name = file.file_name();
+        if file_name != "build.gradle" && file_name != "build.gradle.kts" {
+            continue;
+        }
+
+        let full_path = project_root.join(file.as_str());
+        let content = match std::fs::read_to_string(&full_path) {
+            Ok(c) => c,
+            Err(_) => continue,
+        };
+
+        let rel_path = PathBuf::from(file.as_str());
+        let rel_dir = rel_path.parent().unwrap_or(Path::new("")).to_path_buf();
+
+        if let Some(mut config) = gradle::parse_build_gradle(&content, &rel_dir, diagnostics) {
+            // Look for settings.gradle or settings.gradle.kts in same directory
+            let settings_names = ["settings.gradle", "settings.gradle.kts"];
+            for settings_name in &settings_names {
+                let settings_rel = if rel_dir == PathBuf::from("") {
+                    PathBuf::from(settings_name)
+                } else {
+                    rel_dir.join(settings_name)
+                };
+                let settings_full = project_root.join(&settings_rel);
+                if let Ok(settings_content) = std::fs::read_to_string(&settings_full) {
+                    let subprojects = gradle::parse_settings_gradle(&settings_content);
+                    // Check that declared subproject directories exist
+                    for sp in &subprojects {
+                        let sp_build_rel = if rel_dir == PathBuf::from("") {
+                            sp.path.join("build.gradle")
+                        } else {
+                            rel_dir.join(&sp.path).join("build.gradle")
+                        };
+                        let sp_build_kts_rel = if rel_dir == PathBuf::from("") {
+                            sp.path.join("build.gradle.kts")
+                        } else {
+                            rel_dir.join(&sp.path).join("build.gradle.kts")
+                        };
+                        let sp_build_canon = CanonicalPath::new(
+                            sp_build_rel.to_string_lossy().replace('\\', "/"),
+                        );
+                        let sp_build_kts_canon = CanonicalPath::new(
+                            sp_build_kts_rel.to_string_lossy().replace('\\', "/"),
+                        );
+                        if !known_files.contains(&sp_build_canon)
+                            && !known_files.contains(&sp_build_kts_canon)
+                        {
+                            diagnostics.warn(Warning {
+                                code: WarningCode::W041GradleSubprojectNotFound,
+                                path: CanonicalPath::new(sp.name.clone()),
+                                message: format!(
+                                    "Gradle subproject '{}' declared in settings.gradle but no build.gradle found",
+                                    sp.name
+                                ),
+                                detail: None,
+                            });
+                        }
+                    }
+                    config.subprojects = subprojects;
+                    break;
+                }
+            }
+
+            configs.insert(rel_dir, config);
+        }
+    }
+
+    configs
+}
+
+/// Scan known_files for pom.xml files, parse each, and return keyed by directory.
+fn discover_maven_configs(
+    project_root: &Path,
+    known_files: &FileSet,
+    diagnostics: &DiagnosticCollector,
+) -> BTreeMap<PathBuf, MavenConfig> {
+    let mut configs = BTreeMap::new();
+
+    for file in known_files.iter() {
+        if file.file_name() != "pom.xml" {
+            continue;
+        }
+
+        let full_path = project_root.join(file.as_str());
+        let content = match std::fs::read_to_string(&full_path) {
+            Ok(c) => c,
+            Err(_) => continue,
+        };
+
+        let rel_path = PathBuf::from(file.as_str());
+        if let Some(config) = maven::parse_pom_xml(&content, &rel_path, diagnostics) {
+            let rel_dir = rel_path.parent().unwrap_or(Path::new("")).to_path_buf();
+
+            // Check that declared modules exist
+            for module in &config.modules {
+                let module_pom_rel = if rel_dir == PathBuf::from("") {
+                    PathBuf::from(module).join("pom.xml")
+                } else {
+                    rel_dir.join(module).join("pom.xml")
+                };
+                let module_pom_canon = CanonicalPath::new(
+                    module_pom_rel.to_string_lossy().replace('\\', "/"),
+                );
+                if !known_files.contains(&module_pom_canon) {
+                    diagnostics.warn(Warning {
+                        code: WarningCode::W040MavenModuleNotFound,
+                        path: CanonicalPath::new(module.clone()),
+                        message: format!(
+                            "Maven module '{}' declared in pom.xml but {}/pom.xml not found",
+                            module, module
+                        ),
+                        detail: None,
+                    });
+                }
+            }
+
+            configs.insert(rel_dir, config);
+        }
+    }
+
+    configs
+}
+
 /// Find the nearest .csproj config for a given file directory.
 ///
 /// Walks up from `file_dir`, checking if each ancestor is a key in `csproj_configs`.
@@ -216,6 +360,42 @@ pub fn find_nearest_tsconfig<'a>(
     let mut current = Some(file_dir);
     while let Some(dir) = current {
         if let Some(config) = ts_configs.get(dir) {
+            return Some(config);
+        }
+        current = dir.parent();
+    }
+    None
+}
+
+/// Find the nearest Gradle build config for a given file directory.
+///
+/// Walks up from `file_dir`, checking if each ancestor is a key in `gradle_configs`.
+/// Returns the first match (nearest ancestor).
+pub fn find_nearest_gradle<'a>(
+    file_dir: &Path,
+    gradle_configs: &'a BTreeMap<PathBuf, GradleConfig>,
+) -> Option<&'a GradleConfig> {
+    let mut current = Some(file_dir);
+    while let Some(dir) = current {
+        if let Some(config) = gradle_configs.get(dir) {
+            return Some(config);
+        }
+        current = dir.parent();
+    }
+    None
+}
+
+/// Find the nearest Maven POM config for a given file directory.
+///
+/// Walks up from `file_dir`, checking if each ancestor is a key in `maven_configs`.
+/// Returns the first match (nearest ancestor).
+pub fn find_nearest_maven<'a>(
+    file_dir: &Path,
+    maven_configs: &'a BTreeMap<PathBuf, MavenConfig>,
+) -> Option<&'a MavenConfig> {
+    let mut current = Some(file_dir);
+    while let Some(dir) = current {
+        if let Some(config) = maven_configs.get(dir) {
             return Some(config);
         }
         current = dir.parent();
@@ -313,6 +493,8 @@ mod tests {
         assert!(config.py_config.is_none());
         assert!(config.csproj_configs.is_empty());
         assert!(config.dotnet_solution.is_none());
+        assert!(config.gradle_configs.is_empty());
+        assert!(config.maven_configs.is_empty());
     }
 
     #[test]

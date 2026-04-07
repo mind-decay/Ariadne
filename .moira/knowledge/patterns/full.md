@@ -1,4 +1,4 @@
-<!-- moira:freshness init 2026-04-04 -->
+<!-- moira:freshness task-2026-04-05-001 2026-04-05 -->
 <!-- moira:knowledge patterns L2 -->
 
 ---
@@ -74,3 +74,33 @@ No database. All data access is through in-memory graph structures and JSON file
 | **`pub(crate)` visibility on parser structs** | 5+ parser files | `TypeScriptParser`, `PythonParser`, `RustParser` etc. use `pub(crate)` -- exposed only within the crate, with public factory functions (`parser()`, `resolver()`) in some modules |
 | **Atomic write (write-to-temp, rename)** | 1 impl, 5 call sites | `atomic_write()` in `src/serial/json.rs` used by all 5 `GraphSerializer` methods -- consistent crash-safe write pattern |
 | **Option<&T> for optional analysis state** | 4 sites | `temporal: Option<&TemporalState>`, `semantic: Option<&SemanticState>` passed to `detect_smells`, MCP tool responses conditionally include temporal/semantic data -- recurring "optional enrichment" pattern |
+
+## Phase Implementation Patterns (task-2026-04-05-001 / Phase 12)
+
+### Config-Aware Resolver Construction Pattern
+
+All language-specific resolvers now follow the same Phase 10 pattern:
+1. Discovery: `discover_{lang}_configs()` in `src/parser/config/mod.rs` scans file list for build config files
+2. Storage: `ProjectConfig` holds configs in `BTreeMap<PathBuf, {Lang}Config>`
+3. Nearest-ancestor lookup: `find_nearest_{lang}()` walks from file's directory up to find relevant config
+4. Construction-time injection: `{Lang}Resolver::with_{lang}_config()` or `resolver_with_config()` constructor
+5. Fallback: if no config or no match, fall back to existing heuristics
+
+**Languages using this pattern:** TypeScript (tsconfig), Go (go.mod), Python (pyproject.toml), C# (csproj + sln), Java (build.gradle + pom.xml)
+
+### Classifier Budget Pattern for "execute phase N" Tasks
+
+"Execute phase N" tasks systematically require the classifier to read ROADMAP.md, prior phase specs/decisions, and related architecture docs. This consistently exceeds the 20k classifier budget:
+- task-2026-04-05-001 (Phase 12): classifier used 51k tokens / 20k budget = 256% overrun
+
+**Recommendation:** Allocate 50k budget for classifier when task description contains "phase N" or "implement phase" keywords.
+
+### Partial Delivery Pattern at Phase Gates
+
+Both Phase 11 and Phase 12 completed first-pass with 0 retries but with accepted warnings covering partially-implemented spec items:
+- Phase 11 (task-2026-04-04-001): MAUI fixture missing, spec doc creation step missing
+- Phase 12 (task-2026-04-05-001): Android manifest parsing not implemented (D-142), sourceSets extraction stubbed, is_quarkus_resource never set, @RestController DI gap
+
+Pattern: when architecture spec uses "minimal scope", "lightweight", or "simple" qualifier language on a required deliverable, implementing agents may skip it as optional.
+
+**Recommendation for spec authors:** Use "MUST implement [X]" rather than "lightweight [X]" for required acceptance criteria items.

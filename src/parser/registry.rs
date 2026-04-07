@@ -175,6 +175,9 @@ impl ParserRegistry {
         registry.register_boundary_extractor(Arc::new(
             crate::semantic::dotnet::DotnetBoundaryExtractor,
         ));
+        registry.register_boundary_extractor(Arc::new(
+            crate::semantic::java::JavaBoundaryExtractor,
+        ));
 
         registry
     }
@@ -230,7 +233,12 @@ impl ParserRegistry {
         } else {
             registry.register(csharp::parser(), csharp::resolver());
         }
-        registry.register(java::parser(), java::resolver());
+        // Java: inject build config if discovered (D-138, D-144)
+        if let Some(java_build_config) = Self::build_java_config(config) {
+            registry.register(java::parser(), java::resolver_with_config(java_build_config));
+        } else {
+            registry.register(java::parser(), java::resolver());
+        }
         registry.register(markdown::parser(), markdown::resolver());
         registry.register(json_lang::parser(), json_lang::resolver());
         registry.register(yaml::parser(), yaml::resolver());
@@ -250,8 +258,53 @@ impl ParserRegistry {
         registry.register_boundary_extractor(Arc::new(
             crate::semantic::dotnet::DotnetBoundaryExtractor,
         ));
+        registry.register_boundary_extractor(Arc::new(
+            crate::semantic::java::JavaBoundaryExtractor,
+        ));
 
         registry
+    }
+
+    /// Build a `JavaBuildConfig` from the discovered project configuration.
+    /// Returns `None` if no Gradle or Maven configs were discovered.
+    fn build_java_config(config: &ProjectConfig) -> Option<java::JavaBuildConfig> {
+        let has_gradle = !config.gradle_configs.is_empty();
+        let has_maven = !config.maven_configs.is_empty();
+
+        match (has_gradle, has_maven) {
+            (false, false) => None,
+            (true, false) => {
+                // Find root gradle config (fewest path components)
+                let root_key = config
+                    .gradle_configs
+                    .keys()
+                    .min_by_key(|p| p.components().count())?;
+                let root_config = config.gradle_configs[root_key].clone();
+                let mut subconfigs = config.gradle_configs.clone();
+                subconfigs.remove(root_key);
+                Some(java::JavaBuildConfig::Gradle {
+                    config: root_config,
+                    subconfigs,
+                })
+            }
+            (false, true) => Some(java::JavaBuildConfig::Maven {
+                configs: config.maven_configs.clone(),
+            }),
+            (true, true) => {
+                let root_key = config
+                    .gradle_configs
+                    .keys()
+                    .min_by_key(|p| p.components().count())?;
+                let gradle_config = config.gradle_configs[root_key].clone();
+                let mut gradle_subconfigs = config.gradle_configs.clone();
+                gradle_subconfigs.remove(root_key);
+                Some(java::JavaBuildConfig::Both {
+                    gradle_config,
+                    gradle_subconfigs,
+                    maven_configs: config.maven_configs.clone(),
+                })
+            }
+        }
     }
 
     /// Parse source code with the appropriate parser.

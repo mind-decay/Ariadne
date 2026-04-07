@@ -1,6 +1,10 @@
+use std::collections::BTreeMap;
+use std::path::PathBuf;
+
 use crate::model::symbol::{LineSpan, SymbolDef, SymbolKind, Visibility};
 use crate::model::workspace::WorkspaceInfo;
 use crate::model::{CanonicalPath, FileSet};
+use crate::parser::config::{GradleConfig, MavenConfig};
 use crate::parser::symbols::SymbolExtractor;
 use crate::parser::traits::{ImportKind, ImportResolver, LanguageParser, RawExport, RawImport};
 
@@ -429,6 +433,227 @@ pub(crate) fn resolver() -> Box<dyn ImportResolver> {
     Box::new(JavaResolver)
 }
 
+/// Build system configuration injected at construction time (D-138).
+#[allow(dead_code)]
+pub enum JavaBuildConfig {
+    Gradle {
+        config: GradleConfig,
+        subconfigs: BTreeMap<PathBuf, GradleConfig>,
+    },
+    Maven {
+        configs: BTreeMap<PathBuf, MavenConfig>,
+    },
+    Both {
+        gradle_config: GradleConfig,
+        gradle_subconfigs: BTreeMap<PathBuf, GradleConfig>,
+        maven_configs: BTreeMap<PathBuf, MavenConfig>,
+    },
+}
+
+/// Config-aware Java import resolver (D-144).
+/// Falls back to the heuristic resolver if config provides no match.
+struct JavaConfigResolver {
+    build_config: JavaBuildConfig,
+}
+
+impl JavaConfigResolver {
+    /// Collect source directories with their base paths from the build config.
+    fn collect_source_dirs(&self) -> Vec<(PathBuf, String)> {
+        match &self.build_config {
+            JavaBuildConfig::Gradle { config, subconfigs } => {
+                let mut dirs = Vec::new();
+                for src_dir in &config.source_dirs {
+                    dirs.push((config.config_dir.clone(), src_dir.clone()));
+                }
+                for (sub_path, sub_config) in subconfigs {
+                    for src_dir in &sub_config.source_dirs {
+                        dirs.push((sub_path.clone(), src_dir.clone()));
+                    }
+                }
+                dirs
+            }
+            JavaBuildConfig::Maven { configs } => {
+                let mut dirs = Vec::new();
+                for (_path, config) in configs {
+                    let src_dir = config
+                        .source_directory
+                        .as_deref()
+                        .unwrap_or("src/main/java")
+                        .to_string();
+                    dirs.push((config.config_dir.clone(), src_dir));
+                }
+                dirs
+            }
+            JavaBuildConfig::Both {
+                gradle_config,
+                gradle_subconfigs,
+                maven_configs: _,
+            } => {
+                // D-138: prefer Gradle source dirs
+                let mut dirs = Vec::new();
+                for src_dir in &gradle_config.source_dirs {
+                    dirs.push((gradle_config.config_dir.clone(), src_dir.clone()));
+                }
+                for (sub_path, sub_config) in gradle_subconfigs {
+                    for src_dir in &sub_config.source_dirs {
+                        dirs.push((sub_path.clone(), src_dir.clone()));
+                    }
+                }
+                dirs
+            }
+        }
+    }
+
+    /// Extract the project group prefix (top 2 segments) for external dep filtering.
+    fn project_group_prefix(&self) -> Option<String> {
+        let group = match &self.build_config {
+            JavaBuildConfig::Gradle { config, .. } => config.group.as_deref(),
+            JavaBuildConfig::Maven { configs } => {
+                configs.values().next().and_then(|c| c.group_id.as_deref())
+            }
+            JavaBuildConfig::Both { gradle_config, .. } => gradle_config.group.as_deref(),
+        };
+        group.map(|g| {
+            // Take top 2 segments: "com.example.foo" -> "com.example"
+            let parts: Vec<&str> = g.split('.').collect();
+            if parts.len() >= 2 {
+                format!("{}.{}", parts[0], parts[1])
+            } else {
+                g.to_string()
+            }
+        })
+    }
+
+    /// Check if an import path looks external relative to the project group.
+    fn is_external_import(&self, import_path: &str) -> bool {
+        if let Some(project_prefix) = self.project_group_prefix() {
+            let import_parts: Vec<&str> = import_path.split('.').collect();
+            let project_parts: Vec<&str> = project_prefix.split('.').collect();
+            if import_parts.len() >= 2 && project_parts.len() >= 2 {
+                // Compare top 2 segments
+                let import_prefix = format!("{}.{}", import_parts[0], import_parts[1]);
+                return import_prefix != project_prefix;
+            }
+        }
+        false
+    }
+}
+
+impl ImportResolver for JavaConfigResolver {
+    fn resolve(
+        &self,
+        import: &RawImport,
+        _from_file: &CanonicalPath,
+        known_files: &FileSet,
+        _workspace: Option<&WorkspaceInfo>,
+    ) -> Option<CanonicalPath> {
+        let import_path = &import.path;
+
+        // Step 5: External dependency filter — skip clearly external imports
+        if self.is_external_import(import_path) {
+            return None;
+        }
+
+        // Handle wildcard imports (com.example.*)
+        if import_path.ends_with(".*") {
+            let package = import_path.trim_end_matches(".*");
+            let dir = package.replace('.', "/");
+
+            // Try config source dirs first
+            for (base_path, src_dir) in self.collect_source_dirs() {
+                let candidate_dir = if base_path.as_os_str().is_empty() {
+                    format!("{}/{}/", src_dir, dir)
+                } else {
+                    format!("{}/{}/{}/", base_path.display(), src_dir, dir)
+                };
+                for file in known_files.iter() {
+                    let file_str = file.as_str();
+                    if file_str.starts_with(&candidate_dir) && file_str.ends_with(".java") {
+                        let remainder = &file_str[candidate_dir.len()..];
+                        if !remainder.contains('/') {
+                            return Some(file.clone());
+                        }
+                    }
+                }
+            }
+
+            // Fallback: src/main/java/ prefix
+            let prefixed_dir = format!("src/main/java/{}/", dir);
+            for file in known_files.iter() {
+                let file_str = file.as_str();
+                if file_str.starts_with(&prefixed_dir) && file_str.ends_with(".java") {
+                    let remainder = &file_str[prefixed_dir.len()..];
+                    if !remainder.contains('/') {
+                        return Some(file.clone());
+                    }
+                }
+            }
+
+            // Fallback: plain dir
+            let plain_dir = format!("{}/", dir);
+            for file in known_files.iter() {
+                let file_str = file.as_str();
+                if file_str.starts_with(&plain_dir) && file_str.ends_with(".java") {
+                    let remainder = &file_str[plain_dir.len()..];
+                    if !remainder.contains('/') {
+                        return Some(file.clone());
+                    }
+                }
+            }
+
+            return None;
+        }
+
+        // For static imports, strip the last segment (member name)
+        let class_path = if import.symbols.iter().any(|s| s == "static") {
+            match import_path.rsplit_once('.') {
+                Some((class_part, _)) => class_part,
+                None => import_path.as_str(),
+            }
+        } else {
+            import_path.as_str()
+        };
+
+        let file_path = class_path.replace('.', "/");
+
+        // Try config source dirs first (D-144 layered resolution)
+        for (base_path, src_dir) in self.collect_source_dirs() {
+            let candidate = if base_path.as_os_str().is_empty() {
+                CanonicalPath::new(format!("{}/{}.java", src_dir, file_path))
+            } else {
+                CanonicalPath::new(format!(
+                    "{}/{}/{}.java",
+                    base_path.display(),
+                    src_dir,
+                    file_path
+                ))
+            };
+            if known_files.contains(&candidate) {
+                return Some(candidate);
+            }
+        }
+
+        // Fallback: src/main/java/ prefix
+        let prefixed = CanonicalPath::new(format!("src/main/java/{}.java", file_path));
+        if known_files.contains(&prefixed) {
+            return Some(prefixed);
+        }
+
+        // Fallback: plain path
+        let plain = CanonicalPath::new(format!("{}.java", file_path));
+        if known_files.contains(&plain) {
+            return Some(plain);
+        }
+
+        None
+    }
+}
+
+/// Create a config-aware Java import resolver (D-144).
+pub(crate) fn resolver_with_config(build_config: JavaBuildConfig) -> Box<dyn ImportResolver> {
+    Box::new(JavaConfigResolver { build_config })
+}
+
 pub(crate) fn symbol_extractor() -> std::sync::Arc<dyn SymbolExtractor> {
     std::sync::Arc::new(JavaParser)
 }
@@ -552,5 +777,137 @@ import java.io.File;
     fn empty_source_no_exports() {
         let result = java_exports("");
         assert!(result.is_empty());
+    }
+
+    // ---- Config resolver tests (D-144) ----
+
+    fn make_file_set(paths: &[&str]) -> FileSet {
+        paths
+            .iter()
+            .map(|p| CanonicalPath::new(p.to_string()))
+            .collect()
+    }
+
+    fn make_import(path: &str) -> RawImport {
+        RawImport {
+            path: path.to_string(),
+            symbols: Vec::new(),
+            is_type_only: false,
+            kind: ImportKind::Regular,
+        }
+    }
+
+    fn dummy_from_file() -> CanonicalPath {
+        CanonicalPath::new("src/main/java/com/example/App.java".to_string())
+    }
+
+    #[test]
+    fn test_config_resolver_gradle_source_dir() {
+        let config = JavaBuildConfig::Gradle {
+            config: GradleConfig {
+                config_dir: PathBuf::new(),
+                group: Some("com.example".to_string()),
+                version: None,
+                source_dirs: vec!["src/main/java".to_string()],
+                test_source_dirs: vec![],
+                dependencies: vec![],
+                subprojects: vec![],
+                is_android: false,
+            },
+            subconfigs: BTreeMap::new(),
+        };
+        let resolver = JavaConfigResolver { build_config: config };
+        let file_set = make_file_set(&["src/main/java/com/example/MyClass.java"]);
+        let import = make_import("com.example.MyClass");
+        let result = resolver.resolve(&import, &dummy_from_file(), &file_set, None);
+        assert_eq!(
+            result,
+            Some(CanonicalPath::new(
+                "src/main/java/com/example/MyClass.java".to_string()
+            ))
+        );
+    }
+
+    #[test]
+    fn test_config_resolver_maven_source_dir() {
+        let mut configs = BTreeMap::new();
+        configs.insert(
+            PathBuf::new(),
+            MavenConfig {
+                config_path: PathBuf::new(),
+                config_dir: PathBuf::new(),
+                group_id: Some("com.example".to_string()),
+                artifact_id: Some("myapp".to_string()),
+                version: None,
+                packaging: None,
+                source_directory: Some("src/main/java".to_string()),
+                test_source_directory: None,
+                modules: vec![],
+                dependencies: vec![],
+                parent: None,
+            },
+        );
+        let config = JavaBuildConfig::Maven { configs };
+        let resolver = JavaConfigResolver { build_config: config };
+        let file_set = make_file_set(&["src/main/java/com/example/Service.java"]);
+        let import = make_import("com.example.Service");
+        let result = resolver.resolve(&import, &dummy_from_file(), &file_set, None);
+        assert_eq!(
+            result,
+            Some(CanonicalPath::new(
+                "src/main/java/com/example/Service.java".to_string()
+            ))
+        );
+    }
+
+    #[test]
+    fn test_config_resolver_external_dep_skipped() {
+        let config = JavaBuildConfig::Gradle {
+            config: GradleConfig {
+                config_dir: PathBuf::new(),
+                group: Some("com.example".to_string()),
+                version: None,
+                source_dirs: vec!["src/main/java".to_string()],
+                test_source_dirs: vec![],
+                dependencies: vec![],
+                subprojects: vec![],
+                is_android: false,
+            },
+            subconfigs: BTreeMap::new(),
+        };
+        let resolver = JavaConfigResolver { build_config: config };
+        let file_set = make_file_set(&["src/main/java/com/example/MyClass.java"]);
+        // External import — different top-2 segments
+        let import = make_import("org.springframework.web.bind.annotation.RestController");
+        let result = resolver.resolve(&import, &dummy_from_file(), &file_set, None);
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_config_resolver_fallback() {
+        // Empty source dirs — no config match, falls back to src/main/java/
+        let config = JavaBuildConfig::Gradle {
+            config: GradleConfig {
+                config_dir: PathBuf::new(),
+                group: None,
+                version: None,
+                source_dirs: vec![],
+                test_source_dirs: vec![],
+                dependencies: vec![],
+                subprojects: vec![],
+                is_android: false,
+            },
+            subconfigs: BTreeMap::new(),
+        };
+        let resolver = JavaConfigResolver { build_config: config };
+        let file_set = make_file_set(&["src/main/java/com/example/Fallback.java"]);
+        let import = make_import("com.example.Fallback");
+        let result = resolver.resolve(&import, &dummy_from_file(), &file_set, None);
+        assert_eq!(
+            result,
+            Some(CanonicalPath::new(
+                "src/main/java/com/example/Fallback.java".to_string()
+            ))
+        );
     }
 }

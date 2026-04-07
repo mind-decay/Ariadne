@@ -1,4 +1,4 @@
-<!-- moira:freshness init 2026-04-04 -->
+<!-- moira:freshness task-2026-04-05-001 2026-04-05 -->
 <!-- moira:knowledge project-model L2 -->
 
 ---
@@ -86,20 +86,22 @@ Subdirectories (16 modules):
 | `recommend/` | 7 | Recommendation engine: min_cut, pareto, placement, refactor, split, types |
 | `pipeline/` | 5 | Build pipeline: build, walk, read, resolve |
 | `temporal/` | 6 | Git temporal analysis: churn, coupling, git, hotspot, ownership |
-| `detect/` | 5 | File detection: case_sensitivity, filetype, layer, workspace |
+| `detect/` | 6 | File detection: case_sensitivity, filetype, layer, workspace; java_framework.rs [Phase 12] |
 | `analysis/` | 4 | Architectural analysis: diff, metrics, smells |
 | `serial/` | 3 | Serialization: convert, json |
-| `semantic/` | 4 | Boundary extraction: edges, events, http |
+| `semantic/` | 5 | Boundary extraction: edges, events, http; dotnet.rs [Phase 11], java.rs [Phase 12] |
 | `views/` | 4 | Markdown views: cluster, impact, index |
 | `cluster/` | 1 | Directory-based clustering |
 
 ### `src/parser/config/` (nested subdirectory)
 
-- `mod.rs` — config module root
+- `mod.rs` — config module root; discover_config(), find_nearest_*() helpers for all build systems
 - `tsconfig.rs` — tsconfig.json path resolution
 - `gomod.rs` — go.mod module resolution
 - `pyproject.rs` — pyproject.toml resolution
 - `jsonc.rs` — JSONC parser utility
+- `gradle.rs` — GradleConfig, parse_build_gradle(), parse_settings_gradle() [Phase 12]
+- `maven.rs` — MavenConfig, parse_pom_xml() [Phase 12]
 
 ## Directory Roles
 
@@ -147,7 +149,7 @@ No vendored or third-party directories detected. No `vendor/`, `third_party/`, o
 
 **Pattern:** Separate test directory with integration tests + co-located mod tests within `src/`.
 
-**Integration tests** (`tests/`, 12 test files):
+**Integration tests** (`tests/`, 13 test files):
 - `pipeline_tests.rs` — pipeline integration
 - `graph_tests.rs` — graph construction
 - `mcp_tests.rs` — MCP server
@@ -158,10 +160,18 @@ No vendored or third-party directories detected. No `vendor/`, `third_party/`, o
 - `temporal_integration.rs` — temporal/git analysis
 - `callgraph_tests.rs` — call graph
 - `config_resolution_tests.rs` — config-aware import resolution
+- `integration_java_phase12.rs` — Java Phase 12: Gradle/Maven config, classpath resolution, framework detection, boundaries (16 tests) [Phase 12]
 - `helpers.rs` — shared test utilities
 
-**Test fixtures** (`tests/fixtures/`, 17 fixture projects):
-csharp-project, data-files, edge-cases, go-service, gomod_project, java-project, markdown-docs, mixed-project, python-package, python_src_layout, rust-crate, semantic, tsconfig_extends, tsconfig_project, tsx-components, typescript-app, workspace-project
+**Test fixtures** (`tests/fixtures/`, 22 fixture projects):
+android-project, csharp-project, data-files, edge-cases, go-service, gomod_project, gradle-project, jakarta-ee, java-project, markdown-docs, maven-project, mixed-project, python-package, python_src_layout, rust-crate, semantic, spring-boot, tsconfig_extends, tsconfig_project, tsx-components, typescript-app, workspace-project
+
+**Phase 12 fixtures added [2026-04-05]:**
+- `maven-project/` — pom.xml with com.example groupId, standard Maven layout
+- `gradle-project/` — multi-module (root + :app + :lib subprojects), Groovy DSL
+- `spring-boot/` — Spring Boot with @RestController, @Service, @Autowired, @GetMapping
+- `jakarta-ee/` — JAX-RS endpoints (@Path, @GET, @POST), CDI injection (@Inject)
+- `android-project/` — Android plugin, AndroidManifest.xml, Activity/Fragment subclasses
 
 **Benchmarks** (`benches/`, 7 files):
 algo_bench.rs, analysis_bench.rs, build_bench.rs, mcp_bench.rs, parser_bench.rs, symbol_bench.rs, helpers.rs

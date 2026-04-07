@@ -179,14 +179,15 @@
         "src/detect/case_sensitivity.rs",
         "src/detect/filetype.rs",
         "src/detect/framework.rs",
+        "src/detect/java_framework.rs",
         "src/detect/layer.rs",
         "src/detect/mod.rs",
         "src/detect/workspace.rs"
       ],
-      "file_count": 6,
-      "internal_edges": 5,
+      "file_count": 7,
+      "internal_edges": 6,
       "external_edges": 10,
-      "cohesion": 0.3333
+      "cohesion": 0.375
     },
     "mcp": {
       "files": [
@@ -234,14 +235,16 @@
       ],
       "file_count": 17,
       "internal_edges": 20,
-      "external_edges": 124,
-      "cohesion": 0.1389
+      "external_edges": 128,
+      "cohesion": 0.1351
     },
     "parser": {
       "files": [
         "src/parser/config/csproj.rs",
         "src/parser/config/gomod.rs",
+        "src/parser/config/gradle.rs",
         "src/parser/config/jsonc.rs",
+        "src/parser/config/maven.rs",
         "src/parser/config/mod.rs",
         "src/parser/config/pyproject.rs",
         "src/parser/config/tsconfig.rs",
@@ -260,10 +263,10 @@
         "src/parser/typescript.rs",
         "src/parser/yaml.rs"
       ],
-      "file_count": 20,
-      "internal_edges": 45,
-      "external_edges": 42,
-      "cohesion": 0.5172
+      "file_count": 22,
+      "internal_edges": 48,
+      "external_edges": 46,
+      "cohesion": 0.5106
     },
     "pipeline": {
       "files": [
@@ -305,8 +308,8 @@
       ],
       "file_count": 7,
       "internal_edges": 2,
-      "external_edges": 33,
-      "cohesion": 0.0571
+      "external_edges": 35,
+      "cohesion": 0.0541
     },
     "semantic": {
       "files": [
@@ -314,12 +317,13 @@
         "src/semantic/edges.rs",
         "src/semantic/events.rs",
         "src/semantic/http.rs",
+        "src/semantic/java.rs",
         "src/semantic/mod.rs"
       ],
-      "file_count": 5,
-      "internal_edges": 7,
-      "external_edges": 13,
-      "cohesion": 0.35
+      "file_count": 6,
+      "internal_edges": 9,
+      "external_edges": 15,
+      "cohesion": 0.375
     },
     "serial": {
       "files": [
@@ -351,6 +355,8 @@
         "tests/callgraph_tests.rs",
         "tests/config_resolution_tests.rs",
         "tests/dotnet_integration_tests.rs",
+        "tests/fixtures/android-project/app/src/main/java/com/example/MainActivity.java",
+        "tests/fixtures/android-project/app/src/main/java/com/example/MainFragment.java",
         "tests/fixtures/csharp-project/Data/UserRepository.cs",
         "tests/fixtures/csharp-project/Program.cs",
         "tests/fixtures/csharp-project/Services/AuthService.cs",
@@ -393,6 +399,10 @@
         "tests/fixtures/go-service/internal/service/service.go",
         "tests/fixtures/gomod_project/internal/auth/auth.go",
         "tests/fixtures/gomod_project/main.go",
+        "tests/fixtures/gradle-project/app/src/main/java/com/example/app/Main.java",
+        "tests/fixtures/gradle-project/lib/src/main/java/com/example/lib/Utils.java",
+        "tests/fixtures/jakarta-ee/src/main/java/com/example/UserResource.java",
+        "tests/fixtures/jakarta-ee/src/main/java/com/example/UserService.java",
         "tests/fixtures/java-project/src/main/java/com/example/App.java",
         "tests/fixtures/java-project/src/main/java/com/example/data/UserRepo.java",
         "tests/fixtures/java-project/src/main/java/com/example/service/AuthService.java",
@@ -400,6 +410,9 @@
         "tests/fixtures/markdown-docs/README.md",
         "tests/fixtures/markdown-docs/docs/api.md",
         "tests/fixtures/markdown-docs/docs/guide.md",
+        "tests/fixtures/maven-project/src/main/java/com/example/App.java",
+        "tests/fixtures/maven-project/src/main/java/com/example/data/UserRepo.java",
+        "tests/fixtures/maven-project/src/main/java/com/example/service/UserService.java",
         "tests/fixtures/mixed-project/.ariadne/graph/clusters.json",
         "tests/fixtures/mixed-project/.ariadne/graph/graph.json",
         "tests/fixtures/mixed-project/README.md",
@@ -439,6 +452,9 @@
         "tests/fixtures/semantic/mixed_framework.ts",
         "tests/fixtures/semantic/no_boundaries.rs",
         "tests/fixtures/semantic/spring_routes.java",
+        "tests/fixtures/spring-boot/src/main/java/com/example/UserController.java",
+        "tests/fixtures/spring-boot/src/main/java/com/example/UserRepository.java",
+        "tests/fixtures/spring-boot/src/main/java/com/example/UserService.java",
         "tests/fixtures/tsconfig_extends/lib/core.ts",
         "tests/fixtures/tsconfig_extends/src/main.ts",
         "tests/fixtures/tsconfig_extends/src/service.ts",
@@ -486,6 +502,7 @@
         "tests/fixtures/workspace-project/packages/shared/src/index.ts",
         "tests/graph_tests.rs",
         "tests/helpers.rs",
+        "tests/integration_java_phase12.rs",
         "tests/invariants.rs",
         "tests/mcp_tests.rs",
         "tests/pipeline_tests.rs",
@@ -494,7 +511,7 @@
         "tests/symbol_tests.rs",
         "tests/temporal_integration.rs"
       ],
-      "file_count": 145,
+      "file_count": 158,
       "internal_edges": 39,
       "external_edges": 0,
       "cohesion": 1.0

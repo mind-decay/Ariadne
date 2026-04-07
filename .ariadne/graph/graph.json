@@ -1,8 +1,8 @@
 {
   "version": 1,
   "project_root": "/Users/minddecay/Documents/Projects/Ariadne",
-  "node_count": 351,
-  "edge_count": 411,
+  "node_count": 368,
+  "edge_count": 423,
   "nodes": {
     ".claude/CLAUDE.md": {
       "type": "doc",
@@ -170,8 +170,8 @@
       "type": "doc",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 14,
-      "hash": "11f8173ca0ab494a",
+      "lines": 69,
+      "hash": "7ea876c59c63c01c",
       "exports": [],
       "cluster": ".moira"
     },
@@ -206,8 +206,8 @@
       "type": "doc",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 13,
-      "hash": "04fb01d4d0ba6ac2",
+      "lines": 17,
+      "hash": "ff6ea31f2412da1c",
       "exports": [],
       "cluster": ".moira"
     },
@@ -251,8 +251,8 @@
       "type": "doc",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 76,
-      "hash": "376694bfa0ab04be",
+      "lines": 106,
+      "hash": "7bab503bd19257a8",
       "exports": [],
       "cluster": ".moira"
     },
@@ -278,8 +278,8 @@
       "type": "doc",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 250,
-      "hash": "818568a24a93ff3d",
+      "lines": 260,
+      "hash": "c96b16d5225e8f8c",
       "exports": [],
       "cluster": ".moira"
     },
@@ -984,7 +984,7 @@
       "layer": "unknown",
       "arch_depth": 0,
       "lines": 1955,
-      "hash": "ea95149adfeae964",
+      "hash": "bde85451395ff793",
       "exports": [],
       "cluster": "design"
     },
@@ -1001,8 +1001,8 @@
       "type": "doc",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 1547,
-      "hash": "09cb179620def63f",
+      "lines": 1680,
+      "hash": "1af3cc6535946116",
       "exports": [],
       "cluster": "design"
     },
@@ -3108,6 +3108,99 @@
         }
       ]
     },
+    "src/detect/java_framework.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 292,
+      "hash": "90fd19c6cf80a183",
+      "exports": [
+        "JavaFrameworkHints",
+        "detect_java_framework"
+      ],
+      "cluster": "detect",
+      "symbols": [
+        {
+          "name": "JavaFrameworkHints",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 9,
+            "end": 26
+          },
+          "signature": "pub struct JavaFrameworkHints {"
+        },
+        {
+          "name": "detect_class_patterns",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 47,
+            "end": 96
+          },
+          "signature": "fn detect_class_patterns("
+        },
+        {
+          "name": "detect_java_framework",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 29,
+            "end": 33
+          },
+          "signature": "pub fn detect_java_framework(tree: &tree_sitter::Tree, source: &[u8]) -> JavaFrameworkHints {"
+        },
+        {
+          "name": "extract_annotation_name",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 99,
+            "end": 119
+          },
+          "signature": "fn extract_annotation_name(node: &tree_sitter::Node, source: &[u8]) -> Option<String> {"
+        },
+        {
+          "name": "match_annotation",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 122,
+            "end": 166
+          },
+          "signature": "fn match_annotation(name: &str, hints: &mut JavaFrameworkHints) {"
+        },
+        {
+          "name": "match_superclass",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 169,
+            "end": 182
+          },
+          "signature": "fn match_superclass(name: &str, hints: &mut JavaFrameworkHints) {"
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 185,
+            "end": 292
+          }
+        },
+        {
+          "name": "walk_node",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 35,
+            "end": 44
+          },
+          "signature": "fn walk_node(node: tree_sitter::Node, source: &[u8], hints: &mut JavaFrameworkHints) {"
+        }
+      ]
+    },
     "src/detect/layer.rs": {
       "type": "source",
       "layer": "unknown",
@@ -3185,12 +3278,14 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 5,
-      "lines": 10,
-      "hash": "7a878bbab386e4fb",
+      "lines": 12,
+      "hash": "4009a9a9824b990e",
       "exports": [
+        "JavaFrameworkHints",
         "case_sensitivity",
         "detect_file_type",
         "detect_fsd_project",
+        "detect_java_framework",
         "detect_rust_crate_name",
         "detect_workspace",
         "filetype",
@@ -3198,6 +3293,7 @@
         "framework",
         "infer_arch_layer",
         "is_case_insensitive",
+        "java_framework",
         "layer",
         "workspace"
       ],
@@ -3300,8 +3396,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 3,
-      "lines": 568,
-      "hash": "a6b3375559693a53",
+      "lines": 583,
+      "hash": "ff5ead3ff8901a2f",
       "exports": [
         "DiagnosticCollector",
         "DiagnosticCounts",
@@ -3320,8 +3416,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 290,
-            "end": 292
+            "start": 300,
+            "end": 302
           },
           "signature": "pub struct DiagnosticCollector {"
         },
@@ -3330,8 +3426,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 269,
-            "end": 281
+            "start": 279,
+            "end": 291
           },
           "signature": "pub struct DiagnosticCounts {"
         },
@@ -3340,8 +3436,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 284,
-            "end": 287
+            "start": 294,
+            "end": 297
           },
           "signature": "pub struct DiagnosticReport {"
         },
@@ -3360,8 +3456,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 260,
-            "end": 265
+            "start": 270,
+            "end": 275
           },
           "signature": "pub struct Warning {"
         },
@@ -3371,7 +3467,7 @@
           "visibility": "public",
           "span": {
             "start": 44,
-            "end": 82
+            "end": 87
           },
           "signature": "pub enum WarningCode {"
         },
@@ -3380,8 +3476,8 @@
           "kind": "enum",
           "visibility": "public",
           "span": {
-            "start": 136,
-            "end": 139
+            "start": 146,
+            "end": 149
           },
           "signature": "pub enum WarningFormat {"
         },
@@ -3390,8 +3486,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 85,
-            "end": 125
+            "start": 90,
+            "end": 135
           },
           "signature": "pub fn code(&self) -> &'static str {",
           "parent": "WarningCode"
@@ -3401,8 +3497,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 394,
-            "end": 396
+            "start": 409,
+            "end": 411
           },
           "signature": "fn default() -> Self {",
           "parent": "Default"
@@ -3412,8 +3508,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 385,
-            "end": 390
+            "start": 400,
+            "end": 405
           },
           "signature": "pub fn drain(self) -> DiagnosticReport {",
           "parent": "DiagnosticCollector"
@@ -3423,8 +3519,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 129,
-            "end": 131
+            "start": 139,
+            "end": 141
           },
           "signature": "fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {",
           "parent": "WarningCode"
@@ -3434,8 +3530,8 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 183,
-            "end": 237
+            "start": 193,
+            "end": 247
           },
           "signature": "pub fn format_summary("
         },
@@ -3444,8 +3540,8 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 144,
-            "end": 180
+            "start": 154,
+            "end": 190
           },
           "signature": "pub fn format_warnings(report: &DiagnosticReport, format: WarningFormat, verbose: bool) -> String {"
         },
@@ -3454,8 +3550,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 379,
-            "end": 382
+            "start": 394,
+            "end": 397
           },
           "signature": "pub fn increment_unresolved(&self) {",
           "parent": "DiagnosticCollector"
@@ -3465,8 +3561,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 240,
-            "end": 256
+            "start": 250,
+            "end": 266
           },
           "signature": "fn json_escape(s: &str) -> String {"
         },
@@ -3475,8 +3571,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 295,
-            "end": 299
+            "start": 305,
+            "end": 309
           },
           "signature": "pub fn new() -> Self {",
           "parent": "DiagnosticCollector"
@@ -3486,8 +3582,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 400,
-            "end": 568
+            "start": 415,
+            "end": 583
           }
         },
         {
@@ -3495,8 +3591,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 302,
-            "end": 375
+            "start": 312,
+            "end": 390
           },
           "signature": "pub fn warn(&self, warning: Warning) {",
           "parent": "DiagnosticCollector"
@@ -7525,6 +7621,103 @@
         }
       ]
     },
+    "src/parser/config/gradle.rs": {
+      "type": "source",
+      "layer": "config",
+      "arch_depth": 4,
+      "lines": 382,
+      "hash": "474181c02921b343",
+      "exports": [
+        "GradleConfig",
+        "GradleDep",
+        "GradleDepScope",
+        "GradleSubproject",
+        "parse_build_gradle",
+        "parse_settings_gradle"
+      ],
+      "cluster": "parser",
+      "symbols": [
+        {
+          "name": "GradleConfig",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 10,
+            "end": 21
+          },
+          "signature": "pub struct GradleConfig {"
+        },
+        {
+          "name": "GradleDep",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 25,
+            "end": 30
+          },
+          "signature": "pub struct GradleDep {"
+        },
+        {
+          "name": "GradleDepScope",
+          "kind": "enum",
+          "visibility": "public",
+          "span": {
+            "start": 34,
+            "end": 41
+          },
+          "signature": "pub enum GradleDepScope {"
+        },
+        {
+          "name": "GradleSubproject",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 45,
+            "end": 48
+          },
+          "signature": "pub struct GradleSubproject {"
+        },
+        {
+          "name": "parse_build_gradle",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 65,
+            "end": 205
+          },
+          "signature": "pub fn parse_build_gradle("
+        },
+        {
+          "name": "parse_scope",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 50,
+            "end": 59
+          },
+          "signature": "fn parse_scope(s: &str) -> GradleDepScope {"
+        },
+        {
+          "name": "parse_settings_gradle",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 210,
+            "end": 244
+          },
+          "signature": "pub fn parse_settings_gradle(content: &str) -> Vec<GradleSubproject> {"
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 247,
+            "end": 382
+          }
+        }
+      ]
+    },
     "src/parser/config/jsonc.rs": {
       "type": "source",
       "layer": "config",
@@ -7567,25 +7760,111 @@
         }
       ]
     },
+    "src/parser/config/maven.rs": {
+      "type": "source",
+      "layer": "config",
+      "arch_depth": 4,
+      "lines": 305,
+      "hash": "f9bf1e322e444590",
+      "exports": [
+        "MavenConfig",
+        "MavenDep",
+        "MavenParentRef",
+        "parse_pom_xml"
+      ],
+      "cluster": "parser",
+      "symbols": [
+        {
+          "name": "MavenConfig",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 8,
+            "end": 20
+          },
+          "signature": "pub struct MavenConfig {"
+        },
+        {
+          "name": "MavenDep",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 24,
+            "end": 29
+          },
+          "signature": "pub struct MavenDep {"
+        },
+        {
+          "name": "MavenParentRef",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 33,
+            "end": 38
+          },
+          "signature": "pub struct MavenParentRef {"
+        },
+        {
+          "name": "child_text",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 41,
+            "end": 47
+          },
+          "signature": "fn child_text(node: &roxmltree::Node, name: &str) -> Option<String> {"
+        },
+        {
+          "name": "parse_pom_xml",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 52,
+            "end": 161
+          },
+          "signature": "pub fn parse_pom_xml("
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 164,
+            "end": 305
+          }
+        }
+      ]
+    },
     "src/parser/config/mod.rs": {
       "type": "source",
       "layer": "config",
       "arch_depth": 5,
-      "lines": 357,
-      "hash": "d8c6f8b108ad7404",
+      "lines": 539,
+      "hash": "b4c2e7dedf409c11",
       "exports": [
         "CsprojConfig",
         "DotnetSolutionInfo",
         "GoModConfig",
+        "GradleConfig",
+        "GradleDep",
+        "GradleDepScope",
+        "GradleSubproject",
+        "MavenConfig",
+        "MavenDep",
+        "MavenParentRef",
         "ProjectConfig",
         "PyProjectConfig",
         "TsConfig",
         "csproj",
         "discover_config",
         "find_nearest_csproj",
+        "find_nearest_gradle",
+        "find_nearest_maven",
         "find_nearest_tsconfig",
         "gomod",
+        "gradle",
         "jsonc",
+        "maven",
         "pyproject",
         "tsconfig"
       ],
@@ -7596,8 +7875,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 19,
-            "end": 30
+            "start": 23,
+            "end": 38
           },
           "signature": "pub struct ProjectConfig {"
         },
@@ -7606,8 +7885,8 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 37,
-            "end": 55
+            "start": 45,
+            "end": 67
           },
           "signature": "pub fn discover_config("
         },
@@ -7616,8 +7895,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 111,
-            "end": 142
+            "start": 123,
+            "end": 154
           },
           "signature": "fn discover_csproj_configs("
         },
@@ -7626,8 +7905,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 145,
-            "end": 188
+            "start": 157,
+            "end": 200
           },
           "signature": "fn discover_dotnet_solution("
         },
@@ -7636,18 +7915,38 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 93,
-            "end": 99
+            "start": 105,
+            "end": 111
           },
           "signature": "fn discover_go_config(project_root: &Path) -> Option<GoModConfig> {"
+        },
+        {
+          "name": "discover_gradle_configs",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 203,
+            "end": 279
+          },
+          "signature": "fn discover_gradle_configs("
+        },
+        {
+          "name": "discover_maven_configs",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 282,
+            "end": 332
+          },
+          "signature": "fn discover_maven_configs("
         },
         {
           "name": "discover_py_config",
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 102,
-            "end": 108
+            "start": 114,
+            "end": 120
           },
           "signature": "fn discover_py_config(project_root: &Path) -> Option<PyProjectConfig> {"
         },
@@ -7656,8 +7955,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 58,
-            "end": 90
+            "start": 70,
+            "end": 102
           },
           "signature": "fn discover_tsconfigs("
         },
@@ -7666,18 +7965,38 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 194,
-            "end": 206
+            "start": 338,
+            "end": 350
           },
           "signature": "pub fn find_nearest_csproj<'a>("
+        },
+        {
+          "name": "find_nearest_gradle",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 374,
+            "end": 386
+          },
+          "signature": "pub fn find_nearest_gradle<'a>("
+        },
+        {
+          "name": "find_nearest_maven",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 392,
+            "end": 404
+          },
+          "signature": "pub fn find_nearest_maven<'a>("
         },
         {
           "name": "find_nearest_tsconfig",
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 212,
-            "end": 224
+            "start": 356,
+            "end": 368
           },
           "signature": "pub fn find_nearest_tsconfig<'a>("
         },
@@ -7686,8 +8005,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 227,
-            "end": 357
+            "start": 407,
+            "end": 539
           }
         }
       ]
@@ -8603,24 +8922,46 @@
     "src/parser/java.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 4,
-      "lines": 556,
-      "hash": "4395e14023e9b1ca",
+      "arch_depth": 5,
+      "lines": 912,
+      "hash": "2cbab2ed8d9573d7",
       "exports": [
+        "JavaBuildConfig",
         "JavaParser",
         "parser",
         "resolver",
+        "resolver_with_config",
         "symbol_extractor"
       ],
       "cluster": "parser",
       "symbols": [
         {
+          "name": "JavaBuildConfig",
+          "kind": "enum",
+          "visibility": "public",
+          "span": {
+            "start": 437,
+            "end": 450
+          },
+          "signature": "pub enum JavaBuildConfig {"
+        },
+        {
+          "name": "JavaConfigResolver",
+          "kind": "struct",
+          "visibility": "private",
+          "span": {
+            "start": 454,
+            "end": 456
+          },
+          "signature": "struct JavaConfigResolver {"
+        },
+        {
           "name": "JavaParser",
           "kind": "struct",
           "visibility": "internal",
           "span": {
-            "start": 8,
-            "end": 8
+            "start": 12,
+            "end": 12
           },
           "signature": "pub(crate) struct JavaParser;"
         },
@@ -8629,8 +8970,8 @@
           "kind": "struct",
           "visibility": "private",
           "span": {
-            "start": 350,
-            "end": 350
+            "start": 354,
+            "end": 354
           },
           "signature": "struct JavaResolver;"
         },
@@ -8639,18 +8980,29 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 87,
-            "end": 120
+            "start": 91,
+            "end": 124
           },
           "signature": "fn collect_public_java_declarations("
+        },
+        {
+          "name": "collect_source_dirs",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 460,
+            "end": 504
+          },
+          "signature": "fn collect_source_dirs(&self) -> Vec<(PathBuf, String)> {",
+          "parent": "JavaConfigResolver"
         },
         {
           "name": "extensions",
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 15,
-            "end": 17
+            "start": 19,
+            "end": 21
           },
           "signature": "fn extensions(&self) -> &[&str] {",
           "parent": "LanguageParser"
@@ -8660,8 +9012,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 76,
-            "end": 83
+            "start": 80,
+            "end": 87
           },
           "signature": "fn extract_exports(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Vec<RawExport> {",
           "parent": "LanguageParser"
@@ -8671,8 +9023,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 23,
-            "end": 74
+            "start": 27,
+            "end": 78
           },
           "signature": "fn extract_imports(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Vec<RawImport> {",
           "parent": "LanguageParser"
@@ -8682,8 +9034,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 259,
-            "end": 284
+            "start": 263,
+            "end": 288
           },
           "signature": "fn extract_java_field_names("
         },
@@ -8692,8 +9044,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 168,
-            "end": 256
+            "start": 172,
+            "end": 260
           },
           "signature": "fn extract_java_symbols_from_node("
         },
@@ -8702,8 +9054,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 159,
-            "end": 164
+            "start": 163,
+            "end": 168
           },
           "signature": "fn extract_symbols(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Vec<SymbolDef> {",
           "parent": "SymbolExtractor"
@@ -8713,8 +9065,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 142,
-            "end": 156
+            "start": 146,
+            "end": 160
           },
           "signature": "fn find_java_declaration_name(node: &tree_sitter::Node, source: &[u8]) -> Option<String> {"
         },
@@ -8723,8 +9075,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 308,
-            "end": 323
+            "start": 312,
+            "end": 327
           },
           "signature": "fn has_java_modifier(node: &tree_sitter::Node, modifier: &str) -> bool {"
         },
@@ -8733,18 +9085,29 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 123,
-            "end": 139
+            "start": 127,
+            "end": 143
           },
           "signature": "fn has_public_modifier(node: &tree_sitter::Node, _source: &[u8]) -> bool {"
+        },
+        {
+          "name": "is_external_import",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 527,
+            "end": 538
+          },
+          "signature": "fn is_external_import(&self, import_path: &str) -> bool {",
+          "parent": "JavaConfigResolver"
         },
         {
           "name": "java_node_span",
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 326,
-            "end": 331
+            "start": 330,
+            "end": 335
           },
           "signature": "fn java_node_span(node: &tree_sitter::Node) -> LineSpan {"
         },
@@ -8753,8 +9116,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 334,
-            "end": 347
+            "start": 338,
+            "end": 351
           },
           "signature": "fn java_truncate_signature("
         },
@@ -8763,8 +9126,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 287,
-            "end": 305
+            "start": 291,
+            "end": 309
           },
           "signature": "fn java_visibility(node: &tree_sitter::Node, _source: &[u8]) -> Visibility {"
         },
@@ -8773,8 +9136,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 11,
-            "end": 13
+            "start": 15,
+            "end": 17
           },
           "signature": "fn language(&self) -> &str {",
           "parent": "LanguageParser"
@@ -8784,18 +9147,40 @@
           "kind": "function",
           "visibility": "internal",
           "span": {
-            "start": 424,
-            "end": 426
+            "start": 428,
+            "end": 430
           },
           "signature": "pub(crate) fn parser() -> Box<dyn LanguageParser> {"
+        },
+        {
+          "name": "project_group_prefix",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 507,
+            "end": 524
+          },
+          "signature": "fn project_group_prefix(&self) -> Option<String> {",
+          "parent": "JavaConfigResolver"
         },
         {
           "name": "resolve",
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 353,
-            "end": 421
+            "start": 357,
+            "end": 425
+          },
+          "signature": "fn resolve(",
+          "parent": "ImportResolver"
+        },
+        {
+          "name": "resolve",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 542,
+            "end": 648
           },
           "signature": "fn resolve(",
           "parent": "ImportResolver"
@@ -8805,18 +9190,28 @@
           "kind": "function",
           "visibility": "internal",
           "span": {
-            "start": 428,
-            "end": 430
+            "start": 432,
+            "end": 434
           },
           "signature": "pub(crate) fn resolver() -> Box<dyn ImportResolver> {"
+        },
+        {
+          "name": "resolver_with_config",
+          "kind": "function",
+          "visibility": "internal",
+          "span": {
+            "start": 652,
+            "end": 654
+          },
+          "signature": "pub(crate) fn resolver_with_config(build_config: JavaBuildConfig) -> Box<dyn ImportResolver> {"
         },
         {
           "name": "symbol_extractor",
           "kind": "function",
           "visibility": "internal",
           "span": {
-            "start": 432,
-            "end": 434
+            "start": 656,
+            "end": 658
           },
           "signature": "pub(crate) fn symbol_extractor() -> std::sync::Arc<dyn SymbolExtractor> {"
         },
@@ -8825,8 +9220,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 437,
-            "end": 556
+            "start": 661,
+            "end": 912
           }
         },
         {
@@ -8834,8 +9229,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 19,
-            "end": 21
+            "start": 23,
+            "end": 25
           },
           "signature": "fn tree_sitter_language(&self) -> tree_sitter::Language {",
           "parent": "LanguageParser"
@@ -9588,8 +9983,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 5,
-      "lines": 390,
-      "hash": "feb4bbfd5274f0bb",
+      "lines": 443,
+      "hash": "7c543a150c2f28e2",
       "exports": [
         "ParseOutcome",
         "ParserRegistry"
@@ -9628,12 +10023,23 @@
           "parent": "ParserRegistry"
         },
         {
+          "name": "build_java_config",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 270,
+            "end": 308
+          },
+          "signature": "fn build_java_config(config: &ProjectConfig) -> Option<java::JavaBuildConfig> {",
+          "parent": "ParserRegistry"
+        },
+        {
           "name": "default",
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 357,
-            "end": 359
+            "start": 410,
+            "end": 412
           },
           "signature": "fn default() -> Self {",
           "parent": "Default"
@@ -9643,8 +10049,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 351,
-            "end": 353
+            "start": 404,
+            "end": 406
           },
           "signature": "pub fn language_names(&self) -> Vec<&str> {",
           "parent": "ParserRegistry"
@@ -9665,8 +10071,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 261,
-            "end": 330
+            "start": 314,
+            "end": 383
           },
           "signature": "pub fn parse_source(",
           "parent": "ParserRegistry"
@@ -9720,8 +10126,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 334,
-            "end": 341
+            "start": 387,
+            "end": 394
           },
           "signature": "pub fn reparse_imports(&self, extension: &str, source: &[u8]) -> Option<Vec<RawImport>> {",
           "parent": "ParserRegistry"
@@ -9742,8 +10148,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 344,
-            "end": 348
+            "start": 397,
+            "end": 401
           },
           "signature": "pub fn supported_extensions(&self) -> Vec<&str> {",
           "parent": "ParserRegistry"
@@ -9764,8 +10170,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 363,
-            "end": 390
+            "start": 416,
+            "end": 443
           }
         },
         {
@@ -9773,8 +10179,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 183,
-            "end": 255
+            "start": 186,
+            "end": 266
           },
           "signature": "pub fn with_project_config(config: &ProjectConfig) -> Self {",
           "parent": "ParserRegistry"
@@ -9796,7 +10202,7 @@
           "visibility": "public",
           "span": {
             "start": 132,
-            "end": 180
+            "end": 183
           },
           "signature": "pub fn with_tier1_config(rust_crate_name: Option<String>) -> Self {",
           "parent": "ParserRegistry"
@@ -12412,20 +12818,246 @@
         }
       ]
     },
+    "src/semantic/java.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 2,
+      "lines": 719,
+      "hash": "d2203e1e2558e1b1",
+      "exports": [
+        "JavaBoundaryExtractor"
+      ],
+      "cluster": "semantic",
+      "symbols": [
+        {
+          "name": "ClassContext",
+          "kind": "struct",
+          "visibility": "private",
+          "span": {
+            "start": 44,
+            "end": 52
+          },
+          "signature": "struct ClassContext {"
+        },
+        {
+          "name": "JavaBoundaryExtractor",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 14,
+            "end": 14
+          },
+          "signature": "pub struct JavaBoundaryExtractor;"
+        },
+        {
+          "name": "MAX_BOUNDARIES_PER_FILE",
+          "kind": "const",
+          "visibility": "private",
+          "span": {
+            "start": 11,
+            "end": 11
+          },
+          "signature": "const MAX_BOUNDARIES_PER_FILE: usize = 500;"
+        },
+        {
+          "name": "annotation_name",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 428,
+            "end": 448
+          },
+          "signature": "fn annotation_name(node: tree_sitter::Node, source: &[u8]) -> Option<String> {"
+        },
+        {
+          "name": "combine_route",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 557,
+            "end": 571
+          },
+          "signature": "fn combine_route(prefix: Option<&str>, method_path: &str) -> String {"
+        },
+        {
+          "name": "extensions",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 17,
+            "end": 19
+          },
+          "signature": "fn extensions(&self) -> &[&str] {",
+          "parent": "BoundaryExtractor"
+        },
+        {
+          "name": "extract",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 21,
+            "end": 39
+          },
+          "signature": "fn extract(",
+          "parent": "BoundaryExtractor"
+        },
+        {
+          "name": "extract_field_type",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 532,
+            "end": 554
+          },
+          "signature": "fn extract_field_type(field_decl_node: tree_sitter::Node, source: &[u8]) -> Option<String> {"
+        },
+        {
+          "name": "extract_from_element_value_pair",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 505,
+            "end": 529
+          },
+          "signature": "fn extract_from_element_value_pair("
+        },
+        {
+          "name": "extract_jaxrs_method_routes",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 291,
+            "end": 337
+          },
+          "signature": "fn extract_jaxrs_method_routes("
+        },
+        {
+          "name": "extract_micronaut_method_routes",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 340,
+            "end": 381
+          },
+          "signature": "fn extract_micronaut_method_routes("
+        },
+        {
+          "name": "extract_path_from_args",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 469,
+            "end": 502
+          },
+          "signature": "fn extract_path_from_args(args_node: tree_sitter::Node, source: &[u8]) -> Option<String> {"
+        },
+        {
+          "name": "extract_route_path",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 458,
+            "end": 466
+          },
+          "signature": "fn extract_route_path(annotation_node: tree_sitter::Node, source: &[u8]) -> Option<String> {"
+        },
+        {
+          "name": "extract_spring_method_routes",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 247,
+            "end": 288
+          },
+          "signature": "fn extract_spring_method_routes("
+        },
+        {
+          "name": "handle_class_declaration",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 89,
+            "end": 139
+          },
+          "signature": "fn handle_class_declaration("
+        },
+        {
+          "name": "handle_field_declaration",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 384,
+            "end": 424
+          },
+          "signature": "fn handle_field_declaration("
+        },
+        {
+          "name": "handle_method_declaration",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 218,
+            "end": 244
+          },
+          "signature": "fn handle_method_declaration("
+        },
+        {
+          "name": "process_class_annotation",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 142,
+            "end": 215
+          },
+          "signature": "fn process_class_annotation("
+        },
+        {
+          "name": "strip_quotes",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 574,
+            "end": 584
+          },
+          "signature": "fn strip_quotes(text: &str) -> &str {"
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 587,
+            "end": 719
+          }
+        },
+        {
+          "name": "walk_node",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 54,
+            "end": 86
+          },
+          "signature": "fn walk_node("
+        }
+      ]
+    },
     "src/semantic/mod.rs": {
       "type": "source",
       "layer": "unknown",
       "arch_depth": 2,
-      "lines": 130,
-      "hash": "fa8899b5129eecf7",
+      "lines": 133,
+      "hash": "6e57e5c76b65f1f8",
       "exports": [
         "BoundaryExtractor",
         "ExtractorRegistry",
+        "JavaBoundaryExtractor",
         "analyze",
         "dotnet",
         "edges",
         "events",
-        "http"
+        "http",
+        "java"
       ],
       "cluster": "semantic",
       "symbols": [
@@ -12434,8 +13066,8 @@
           "kind": "trait",
           "visibility": "public",
           "span": {
-            "start": 16,
-            "end": 27
+            "start": 19,
+            "end": 30
           },
           "signature": "pub trait BoundaryExtractor: Send + Sync {"
         },
@@ -12444,8 +13076,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 33,
-            "end": 36
+            "start": 36,
+            "end": 39
           },
           "signature": "pub struct ExtractorRegistry {"
         },
@@ -12454,8 +13086,8 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 85,
-            "end": 109
+            "start": 88,
+            "end": 112
           },
           "signature": "pub fn analyze(file_boundaries: BTreeMap<CanonicalPath, Vec<Boundary>>) -> SemanticState {"
         },
@@ -12464,8 +13096,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 73,
-            "end": 75
+            "start": 76,
+            "end": 78
           },
           "signature": "fn default() -> Self {",
           "parent": "Default"
@@ -12475,8 +13107,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 59,
-            "end": 69
+            "start": 62,
+            "end": 72
           },
           "signature": "pub fn extractors_for(&self, extension: &str) -> Vec<&dyn BoundaryExtractor> {",
           "parent": "ExtractorRegistry"
@@ -12486,8 +13118,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 39,
-            "end": 44
+            "start": 42,
+            "end": 47
           },
           "signature": "pub fn new() -> Self {",
           "parent": "ExtractorRegistry"
@@ -12497,8 +13129,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 47,
-            "end": 56
+            "start": 50,
+            "end": 59
           },
           "signature": "pub fn register(&mut self, extractor: Box<dyn BoundaryExtractor>) {",
           "parent": "ExtractorRegistry"
@@ -12508,8 +13140,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 112,
-            "end": 130
+            "start": 115,
+            "end": 133
           }
         }
       ]
@@ -13894,6 +14526,74 @@
         }
       ]
     },
+    "tests/fixtures/android-project/app/src/main/java/com/example/MainActivity.java": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 13,
+      "hash": "040c890f79364f60",
+      "exports": [
+        "MainActivity"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "MainActivity",
+          "kind": "class",
+          "visibility": "public",
+          "span": {
+            "start": 7,
+            "end": 13
+          },
+          "signature": "public class MainActivity extends AppCompatActivity {"
+        },
+        {
+          "name": "onCreate",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 9,
+            "end": 12
+          },
+          "signature": "@Override",
+          "parent": "MainActivity"
+        }
+      ]
+    },
+    "tests/fixtures/android-project/app/src/main/java/com/example/MainFragment.java": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 13,
+      "hash": "390fca29c431d3a1",
+      "exports": [
+        "MainFragment"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "MainFragment",
+          "kind": "class",
+          "visibility": "public",
+          "span": {
+            "start": 7,
+            "end": 13
+          },
+          "signature": "public class MainFragment extends Fragment {"
+        },
+        {
+          "name": "onViewCreated",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 9,
+            "end": 12
+          },
+          "signature": "@Override",
+          "parent": "MainFragment"
+        }
+      ]
+    },
     "tests/fixtures/csharp-project/Data/UserRepository.cs": {
       "type": "source",
       "layer": "data",
@@ -14888,6 +15588,186 @@
         }
       ]
     },
+    "tests/fixtures/gradle-project/app/src/main/java/com/example/app/Main.java": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 9,
+      "hash": "8ed9cb79c1c7cc7a",
+      "exports": [
+        "Main"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "Main",
+          "kind": "class",
+          "visibility": "public",
+          "span": {
+            "start": 5,
+            "end": 9
+          },
+          "signature": "public class Main {"
+        },
+        {
+          "name": "main",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 6,
+            "end": 8
+          },
+          "signature": "public static void main(String[] args) {",
+          "parent": "Main"
+        }
+      ]
+    },
+    "tests/fixtures/gradle-project/lib/src/main/java/com/example/lib/Utils.java": {
+      "type": "source",
+      "layer": "util",
+      "arch_depth": 0,
+      "lines": 7,
+      "hash": "7c57d957f38855bf",
+      "exports": [
+        "Utils"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "Utils",
+          "kind": "class",
+          "visibility": "public",
+          "span": {
+            "start": 3,
+            "end": 7
+          },
+          "signature": "public class Utils {"
+        },
+        {
+          "name": "greet",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 4,
+            "end": 6
+          },
+          "signature": "public static String greet(String name) {",
+          "parent": "Utils"
+        }
+      ]
+    },
+    "tests/fixtures/jakarta-ee/src/main/java/com/example/UserResource.java": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 31,
+      "hash": "ccd78a099860ac70",
+      "exports": [
+        "UserResource"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "UserResource",
+          "kind": "class",
+          "visibility": "public",
+          "span": {
+            "start": 10,
+            "end": 31
+          },
+          "signature": "@Path(\"/users\")"
+        },
+        {
+          "name": "createUser",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 27,
+            "end": 30
+          },
+          "signature": "@POST",
+          "parent": "UserResource"
+        },
+        {
+          "name": "getUser",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 21,
+            "end": 25
+          },
+          "signature": "@GET",
+          "parent": "UserResource"
+        },
+        {
+          "name": "listUsers",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 16,
+            "end": 19
+          },
+          "signature": "@GET",
+          "parent": "UserResource"
+        }
+      ]
+    },
+    "tests/fixtures/jakarta-ee/src/main/java/com/example/UserService.java": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 10,
+      "hash": "817ff98fbe8d8db2",
+      "exports": [
+        "UserService"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "UserService",
+          "kind": "class",
+          "visibility": "public",
+          "span": {
+            "start": 5,
+            "end": 10
+          },
+          "signature": "@ApplicationScoped"
+        },
+        {
+          "name": "create",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 9,
+            "end": 9
+          },
+          "signature": "public String create(String body) { return \"\"; }",
+          "parent": "UserService"
+        },
+        {
+          "name": "getById",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 8,
+            "end": 8
+          },
+          "signature": "public String getById(long id) { return \"\"; }",
+          "parent": "UserService"
+        },
+        {
+          "name": "listAll",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 7,
+            "end": 7
+          },
+          "signature": "public String listAll() { return \"\"; }",
+          "parent": "UserService"
+        }
+      ]
+    },
     "tests/fixtures/java-project/src/main/java/com/example/App.java": {
       "type": "source",
       "layer": "unknown",
@@ -15050,6 +15930,108 @@
       "hash": "d6631643755e651e",
       "exports": [],
       "cluster": "tests"
+    },
+    "tests/fixtures/maven-project/src/main/java/com/example/App.java": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 11,
+      "hash": "a74b4f5597278dbc",
+      "exports": [
+        "App"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "App",
+          "kind": "class",
+          "visibility": "public",
+          "span": {
+            "start": 5,
+            "end": 11
+          },
+          "signature": "public class App {"
+        },
+        {
+          "name": "main",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 8,
+            "end": 10
+          },
+          "signature": "public static void main(String[] args) {",
+          "parent": "App"
+        }
+      ]
+    },
+    "tests/fixtures/maven-project/src/main/java/com/example/data/UserRepo.java": {
+      "type": "source",
+      "layer": "data",
+      "arch_depth": 0,
+      "lines": 7,
+      "hash": "fc6ccab837f3439b",
+      "exports": [
+        "UserRepo"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "UserRepo",
+          "kind": "class",
+          "visibility": "public",
+          "span": {
+            "start": 3,
+            "end": 7
+          },
+          "signature": "public class UserRepo {"
+        },
+        {
+          "name": "findById",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 4,
+            "end": 6
+          },
+          "signature": "public String findById(long id) {",
+          "parent": "UserRepo"
+        }
+      ]
+    },
+    "tests/fixtures/maven-project/src/main/java/com/example/service/UserService.java": {
+      "type": "source",
+      "layer": "service",
+      "arch_depth": 0,
+      "lines": 11,
+      "hash": "125dfb12da1878bc",
+      "exports": [
+        "UserService"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "UserService",
+          "kind": "class",
+          "visibility": "public",
+          "span": {
+            "start": 5,
+            "end": 11
+          },
+          "signature": "public class UserService {"
+        },
+        {
+          "name": "getUser",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 8,
+            "end": 10
+          },
+          "signature": "public String getUser(long id) {",
+          "parent": "UserService"
+        }
+      ]
     },
     "tests/fixtures/mixed-project/.ariadne/graph/clusters.json": {
       "type": "data",
@@ -15951,6 +16933,163 @@
           },
           "signature": "@GetMapping(\"/api/users\")",
           "parent": "UserController"
+        }
+      ]
+    },
+    "tests/fixtures/spring-boot/src/main/java/com/example/UserController.java": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 37,
+      "hash": "8b2af573326fa662",
+      "exports": [
+        "UserController"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "UserController",
+          "kind": "class",
+          "visibility": "public",
+          "span": {
+            "start": 11,
+            "end": 37
+          },
+          "signature": "@RestController"
+        },
+        {
+          "name": "createUser",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 28,
+            "end": 31
+          },
+          "signature": "@PostMapping",
+          "parent": "UserController"
+        },
+        {
+          "name": "deleteUser",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 33,
+            "end": 36
+          },
+          "signature": "@DeleteMapping(\"/{id}\")",
+          "parent": "UserController"
+        },
+        {
+          "name": "getUser",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 23,
+            "end": 26
+          },
+          "signature": "@GetMapping(\"/{id}\")",
+          "parent": "UserController"
+        },
+        {
+          "name": "listUsers",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 18,
+            "end": 21
+          },
+          "signature": "@GetMapping",
+          "parent": "UserController"
+        }
+      ]
+    },
+    "tests/fixtures/spring-boot/src/main/java/com/example/UserRepository.java": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 7,
+      "hash": "34025f2b26497ec1",
+      "exports": [
+        "UserRepository"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "UserRepository",
+          "kind": "class",
+          "visibility": "public",
+          "span": {
+            "start": 5,
+            "end": 7
+          },
+          "signature": "@Repository"
+        }
+      ]
+    },
+    "tests/fixtures/spring-boot/src/main/java/com/example/UserService.java": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 17,
+      "hash": "951e2add07903c27",
+      "exports": [
+        "UserService"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "UserService",
+          "kind": "class",
+          "visibility": "public",
+          "span": {
+            "start": 7,
+            "end": 17
+          },
+          "signature": "@Service"
+        },
+        {
+          "name": "create",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 15,
+            "end": 15
+          },
+          "signature": "public String create(String name) { return \"\"; }",
+          "parent": "UserService"
+        },
+        {
+          "name": "delete",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 16,
+            "end": 16
+          },
+          "signature": "public void delete(long id) {}",
+          "parent": "UserService"
+        },
+        {
+          "name": "getById",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 14,
+            "end": 14
+          },
+          "signature": "public String getById(long id) { return \"\"; }",
+          "parent": "UserService"
+        },
+        {
+          "name": "listAll",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 13,
+            "end": 13
+          },
+          "signature": "public String listAll() { return \"\"; }",
+          "parent": "UserService"
         }
       ]
     },
@@ -17007,6 +18146,207 @@
             "end": 13
           },
           "signature": "pub fn fixture_path(name: &str) -> PathBuf {"
+        }
+      ]
+    },
+    "tests/integration_java_phase12.rs": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 443,
+      "hash": "64c9f99bbccdee7d",
+      "exports": [],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "fixture_dir",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 18,
+            "end": 23
+          },
+          "signature": "fn fixture_dir(name: &str) -> PathBuf {"
+        },
+        {
+          "name": "parse_java",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 31,
+            "end": 37
+          },
+          "signature": "fn parse_java(source: &str) -> tree_sitter::Tree {"
+        },
+        {
+          "name": "read_fixture_file",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 25,
+            "end": 29
+          },
+          "signature": "fn read_fixture_file(fixture: &str, path: &str) -> String {"
+        },
+        {
+          "name": "test_android_manifest_malformed_no_crash",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 432,
+            "end": 443
+          },
+          "signature": "fn test_android_manifest_malformed_no_crash() {"
+        },
+        {
+          "name": "test_discover_gradle_configs",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 132,
+            "end": 142
+          },
+          "signature": "fn test_discover_gradle_configs() {"
+        },
+        {
+          "name": "test_discover_maven_configs",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 149,
+            "end": 158
+          },
+          "signature": "fn test_discover_maven_configs() {"
+        },
+        {
+          "name": "test_existing_java_project_no_regression",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 413,
+            "end": 425
+          },
+          "signature": "fn test_existing_java_project_no_regression() {"
+        },
+        {
+          "name": "test_gradle_config_parse",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 44,
+            "end": 69
+          },
+          "signature": "fn test_gradle_config_parse() {"
+        },
+        {
+          "name": "test_gradle_parse_error_emits_w038",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 369,
+            "end": 385
+          },
+          "signature": "fn test_gradle_parse_error_emits_w038() {"
+        },
+        {
+          "name": "test_java_boundary_jakarta_routes",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 335,
+            "end": 362
+          },
+          "signature": "fn test_java_boundary_jakarta_routes() {"
+        },
+        {
+          "name": "test_java_boundary_spring_di_consumer",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 299,
+            "end": 328
+          },
+          "signature": "fn test_java_boundary_spring_di_consumer() {"
+        },
+        {
+          "name": "test_java_boundary_spring_routes",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 253,
+            "end": 292
+          },
+          "signature": "fn test_java_boundary_spring_routes() {"
+        },
+        {
+          "name": "test_java_classpath_resolution_fallback",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 190,
+            "end": 210
+          },
+          "signature": "fn test_java_classpath_resolution_fallback() {"
+        },
+        {
+          "name": "test_java_classpath_resolution_with_gradle",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 165,
+            "end": 183
+          },
+          "signature": "fn test_java_classpath_resolution_with_gradle() {"
+        },
+        {
+          "name": "test_java_framework_detect_android",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 235,
+            "end": 246
+          },
+          "signature": "fn test_java_framework_detect_android() {"
+        },
+        {
+          "name": "test_java_framework_detect_spring",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 217,
+            "end": 228
+          },
+          "signature": "fn test_java_framework_detect_spring() {"
+        },
+        {
+          "name": "test_maven_config_parse",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 92,
+            "end": 125
+          },
+          "signature": "fn test_maven_config_parse() {"
+        },
+        {
+          "name": "test_maven_parse_error_emits_w039",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 392,
+            "end": 406
+          },
+          "signature": "fn test_maven_parse_error_emits_w039() {"
+        },
+        {
+          "name": "test_settings_gradle_subprojects",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 76,
+            "end": 85
+          },
+          "signature": "fn test_settings_gradle_subprojects() {"
         }
       ]
     },
@@ -18705,6 +20045,14 @@
     ],
     [
       "src/detect/mod.rs",
+      "src/detect/java_framework.rs",
+      "imports",
+      [
+        "java_framework"
+      ]
+    ],
+    [
+      "src/detect/mod.rs",
       "src/detect/layer.rs",
       "imports",
       [
@@ -19604,6 +20952,42 @@
       ]
     ],
     [
+      "src/parser/config/gradle.rs",
+      "src/diagnostic.rs",
+      "imports",
+      [
+        "DiagnosticCollector",
+        "Warning",
+        "WarningCode"
+      ]
+    ],
+    [
+      "src/parser/config/gradle.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath"
+      ]
+    ],
+    [
+      "src/parser/config/maven.rs",
+      "src/diagnostic.rs",
+      "imports",
+      [
+        "DiagnosticCollector",
+        "Warning",
+        "WarningCode"
+      ]
+    ],
+    [
+      "src/parser/config/maven.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath"
+      ]
+    ],
+    [
       "src/parser/config/mod.rs",
       "src/diagnostic.rs",
       "imports",
@@ -19640,10 +21024,26 @@
     ],
     [
       "src/parser/config/mod.rs",
+      "src/parser/config/gradle.rs",
+      "imports",
+      [
+        "gradle"
+      ]
+    ],
+    [
+      "src/parser/config/mod.rs",
       "src/parser/config/jsonc.rs",
       "imports",
       [
         "jsonc"
+      ]
+    ],
+    [
+      "src/parser/config/mod.rs",
+      "src/parser/config/maven.rs",
+      "imports",
+      [
+        "maven"
       ]
     ],
     [
@@ -19842,6 +21242,15 @@
       "imports",
       [
         "WorkspaceInfo"
+      ]
+    ],
+    [
+      "src/parser/java.rs",
+      "src/parser/config/mod.rs",
+      "imports",
+      [
+        "GradleConfig",
+        "MavenConfig"
       ]
     ],
     [
@@ -20928,6 +22337,32 @@
       ]
     ],
     [
+      "src/semantic/java.rs",
+      "src/model/semantic.rs",
+      "imports",
+      [
+        "Boundary",
+        "BoundaryKind",
+        "BoundaryRole"
+      ]
+    ],
+    [
+      "src/semantic/java.rs",
+      "src/model/types.rs",
+      "imports",
+      [
+        "CanonicalPath"
+      ]
+    ],
+    [
+      "src/semantic/java.rs",
+      "src/semantic/mod.rs",
+      "imports",
+      [
+        "BoundaryExtractor"
+      ]
+    ],
+    [
       "src/semantic/mod.rs",
       "src/model/semantic.rs",
       "imports",
@@ -20975,6 +22410,14 @@
       "imports",
       [
         "http"
+      ]
+    ],
+    [
+      "src/semantic/mod.rs",
+      "src/semantic/java.rs",
+      "imports",
+      [
+        "java"
       ]
     ],
     [

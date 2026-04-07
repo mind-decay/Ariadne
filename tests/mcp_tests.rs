@@ -704,8 +704,14 @@ mod integration_tests {
 
         let output_dir = build_output.graph_path.parent().unwrap();
 
-        // Find the ariadne binary
-        let binary = env!("CARGO_BIN_EXE_ariadne");
+        // Find the ariadne binary (in ariadne-cli workspace member)
+        let binary = std::env::current_exe()
+            .unwrap()
+            .parent()       // deps/
+            .unwrap()
+            .parent()       // debug/
+            .unwrap()
+            .join("ariadne");
 
         // Spawn ariadne serve
         let mut child = Command::new(binary)

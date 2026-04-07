@@ -79,6 +79,11 @@ pub enum WarningCode {
     W035SlnParseError,
     W036ProjectRefNotFound,
     W037MultipleSlnFiles,
+    W038GradleParseError,
+    W039MavenParseError,
+    W040MavenModuleNotFound,
+    W041GradleSubprojectNotFound,
+    W042AndroidManifestParseError,
 }
 
 impl WarningCode {
@@ -121,6 +126,11 @@ impl WarningCode {
             Self::W035SlnParseError => "W035",
             Self::W036ProjectRefNotFound => "W036",
             Self::W037MultipleSlnFiles => "W037",
+            Self::W038GradleParseError => "W038",
+            Self::W039MavenParseError => "W039",
+            Self::W040MavenModuleNotFound => "W040",
+            Self::W041GradleSubprojectNotFound => "W041",
+            Self::W042AndroidManifestParseError => "W042",
         }
     }
 }
@@ -370,6 +380,11 @@ impl DiagnosticCollector {
             WarningCode::W035SlnParseError => {}
             WarningCode::W036ProjectRefNotFound => {}
             WarningCode::W037MultipleSlnFiles => {}
+            WarningCode::W038GradleParseError => {}
+            WarningCode::W039MavenParseError => {}
+            WarningCode::W040MavenModuleNotFound => {}
+            WarningCode::W041GradleSubprojectNotFound => {}
+            WarningCode::W042AndroidManifestParseError => {}
         }
         guard.0.push(warning);
     }

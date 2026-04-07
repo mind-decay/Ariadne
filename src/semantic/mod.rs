@@ -2,6 +2,9 @@ pub mod dotnet;
 pub mod edges;
 pub mod events;
 pub mod http;
+pub mod java;
+
+pub use java::JavaBoundaryExtractor;
 
 use std::collections::{BTreeMap, HashMap};
 
