@@ -1916,27 +1916,43 @@ For each FM approach during implementation:
 
 **Depends on:** Phase 10 (tsconfig resolution already done).
 
+### Phase 13a: Bundler Resolution + React/Next.js [DONE]
+
 **Scope:**
 
 - Bundler alias resolution:
-  - **Vite** — `vite.config.ts` `resolve.alias`
-  - **Webpack** — `webpack.config.js` `resolve.alias`, `resolve.modules`
-  - **Next.js** — `next.config.js` rewrites, automatic `app/` and `pages/` routing
-  - **Turbopack** — turbo.json pipeline dependencies
+  - **Vite** — `vite.config.ts` `resolve.alias` (string literal, fileURLToPath, array form, defineConfig callback, template literal)
+  - **Webpack** — `webpack.config.js` `resolve.alias`, `resolve.modules` (path.resolve, path.join, __dirname+)
+  - **Turbopack** — turbo.json pipeline dependencies (v1 + v2)
+- `raw_parse` trait extension (D-145) — bypass tree-sitter for non-AST formats; .razor migrated
+- TypeScriptResolver bundler alias fallback (tsconfig > bundler priority, D-150)
 - Framework-aware patterns:
-  - **React** — component tree extraction, hook dependency tracking, context provider/consumer graph
-  - **Next.js** — page routes from filesystem, server/client component boundaries (`"use client"`), API routes, middleware chain
-  - **Vue** — SFC (`.vue`) component parsing, composables, Pinia store dependencies
-  - **Angular** — module/component/service DI graph, `NgModule` declarations, lazy-loaded routes
-  - **Svelte/SvelteKit** — `.svelte` component parsing, load functions, route structure
-  - **Remix** — loader/action dependency graph, route modules
-  - **Astro** — `.astro` component parsing, island architecture boundaries
+  - **React** — component/hook detection, context provider/consumer boundaries (D-151)
+  - **Next.js** — filesystem route discovery (App Router + Pages Router), route/client boundaries (D-152), middleware
+- Secondary extension filter (.styles, .test, .spec, .mock) for route discovery
 
 **Deliverables:**
-- `src/parser/config/bundler.rs` — Vite/Webpack/Next.js config parsing
+- `src/parser/config/bundler.rs` — Vite/Webpack config parsing
+- `src/parser/config/nextjs.rs` — Next.js filesystem route discovery
+- `src/parser/config/turbo.rs` — Turborepo pipeline parsing
+- `src/detect/js_framework.rs` — React/Next.js framework detection
+- `src/semantic/react.rs` — React context boundary extraction
+- `src/semantic/nextjs.rs` — Next.js route/client boundary extraction
 - Enhanced `src/parser/typescript.rs` — bundler alias integration
-- Framework-specific parsers for Vue SFC, Angular modules, Svelte components
-- Test fixtures for each framework
+- Warning codes W044, W045, W047, W048
+- Decisions D-145 through D-152
+- Test fixtures: react-vite, nextjs-app
+
+### Phase 13b: SFC Formats + Angular + Remix
+
+**Scope:**
+
+- **Vue** — SFC (`.vue`) component parsing, composables, Pinia store dependencies
+- **Angular** — module/component/service DI graph, `NgModule` declarations, lazy-loaded routes
+- **Svelte/SvelteKit** — `.svelte` component parsing, load functions, route structure
+- **Remix** — loader/action dependency graph, route modules
+- **Astro** — `.astro` component parsing, island architecture boundaries
+- **Next.js** — `next.config.js` rewrites (W048)
 
 ---
 
