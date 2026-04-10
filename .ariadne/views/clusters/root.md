@@ -7,10 +7,9 @@
 | `.mcp.json` | data | 0 | 0 | 0 | 0.0000 |
 | `CLAUDE.md` | doc | 0 | 0 | 0 | 0.0000 |
 | `README.md` | doc | 0 | 0 | 0 | 0.0000 |
-| `src/diagnostic.rs` | source | 3 | 17 | 1 | 0.0002 |
+| `src/diagnostic.rs` | source | 3 | 20 | 1 | 0.0002 |
 | `src/hash.rs` | source | 3 | 2 | 1 | 0.0000 |
-| `src/lib.rs` | source | 11 | 0 | 15 | 0.0000 |
-| `src/main.rs` | source | 0 | 0 | 0 | 0.0000 |
+| `src/lib.rs` | source | 11 | 0 | 16 | 0.0000 |
 
 ## Internal Dependencies
 
@@ -24,6 +23,7 @@
 - `src/lib.rs` → `src/algo/mod.rs` (imports)
 - `src/lib.rs` → `src/analysis/mod.rs` (imports)
 - `src/lib.rs` → `src/cluster/mod.rs` (imports)
+- `src/lib.rs` → `src/conventions/mod.rs` (imports)
 - `src/lib.rs` → `src/detect/mod.rs` (imports)
 - `src/lib.rs` → `src/mcp/mod.rs` (imports)
 - `src/lib.rs` → `src/model/mod.rs` (imports)
@@ -42,6 +42,9 @@
 - `src/diagnostic.rs` ← `src/mcp/server.rs` (imports)
 - `src/diagnostic.rs` ← `src/mcp/state.rs` (imports)
 - `src/diagnostic.rs` ← `src/mcp/watch.rs` (imports)
+- `src/diagnostic.rs` ← `src/parser/config/csproj.rs` (imports)
+- `src/diagnostic.rs` ← `src/parser/config/gradle.rs` (imports)
+- `src/diagnostic.rs` ← `src/parser/config/maven.rs` (imports)
 - `src/diagnostic.rs` ← `src/parser/config/mod.rs` (imports)
 - `src/diagnostic.rs` ← `src/parser/config/tsconfig.rs` (imports)
 - `src/diagnostic.rs` ← `src/pipeline/build.rs` (imports)

@@ -4,10 +4,14 @@ use std::fmt::Write;
 use crate::model::{ClusterMap, ProjectGraph, StatsOutput};
 
 /// Generate L0 index.md content.
-pub fn generate_index(graph: &ProjectGraph, clusters: &ClusterMap, stats: &StatsOutput) -> String {
+pub fn generate_index(
+    graph: &ProjectGraph,
+    clusters: &ClusterMap,
+    stats: &StatsOutput,
+) -> Result<String, std::fmt::Error> {
     let mut out = String::new();
-    writeln!(out, "# Project Index").unwrap();
-    writeln!(out).unwrap();
+    writeln!(out, "# Project Index")?;
+    writeln!(out)?;
 
     // Build reverse adjacency for dependent counts
     let mut dependents_count: BTreeMap<&str, u32> = BTreeMap::new();
@@ -18,31 +22,29 @@ pub fn generate_index(graph: &ProjectGraph, clusters: &ClusterMap, stats: &Stats
     }
 
     // Architecture summary
-    writeln!(out, "## Architecture Summary").unwrap();
-    writeln!(out).unwrap();
-    writeln!(out, "- **Files:** {}", graph.nodes.len()).unwrap();
-    writeln!(out, "- **Edges:** {}", graph.edges.len()).unwrap();
-    writeln!(out, "- **Clusters:** {}", clusters.clusters.len()).unwrap();
-    writeln!(out, "- **Max depth:** {}", stats.summary.max_depth).unwrap();
+    writeln!(out, "## Architecture Summary")?;
+    writeln!(out)?;
+    writeln!(out, "- **Files:** {}", graph.nodes.len())?;
+    writeln!(out, "- **Edges:** {}", graph.edges.len())?;
+    writeln!(out, "- **Clusters:** {}", clusters.clusters.len())?;
+    writeln!(out, "- **Max depth:** {}", stats.summary.max_depth)?;
     writeln!(
         out,
         "- **Avg in-degree:** {:.4}",
         stats.summary.avg_in_degree
-    )
-    .unwrap();
+    )?;
     writeln!(
         out,
         "- **Avg out-degree:** {:.4}",
         stats.summary.avg_out_degree
-    )
-    .unwrap();
-    writeln!(out).unwrap();
+    )?;
+    writeln!(out)?;
 
     // Cluster table
-    writeln!(out, "## Clusters").unwrap();
-    writeln!(out).unwrap();
-    writeln!(out, "| Cluster | Files | Key File | Cohesion |").unwrap();
-    writeln!(out, "|---------|------:|----------|--------:|").unwrap();
+    writeln!(out, "## Clusters")?;
+    writeln!(out)?;
+    writeln!(out, "| Cluster | Files | Key File | Cohesion |")?;
+    writeln!(out, "|---------|------:|----------|--------:|")?;
 
     for (cluster_id, cluster) in &clusters.clusters {
         // Key file: highest centrality in cluster
@@ -58,46 +60,45 @@ pub fn generate_index(graph: &ProjectGraph, clusters: &ClusterMap, stats: &Stats
             out,
             "| {} | {} | `{}` | {:.4} |",
             cluster_id, cluster.file_count, key_file, cluster.cohesion
-        )
-        .unwrap();
+        )?;
     }
-    writeln!(out).unwrap();
+    writeln!(out)?;
 
     // Critical files (BC > 0.7)
     if !stats.summary.bottleneck_files.is_empty() {
-        writeln!(out, "## Critical Files").unwrap();
-        writeln!(out).unwrap();
-        writeln!(out, "| File | Centrality | Dependents |").unwrap();
-        writeln!(out, "|------|----------:|----------:|").unwrap();
+        writeln!(out, "## Critical Files")?;
+        writeln!(out)?;
+        writeln!(out, "| File | Centrality | Dependents |")?;
+        writeln!(out, "|------|----------:|----------:|")?;
         for file in &stats.summary.bottleneck_files {
             let bc = stats.centrality.get(file).copied().unwrap_or(0.0);
             let deps = dependents_count.get(file.as_str()).copied().unwrap_or(0);
-            writeln!(out, "| `{}` | {:.4} | {} |", file, bc, deps).unwrap();
+            writeln!(out, "| `{}` | {:.4} | {} |", file, bc, deps)?;
         }
-        writeln!(out).unwrap();
+        writeln!(out)?;
     }
 
     // Circular dependencies
     if !stats.sccs.is_empty() {
-        writeln!(out, "## Circular Dependencies").unwrap();
-        writeln!(out).unwrap();
+        writeln!(out, "## Circular Dependencies")?;
+        writeln!(out)?;
         for (i, scc) in stats.sccs.iter().enumerate() {
-            writeln!(out, "{}. {} files: {}", i + 1, scc.len(), scc.join(" → ")).unwrap();
+            writeln!(out, "{}. {} files: {}", i + 1, scc.len(), scc.join(" → "))?;
         }
-        writeln!(out).unwrap();
+        writeln!(out)?;
     }
 
     // Orphan files
     if !stats.summary.orphan_files.is_empty() {
-        writeln!(out, "## Orphan Files").unwrap();
-        writeln!(out).unwrap();
+        writeln!(out, "## Orphan Files")?;
+        writeln!(out)?;
         for file in &stats.summary.orphan_files {
-            writeln!(out, "- `{}`", file).unwrap();
+            writeln!(out, "- `{}`", file)?;
         }
-        writeln!(out).unwrap();
+        writeln!(out)?;
     }
 
-    out
+    Ok(out)
 }
 
 #[cfg(test)]
@@ -231,7 +232,7 @@ mod tests {
     #[test]
     fn empty_graph_generates_valid_markdown() {
         let (graph, clusters, stats) = make_empty_graph();
-        let md = generate_index(&graph, &clusters, &stats);
+        let md = generate_index(&graph, &clusters, &stats).unwrap();
         assert!(md.contains("# Project Index"));
         assert!(md.contains("**Files:** 0"));
         assert!(md.contains("**Edges:** 0"));
@@ -241,7 +242,7 @@ mod tests {
     #[test]
     fn small_graph_shows_clusters() {
         let (graph, clusters, stats) = make_small_graph();
-        let md = generate_index(&graph, &clusters, &stats);
+        let md = generate_index(&graph, &clusters, &stats).unwrap();
         assert!(md.contains("**Files:** 3"));
         assert!(md.contains("**Clusters:** 2"));
         assert!(md.contains("| lib |"));
@@ -251,7 +252,7 @@ mod tests {
     #[test]
     fn small_graph_shows_critical_files() {
         let (graph, clusters, stats) = make_small_graph();
-        let md = generate_index(&graph, &clusters, &stats);
+        let md = generate_index(&graph, &clusters, &stats).unwrap();
         assert!(md.contains("## Critical Files"));
         assert!(md.contains("src/a.ts"));
     }
@@ -259,7 +260,7 @@ mod tests {
     #[test]
     fn small_graph_shows_orphan_files() {
         let (graph, clusters, stats) = make_small_graph();
-        let md = generate_index(&graph, &clusters, &stats);
+        let md = generate_index(&graph, &clusters, &stats).unwrap();
         assert!(md.contains("## Orphan Files"));
         assert!(md.contains("lib/c.ts"));
     }
@@ -301,7 +302,7 @@ mod tests {
                 orphan_files: vec![],
             },
         };
-        let md = generate_index(&graph, &clusters, &stats);
+        let md = generate_index(&graph, &clusters, &stats).unwrap();
         assert!(md.contains("**Files:** 1"));
     }
 }

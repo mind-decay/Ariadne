@@ -861,7 +861,8 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
                     path.as_str(),
                     &result,
                     &graph,
-                );
+                )
+                .map_err(|e| FatalError::InvalidArgument { reason: format!("view render: {e}") })?;
                 print!("{}", view);
             }
         }
@@ -880,7 +881,8 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
                 let json = serialize_subgraph_result(&result);
                 println!("{}", json_pretty(&json)?);
             } else {
-                let view = ariadne_graph::views::impact::generate_subgraph_view(&result);
+                let view = ariadne_graph::views::impact::generate_subgraph_view(&result)
+                    .map_err(|e| FatalError::InvalidArgument { reason: format!("view render: {e}") })?;
                 print!("{}", view);
             }
         }
@@ -937,7 +939,8 @@ fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {
                 let graph = load_graph(&reader, &graph_dir)?;
                 let stats = load_stats(&reader, &graph_dir)?;
                 let view =
-                    ariadne_graph::views::cluster::generate_cluster_view(&name, &graph, &stats);
+                    ariadne_graph::views::cluster::generate_cluster_view(&name, &graph, &stats)
+                        .map_err(|e| FatalError::InvalidArgument { reason: format!("view render: {e}") })?;
                 print!("{}", view);
             }
         }

@@ -6,6 +6,10 @@
 |------|------|------:|---:|----:|-----------:|
 | `tests/callgraph_tests.rs` | test | 0 | 0 | 0 | 0.0000 |
 | `tests/config_resolution_tests.rs` | test | 0 | 0 | 0 | 0.0000 |
+| `tests/constraints.rs` | test | 0 | 0 | 0 | 0.0000 |
+| `tests/dotnet_integration_tests.rs` | test | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/android-project/app/src/main/java/com/example/MainActivity.java` | source | 1 | 0 | 1 | 0.0000 |
+| `tests/fixtures/android-project/app/src/main/java/com/example/MainFragment.java` | source | 0 | 1 | 0 | 0.0000 |
 | `tests/fixtures/csharp-project/Data/UserRepository.cs` | source | 0 | 0 | 0 | 0.0000 |
 | `tests/fixtures/csharp-project/Program.cs` | source | 0 | 0 | 0 | 0.0000 |
 | `tests/fixtures/csharp-project/Services/AuthService.cs` | source | 0 | 0 | 0 | 0.0000 |
@@ -15,6 +19,23 @@
 | `tests/fixtures/data-files/sample.json` | data | 0 | 0 | 0 | 0.0000 |
 | `tests/fixtures/data-files/sample.yaml` | data | 0 | 0 | 0 | 0.0000 |
 | `tests/fixtures/data-files/sample.yml` | data | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/dotnet-blazor/BlazorApp/Data/WeatherService.cs` | source | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/dotnet-blazor/BlazorApp/Pages/Counter.razor` | source | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/dotnet-blazor/BlazorApp/Pages/Index.razor` | source | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/dotnet-blazor/BlazorApp/Shared/MainLayout.razor` | source | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/dotnet-efcore/DataApp/Data/AppDbContext.cs` | source | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/dotnet-efcore/DataApp/Migrations/20240101_Init.cs` | source | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/dotnet-efcore/DataApp/Models/Order.cs` | source | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/dotnet-efcore/DataApp/Models/User.cs` | source | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/dotnet-maui/MauiApp/Pages/MainPage.cs` | source | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/dotnet-maui/MauiApp/Pages/SettingsPage.cs` | source | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/dotnet-maui/MauiApp/Services/ISettingsService.cs` | source | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/dotnet-maui/MauiApp/ViewModels/MainViewModel.cs` | source | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/dotnet-webapi/MyApi/Controllers/WeatherController.cs` | source | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/dotnet-webapi/MyApi/Models/WeatherForecast.cs` | source | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/dotnet-webapi/MyApi/Program.cs` | source | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/dotnet-webapi/MyApi/Services/IWeatherService.cs` | source | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/dotnet-webapi/MyApi/Services/WeatherService.cs` | source | 0 | 0 | 0 | 0.0000 |
 | `tests/fixtures/edge-cases/.ariadne/graph/clusters.json` | data | 0 | 0 | 0 | 0.0000 |
 | `tests/fixtures/edge-cases/.ariadne/graph/graph.json` | data | 0 | 0 | 0 | 0.0000 |
 | `tests/fixtures/edge-cases/circular-a.ts` | source | 0 | 1 | 1 | 0.0000 |
@@ -34,6 +55,10 @@
 | `tests/fixtures/go-service/internal/service/service.go` | source | 0 | 0 | 0 | 0.0000 |
 | `tests/fixtures/gomod_project/internal/auth/auth.go` | source | 0 | 0 | 0 | 0.0000 |
 | `tests/fixtures/gomod_project/main.go` | source | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/gradle-project/app/src/main/java/com/example/app/Main.java` | source | 1 | 0 | 1 | 0.0000 |
+| `tests/fixtures/gradle-project/lib/src/main/java/com/example/lib/Utils.java` | source | 0 | 1 | 0 | 0.0000 |
+| `tests/fixtures/jakarta-ee/src/main/java/com/example/UserResource.java` | source | 2 | 0 | 1 | 0.0000 |
+| `tests/fixtures/jakarta-ee/src/main/java/com/example/UserService.java` | source | 0 | 0 | 0 | 0.0000 |
 | `tests/fixtures/java-project/src/main/java/com/example/App.java` | source | 0 | 0 | 0 | 0.0000 |
 | `tests/fixtures/java-project/src/main/java/com/example/data/UserRepo.java` | source | 0 | 0 | 0 | 0.0000 |
 | `tests/fixtures/java-project/src/main/java/com/example/service/AuthService.java` | source | 0 | 0 | 0 | 0.0000 |
@@ -41,6 +66,9 @@
 | `tests/fixtures/markdown-docs/README.md` | doc | 0 | 0 | 0 | 0.0000 |
 | `tests/fixtures/markdown-docs/docs/api.md` | doc | 0 | 0 | 0 | 0.0000 |
 | `tests/fixtures/markdown-docs/docs/guide.md` | doc | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/maven-project/src/main/java/com/example/App.java` | source | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/maven-project/src/main/java/com/example/data/UserRepo.java` | source | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/maven-project/src/main/java/com/example/service/UserService.java` | source | 0 | 0 | 0 | 0.0000 |
 | `tests/fixtures/mixed-project/.ariadne/graph/clusters.json` | data | 0 | 0 | 0 | 0.0000 |
 | `tests/fixtures/mixed-project/.ariadne/graph/graph.json` | data | 0 | 0 | 0 | 0.0000 |
 | `tests/fixtures/mixed-project/README.md` | doc | 0 | 0 | 0 | 0.0000 |
@@ -80,6 +108,9 @@
 | `tests/fixtures/semantic/mixed_framework.ts` | source | 0 | 0 | 0 | 0.0000 |
 | `tests/fixtures/semantic/no_boundaries.rs` | test | 0 | 0 | 0 | 0.0000 |
 | `tests/fixtures/semantic/spring_routes.java` | source | 0 | 0 | 0 | 0.0000 |
+| `tests/fixtures/spring-boot/src/main/java/com/example/UserController.java` | source | 2 | 0 | 1 | 0.0000 |
+| `tests/fixtures/spring-boot/src/main/java/com/example/UserRepository.java` | source | 0 | 1 | 0 | 0.0000 |
+| `tests/fixtures/spring-boot/src/main/java/com/example/UserService.java` | source | 1 | 2 | 1 | 0.0000 |
 | `tests/fixtures/tsconfig_extends/lib/core.ts` | source | 0 | 1 | 0 | 0.0000 |
 | `tests/fixtures/tsconfig_extends/src/main.ts` | source | 1 | 0 | 2 | 0.0000 |
 | `tests/fixtures/tsconfig_extends/src/service.ts` | source | 0 | 1 | 0 | 0.0000 |
@@ -127,6 +158,7 @@
 | `tests/fixtures/workspace-project/packages/shared/src/index.ts` | source | 1 | 0 | 1 | 0.0000 |
 | `tests/graph_tests.rs` | test | 0 | 0 | 0 | 0.0000 |
 | `tests/helpers.rs` | test | 0 | 0 | 0 | 0.0000 |
+| `tests/integration_java_phase12.rs` | test | 0 | 0 | 0 | 0.0000 |
 | `tests/invariants.rs` | test | 0 | 0 | 0 | 0.0000 |
 | `tests/mcp_tests.rs` | test | 0 | 0 | 0 | 0.0000 |
 | `tests/pipeline_tests.rs` | test | 0 | 0 | 0 | 0.0000 |
@@ -137,9 +169,12 @@
 
 ## Internal Dependencies
 
+- `tests/fixtures/android-project/app/src/main/java/com/example/MainActivity.java` → `tests/fixtures/android-project/app/src/main/java/com/example/MainFragment.java` (imports)
 - `tests/fixtures/edge-cases/circular-a.ts` → `tests/fixtures/edge-cases/circular-b.ts` (imports)
 - `tests/fixtures/edge-cases/circular-b.ts` → `tests/fixtures/edge-cases/circular-a.ts` (imports)
 - `tests/fixtures/edge-cases/syntax-error.ts` → `tests/fixtures/edge-cases/valid.ts` (imports)
+- `tests/fixtures/gradle-project/app/src/main/java/com/example/app/Main.java` → `tests/fixtures/gradle-project/lib/src/main/java/com/example/lib/Utils.java` (imports)
+- `tests/fixtures/jakarta-ee/src/main/java/com/example/UserResource.java` → `tests/fixtures/spring-boot/src/main/java/com/example/UserService.java` (imports)
 - `tests/fixtures/mixed-project/frontend/src/App.tsx` → `tests/fixtures/mixed-project/frontend/src/components/Button.tsx` (imports)
 - `tests/fixtures/python-package/src/auth/login.py` → `tests/fixtures/python-package/src/utils/helpers.py` (imports)
 - `tests/fixtures/python-package/src/main.py` → `tests/fixtures/python-package/src/auth/__init__.py` (imports)
@@ -148,6 +183,8 @@
 - `tests/fixtures/rust-crate/src/lib.rs` → `tests/fixtures/rust-crate/src/auth/mod.rs` (imports)
 - `tests/fixtures/rust-crate/src/lib.rs` → `tests/fixtures/rust-crate/src/utils/mod.rs` (imports)
 - `tests/fixtures/rust-crate/src/utils/mod.rs` → `tests/fixtures/rust-crate/src/utils/format.rs` (imports)
+- `tests/fixtures/spring-boot/src/main/java/com/example/UserController.java` → `tests/fixtures/spring-boot/src/main/java/com/example/UserService.java` (imports)
+- `tests/fixtures/spring-boot/src/main/java/com/example/UserService.java` → `tests/fixtures/spring-boot/src/main/java/com/example/UserRepository.java` (imports)
 - `tests/fixtures/tsconfig_extends/src/main.ts` → `tests/fixtures/tsconfig_extends/lib/core.ts` (imports)
 - `tests/fixtures/tsconfig_extends/src/main.ts` → `tests/fixtures/tsconfig_extends/src/service.ts` (imports)
 - `tests/fixtures/tsconfig_project/src/app.ts` → `tests/fixtures/tsconfig_project/src/components/Button.ts` (imports)

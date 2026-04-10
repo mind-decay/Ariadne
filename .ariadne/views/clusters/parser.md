@@ -4,20 +4,23 @@
 
 | File | Type | Layer | In | Out | Centrality |
 |------|------|------:|---:|----:|-----------:|
+| `src/parser/config/csproj.rs` | source | 4 | 2 | 2 | 0.0000 |
 | `src/parser/config/gomod.rs` | source | 0 | 1 | 0 | 0.0000 |
+| `src/parser/config/gradle.rs` | source | 4 | 1 | 2 | 0.0000 |
 | `src/parser/config/jsonc.rs` | source | 0 | 1 | 0 | 0.0000 |
-| `src/parser/config/mod.rs` | source | 5 | 6 | 6 | 0.0012 |
+| `src/parser/config/maven.rs` | source | 4 | 1 | 2 | 0.0000 |
+| `src/parser/config/mod.rs` | source | 5 | 8 | 9 | 0.0015 |
 | `src/parser/config/pyproject.rs` | source | 0 | 1 | 0 | 0.0000 |
-| `src/parser/config/tsconfig.rs` | source | 5 | 1 | 3 | 0.0007 |
-| `src/parser/csharp.rs` | source | 4 | 1 | 5 | 0.0000 |
+| `src/parser/config/tsconfig.rs` | source | 5 | 1 | 3 | 0.0008 |
+| `src/parser/csharp.rs` | source | 5 | 1 | 7 | 0.0000 |
 | `src/parser/go.rs` | source | 5 | 1 | 7 | 0.0000 |
 | `src/parser/helpers.rs` | source | 0 | 5 | 0 | 0.0000 |
-| `src/parser/java.rs` | source | 4 | 1 | 5 | 0.0000 |
+| `src/parser/java.rs` | source | 5 | 1 | 6 | 0.0000 |
 | `src/parser/json_lang.rs` | source | 4 | 1 | 3 | 0.0000 |
 | `src/parser/markdown.rs` | source | 4 | 1 | 3 | 0.0000 |
-| `src/parser/mod.rs` | source | 5 | 5 | 14 | 0.0019 |
+| `src/parser/mod.rs` | source | 5 | 5 | 14 | 0.0018 |
 | `src/parser/python.rs` | source | 5 | 1 | 7 | 0.0000 |
-| `src/parser/registry.rs` | source | 5 | 1 | 5 | 0.0003 |
+| `src/parser/registry.rs` | source | 5 | 1 | 5 | 0.0004 |
 | `src/parser/rust_lang.rs` | source | 4 | 1 | 6 | 0.0000 |
 | `src/parser/symbols.rs` | source | 1 | 7 | 1 | 0.0000 |
 | `src/parser/traits.rs` | source | 3 | 10 | 2 | 0.0000 |
@@ -26,17 +29,23 @@
 
 ## Internal Dependencies
 
+- `src/parser/config/mod.rs` → `src/parser/config/csproj.rs` (imports)
 - `src/parser/config/mod.rs` → `src/parser/config/gomod.rs` (imports)
+- `src/parser/config/mod.rs` → `src/parser/config/gradle.rs` (imports)
 - `src/parser/config/mod.rs` → `src/parser/config/jsonc.rs` (imports)
+- `src/parser/config/mod.rs` → `src/parser/config/maven.rs` (imports)
 - `src/parser/config/mod.rs` → `src/parser/config/pyproject.rs` (imports)
 - `src/parser/config/mod.rs` → `src/parser/config/tsconfig.rs` (imports)
 - `src/parser/config/tsconfig.rs` → `src/parser/mod.rs` (imports)
+- `src/parser/csharp.rs` → `src/parser/config/csproj.rs` (imports)
+- `src/parser/csharp.rs` → `src/parser/config/mod.rs` (imports)
 - `src/parser/csharp.rs` → `src/parser/symbols.rs` (imports)
 - `src/parser/csharp.rs` → `src/parser/traits.rs` (imports)
 - `src/parser/go.rs` → `src/parser/config/mod.rs` (imports)
 - `src/parser/go.rs` → `src/parser/helpers.rs` (imports)
 - `src/parser/go.rs` → `src/parser/symbols.rs` (imports)
 - `src/parser/go.rs` → `src/parser/traits.rs` (imports)
+- `src/parser/java.rs` → `src/parser/config/mod.rs` (imports)
 - `src/parser/java.rs` → `src/parser/symbols.rs` (imports)
 - `src/parser/java.rs` → `src/parser/traits.rs` (imports)
 - `src/parser/json_lang.rs` → `src/parser/traits.rs` (imports)
@@ -71,6 +80,12 @@
 
 ## External Dependencies
 
+- `src/parser/config/csproj.rs` → `src/diagnostic.rs` (imports)
+- `src/parser/config/csproj.rs` → `src/model/mod.rs` (imports)
+- `src/parser/config/gradle.rs` → `src/diagnostic.rs` (imports)
+- `src/parser/config/gradle.rs` → `src/model/mod.rs` (imports)
+- `src/parser/config/maven.rs` → `src/diagnostic.rs` (imports)
+- `src/parser/config/maven.rs` → `src/model/mod.rs` (imports)
 - `src/parser/config/mod.rs` → `src/diagnostic.rs` (imports)
 - `src/parser/config/mod.rs` → `src/model/mod.rs` (imports)
 - `src/parser/config/tsconfig.rs` → `src/diagnostic.rs` (imports)

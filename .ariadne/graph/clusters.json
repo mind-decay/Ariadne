@@ -102,6 +102,15 @@
       "external_edges": 12,
       "cohesion": 0.3333
     },
+    "ariadne-cli": {
+      "files": [
+        "ariadne-cli/src/main.rs"
+      ],
+      "file_count": 1,
+      "internal_edges": 0,
+      "external_edges": 0,
+      "cohesion": 1.0
+    },
     "benches": {
       "files": [
         "benches/algo_bench.rs",
@@ -126,6 +135,20 @@
       "external_edges": 3,
       "cohesion": 0.0
     },
+    "conventions": {
+      "files": [
+        "src/conventions/imports.rs",
+        "src/conventions/mod.rs",
+        "src/conventions/naming.rs",
+        "src/conventions/tech_stack.rs",
+        "src/conventions/trends.rs",
+        "src/conventions/types.rs"
+      ],
+      "file_count": 6,
+      "internal_edges": 9,
+      "external_edges": 5,
+      "cohesion": 0.6429
+    },
     "design": {
       "files": [
         "design/ROADMAP.md",
@@ -148,6 +171,8 @@
         "design/specs/2026-03-29-phase9-recommendations.md",
         "design/specs/2026-04-04-phase11-csharp-dotnet.md",
         "design/specs/2026-04-04-phase11-implementation-plan.md",
+        "design/specs/2026-04-10-phase13-js-frameworks.md",
+        "design/specs/2026-04-10-phase13a-implementation-plan.md",
         "design/specs/archive/2026-03-17-phase1-core-cli.md",
         "design/specs/archive/2026-03-17-phase1-implementation-plan.md",
         "design/specs/archive/2026-03-17-phase1a-implementation-plan.md",
@@ -169,7 +194,7 @@
         "design/specs/archive/2026-03-25-phase7-implementation-plan.md",
         "design/testing.md"
       ],
-      "file_count": 40,
+      "file_count": 42,
       "internal_edges": 0,
       "external_edges": 0,
       "cohesion": 1.0
@@ -180,14 +205,15 @@
         "src/detect/filetype.rs",
         "src/detect/framework.rs",
         "src/detect/java_framework.rs",
+        "src/detect/js_framework.rs",
         "src/detect/layer.rs",
         "src/detect/mod.rs",
         "src/detect/workspace.rs"
       ],
-      "file_count": 7,
-      "internal_edges": 6,
-      "external_edges": 10,
-      "cohesion": 0.375
+      "file_count": 8,
+      "internal_edges": 7,
+      "external_edges": 13,
+      "cohesion": 0.35
     },
     "mcp": {
       "files": [
@@ -235,19 +261,22 @@
       ],
       "file_count": 17,
       "internal_edges": 20,
-      "external_edges": 128,
-      "cohesion": 0.1351
+      "external_edges": 140,
+      "cohesion": 0.125
     },
     "parser": {
       "files": [
+        "src/parser/config/bundler.rs",
         "src/parser/config/csproj.rs",
         "src/parser/config/gomod.rs",
         "src/parser/config/gradle.rs",
         "src/parser/config/jsonc.rs",
         "src/parser/config/maven.rs",
         "src/parser/config/mod.rs",
+        "src/parser/config/nextjs.rs",
         "src/parser/config/pyproject.rs",
         "src/parser/config/tsconfig.rs",
+        "src/parser/config/turbo.rs",
         "src/parser/csharp.rs",
         "src/parser/go.rs",
         "src/parser/helpers.rs",
@@ -263,10 +292,10 @@
         "src/parser/typescript.rs",
         "src/parser/yaml.rs"
       ],
-      "file_count": 22,
-      "internal_edges": 48,
-      "external_edges": 46,
-      "cohesion": 0.5106
+      "file_count": 25,
+      "internal_edges": 52,
+      "external_edges": 52,
+      "cohesion": 0.5
     },
     "pipeline": {
       "files": [
@@ -303,13 +332,12 @@
         "README.md",
         "src/diagnostic.rs",
         "src/hash.rs",
-        "src/lib.rs",
-        "src/main.rs"
+        "src/lib.rs"
       ],
-      "file_count": 7,
+      "file_count": 6,
       "internal_edges": 2,
-      "external_edges": 35,
-      "cohesion": 0.0541
+      "external_edges": 39,
+      "cohesion": 0.0488
     },
     "semantic": {
       "files": [
@@ -318,12 +346,14 @@
         "src/semantic/events.rs",
         "src/semantic/http.rs",
         "src/semantic/java.rs",
-        "src/semantic/mod.rs"
+        "src/semantic/mod.rs",
+        "src/semantic/nextjs.rs",
+        "src/semantic/react.rs"
       ],
-      "file_count": 6,
-      "internal_edges": 9,
-      "external_edges": 15,
-      "cohesion": 0.375
+      "file_count": 8,
+      "internal_edges": 13,
+      "external_edges": 21,
+      "cohesion": 0.3824
     },
     "serial": {
       "files": [
@@ -354,6 +384,7 @@
       "files": [
         "tests/callgraph_tests.rs",
         "tests/config_resolution_tests.rs",
+        "tests/constraints.rs",
         "tests/dotnet_integration_tests.rs",
         "tests/fixtures/android-project/app/src/main/java/com/example/MainActivity.java",
         "tests/fixtures/android-project/app/src/main/java/com/example/MainFragment.java",
@@ -421,6 +452,13 @@
         "tests/fixtures/mixed-project/frontend/src/App.tsx",
         "tests/fixtures/mixed-project/frontend/src/components/Button.tsx",
         "tests/fixtures/mixed-project/scripts/deploy.py",
+        "tests/fixtures/nextjs-app/app/api/users/route.ts",
+        "tests/fixtures/nextjs-app/app/dashboard/page.tsx",
+        "tests/fixtures/nextjs-app/app/layout.tsx",
+        "tests/fixtures/nextjs-app/app/page.tsx",
+        "tests/fixtures/nextjs-app/middleware.ts",
+        "tests/fixtures/nextjs-app/src/lib/data.ts",
+        "tests/fixtures/nextjs-app/src/lib/theme.ts",
         "tests/fixtures/python-package/.ariadne/graph/clusters.json",
         "tests/fixtures/python-package/.ariadne/graph/graph.json",
         "tests/fixtures/python-package/src/__init__.py",
@@ -434,6 +472,11 @@
         "tests/fixtures/python_src_layout/src/mypackage/__init__.py",
         "tests/fixtures/python_src_layout/src/mypackage/main.py",
         "tests/fixtures/python_src_layout/src/mypackage/utils.py",
+        "tests/fixtures/react-vite/src/App.tsx",
+        "tests/fixtures/react-vite/src/components/Button.tsx",
+        "tests/fixtures/react-vite/src/contexts/theme.ts",
+        "tests/fixtures/react-vite/src/utils/format.ts",
+        "tests/fixtures/react-vite/vite.config.ts",
         "tests/fixtures/rust-crate/.ariadne/graph/clusters.json",
         "tests/fixtures/rust-crate/.ariadne/graph/graph.json",
         "tests/fixtures/rust-crate/src/auth/login.rs",
@@ -504,6 +547,7 @@
         "tests/helpers.rs",
         "tests/integration_java_phase12.rs",
         "tests/invariants.rs",
+        "tests/js_framework_tests.rs",
         "tests/mcp_tests.rs",
         "tests/pipeline_tests.rs",
         "tests/properties.rs",
@@ -511,8 +555,8 @@
         "tests/symbol_tests.rs",
         "tests/temporal_integration.rs"
       ],
-      "file_count": 158,
-      "internal_edges": 39,
+      "file_count": 172,
+      "internal_edges": 41,
       "external_edges": 0,
       "cohesion": 1.0
     },

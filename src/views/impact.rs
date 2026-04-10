@@ -8,12 +8,12 @@ pub fn generate_blast_radius_view(
     file: &str,
     blast_result: &BTreeMap<CanonicalPath, u32>,
     graph: &ProjectGraph,
-) -> String {
+) -> Result<String, std::fmt::Error> {
     let mut out = String::new();
-    writeln!(out, "# Blast Radius: `{}`", file).unwrap();
-    writeln!(out).unwrap();
-    writeln!(out, "**Affected files:** {}", blast_result.len()).unwrap();
-    writeln!(out).unwrap();
+    writeln!(out, "# Blast Radius: `{}`", file)?;
+    writeln!(out)?;
+    writeln!(out, "**Affected files:** {}", blast_result.len())?;
+    writeln!(out)?;
 
     // Group by distance
     let mut by_distance: BTreeMap<u32, Vec<&CanonicalPath>> = BTreeMap::new();
@@ -23,46 +23,45 @@ pub fn generate_blast_radius_view(
 
     for (distance, files) in &by_distance {
         if *distance == 0 {
-            writeln!(out, "## Source (distance 0)").unwrap();
+            writeln!(out, "## Source (distance 0)")?;
         } else {
-            writeln!(out, "## Distance {}", distance).unwrap();
+            writeln!(out, "## Distance {}", distance)?;
         }
-        writeln!(out).unwrap();
+        writeln!(out)?;
         for f in files {
             let node_info = graph
                 .nodes
                 .get(*f)
                 .map(|n| format!(" ({}, {})", n.file_type.as_str(), n.layer.as_str()))
                 .unwrap_or_default();
-            writeln!(out, "- `{}`{}", f.as_str(), node_info).unwrap();
+            writeln!(out, "- `{}`{}", f.as_str(), node_info)?;
         }
-        writeln!(out).unwrap();
+        writeln!(out)?;
     }
 
-    out
+    Ok(out)
 }
 
 /// Generate L2 subgraph view as markdown.
-pub fn generate_subgraph_view(subgraph: &SubgraphResult) -> String {
+pub fn generate_subgraph_view(subgraph: &SubgraphResult) -> Result<String, std::fmt::Error> {
     let mut out = String::new();
     let centers: Vec<&str> = subgraph.center_files.iter().map(|p| p.as_str()).collect();
-    writeln!(out, "# Subgraph: {}", centers.join(", ")).unwrap();
-    writeln!(out).unwrap();
+    writeln!(out, "# Subgraph: {}", centers.join(", "))?;
+    writeln!(out)?;
     writeln!(
         out,
         "**Depth:** {} | **Nodes:** {} | **Edges:** {}",
         subgraph.depth,
         subgraph.nodes.len(),
         subgraph.edges.len()
-    )
-    .unwrap();
-    writeln!(out).unwrap();
+    )?;
+    writeln!(out)?;
 
     // Node table
-    writeln!(out, "## Files").unwrap();
-    writeln!(out).unwrap();
-    writeln!(out, "| File | Type | Layer | Cluster |").unwrap();
-    writeln!(out, "|------|------|------:|---------|").unwrap();
+    writeln!(out, "## Files")?;
+    writeln!(out)?;
+    writeln!(out, "| File | Type | Layer | Cluster |")?;
+    writeln!(out, "|------|------|------:|---------|")?;
     for (path, node) in &subgraph.nodes {
         writeln!(
             out,
@@ -71,15 +70,14 @@ pub fn generate_subgraph_view(subgraph: &SubgraphResult) -> String {
             node.file_type.as_str(),
             node.arch_depth,
             node.cluster.as_str()
-        )
-        .unwrap();
+        )?;
     }
-    writeln!(out).unwrap();
+    writeln!(out)?;
 
     // Edges
     if !subgraph.edges.is_empty() {
-        writeln!(out, "## Edges").unwrap();
-        writeln!(out).unwrap();
+        writeln!(out, "## Edges")?;
+        writeln!(out)?;
         for edge in &subgraph.edges {
             writeln!(
                 out,
@@ -87,13 +85,12 @@ pub fn generate_subgraph_view(subgraph: &SubgraphResult) -> String {
                 edge.from.as_str(),
                 edge.to.as_str(),
                 edge.edge_type.as_str()
-            )
-            .unwrap();
+            )?;
         }
-        writeln!(out).unwrap();
+        writeln!(out)?;
     }
 
-    out
+    Ok(out)
 }
 
 #[cfg(test)]
@@ -108,7 +105,7 @@ mod tests {
             edges: vec![],
         };
         let blast = BTreeMap::new();
-        let md = generate_blast_radius_view("src/x.ts", &blast, &graph);
+        let md = generate_blast_radius_view("src/x.ts", &blast, &graph).unwrap();
         assert!(md.contains("# Blast Radius: `src/x.ts`"));
         assert!(md.contains("**Affected files:** 0"));
     }
@@ -151,7 +148,7 @@ mod tests {
         let mut blast = BTreeMap::new();
         blast.insert(CanonicalPath::new("src/a.ts"), 0);
         blast.insert(CanonicalPath::new("src/b.ts"), 1);
-        let md = generate_blast_radius_view("src/a.ts", &blast, &graph);
+        let md = generate_blast_radius_view("src/a.ts", &blast, &graph).unwrap();
         assert!(md.contains("## Source (distance 0)"));
         assert!(md.contains("## Distance 1"));
         assert!(md.contains("src/b.ts"));
@@ -165,7 +162,7 @@ mod tests {
         };
         let mut blast = BTreeMap::new();
         blast.insert(CanonicalPath::new("src/special&file.ts"), 0);
-        let md = generate_blast_radius_view("src/special&file.ts", &blast, &graph);
+        let md = generate_blast_radius_view("src/special&file.ts", &blast, &graph).unwrap();
         assert!(md.contains("special&file.ts"));
     }
 
@@ -177,7 +174,7 @@ mod tests {
             center_files: vec![CanonicalPath::new("src/x.ts")],
             depth: 2,
         };
-        let md = generate_subgraph_view(&subgraph);
+        let md = generate_subgraph_view(&subgraph).unwrap();
         assert!(md.contains("# Subgraph: src/x.ts"));
         assert!(md.contains("**Depth:** 2"));
         assert!(md.contains("**Nodes:** 0"));
@@ -212,7 +209,7 @@ mod tests {
             center_files: vec![CanonicalPath::new("src/a.ts")],
             depth: 1,
         };
-        let md = generate_subgraph_view(&subgraph);
+        let md = generate_subgraph_view(&subgraph).unwrap();
         assert!(md.contains("## Files"));
         assert!(md.contains("src/a.ts"));
         assert!(md.contains("## Edges"));

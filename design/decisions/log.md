@@ -1678,3 +1678,152 @@ Applies to: Brandes centrality (Phase 2), Louvain modularity (Phase 2b), PageRan
 - Resolving external dependencies to Maven Central — out of scope
 **Reasoning:** Layered resolution with fallback maintains backward compatibility. Projects that don't use Gradle/Maven still get the existing heuristic resolution.
 **Affects:** `src/parser/java.rs`, `src/parser/registry.rs`.
+
+## D-145: raw_parse Override for Container Formats (SFC)
+
+**Date:** 2026-04-10
+**Status:** Accepted
+**Context:** The `parse_source()` pipeline in `ParserRegistry` assumes all files are parsed by a single top-level tree-sitter grammar. It checks error rate (>50% ERROR nodes → file skipped) before calling `extract_imports()`. Single File Component formats (`.vue`, `.svelte`, `.astro`) have no tree-sitter grammar — parsing them as TypeScript produces garbage trees that trigger the error rate rejection. The existing `.razor` workaround (detect inside `extract_imports`, ignore tree) is a latent bug: if a .razor file produces >50% ERROR nodes when parsed as C#, the file is silently skipped before `extract_imports` runs.
+**Decision:** Extend `LanguageParser` trait with an optional `raw_parse` method:
+```rust
+fn raw_parse(&self, source: &[u8], extension: &str, path: &CanonicalPath)
+    -> Option<ParseOutcome> { None }
+```
+Default returns `None` (use standard tree-sitter pipeline). SFC parsers return `Some(ParseOutcome)` — they handle block extraction via state machine internally, then parse script block content with tree-sitter-typescript. `parse_source()` checks `raw_parse` first; if `Some`, returns the result directly, bypassing tree-sitter top-level parse and error rate check. The SFC parser is responsible for producing all four components: imports, exports, symbols, boundaries.
+**Alternatives rejected:**
+- Preprocessing step that extracts script block before pipeline — would require shared state or multiple parse passes
+- Separate SfcParser trait + separate registration path — splits the registry into two systems, adds complexity
+- Disabling error rate check for SFC extensions — special-casing instead of proper abstraction
+- Keeping the .razor workaround pattern — latent bug, depends on error rate not triggering
+**Reasoning:** Minimal trait extension, backward compatible (existing parsers return None), single pipeline entry point preserved, fixes .razor latent bug. CSharpParser should migrate .razor handling to `raw_parse` as follow-up.
+**Affects:** `src/parser/traits.rs`, `src/parser/registry.rs`, `src/parser/vue.rs`, `src/parser/svelte.rs`, `src/parser/astro.rs`, `src/parser/csharp.rs` (future migration).
+
+## D-146: Container Format Exception to D-001 — State Machines for SFC Block Extraction
+
+**Date:** 2026-04-10
+**Status:** Accepted
+**Context:** D-001 mandates "Tree-sitter queries for AST extraction. No regex-based parsing." SFC formats (`.vue`, `.svelte`, `.astro`) are container formats wrapping `<script>`, `<style>`, and `<template>` blocks. No tree-sitter grammars exist for these container formats. The script block content IS parsed with tree-sitter (TypeScript/JavaScript grammar). The question is how to extract block boundaries from the container.
+**Decision:** D-001 applies to **language parsing** (extracting imports/exports/symbols from source code). Container format block extraction is a separate concern: splitting a file into typed blocks. For this, deterministic state machines are permitted when no tree-sitter grammar exists. Specifically:
+- `.vue` / `.svelte`: state machine extracts `<script>` and `<style>` block boundaries + attributes (`lang`, `setup`, `context`)
+- `.astro`: frontmatter extraction between `---` delimiters
+- CSS `@import` / `@use` extraction from `<style>` blocks: line-based pattern matching (same category as .razor `@using` directive extraction, D-130)
+- Script block content: parsed with tree-sitter-typescript/javascript (full D-001 compliance)
+
+This extends the precedent set by D-130 (.razor regex extraction) into a general principle: container formats without tree-sitter grammars use deterministic structural extraction, language content within those containers uses tree-sitter.
+**Alternatives rejected:**
+- Community tree-sitter grammars (tree-sitter-vue, tree-sitter-svelte) — maintenance risk, compatibility risk with tree-sitter 0.24, external dependency
+- Regex for block extraction — fragile for HTML-like nesting; state machine is more robust
+- Full tree-sitter requirement (skip SFC formats entirely) — abandons Vue/Svelte/Astro ecosystem
+**Reasoning:** The state machine handles a finite, well-defined grammar (HTML-like open/close tags for block boundaries). This is not "language parsing" — it's format segmentation. Script content parsing remains tree-sitter-only.
+**Affects:** `src/parser/vue.rs`, `src/parser/svelte.rs`, `src/parser/astro.rs`. Updates the interpretation of D-001.
+
+## D-147: Bundler Config Idiom Recognition via AST Pattern Matching
+
+**Date:** 2026-04-10
+**Status:** Accepted
+**Context:** Bundler config files (`vite.config.ts`, `webpack.config.js`) are executable JavaScript/TypeScript, not static data like `tsconfig.json`. Architecture.md lists "Webpack aliases, Babel module resolution" as a Known Limitation. However, real-world configs use a finite set of deterministic idioms that can be statically evaluated by recognizing AST patterns.
+**Decision:** Parse bundler config files with tree-sitter-typescript and recognize specific AST patterns for alias values:
+1. String literals: `'./src'` → resolve relative to config dir
+2. `path.resolve(__dirname, <literal>)` → join(config_dir, literal)
+3. `path.join(__dirname, <literal>)` → join(config_dir, literal)
+4. `fileURLToPath(new URL(<literal>, import.meta.url))` → join(config_dir, literal)
+5. `__dirname + <literal>` string concatenation → join(config_dir, literal)
+6. Array alias form (Vite): `[{ find: <literal>, replacement: <literal> }]`
+
+All patterns evaluate deterministically because `__dirname` and `import.meta.url` are known at parse time (= config file directory). Patterns not matching any recognized idiom emit W045 (DynamicAliasSkipped) with the actual source text for debugging. Users can work around unrecognized patterns by duplicating aliases in tsconfig `paths`.
+
+Coverage estimates: Vite ~90%, Webpack ~85%, Next.js ~95% (uses tsconfig paths natively, already covered by Phase 10), Turbopack ~100% (JSON format).
+**Alternatives rejected:**
+- Literal-only extraction — covers ~40% of Vite, ~20% of Webpack. Unacceptably low.
+- Skip bundler configs entirely, rely on tsconfig paths — leaves projects without tsconfig paths unsupported
+- Execute config files (Node.js subprocess) — non-deterministic, security risk, adds runtime dependency
+- `.ariadne.toml` manual aliases — requires new config format (future phase), doesn't solve automatic detection
+**Reasoning:** AST pattern matching is the same technique all parsers use (walk tree, interpret nodes). The idiom set is finite, testable, and covers the dominant patterns in both ecosystems. Graceful degradation (W045 warning) handles the long tail.
+**Affects:** `src/parser/config/bundler.rs`, `src/parser/typescript.rs`, `src/parser/config/mod.rs`. Updates Known Limitations in `design/architecture.md`.
+
+## D-148: Warning Codes W044-W048 for Phase 13
+
+**Date:** 2026-04-10
+**Status:** Accepted
+**Context:** Phase 13 introduces bundler config parsing, SFC block extraction, and framework detection — each with distinct failure modes requiring specific warning codes. Following D-003 (graceful degradation), D-122, D-131, D-143 pattern.
+**Decision:**
+- W044 BundlerConfigParseError — vite.config.ts / webpack.config.js failed to parse as TypeScript
+- W045 DynamicAliasSkipped — bundler alias value doesn't match any recognized idiom pattern (D-147)
+- W046 SfcBlockExtractionError — failed to extract `<script>` or `<style>` block from .vue/.svelte/.astro
+- W047 TurboConfigParseError — turbo.json failed to parse as JSON
+- W048 NextConfigParseError — next.config.js failed to parse / route discovery failed
+
+All non-fatal. Resolution falls back to standard TypeScript import resolution (tsconfig paths or relative).
+**Alternatives rejected:**
+- Reusing W030 (generic ConfigParseError) — loses diagnostic specificity
+- Single warning code for all bundler errors — harder to troubleshoot
+**Reasoning:** Continues the established pattern of per-config-source warning codes. Sequential allocation after W038-W042 (Phase 12).
+**Affects:** `src/diagnostic.rs`.
+
+## D-149: Phase 13 Scope Split — 13a (Bundlers + React/Next.js) / 13b (SFC + Remaining Frameworks)
+
+**Date:** 2026-04-10
+**Status:** Accepted
+**Context:** Phase 13 scope includes 4 bundler systems + 7 framework ecosystems — the largest phase in project history. SFC formats (Vue, Svelte, Astro) require a new parsing strategy (D-145, D-146) while bundler configs and React/Next.js patterns use existing tree-sitter-typescript infrastructure.
+**Decision:** Split Phase 13 into two sub-phases:
+- **Phase 13a**: Bundler resolution (Vite, Webpack, Turbopack) + Next.js filesystem routing + React/Next.js framework detection and semantic boundaries + TypeScriptResolver bundler integration + `raw_parse` trait extension (D-145) + .razor migration to raw_parse. All deliverables use existing tree-sitter-typescript grammar.
+- **Phase 13b**: SFC state machine infrastructure + Vue parser + Svelte parser + Astro parser + Angular DI/module parsing + Remix patterns. Introduces the container format parsing strategy (D-146).
+
+Phase 13a delivers `raw_parse` infrastructure that 13b depends on. React/Next.js + Vite/Webpack cover the highest-share ecosystem segment (~65% of JS/TS projects by npm download volume).
+**Alternatives rejected:**
+- Single monolithic phase — too large, SFC parsing risk contaminates bundler work which is lower risk
+- Three-way split (bundlers / framework detection / SFC) — over-fragmented, too many spec/plan/review cycles
+**Reasoning:** Infrastructure (raw_parse, idiom recognizer) in 13a, consumers (SFC parsers) in 13b. Each phase independently shippable. Highest-value ecosystem first.
+**Affects:** `design/ROADMAP.md`, `design/specs/`.
+
+## D-150: Bundler Alias Resolution Priority — tsconfig > Bundler > Relative
+
+**Date:** 2026-04-10
+**Status:** Accepted
+**Context:** With bundler alias support (D-147), the TypeScriptResolver has a new resolution step. The resolution order must be defined for cases where a specifier matches both tsconfig paths and a bundler alias.
+**Decision:** Resolution order in TypeScriptResolver:
+0. Workspace import match (existing, unchanged)
+1. tsconfig `paths` alias match (existing, unchanged)
+2. Bundler alias match (new — nearest bundler config)
+3. Bare specifier skip (existing, unchanged)
+4. Relative path with extension probing (existing, unchanged)
+5. tsconfig `baseUrl` fallback (existing, unchanged)
+
+tsconfig paths take priority over bundler aliases because tsconfig is the language-level standard and is authoritative for TypeScript's own resolution. Bundler aliases are build-tool configuration that may diverge from language semantics. When both match, the language-level resolution wins.
+**Alternatives rejected:**
+- Bundler aliases first — would override TypeScript's own path configuration, confusing for users
+- Merging both into a single alias map — loses provenance, harder to debug
+**Reasoning:** TypeScript Language Server uses tsconfig paths for IDE support. Ariadne should match the language server's behavior for consistency.
+**Affects:** `src/parser/typescript.rs`.
+
+## D-151: React Context Boundaries as EventChannel
+
+**Date:** 2026-04-10
+**Status:** Accepted
+**Context:** React's `createContext()` / `useContext()` pattern creates implicit dependencies between provider and consumer components that are invisible in the import graph. File A and File B may both import a context definition from File C, but the provider→consumer relationship (A provides, B consumes) is not captured by import edges alone.
+**Decision:** Map React context to existing `BoundaryKind::EventChannel`:
+- `createContext()` call → `Boundary { kind: EventChannel, name: "Context:<variable_name>", role: Producer }`
+- `useContext(X)` call → `Boundary { kind: EventChannel, name: "Context:<variable_name>", role: Consumer }`
+- `<X.Provider>` JSX confirms producer role
+
+This follows the .NET DI precedent (D-140) and Java DI (D-140) which also use `EventChannel` for dependency injection relationships. No new `BoundaryKind` variant needed.
+**Alternatives rejected:**
+- New `BoundaryKind::ReactContext` — premature specialization; EventChannel captures the semantic accurately
+- Skip context tracking — loses real architectural information not available from imports alone
+**Reasoning:** Provider/consumer is semantically equivalent to event channel producer/consumer. Reusing EventChannel means zero model changes and consistent cross-language behavior.
+**Affects:** `src/semantic/react.rs`.
+
+## D-152: Next.js Directive and Route Boundary Mapping
+
+**Date:** 2026-04-10
+**Status:** Accepted
+**Context:** Next.js App Router has two architectural boundary types: server/client component boundaries (`"use client"` / `"use server"` directives) and filesystem-based route boundaries (page.tsx, route.ts, middleware.ts).
+**Decision:**
+- Route boundaries: `app/*/page.tsx` → `Boundary { kind: HttpRoute, name: "<route_path>" }`. Route path derived from file's CanonicalPath via convention matching (e.g., `app/dashboard/settings/page.tsx` → `/dashboard/settings`). Same for API routes with `API:` prefix.
+- Client boundary: `"use client"` directive → `Boundary { kind: EventChannel, name: "ClientBoundary", role: Producer }`. This marks the server→client handoff point.
+- `NextBoundaryExtractor` derives route paths from the file's `CanonicalPath` using filesystem convention matching. It does NOT depend on `NextRouteInfo` from `ProjectConfig` — the extractor is self-contained. `NextRouteInfo` in `ProjectConfig` serves downstream consumers (MCP tools, views) for route-level queries.
+**Alternatives rejected:**
+- New `BoundaryKind::ClientBoundary` — EventChannel already captures the concept (server produces, client consumes)
+- Passing `NextRouteInfo` to extractor — violates `BoundaryExtractor` trait interface which takes `(tree, source, path)` only
+**Reasoning:** Filesystem convention matching is deterministic and doesn't require external state. Self-contained extractors are simpler and testable.
+**Affects:** `src/semantic/nextjs.rs`, `src/parser/config/nextjs.rs`.

@@ -6,14 +6,18 @@
 |------|------|------:|---:|----:|-----------:|
 | `src/detect/case_sensitivity.rs` | source | 1 | 1 | 1 | 0.0000 |
 | `src/detect/filetype.rs` | source | 3 | 1 | 1 | 0.0000 |
+| `src/detect/framework.rs` | source | 0 | 1 | 0 | 0.0000 |
+| `src/detect/java_framework.rs` | source | 0 | 1 | 0 | 0.0000 |
 | `src/detect/layer.rs` | source | 3 | 1 | 1 | 0.0000 |
-| `src/detect/mod.rs` | source | 5 | 4 | 4 | 0.0003 |
-| `src/detect/workspace.rs` | source | 4 | 1 | 3 | 0.0001 |
+| `src/detect/mod.rs` | source | 5 | 4 | 6 | 0.0003 |
+| `src/detect/workspace.rs` | source | 4 | 1 | 3 | 0.0000 |
 
 ## Internal Dependencies
 
 - `src/detect/mod.rs` → `src/detect/case_sensitivity.rs` (imports)
 - `src/detect/mod.rs` → `src/detect/filetype.rs` (imports)
+- `src/detect/mod.rs` → `src/detect/framework.rs` (imports)
+- `src/detect/mod.rs` → `src/detect/java_framework.rs` (imports)
 - `src/detect/mod.rs` → `src/detect/layer.rs` (imports)
 - `src/detect/mod.rs` → `src/detect/workspace.rs` (imports)
 

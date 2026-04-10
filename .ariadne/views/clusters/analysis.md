@@ -5,9 +5,9 @@
 | File | Type | Layer | In | Out | Centrality |
 |------|------|------:|---:|----:|-----------:|
 | `src/analysis/diff.rs` | source | 7 | 2 | 4 | 0.0002 |
-| `src/analysis/metrics.rs` | source | 5 | 4 | 2 | 0.0002 |
+| `src/analysis/metrics.rs` | source | 5 | 4 | 2 | 0.0001 |
 | `src/analysis/mod.rs` | source | 8 | 1 | 3 | 0.0000 |
-| `src/analysis/smells.rs` | source | 6 | 5 | 3 | 0.0004 |
+| `src/analysis/smells.rs` | source | 6 | 5 | 3 | 0.0003 |
 
 ## Internal Dependencies
 

@@ -63,7 +63,7 @@ pub fn find_sccs(graph: &ProjectGraph, index: &AdjacencyIndex) -> Vec<Vec<Canoni
                 if lowlinks[node] == indices[node] {
                     let mut scc = Vec::new();
                     loop {
-                        let w = stack.pop().unwrap();
+                        let w = stack.pop().expect("Tarjan SCC: stack non-empty by algorithm invariant");
                         on_stack.insert(w, false);
                         scc.push(w.clone());
                         if w == node {

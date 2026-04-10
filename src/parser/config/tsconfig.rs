@@ -7,7 +7,7 @@ use crate::model::CanonicalPath;
 use super::jsonc::strip_jsonc_comments;
 
 /// Parsed tsconfig.json configuration.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct TsConfig {
     /// Directory containing this tsconfig.json (for relative path resolution).
     pub config_dir: PathBuf,

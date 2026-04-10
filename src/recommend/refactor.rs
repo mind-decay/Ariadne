@@ -113,8 +113,12 @@ pub fn find_refactor_opportunities(
     tagged.sort_by(|(_, a), (_, b)| {
         b.impact_score
             .partial_cmp(&a.impact_score)
-            .unwrap()
-            .then(a.effort_score.partial_cmp(&b.effort_score).unwrap())
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then(
+                a.effort_score
+                    .partial_cmp(&b.effort_score)
+                    .unwrap_or(std::cmp::Ordering::Equal),
+            )
     });
 
     // Step 9: Truncate to MAX_RECOMMENDATIONS

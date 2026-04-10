@@ -8,10 +8,10 @@ pub fn generate_cluster_view(
     cluster_name: &str,
     graph: &ProjectGraph,
     stats: &StatsOutput,
-) -> String {
+) -> Result<String, std::fmt::Error> {
     let mut out = String::new();
-    writeln!(out, "# Cluster: {}", cluster_name).unwrap();
-    writeln!(out).unwrap();
+    writeln!(out, "# Cluster: {}", cluster_name)?;
+    writeln!(out)?;
 
     // Collect files in this cluster (BTreeSet for O(1) membership tests)
     let cluster_files: BTreeSet<&str> = graph
@@ -22,8 +22,8 @@ pub fn generate_cluster_view(
         .collect();
 
     if cluster_files.is_empty() {
-        writeln!(out, "*No files in this cluster.*").unwrap();
-        return out;
+        writeln!(out, "*No files in this cluster.*")?;
+        return Ok(out);
     }
 
     // Compute in/out degree per file
@@ -37,10 +37,10 @@ pub fn generate_cluster_view(
     }
 
     // File table
-    writeln!(out, "## Files").unwrap();
-    writeln!(out).unwrap();
-    writeln!(out, "| File | Type | Layer | In | Out | Centrality |").unwrap();
-    writeln!(out, "|------|------|------:|---:|----:|-----------:|").unwrap();
+    writeln!(out, "## Files")?;
+    writeln!(out)?;
+    writeln!(out, "| File | Type | Layer | In | Out | Centrality |")?;
+    writeln!(out, "|------|------|------:|---:|----:|-----------:|")?;
 
     for &file in &cluster_files {
         if let Some(node) = graph.nodes.get(&crate::model::CanonicalPath::new(file)) {
@@ -56,11 +56,10 @@ pub fn generate_cluster_view(
                 ind,
                 outd,
                 bc
-            )
-            .unwrap();
+            )?;
         }
     }
-    writeln!(out).unwrap();
+    writeln!(out)?;
 
     // Internal dependencies
     let internal_edges: Vec<_> = graph
@@ -74,8 +73,8 @@ pub fn generate_cluster_view(
         .collect();
 
     if !internal_edges.is_empty() {
-        writeln!(out, "## Internal Dependencies").unwrap();
-        writeln!(out).unwrap();
+        writeln!(out, "## Internal Dependencies")?;
+        writeln!(out)?;
         for edge in &internal_edges {
             writeln!(
                 out,
@@ -83,10 +82,9 @@ pub fn generate_cluster_view(
                 edge.from.as_str(),
                 edge.to.as_str(),
                 edge.edge_type.as_str()
-            )
-            .unwrap();
+            )?;
         }
-        writeln!(out).unwrap();
+        writeln!(out)?;
     }
 
     // External deps (outgoing from this cluster)
@@ -101,8 +99,8 @@ pub fn generate_cluster_view(
         .collect();
 
     if !external_out.is_empty() {
-        writeln!(out, "## External Dependencies").unwrap();
-        writeln!(out).unwrap();
+        writeln!(out, "## External Dependencies")?;
+        writeln!(out)?;
         for edge in &external_out {
             writeln!(
                 out,
@@ -110,10 +108,9 @@ pub fn generate_cluster_view(
                 edge.from.as_str(),
                 edge.to.as_str(),
                 edge.edge_type.as_str()
-            )
-            .unwrap();
+            )?;
         }
-        writeln!(out).unwrap();
+        writeln!(out)?;
     }
 
     // External dependents (incoming to this cluster)
@@ -128,8 +125,8 @@ pub fn generate_cluster_view(
         .collect();
 
     if !external_in.is_empty() {
-        writeln!(out, "## External Dependents").unwrap();
-        writeln!(out).unwrap();
+        writeln!(out, "## External Dependents")?;
+        writeln!(out)?;
         for edge in &external_in {
             writeln!(
                 out,
@@ -137,10 +134,9 @@ pub fn generate_cluster_view(
                 edge.to.as_str(),
                 edge.from.as_str(),
                 edge.edge_type.as_str()
-            )
-            .unwrap();
+            )?;
         }
-        writeln!(out).unwrap();
+        writeln!(out)?;
     }
 
     // Tests section
@@ -155,21 +151,20 @@ pub fn generate_cluster_view(
         .collect();
 
     if !test_edges.is_empty() {
-        writeln!(out, "## Tests").unwrap();
-        writeln!(out).unwrap();
+        writeln!(out, "## Tests")?;
+        writeln!(out)?;
         for edge in &test_edges {
             writeln!(
                 out,
                 "- `{}` tests `{}`",
                 edge.from.as_str(),
                 edge.to.as_str()
-            )
-            .unwrap();
+            )?;
         }
-        writeln!(out).unwrap();
+        writeln!(out)?;
     }
 
-    out
+    Ok(out)
 }
 
 #[cfg(test)]
@@ -252,7 +247,7 @@ mod tests {
                 orphan_files: vec![],
             },
         };
-        let md = generate_cluster_view("nonexistent", &graph, &stats);
+        let md = generate_cluster_view("nonexistent", &graph, &stats).unwrap();
         assert!(md.contains("# Cluster: nonexistent"));
         assert!(md.contains("*No files in this cluster.*"));
     }
@@ -260,7 +255,7 @@ mod tests {
     #[test]
     fn cluster_shows_files_table() {
         let (graph, stats) = make_graph_with_cluster();
-        let md = generate_cluster_view("src", &graph, &stats);
+        let md = generate_cluster_view("src", &graph, &stats).unwrap();
         assert!(md.contains("# Cluster: src"));
         assert!(md.contains("## Files"));
         assert!(md.contains("src/a.ts"));
@@ -270,7 +265,7 @@ mod tests {
     #[test]
     fn cluster_shows_internal_dependencies() {
         let (graph, stats) = make_graph_with_cluster();
-        let md = generate_cluster_view("src", &graph, &stats);
+        let md = generate_cluster_view("src", &graph, &stats).unwrap();
         assert!(md.contains("## Internal Dependencies"));
     }
 }

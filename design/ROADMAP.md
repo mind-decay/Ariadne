@@ -1940,7 +1940,62 @@ For each FM approach during implementation:
 
 ---
 
-## Future (Beyond Phase 13)
+## Phase 14: Stack-Agnostic Script Discovery
+
+**Goal:** `tech_stack()` returns usable build/test/lint commands for any project, not just the 3 manifests it currently parses (package.json, Cargo.toml, go.mod).
+
+**Problem:** Theseus cannot verify generated code when `scripts: []`. Currently this happens for Python, Java, Ruby, PHP, Swift, .NET, Elixir, and every other ecosystem Ariadne doesn't have a manifest parser for. The pipeline runs blind — no build check, no test check, no lint check.
+
+**Design principle:** Layered discovery (Chain of Responsibility), not a growing allow-list of per-ecosystem parsers. Each layer is independent, tried in priority order:
+
+| Layer | Source | Confidence | Coverage |
+|-------|--------|------------|----------|
+| 1. Manifest-native scripts | package.json, Cargo.toml (existing) | Highest | JS/TS, Rust |
+| 2. Universal task runners | Makefile, justfile, Taskfile.yml | High | Any language |
+| 3. Probe-based defaults | Signal files → default commands | Medium | Standard ecosystems |
+| 4. User declaration | Theseus asks once, persists | Highest | 100% (fallback) |
+
+**Evidence:**
+- Travis CI auto-detection (2013-2023): probe-based detection served millions of projects. Signal file → default command works for 90%+ cases.
+- SWE-bench (Jimenez et al., 2024): each task uses project-declared test infrastructure. Agentless (Xia et al., ICLR 2024): same. The most successful systems use what the project already declares.
+- GSD / Bazel / Buck: projects explicitly declare build/test commands. Explicit declaration is the most reliable approach, but requires a fallback mechanism.
+
+**Layer 2 — Universal task runners:**
+- Makefile: parse targets, match names to ScriptCategory (build/test/lint/check/fmt → Build/Test/Lint). ~18% of non-trivial GitHub projects have a Makefile; ~40% in Go ecosystem.
+- justfile: simpler syntax, growing adoption. Same target-name matching.
+- Taskfile.yml: YAML-based, explicit task names.
+
+**Layer 3 — Probe-based defaults:**
+Map signal files to default commands without checking `tech_stack.language`:
+
+| Signal file | Build | Test | Lint |
+|-------------|-------|------|------|
+| go.mod | `go build ./...` | `go test ./...` | `go vet ./...` |
+| pyproject.toml | — | `pytest` (if pytest section exists) | — |
+| conftest.py | — | `pytest` | — |
+| Gemfile | — | `bundle exec rake test` | `bundle exec rubocop` (if .rubocop.yml) |
+| pom.xml | `mvn compile` | `mvn test` | — |
+| build.gradle[.kts] | `./gradlew build` | `./gradlew test` | — |
+| composer.json | — | `composer test` (if scripts.test) | — |
+| mix.exs | `mix compile` | `mix test` | — |
+| *.csproj | `dotnet build` | `dotnet test` | — |
+
+Errors from wrong defaults are safe: command fails → VerifyResult::Fail → Theseus retries or asks user. Never crashes.
+
+**Layer 4 — User declaration (Theseus-side):**
+If layers 1-3 yield `scripts: []`, Theseus prompts the user: "No build/test/lint commands detected. What commands does this project use?" Answers persisted in `.theseus-task.json`.
+
+**Also in scope:**
+- Add `structured_diagnostics_cmd: Option<String>` to TechStack. Ariadne fills it for ecosystems that support JSON diagnostics (cargo → `cargo build --message-format=json`). Theseus uses it without knowing which tool it is.
+- Clean up `categorize_script`: remove framework-specific names (jest, vitest, mocha, eslint). Keep only generic patterns (test, lint, build, check, format, compile, dev, start, serve, watch).
+
+**Out of scope:** Per-ecosystem manifest parsing (parse_pyproject_toml, parse_pom_xml, etc.) — that's the allow-list approach this phase replaces.
+
+**Depends on:** None (Ariadne-internal). Layer 4 requires Theseus-side changes.
+
+---
+
+## Future (Beyond Phase 14)
 
 - Tier 2/3 language parsers (Kotlin, Swift, C/C++, PHP, Ruby, Dart)
 - Config file (.ariadne.toml)

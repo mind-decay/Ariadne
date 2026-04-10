@@ -9,7 +9,7 @@
 | `src/recommend/pareto.rs` | source | 0 | 2 | 0 | 0.0000 |
 | `src/recommend/placement.rs` | source | 3 | 1 | 1 | 0.0000 |
 | `src/recommend/refactor.rs` | source | 6 | 1 | 12 | 0.0001 |
-| `src/recommend/split.rs` | source | 5 | 2 | 12 | 0.0002 |
+| `src/recommend/split.rs` | source | 5 | 2 | 12 | 0.0001 |
 | `src/recommend/types.rs` | source | 0 | 3 | 0 | 0.0000 |
 
 ## Internal Dependencies

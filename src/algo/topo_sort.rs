@@ -93,7 +93,7 @@ pub fn topological_layers(
                     *existing = new_layer;
                 }
                 // Decrement outgoing count for predecessor
-                let count = out_degree.get_mut(&pred).unwrap();
+                let count = out_degree.get_mut(&pred).expect("topo_sort: all predecessors present in out_degree map");
                 *count -= 1;
                 if *count == 0 {
                     queue.push_back(pred);

@@ -65,8 +65,7 @@ pub(crate) fn compute_churn(
             }
 
             // Track last_changed
-            if entry.last_changed_days.is_none()
-                || commit_days > entry.last_changed_days.unwrap()
+            if entry.last_changed_days.map_or(true, |d| commit_days > d)
             {
                 entry.last_changed_days = Some(commit_days);
                 entry.last_changed_date = Some(extract_date_prefix(&commit.date));

@@ -114,7 +114,10 @@ fn write_lock(lock_path: &Path) -> Result<(), FatalError> {
         pid: std::process::id(),
         started_at: current_timestamp(),
     };
-    let json = serde_json::to_string_pretty(&content).unwrap();
+    let json = serde_json::to_string_pretty(&content).map_err(|e| FatalError::OutputNotWritable {
+        path: lock_path.to_path_buf(),
+        reason: format!("lock serialization failed: {e}"),
+    })?;
     if let Some(parent) = lock_path.parent() {
         std::fs::create_dir_all(parent).ok();
     }

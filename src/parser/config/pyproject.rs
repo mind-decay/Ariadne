@@ -1,5 +1,5 @@
 /// Parsed pyproject.toml configuration.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct PyProjectConfig {
     /// Whether the project uses src-layout (packages under `src/`).
     pub src_layout: bool,

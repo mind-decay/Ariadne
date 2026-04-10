@@ -24,7 +24,11 @@ pub fn generate_all_views(
     })?;
 
     // L0: index.md
-    let index_content = index::generate_index(graph, clusters, stats);
+    let index_content = index::generate_index(graph, clusters, stats)
+        .map_err(|e| FatalError::OutputNotWritable {
+            path: views_dir.join("index.md"),
+            reason: format!("view generation failed: {e}"),
+        })?;
     fs::write(views_dir.join("index.md"), index_content).map_err(|e| {
         FatalError::OutputNotWritable {
             path: views_dir.join("index.md"),
@@ -35,7 +39,11 @@ pub fn generate_all_views(
     // L1: per-cluster views
     let mut cluster_count = 0;
     for cluster_id in clusters.clusters.keys() {
-        let content = cluster::generate_cluster_view(cluster_id.as_str(), graph, stats);
+        let content = cluster::generate_cluster_view(cluster_id.as_str(), graph, stats)
+            .map_err(|e| FatalError::OutputNotWritable {
+                path: clusters_dir.join(format!("{}.md", sanitize_filename(cluster_id.as_str()))),
+                reason: format!("view generation failed: {e}"),
+            })?;
         let filename = sanitize_filename(cluster_id.as_str());
         fs::write(clusters_dir.join(format!("{}.md", filename)), content).map_err(|e| {
             FatalError::OutputNotWritable {

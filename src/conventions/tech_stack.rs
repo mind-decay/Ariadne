@@ -3,7 +3,7 @@ use std::fs;
 use std::path::Path;
 
 use crate::conventions::types::{
-    FrameworkInfo, ScriptCategory, ScriptInfo, TechStack,
+    FrameworkInfo, ScriptCategory, ScriptInfo, TechStack, TestConfig,
 };
 use crate::model::{FileType, ProjectGraph};
 
@@ -21,13 +21,17 @@ pub fn tech_stack(
     let pkg_json = project_root.join("package.json");
     if pkg_json.exists() {
         let content = fs::read_to_string(&pkg_json)?;
-        return parse_package_json(&content, &language, &pkg_json);
+        let mut ts = parse_package_json(&content, &language, &pkg_json, project_root)?;
+        ts.test_config = discover_test_config(project_root, ts.test_framework.as_deref());
+        return Ok(ts);
     }
 
     let cargo_toml = project_root.join("Cargo.toml");
     if cargo_toml.exists() {
         let content = fs::read_to_string(&cargo_toml)?;
-        return parse_cargo_toml(&content, &cargo_toml);
+        let mut ts = parse_cargo_toml(&content, &cargo_toml)?;
+        ts.test_config = discover_test_config(project_root, ts.test_framework.as_deref());
+        return Ok(ts);
     }
 
     let go_mod = project_root.join("go.mod");
@@ -40,6 +44,7 @@ pub fn tech_stack(
             test_framework: Some("go test".to_string()),
             linter: None,
             bundler: None,
+            test_config: None,
         });
     }
 
@@ -51,7 +56,134 @@ pub fn tech_stack(
         test_framework: None,
         linter: None,
         bundler: None,
+        test_config: discover_test_config(project_root, None),
     })
+}
+
+/// Phase 8c B2: discover a test framework config file on disk.
+///
+/// **Stack-agnostic by design.** Instead of matching a closed allow-list of
+/// known frameworks (vitest/jest/mocha/…), candidate filenames are derived
+/// *by convention* from the `test_framework` string itself:
+///
+/// - `{stem}.config.{ts,js,mts,cts,mjs,cjs,json,yaml,yml}`
+/// - `.{stem}rc` and `.{stem}rc.{js,cjs,json,yml,yaml,toml}`
+///
+/// where `stem` is the normalized framework name (e.g. `@playwright/test` →
+/// `playwright`, `go test` → `go`). This works for any framework that follows
+/// the common `<name>.config.<ext>` / `.<name>rc.<ext>` convention, including
+/// ones Ariadne has never heard of (karma, ava, uvu, supertest, bun test,
+/// deno test, storybook, etc.).
+///
+/// The Python ecosystem is the single explicit exception because its convention
+/// is different: `pytest.ini`, `pyproject.toml` (`[tool.pytest.ini_options]`),
+/// `setup.cfg`, `tox.ini`. These are tried when `test_framework` is absent or
+/// when the primary convention-based lookup fails.
+///
+/// Does NOT parse the discovered file's include/exclude globs — those are left
+/// empty and populated best-effort in a future phase if telemetry shows LLMs
+/// still searching for them.
+pub fn discover_test_config(
+    project_root: &Path,
+    test_framework: Option<&str>,
+) -> Option<TestConfig> {
+    // 1. Convention-based probe: derive candidate names from the framework string.
+    if let Some(raw) = test_framework {
+        if let Some(stem) = normalize_framework_stem(raw) {
+            if let Some(cfg) = probe_config_stem(project_root, &stem) {
+                return Some(cfg);
+            }
+        }
+    }
+
+    // 2. Language-neutral fallback for Python-style config conventions.
+    //    These do not follow the `<name>.config.<ext>` pattern above, so they
+    //    need an explicit probe — but the list is fixed by the Python
+    //    ecosystem, not by a Theseus-managed allow-list of frameworks.
+    for name in ["pytest.ini", "pyproject.toml", "setup.cfg", "tox.ini"] {
+        if project_root.join(name).exists() {
+            // Only accept pyproject.toml / setup.cfg / tox.ini if they
+            // actually mention pytest — otherwise they belong to unrelated
+            // tooling and returning them would be misleading.
+            if name == "pytest.ini" || file_mentions(project_root, name, "pytest") {
+                return Some(TestConfig {
+                    config_file_path: Some(name.to_string()),
+                    ..TestConfig::default()
+                });
+            }
+        }
+    }
+
+    None
+}
+
+/// Normalize a framework identifier from tech_stack (e.g. `@playwright/test`,
+/// `@nestjs/testing`, `go test`, `cargo-test`) into a filesystem-safe stem
+/// suitable for convention-based config lookup.
+///
+/// Rules: strip leading scope `@owner/`, split on whitespace/slash/hyphen, keep
+/// the first non-empty token. Returns `None` for empty input.
+fn normalize_framework_stem(raw: &str) -> Option<String> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    // Strip leading "@scope/" — e.g. "@playwright/test" → "playwright/test"
+    let without_scope = trimmed.strip_prefix('@').unwrap_or(trimmed);
+    // Take the first token split by any of / , space, hyphen, underscore
+    let stem = without_scope
+        .split(|c: char| matches!(c, '/' | ' ' | '-' | '_'))
+        .find(|s| !s.is_empty())?
+        .to_lowercase();
+    if stem.is_empty() { None } else { Some(stem) }
+}
+
+/// Probe the project root for any `{stem}.config.<ext>` or `.{stem}rc[.<ext>]`
+/// file. Returns the first match that exists on disk.
+fn probe_config_stem(project_root: &Path, stem: &str) -> Option<TestConfig> {
+    // `<stem>.config.<ext>` — ordered by how common the extension is in
+    // the JS/TS ecosystem, then other ecosystems.
+    for ext in [
+        "ts", "mts", "cts", "js", "mjs", "cjs", "json", "yaml", "yml", "toml",
+    ] {
+        let name = format!("{stem}.config.{ext}");
+        if project_root.join(&name).exists() {
+            return Some(TestConfig {
+                config_file_path: Some(name),
+                ..TestConfig::default()
+            });
+        }
+    }
+    // Bare `.<stem>rc`
+    let bare = format!(".{stem}rc");
+    if project_root.join(&bare).exists() {
+        return Some(TestConfig {
+            config_file_path: Some(bare),
+            ..TestConfig::default()
+        });
+    }
+    // `.<stem>rc.<ext>`
+    for ext in ["js", "cjs", "mjs", "json", "yml", "yaml", "toml"] {
+        let name = format!(".{stem}rc.{ext}");
+        if project_root.join(&name).exists() {
+            return Some(TestConfig {
+                config_file_path: Some(name),
+                ..TestConfig::default()
+            });
+        }
+    }
+    None
+}
+
+/// Cheap text-search guard used by Python-config detection: returns true if
+/// `path` (read as UTF-8) contains `needle`. Used to keep pyproject.toml /
+/// setup.cfg / tox.ini from being returned as a "test config" when they
+/// actually belong to unrelated tooling.
+fn file_mentions(project_root: &Path, name: &str, needle: &str) -> bool {
+    match fs::read_to_string(project_root.join(name)) {
+        Ok(content) => content.contains(needle),
+        Err(_) => false,
+    }
 }
 
 /// Detect primary language from file extension frequency in the graph.
@@ -134,6 +266,7 @@ fn parse_package_json(
     content: &str,
     language: &str,
     manifest_path: &Path,
+    project_root: &Path,
 ) -> Result<TechStack, std::io::Error> {
     let json: serde_json::Value = serde_json::from_str(content)
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
@@ -171,12 +304,14 @@ fn parse_package_json(
         }
     }
 
-    // Parse scripts
+    // Parse scripts — command is the ready-to-run shell command (e.g. "npm run build"),
+    // not the raw inner value from package.json. Runner detected from lock files.
+    let runner = detect_js_runner(project_root);
     let scripts = if let Some(scripts_obj) = json.get("scripts").and_then(|v| v.as_object()) {
         scripts_obj
             .iter()
-            .map(|(name, cmd)| {
-                let command = cmd.as_str().unwrap_or("").to_string();
+            .map(|(name, _cmd)| {
+                let command = format!("{runner} run {name}");
                 let category = categorize_script(name);
                 ScriptInfo {
                     name: name.clone(),
@@ -197,7 +332,22 @@ fn parse_package_json(
         test_framework,
         linter,
         bundler,
+        test_config: None,
     })
+}
+
+/// Detect JS package runner from lock files in the project directory.
+/// Falls back to "npm" if no lock file is found.
+fn detect_js_runner(project_root: &Path) -> &'static str {
+    if project_root.join("bun.lockb").exists() || project_root.join("bun.lock").exists() {
+        "bun"
+    } else if project_root.join("pnpm-lock.yaml").exists() {
+        "pnpm"
+    } else if project_root.join("yarn.lock").exists() {
+        "yarn"
+    } else {
+        "npm"
+    }
 }
 
 /// Known Rust crate patterns: (crate_name, category)
@@ -248,14 +398,37 @@ fn parse_cargo_toml(
         }
     }
 
+    // Rust always has cargo commands — synthesize scripts from toolchain
+    let mut scripts = vec![
+        ScriptInfo {
+            name: "build".to_string(),
+            command: "cargo build".to_string(),
+            category: ScriptCategory::Build,
+        },
+        ScriptInfo {
+            name: "test".to_string(),
+            command: "cargo test".to_string(),
+            category: ScriptCategory::Test,
+        },
+    ];
+    if true {
+        // clippy is Rust's de facto linter
+        scripts.push(ScriptInfo {
+            name: "lint".to_string(),
+            command: "cargo clippy -- -D warnings".to_string(),
+            category: ScriptCategory::Lint,
+        });
+    }
+
     Ok(TechStack {
         manifest_path: Some(manifest_path.to_string_lossy().into_owned()),
         language: "rust".to_string(),
         frameworks,
-        scripts: Vec::new(), // Rust uses cargo commands, no scripts in manifest
+        scripts,
         test_framework,
-        linter: Some("clippy".to_string()), // Rust de facto linter
+        linter: Some("clippy".to_string()),
         bundler: None,
+        test_config: None,
     })
 }
 
@@ -360,7 +533,8 @@ mod tests {
             }
         }"#;
 
-        let result = parse_package_json(json, "typescript", Path::new("package.json")).unwrap();
+        let tmp = tempfile::tempdir().expect("temp dir");
+        let result = parse_package_json(json, "typescript", Path::new("package.json"), tmp.path()).unwrap();
 
         assert_eq!(result.language, "typescript");
 
@@ -441,6 +615,131 @@ insta = { version = "1", features = ["yaml"] }
         assert!(result.manifest_path.is_some());
         assert_eq!(result.language, "typescript");
         assert!(result.frameworks.iter().any(|f| f.name == "react"));
+    }
+
+    // --- Phase 8c B2: stack-agnostic TestConfig discovery ---
+
+    #[test]
+    fn normalize_framework_stem_strips_npm_scope() {
+        assert_eq!(
+            normalize_framework_stem("@playwright/test").as_deref(),
+            Some("playwright")
+        );
+        assert_eq!(
+            normalize_framework_stem("@nestjs/testing").as_deref(),
+            Some("nestjs")
+        );
+    }
+
+    #[test]
+    fn normalize_framework_stem_splits_on_whitespace_and_hyphen() {
+        assert_eq!(normalize_framework_stem("go test").as_deref(), Some("go"));
+        assert_eq!(
+            normalize_framework_stem("cargo-test").as_deref(),
+            Some("cargo")
+        );
+        assert_eq!(
+            normalize_framework_stem("bun test").as_deref(),
+            Some("bun")
+        );
+    }
+
+    #[test]
+    fn normalize_framework_stem_lowercases_and_rejects_empty() {
+        assert_eq!(normalize_framework_stem("Vitest").as_deref(), Some("vitest"));
+        assert!(normalize_framework_stem("").is_none());
+        assert!(normalize_framework_stem("  ").is_none());
+    }
+
+    #[test]
+    fn discover_test_config_vitest_picks_ts_first() {
+        let dir = tempfile::tempdir().unwrap();
+        fs::write(dir.path().join("vitest.config.ts"), "export default {}").unwrap();
+        let cfg = discover_test_config(dir.path(), Some("vitest")).unwrap();
+        assert_eq!(cfg.config_file_path.as_deref(), Some("vitest.config.ts"));
+    }
+
+    #[test]
+    fn discover_test_config_jest_js_fallback() {
+        let dir = tempfile::tempdir().unwrap();
+        fs::write(dir.path().join("jest.config.js"), "module.exports = {}").unwrap();
+        let cfg = discover_test_config(dir.path(), Some("jest")).unwrap();
+        assert_eq!(cfg.config_file_path.as_deref(), Some("jest.config.js"));
+    }
+
+    #[test]
+    fn discover_test_config_none_when_no_files() {
+        let dir = tempfile::tempdir().unwrap();
+        assert!(discover_test_config(dir.path(), Some("vitest")).is_none());
+    }
+
+    #[test]
+    fn discover_test_config_works_for_unknown_framework() {
+        // karma is not in any hardcoded list — convention derivation must handle it.
+        let dir = tempfile::tempdir().unwrap();
+        fs::write(dir.path().join("karma.config.js"), "module.exports = {}").unwrap();
+        let cfg = discover_test_config(dir.path(), Some("karma")).unwrap();
+        assert_eq!(cfg.config_file_path.as_deref(), Some("karma.config.js"));
+    }
+
+    #[test]
+    fn discover_test_config_works_for_rc_style_mocha() {
+        let dir = tempfile::tempdir().unwrap();
+        fs::write(dir.path().join(".mocharc.json"), "{}").unwrap();
+        let cfg = discover_test_config(dir.path(), Some("mocha")).unwrap();
+        assert_eq!(cfg.config_file_path.as_deref(), Some(".mocharc.json"));
+    }
+
+    #[test]
+    fn discover_test_config_works_for_scoped_playwright() {
+        // npm scope normalization must not break the common playwright case.
+        let dir = tempfile::tempdir().unwrap();
+        fs::write(
+            dir.path().join("playwright.config.ts"),
+            "export default {}",
+        )
+        .unwrap();
+        let cfg = discover_test_config(dir.path(), Some("@playwright/test")).unwrap();
+        assert_eq!(cfg.config_file_path.as_deref(), Some("playwright.config.ts"));
+    }
+
+    #[test]
+    fn discover_test_config_pytest_pyproject_with_marker() {
+        let dir = tempfile::tempdir().unwrap();
+        fs::write(
+            dir.path().join("pyproject.toml"),
+            "[tool.pytest.ini_options]\n",
+        )
+        .unwrap();
+        let cfg = discover_test_config(dir.path(), Some("pytest")).unwrap();
+        assert_eq!(cfg.config_file_path.as_deref(), Some("pyproject.toml"));
+    }
+
+    #[test]
+    fn discover_test_config_pyproject_without_marker_is_skipped() {
+        // pyproject.toml exists but never mentions pytest — do not falsely
+        // claim it as a test config.
+        let dir = tempfile::tempdir().unwrap();
+        fs::write(
+            dir.path().join("pyproject.toml"),
+            "[project]\nname = \"x\"\n",
+        )
+        .unwrap();
+        assert!(discover_test_config(dir.path(), None).is_none());
+    }
+
+    #[test]
+    fn tech_stack_populates_test_config_for_vitest() {
+        let dir = tempfile::tempdir().unwrap();
+        let pkg = r#"{"devDependencies":{"vitest":"^1.0.0"}}"#;
+        fs::write(dir.path().join("package.json"), pkg).unwrap();
+        fs::write(dir.path().join("vitest.config.ts"), "export default {}").unwrap();
+
+        let graph = make_graph_with_extensions(&["ts", "ts"]);
+        let result = tech_stack(dir.path(), &graph).unwrap();
+        assert_eq!(result.test_framework.as_deref(), Some("vitest"));
+        let tc = result.test_config.expect("test_config populated");
+        assert_eq!(tc.config_file_path.as_deref(), Some("vitest.config.ts"));
     }
 
     #[test]

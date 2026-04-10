@@ -10,16 +10,16 @@
 | `src/model/diff.rs` | source | 0 | 1 | 0 | 0.0000 |
 | `src/model/edge.rs` | source | 0 | 4 | 0 | 0.0000 |
 | `src/model/graph.rs` | source | 0 | 3 | 0 | 0.0000 |
-| `src/model/mod.rs` | source | 2 | 64 | 16 | 0.0106 |
+| `src/model/mod.rs` | source | 2 | 71 | 16 | 0.0087 |
 | `src/model/node.rs` | source | 0 | 3 | 0 | 0.0000 |
 | `src/model/query.rs` | source | 0 | 1 | 0 | 0.0000 |
-| `src/model/semantic.rs` | source | 0 | 8 | 0 | 0.0000 |
+| `src/model/semantic.rs` | source | 0 | 10 | 0 | 0.0000 |
 | `src/model/smell.rs` | source | 0 | 2 | 0 | 0.0000 |
 | `src/model/stats.rs` | source | 0 | 1 | 0 | 0.0000 |
 | `src/model/symbol.rs` | source | 0 | 13 | 0 | 0.0000 |
 | `src/model/symbol_index.rs` | source | 1 | 5 | 4 | 0.0001 |
 | `src/model/temporal.rs` | source | 0 | 7 | 0 | 0.0000 |
-| `src/model/types.rs` | source | 0 | 11 | 0 | 0.0000 |
+| `src/model/types.rs` | source | 0 | 13 | 0 | 0.0000 |
 | `src/model/workspace.rs` | source | 0 | 14 | 0 | 0.0000 |
 
 ## Internal Dependencies
@@ -71,6 +71,10 @@
 - `src/model/mod.rs` ← `src/analysis/metrics.rs` (imports)
 - `src/model/mod.rs` ← `src/analysis/smells.rs` (imports)
 - `src/model/mod.rs` ← `src/cluster/mod.rs` (imports)
+- `src/model/mod.rs` ← `src/conventions/imports.rs` (imports)
+- `src/model/mod.rs` ← `src/conventions/naming.rs` (imports)
+- `src/model/mod.rs` ← `src/conventions/tech_stack.rs` (imports)
+- `src/model/mod.rs` ← `src/conventions/trends.rs` (imports)
 - `src/model/types.rs` ← `src/detect/case_sensitivity.rs` (imports)
 - `src/model/mod.rs` ← `src/detect/filetype.rs` (imports)
 - `src/model/mod.rs` ← `src/detect/layer.rs` (imports)
@@ -86,6 +90,9 @@
 - `src/model/symbol_index.rs` ← `src/mcp/state.rs` (imports)
 - `src/model/mod.rs` ← `src/mcp/tools.rs` (imports)
 - `src/model/mod.rs` ← `src/mcp/user_state.rs` (imports)
+- `src/model/mod.rs` ← `src/parser/config/csproj.rs` (imports)
+- `src/model/mod.rs` ← `src/parser/config/gradle.rs` (imports)
+- `src/model/mod.rs` ← `src/parser/config/maven.rs` (imports)
 - `src/model/mod.rs` ← `src/parser/config/mod.rs` (imports)
 - `src/model/mod.rs` ← `src/parser/config/tsconfig.rs` (imports)
 - `src/model/mod.rs` ← `src/parser/csharp.rs` (imports)
@@ -140,12 +147,16 @@
 - `src/model/symbol.rs` ← `src/recommend/split.rs` (imports)
 - `src/model/symbol_index.rs` ← `src/recommend/split.rs` (imports)
 - `src/model/temporal.rs` ← `src/recommend/split.rs` (imports)
+- `src/model/semantic.rs` ← `src/semantic/dotnet.rs` (imports)
+- `src/model/types.rs` ← `src/semantic/dotnet.rs` (imports)
 - `src/model/semantic.rs` ← `src/semantic/edges.rs` (imports)
 - `src/model/types.rs` ← `src/semantic/edges.rs` (imports)
 - `src/model/semantic.rs` ← `src/semantic/events.rs` (imports)
 - `src/model/types.rs` ← `src/semantic/events.rs` (imports)
 - `src/model/semantic.rs` ← `src/semantic/http.rs` (imports)
 - `src/model/types.rs` ← `src/semantic/http.rs` (imports)
+- `src/model/semantic.rs` ← `src/semantic/java.rs` (imports)
+- `src/model/types.rs` ← `src/semantic/java.rs` (imports)
 - `src/model/semantic.rs` ← `src/semantic/mod.rs` (imports)
 - `src/model/types.rs` ← `src/semantic/mod.rs` (imports)
 - `src/model/mod.rs` ← `src/serial/convert.rs` (imports)

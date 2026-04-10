@@ -92,6 +92,29 @@ pub struct ScriptInfo {
     pub category: ScriptCategory,
 }
 
+/// Test framework configuration, populated when Ariadne can discover a
+/// framework-specific config file (vitest.config.ts, jest.config.js, pytest.ini, etc.).
+///
+/// Phase 8c B2: exists so downstream consumers (e.g. Theseus test_gen prompts)
+/// can name the config file explicitly instead of forcing the LLM to search.
+/// Fields beyond `config_file_path` are populated best-effort: `include_glob`,
+/// `exclude_glob`, `setup_files`, `environment` are left empty/None when the
+/// config file exists but parsing the full shape is not implemented for the
+/// framework in question.
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct TestConfig {
+    /// Path to the discovered config file, relative to project root.
+    pub config_file_path: Option<String>,
+    /// Glob patterns listing test files.
+    pub include_glob: Vec<String>,
+    /// Glob patterns excluding files from test discovery.
+    pub exclude_glob: Vec<String>,
+    /// Setup files that run before the test suite.
+    pub setup_files: Vec<String>,
+    /// Test environment name (e.g. "node", "jsdom").
+    pub environment: Option<String>,
+}
+
 /// Technology stack derived from manifest files and graph analysis.
 #[derive(Debug, Clone, Serialize)]
 pub struct TechStack {
@@ -109,6 +132,10 @@ pub struct TechStack {
     pub linter: Option<String>,
     /// Detected bundler name
     pub bundler: Option<String>,
+    /// Test framework configuration — populated when Ariadne discovers a
+    /// framework-specific config file (Phase 8c B2).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub test_config: Option<TestConfig>,
 }
 
 /// A temporal trend detected across the codebase.

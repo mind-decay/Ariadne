@@ -6,7 +6,7 @@
 |------|------|------:|---:|----:|-----------:|
 | `src/serial/convert.rs` | source | 3 | 1 | 1 | 0.0000 |
 | `src/serial/json.rs` | source | 4 | 3 | 2 | 0.0000 |
-| `src/serial/mod.rs` | source | 5 | 3 | 7 | 0.0002 |
+| `src/serial/mod.rs` | source | 5 | 3 | 7 | 0.0001 |
 
 ## Internal Dependencies
 

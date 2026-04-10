@@ -49,7 +49,7 @@ pub fn stoer_wagner(graph: &SymbolGraph) -> Option<MinCutResult> {
     for _ in 0..(n - 1) {
         // Maximum adjacency ordering
         // Find an arbitrary active node to start
-        let start = active.iter().position(|&a| a).unwrap();
+        let start = active.iter().position(|&a| a).expect("Stoer-Wagner: at least one active node per iteration");
 
         let mut in_order: Vec<bool> = vec![false; n];
         let mut key: Vec<f64> = vec![0.0; n]; // weight of connection to nodes already in order

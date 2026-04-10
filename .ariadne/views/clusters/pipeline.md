@@ -5,7 +5,7 @@
 | File | Type | Layer | In | Out | Centrality |
 |------|------|------:|---:|----:|-----------:|
 | `src/pipeline/build.rs` | config | 6 | 1 | 5 | 0.0000 |
-| `src/pipeline/mod.rs` | source | 7 | 3 | 15 | 0.0013 |
+| `src/pipeline/mod.rs` | source | 7 | 3 | 15 | 0.0011 |
 | `src/pipeline/read.rs` | source | 4 | 1 | 2 | 0.0000 |
 | `src/pipeline/resolve.rs` | source | 6 | 1 | 5 | 0.0000 |
 | `src/pipeline/walk.rs` | source | 4 | 1 | 2 | 0.0000 |

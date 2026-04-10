@@ -22,6 +22,8 @@
 | `design/reports/archive/2026-03-25-phase4d-formal-methods-evaluation.md` | doc | 0 | 0 | 0 | 0.0000 |
 | `design/specs/2026-03-29-phase9-implementation-plan.md` | doc | 0 | 0 | 0 | 0.0000 |
 | `design/specs/2026-03-29-phase9-recommendations.md` | doc | 0 | 0 | 0 | 0.0000 |
+| `design/specs/2026-04-04-phase11-csharp-dotnet.md` | doc | 0 | 0 | 0 | 0.0000 |
+| `design/specs/2026-04-04-phase11-implementation-plan.md` | doc | 0 | 0 | 0 | 0.0000 |
 | `design/specs/archive/2026-03-17-phase1-core-cli.md` | doc | 0 | 0 | 0 | 0.0000 |
 | `design/specs/archive/2026-03-17-phase1-implementation-plan.md` | doc | 0 | 0 | 0 | 0.0000 |
 | `design/specs/archive/2026-03-17-phase1a-implementation-plan.md` | doc | 0 | 0 | 0 | 0.0000 |

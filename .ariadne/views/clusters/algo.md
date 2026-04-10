@@ -12,7 +12,7 @@
 | `src/algo/delta.rs` | source | 3 | 1 | 1 | 0.0000 |
 | `src/algo/impact.rs` | source | 4 | 2 | 5 | 0.0000 |
 | `src/algo/louvain.rs` | source | 3 | 1 | 1 | 0.0000 |
-| `src/algo/mod.rs` | source | 4 | 20 | 17 | 0.0037 |
+| `src/algo/mod.rs` | source | 4 | 20 | 17 | 0.0027 |
 | `src/algo/pagerank.rs` | source | 4 | 2 | 2 | 0.0000 |
 | `src/algo/reading_order.rs` | source | 4 | 3 | 4 | 0.0001 |
 | `src/algo/scc.rs` | source | 4 | 3 | 2 | 0.0000 |

@@ -211,9 +211,9 @@ pub fn parse_settings_gradle(content: &str) -> Vec<GradleSubproject> {
     let mut subprojects = Vec::new();
 
     // Groovy: include ':module-name' or include 'module-name'
-    let re_groovy = Regex::new(r#"include\s+['"][:.]?([^'"]+)['"]"#).unwrap();
+    let re_groovy = Regex::new(r#"include\s+['"][:.]?([^'"]+)['"]"#).expect("valid regex literal");
     // Kotlin DSL: include(":module-name") or include("module-name")
-    let re_kotlin = Regex::new(r#"include\s*\(\s*"[:]?([^"]+)"\s*\)"#).unwrap();
+    let re_kotlin = Regex::new(r#"include\s*\(\s*"[:]?([^"]+)"\s*\)"#).expect("valid regex literal");
 
     for line in content.lines() {
         let trimmed = line.trim();

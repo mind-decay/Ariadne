@@ -1,5 +1,5 @@
 /// Parsed go.mod configuration.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct GoModConfig {
     /// The module path (e.g., `github.com/user/repo`).
     pub module_path: String,

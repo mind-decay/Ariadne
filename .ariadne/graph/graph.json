@@ -1,8 +1,8 @@
 {
   "version": 1,
   "project_root": "/Users/minddecay/Documents/Projects/Ariadne",
-  "node_count": 368,
-  "edge_count": 423,
+  "node_count": 396,
+  "edge_count": 461,
   "nodes": {
     ".claude/CLAUDE.md": {
       "type": "doc",
@@ -386,8 +386,8 @@
       "type": "doc",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 124,
-      "hash": "af2be8236cefdecc",
+      "lines": 214,
+      "hash": "61c69cf3163c6a6d",
       "exports": [],
       "cluster": "root"
     },
@@ -399,6 +399,207 @@
       "hash": "1d5868a983e20d35",
       "exports": [],
       "cluster": "root"
+    },
+    "ariadne-cli/src/main.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 1882,
+      "hash": "39bac84ef0fa83d1",
+      "exports": [],
+      "cluster": "ariadne-cli",
+      "symbols": [
+        {
+          "name": "Cli",
+          "kind": "struct",
+          "visibility": "private",
+          "span": {
+            "start": 27,
+            "end": 30
+          },
+          "signature": "struct Cli {"
+        },
+        {
+          "name": "Commands",
+          "kind": "enum",
+          "visibility": "private",
+          "span": {
+            "start": 33,
+            "end": 137
+          },
+          "signature": "enum Commands {"
+        },
+        {
+          "name": "QueryCommands",
+          "kind": "enum",
+          "visibility": "private",
+          "span": {
+            "start": 140,
+            "end": 390
+          },
+          "signature": "enum QueryCommands {"
+        },
+        {
+          "name": "ViewsCommands",
+          "kind": "enum",
+          "visibility": "private",
+          "span": {
+            "start": 393,
+            "end": 403
+          },
+          "signature": "enum ViewsCommands {"
+        },
+        {
+          "name": "check_server_lock",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 510,
+            "end": 518
+          },
+          "signature": "fn check_server_lock(output_dir: &std::path::Path) -> Result<(), FatalError> {"
+        },
+        {
+          "name": "json_pretty",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 831,
+            "end": 836
+          },
+          "signature": "fn json_pretty<T: serde::Serialize>(value: &T) -> Result<String, FatalError> {"
+        },
+        {
+          "name": "load_boundaries",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 816,
+            "end": 826
+          },
+          "signature": "fn load_boundaries("
+        },
+        {
+          "name": "load_clusters",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 801,
+            "end": 814
+          },
+          "signature": "fn load_clusters("
+        },
+        {
+          "name": "load_graph",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 781,
+            "end": 791
+          },
+          "signature": "fn load_graph(reader: &dyn GraphReader, dir: &std::path::Path) -> Result<ProjectGraph, FatalError> {"
+        },
+        {
+          "name": "load_stats",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 793,
+            "end": 799
+          },
+          "signature": "fn load_stats(reader: &dyn GraphReader, dir: &std::path::Path) -> Result<StatsOutput, FatalError> {"
+        },
+        {
+          "name": "main",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 405,
+            "end": 506
+          },
+          "signature": "fn main() {"
+        },
+        {
+          "name": "print_stats_md",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 1807,
+            "end": 1838
+          },
+          "signature": "fn print_stats_md(stats: &StatsOutput) {"
+        },
+        {
+          "name": "run_build",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 593,
+            "end": 675
+          },
+          "signature": "fn run_build("
+        },
+        {
+          "name": "run_info",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 764,
+            "end": 777
+          },
+          "signature": "fn run_info() {"
+        },
+        {
+          "name": "run_query",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 838,
+            "end": 1787
+          },
+          "signature": "fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {"
+        },
+        {
+          "name": "run_restart",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 521,
+            "end": 590
+          },
+          "signature": "fn run_restart(project: PathBuf, output: Option<PathBuf>) -> Result<(), FatalError> {"
+        },
+        {
+          "name": "run_update",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 678,
+            "end": 762
+          },
+          "signature": "fn run_update("
+        },
+        {
+          "name": "run_views",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 1789,
+            "end": 1805
+          },
+          "signature": "fn run_views(cmd: ViewsCommands) -> Result<(), FatalError> {"
+        },
+        {
+          "name": "serialize_subgraph_result",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 1841,
+            "end": 1882
+          },
+          "signature": "fn serialize_subgraph_result(result: &ariadne_graph::model::SubgraphResult) -> serde_json::Value {"
+        }
+      ]
     },
     "benches/algo_bench.rs": {
       "type": "source",
@@ -983,8 +1184,8 @@
       "type": "doc",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 1955,
-      "hash": "bde85451395ff793",
+      "lines": 2010,
+      "hash": "ada8cf678453346d",
       "exports": [],
       "cluster": "design"
     },
@@ -1001,8 +1202,8 @@
       "type": "doc",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 1680,
-      "hash": "1af3cc6535946116",
+      "lines": 1829,
+      "hash": "b4a99d21a4de529d",
       "exports": [],
       "cluster": "design"
     },
@@ -1156,6 +1357,24 @@
       "arch_depth": 0,
       "lines": 125,
       "hash": "678c94382c0e25e5",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/specs/2026-04-10-phase13-js-frameworks.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 395,
+      "hash": "215f6fd4c86112ab",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/specs/2026-04-10-phase13a-implementation-plan.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 302,
+      "hash": "7c90ee72cb46a435",
       "exports": [],
       "cluster": "design"
     },
@@ -2123,7 +2342,7 @@
       "layer": "unknown",
       "arch_depth": 4,
       "lines": 233,
-      "hash": "5dac8a2c6e5e9314",
+      "hash": "0eb72c81c0dafeee",
       "exports": [
         "find_sccs"
       ],
@@ -2420,7 +2639,7 @@
       "layer": "unknown",
       "arch_depth": 4,
       "lines": 217,
-      "hash": "f0def65287133c8b",
+      "hash": "008e6f0391bc1f45",
       "exports": [
         "topological_layers"
       ],
@@ -2850,6 +3069,455 @@
         }
       ]
     },
+    "src/conventions/imports.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 3,
+      "lines": 301,
+      "hash": "4100db9aa0438a99",
+      "exports": [
+        "import_patterns"
+      ],
+      "cluster": "conventions",
+      "symbols": [
+        {
+          "name": "import_patterns",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 14,
+            "end": 113
+          },
+          "signature": "pub fn import_patterns("
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 116,
+            "end": 301
+          }
+        }
+      ]
+    },
+    "src/conventions/mod.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 4,
+      "lines": 11,
+      "hash": "789e487a2ab2a788",
+      "exports": [
+        "classify_case",
+        "import_patterns",
+        "naming_conventions",
+        "tech_stack",
+        "temporal_trends",
+        "types"
+      ],
+      "cluster": "conventions"
+    },
+    "src/conventions/naming.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 3,
+      "lines": 409,
+      "hash": "df2dbde7e0879196",
+      "exports": [
+        "classify_case",
+        "naming_conventions"
+      ],
+      "cluster": "conventions",
+      "symbols": [
+        {
+          "name": "classify_case",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 14,
+            "end": 53
+          },
+          "signature": "pub fn classify_case(name: &str) -> NamingCase {"
+        },
+        {
+          "name": "conforms_to",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 59,
+            "end": 66
+          },
+          "signature": "fn conforms_to(name: &str, convention: NamingCase) -> bool {"
+        },
+        {
+          "name": "naming_conventions",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 92,
+            "end": 177
+          },
+          "signature": "pub fn naming_conventions("
+        },
+        {
+          "name": "symbol_kind_label",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 68,
+            "end": 81
+          },
+          "signature": "fn symbol_kind_label(kind: &SymbolKind) -> &'static str {"
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 180,
+            "end": 409
+          }
+        }
+      ]
+    },
+    "src/conventions/tech_stack.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 3,
+      "lines": 765,
+      "hash": "e8f5387ebebcd593",
+      "exports": [
+        "discover_test_config",
+        "tech_stack"
+      ],
+      "cluster": "conventions",
+      "symbols": [
+        {
+          "name": "categorize_script",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 222,
+            "end": 241
+          },
+          "signature": "fn categorize_script(name: &str) -> ScriptCategory {"
+        },
+        {
+          "name": "detect_js_runner",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 341,
+            "end": 351
+          },
+          "signature": "fn detect_js_runner(project_root: &Path) -> &'static str {"
+        },
+        {
+          "name": "detect_language",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 190,
+            "end": 220
+          },
+          "signature": "fn detect_language(graph: &ProjectGraph) -> String {"
+        },
+        {
+          "name": "discover_test_config",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 86,
+            "end": 118
+          },
+          "signature": "pub fn discover_test_config("
+        },
+        {
+          "name": "extract_toml_version",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 437,
+            "end": 447
+          },
+          "signature": "fn extract_toml_version(val: &toml::Value) -> String {"
+        },
+        {
+          "name": "file_mentions",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 182,
+            "end": 187
+          },
+          "signature": "fn file_mentions(project_root: &Path, name: &str, needle: &str) -> bool {"
+        },
+        {
+          "name": "js_framework_category",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 244,
+            "end": 263
+          },
+          "signature": "fn js_framework_category(name: &str) -> Option<&'static str> {"
+        },
+        {
+          "name": "normalize_framework_stem",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 126,
+            "end": 139
+          },
+          "signature": "fn normalize_framework_stem(raw: &str) -> Option<String> {"
+        },
+        {
+          "name": "parse_cargo_toml",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 367,
+            "end": 433
+          },
+          "signature": "fn parse_cargo_toml("
+        },
+        {
+          "name": "parse_package_json",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 265,
+            "end": 337
+          },
+          "signature": "fn parse_package_json("
+        },
+        {
+          "name": "probe_config_stem",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 143,
+            "end": 176
+          },
+          "signature": "fn probe_config_stem(project_root: &Path, stem: &str) -> Option<TestConfig> {"
+        },
+        {
+          "name": "rust_crate_category",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 354,
+            "end": 365
+          },
+          "signature": "fn rust_crate_category(name: &str) -> Option<&'static str> {"
+        },
+        {
+          "name": "tech_stack",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 15,
+            "end": 61
+          },
+          "signature": "pub fn tech_stack("
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 450,
+            "end": 765
+          }
+        }
+      ]
+    },
+    "src/conventions/trends.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 3,
+      "lines": 304,
+      "hash": "e870e4b4bc538b0e",
+      "exports": [
+        "temporal_trends"
+      ],
+      "cluster": "conventions",
+      "symbols": [
+        {
+          "name": "GROWTH_RATIO",
+          "kind": "const",
+          "visibility": "private",
+          "span": {
+            "start": 10,
+            "end": 10
+          },
+          "signature": "const GROWTH_RATIO: f64 = 2.0;"
+        },
+        {
+          "name": "MIN_SAMPLE_SIZE",
+          "kind": "const",
+          "visibility": "private",
+          "span": {
+            "start": 7,
+            "end": 7
+          },
+          "signature": "const MIN_SAMPLE_SIZE: usize = 5;"
+        },
+        {
+          "name": "temporal_trends",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 17,
+            "end": 131
+          },
+          "signature": "pub fn temporal_trends("
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 134,
+            "end": 304
+          }
+        }
+      ]
+    },
+    "src/conventions/types.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 150,
+      "hash": "109e31a3744d1337",
+      "exports": [
+        "FrameworkInfo",
+        "ImportCategory",
+        "ImportPattern",
+        "NamingCase",
+        "NamingConvention",
+        "ScriptCategory",
+        "ScriptInfo",
+        "TechStack",
+        "TemporalTrend",
+        "TestConfig",
+        "Trend"
+      ],
+      "cluster": "conventions",
+      "symbols": [
+        {
+          "name": "FrameworkInfo",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 80,
+            "end": 85
+          },
+          "signature": "pub struct FrameworkInfo {"
+        },
+        {
+          "name": "ImportCategory",
+          "kind": "enum",
+          "visibility": "public",
+          "span": {
+            "start": 15,
+            "end": 22
+          },
+          "signature": "pub enum ImportCategory {"
+        },
+        {
+          "name": "ImportPattern",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 26,
+            "end": 38
+          },
+          "signature": "pub struct ImportPattern {"
+        },
+        {
+          "name": "NamingCase",
+          "kind": "enum",
+          "visibility": "public",
+          "span": {
+            "start": 43,
+            "end": 50
+          },
+          "signature": "pub enum NamingCase {"
+        },
+        {
+          "name": "NamingConvention",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 54,
+            "end": 65
+          },
+          "signature": "pub struct NamingConvention {"
+        },
+        {
+          "name": "ScriptCategory",
+          "kind": "enum",
+          "visibility": "public",
+          "span": {
+            "start": 70,
+            "end": 76
+          },
+          "signature": "pub enum ScriptCategory {"
+        },
+        {
+          "name": "ScriptInfo",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 89,
+            "end": 93
+          },
+          "signature": "pub struct ScriptInfo {"
+        },
+        {
+          "name": "TechStack",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 120,
+            "end": 139
+          },
+          "signature": "pub struct TechStack {"
+        },
+        {
+          "name": "TemporalTrend",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 143,
+            "end": 150
+          },
+          "signature": "pub struct TemporalTrend {"
+        },
+        {
+          "name": "TestConfig",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 105,
+            "end": 116
+          },
+          "signature": "pub struct TestConfig {"
+        },
+        {
+          "name": "Trend",
+          "kind": "enum",
+          "visibility": "public",
+          "span": {
+            "start": 6,
+            "end": 10
+          },
+          "signature": "pub enum Trend {"
+        }
+      ]
+    },
     "src/detect/case_sensitivity.rs": {
       "type": "source",
       "layer": "unknown",
@@ -3201,6 +3869,204 @@
         }
       ]
     },
+    "src/detect/js_framework.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 3,
+      "lines": 611,
+      "hash": "bb4368c02a7338f2",
+      "exports": [
+        "JsFrameworkHints",
+        "RouteConvention",
+        "classify_route_convention",
+        "detect_js_framework",
+        "find_create_context_calls",
+        "find_use_context_calls",
+        "has_use_client_directive"
+      ],
+      "cluster": "detect",
+      "symbols": [
+        {
+          "name": "JsFrameworkHints",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 21,
+            "end": 29
+          },
+          "signature": "pub struct JsFrameworkHints {"
+        },
+        {
+          "name": "NON_ROUTE_SECONDARY_EXTS",
+          "kind": "const",
+          "visibility": "private",
+          "span": {
+            "start": 89,
+            "end": 94
+          },
+          "signature": "const NON_ROUTE_SECONDARY_EXTS: &[&str] = &["
+        },
+        {
+          "name": "RouteConvention",
+          "kind": "enum",
+          "visibility": "public",
+          "span": {
+            "start": 10,
+            "end": 17
+          },
+          "signature": "pub enum RouteConvention {"
+        },
+        {
+          "name": "check_variable_hook",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 230,
+            "end": 250
+          },
+          "signature": "fn check_variable_hook(node: &tree_sitter::Node, source: &[u8], hints: &mut JsFrameworkHints) {"
+        },
+        {
+          "name": "classify_route_convention",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 97,
+            "end": 140
+          },
+          "signature": "pub fn classify_route_convention(path: &CanonicalPath) -> Option<RouteConvention> {"
+        },
+        {
+          "name": "detect_js_framework",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 32,
+            "end": 59
+          },
+          "signature": "pub fn detect_js_framework("
+        },
+        {
+          "name": "find_create_context_calls",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 66,
+            "end": 72
+          },
+          "signature": "pub fn find_create_context_calls(tree: &tree_sitter::Tree, source: &[u8]) -> Vec<String> {"
+        },
+        {
+          "name": "find_create_context_recursive",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 253,
+            "end": 281
+          },
+          "signature": "fn find_create_context_recursive("
+        },
+        {
+          "name": "find_use_context_calls",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 75,
+            "end": 81
+          },
+          "signature": "pub fn find_use_context_calls(tree: &tree_sitter::Tree, source: &[u8]) -> Vec<String> {"
+        },
+        {
+          "name": "find_use_context_recursive",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 284,
+            "end": 315
+          },
+          "signature": "fn find_use_context_recursive("
+        },
+        {
+          "name": "has_directive",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 163,
+            "end": 188
+          },
+          "signature": "fn has_directive(tree: &tree_sitter::Tree, source: &[u8], directive: &str) -> bool {"
+        },
+        {
+          "name": "has_non_route_secondary_ext",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 142,
+            "end": 152
+          },
+          "signature": "fn has_non_route_secondary_ext(file_name: &str) -> bool {"
+        },
+        {
+          "name": "has_use_client_directive",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 84,
+            "end": 86
+          },
+          "signature": "pub fn has_use_client_directive(tree: &tree_sitter::Tree, source: &[u8]) -> bool {"
+        },
+        {
+          "name": "has_use_server_directive",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 158,
+            "end": 160
+          },
+          "signature": "fn has_use_server_directive(tree: &tree_sitter::Tree, source: &[u8]) -> bool {"
+        },
+        {
+          "name": "is_under_app_dir",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 190,
+            "end": 192
+          },
+          "signature": "fn is_under_app_dir(path: &str) -> bool {"
+        },
+        {
+          "name": "is_under_pages_dir",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 194,
+            "end": 196
+          },
+          "signature": "fn is_under_pages_dir(path: &str) -> bool {"
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 318,
+            "end": 611
+          }
+        },
+        {
+          "name": "walk_for_hints",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 199,
+            "end": 227
+          },
+          "signature": "fn walk_for_hints(node: &tree_sitter::Node, source: &[u8], hints: &mut JsFrameworkHints) {"
+        }
+      ]
+    },
     "src/detect/layer.rs": {
       "type": "source",
       "layer": "unknown",
@@ -3278,14 +4144,17 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 5,
-      "lines": 12,
-      "hash": "4009a9a9824b990e",
+      "lines": 14,
+      "hash": "9b1cccb452eeea10",
       "exports": [
         "JavaFrameworkHints",
+        "JsFrameworkHints",
+        "RouteConvention",
         "case_sensitivity",
         "detect_file_type",
         "detect_fsd_project",
         "detect_java_framework",
+        "detect_js_framework",
         "detect_rust_crate_name",
         "detect_workspace",
         "filetype",
@@ -3294,6 +4163,7 @@
         "infer_arch_layer",
         "is_case_insensitive",
         "java_framework",
+        "js_framework",
         "layer",
         "workspace"
       ],
@@ -3396,8 +4266,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 3,
-      "lines": 583,
-      "hash": "ff5ead3ff8901a2f",
+      "lines": 595,
+      "hash": "2f5b1af372f3c487",
       "exports": [
         "DiagnosticCollector",
         "DiagnosticCounts",
@@ -3416,8 +4286,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 300,
-            "end": 302
+            "start": 308,
+            "end": 310
           },
           "signature": "pub struct DiagnosticCollector {"
         },
@@ -3426,8 +4296,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 279,
-            "end": 291
+            "start": 287,
+            "end": 299
           },
           "signature": "pub struct DiagnosticCounts {"
         },
@@ -3436,8 +4306,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 294,
-            "end": 297
+            "start": 302,
+            "end": 305
           },
           "signature": "pub struct DiagnosticReport {"
         },
@@ -3456,8 +4326,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 270,
-            "end": 275
+            "start": 278,
+            "end": 283
           },
           "signature": "pub struct Warning {"
         },
@@ -3467,7 +4337,7 @@
           "visibility": "public",
           "span": {
             "start": 44,
-            "end": 87
+            "end": 91
           },
           "signature": "pub enum WarningCode {"
         },
@@ -3476,8 +4346,8 @@
           "kind": "enum",
           "visibility": "public",
           "span": {
-            "start": 146,
-            "end": 149
+            "start": 154,
+            "end": 157
           },
           "signature": "pub enum WarningFormat {"
         },
@@ -3486,8 +4356,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 90,
-            "end": 135
+            "start": 94,
+            "end": 143
           },
           "signature": "pub fn code(&self) -> &'static str {",
           "parent": "WarningCode"
@@ -3497,8 +4367,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 409,
-            "end": 411
+            "start": 421,
+            "end": 423
           },
           "signature": "fn default() -> Self {",
           "parent": "Default"
@@ -3508,8 +4378,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 400,
-            "end": 405
+            "start": 412,
+            "end": 417
           },
           "signature": "pub fn drain(self) -> DiagnosticReport {",
           "parent": "DiagnosticCollector"
@@ -3519,8 +4389,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 139,
-            "end": 141
+            "start": 147,
+            "end": 149
           },
           "signature": "fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {",
           "parent": "WarningCode"
@@ -3530,8 +4400,8 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 193,
-            "end": 247
+            "start": 201,
+            "end": 255
           },
           "signature": "pub fn format_summary("
         },
@@ -3540,8 +4410,8 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 154,
-            "end": 190
+            "start": 162,
+            "end": 198
           },
           "signature": "pub fn format_warnings(report: &DiagnosticReport, format: WarningFormat, verbose: bool) -> String {"
         },
@@ -3550,8 +4420,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 394,
-            "end": 397
+            "start": 406,
+            "end": 409
           },
           "signature": "pub fn increment_unresolved(&self) {",
           "parent": "DiagnosticCollector"
@@ -3561,8 +4431,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 250,
-            "end": 266
+            "start": 258,
+            "end": 274
           },
           "signature": "fn json_escape(s: &str) -> String {"
         },
@@ -3571,8 +4441,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 305,
-            "end": 309
+            "start": 313,
+            "end": 317
           },
           "signature": "pub fn new() -> Self {",
           "parent": "DiagnosticCollector"
@@ -3582,8 +4452,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 415,
-            "end": 583
+            "start": 427,
+            "end": 595
           }
         },
         {
@@ -3591,8 +4461,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 312,
-            "end": 390
+            "start": 320,
+            "end": 402
           },
           "signature": "pub fn warn(&self, warning: Warning) {",
           "parent": "DiagnosticCollector"
@@ -3626,12 +4496,13 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 11,
-      "lines": 16,
-      "hash": "fdaad35044d42499",
+      "lines": 17,
+      "hash": "d42bc52c36ffadab",
       "exports": [
         "algo",
         "analysis",
         "cluster",
+        "conventions",
         "detect",
         "diagnostic",
         "hash",
@@ -3646,207 +4517,6 @@
         "views"
       ],
       "cluster": "root"
-    },
-    "src/main.rs": {
-      "type": "source",
-      "layer": "unknown",
-      "arch_depth": 0,
-      "lines": 1879,
-      "hash": "6fe956f8394b25a0",
-      "exports": [],
-      "cluster": "root",
-      "symbols": [
-        {
-          "name": "Cli",
-          "kind": "struct",
-          "visibility": "private",
-          "span": {
-            "start": 27,
-            "end": 30
-          },
-          "signature": "struct Cli {"
-        },
-        {
-          "name": "Commands",
-          "kind": "enum",
-          "visibility": "private",
-          "span": {
-            "start": 33,
-            "end": 137
-          },
-          "signature": "enum Commands {"
-        },
-        {
-          "name": "QueryCommands",
-          "kind": "enum",
-          "visibility": "private",
-          "span": {
-            "start": 140,
-            "end": 390
-          },
-          "signature": "enum QueryCommands {"
-        },
-        {
-          "name": "ViewsCommands",
-          "kind": "enum",
-          "visibility": "private",
-          "span": {
-            "start": 393,
-            "end": 403
-          },
-          "signature": "enum ViewsCommands {"
-        },
-        {
-          "name": "check_server_lock",
-          "kind": "function",
-          "visibility": "private",
-          "span": {
-            "start": 510,
-            "end": 518
-          },
-          "signature": "fn check_server_lock(output_dir: &std::path::Path) -> Result<(), FatalError> {"
-        },
-        {
-          "name": "json_pretty",
-          "kind": "function",
-          "visibility": "private",
-          "span": {
-            "start": 831,
-            "end": 836
-          },
-          "signature": "fn json_pretty<T: serde::Serialize>(value: &T) -> Result<String, FatalError> {"
-        },
-        {
-          "name": "load_boundaries",
-          "kind": "function",
-          "visibility": "private",
-          "span": {
-            "start": 816,
-            "end": 826
-          },
-          "signature": "fn load_boundaries("
-        },
-        {
-          "name": "load_clusters",
-          "kind": "function",
-          "visibility": "private",
-          "span": {
-            "start": 801,
-            "end": 814
-          },
-          "signature": "fn load_clusters("
-        },
-        {
-          "name": "load_graph",
-          "kind": "function",
-          "visibility": "private",
-          "span": {
-            "start": 781,
-            "end": 791
-          },
-          "signature": "fn load_graph(reader: &dyn GraphReader, dir: &std::path::Path) -> Result<ProjectGraph, FatalError> {"
-        },
-        {
-          "name": "load_stats",
-          "kind": "function",
-          "visibility": "private",
-          "span": {
-            "start": 793,
-            "end": 799
-          },
-          "signature": "fn load_stats(reader: &dyn GraphReader, dir: &std::path::Path) -> Result<StatsOutput, FatalError> {"
-        },
-        {
-          "name": "main",
-          "kind": "function",
-          "visibility": "private",
-          "span": {
-            "start": 405,
-            "end": 506
-          },
-          "signature": "fn main() {"
-        },
-        {
-          "name": "print_stats_md",
-          "kind": "function",
-          "visibility": "private",
-          "span": {
-            "start": 1804,
-            "end": 1835
-          },
-          "signature": "fn print_stats_md(stats: &StatsOutput) {"
-        },
-        {
-          "name": "run_build",
-          "kind": "function",
-          "visibility": "private",
-          "span": {
-            "start": 593,
-            "end": 675
-          },
-          "signature": "fn run_build("
-        },
-        {
-          "name": "run_info",
-          "kind": "function",
-          "visibility": "private",
-          "span": {
-            "start": 764,
-            "end": 777
-          },
-          "signature": "fn run_info() {"
-        },
-        {
-          "name": "run_query",
-          "kind": "function",
-          "visibility": "private",
-          "span": {
-            "start": 838,
-            "end": 1784
-          },
-          "signature": "fn run_query(cmd: QueryCommands) -> Result<(), FatalError> {"
-        },
-        {
-          "name": "run_restart",
-          "kind": "function",
-          "visibility": "private",
-          "span": {
-            "start": 521,
-            "end": 590
-          },
-          "signature": "fn run_restart(project: PathBuf, output: Option<PathBuf>) -> Result<(), FatalError> {"
-        },
-        {
-          "name": "run_update",
-          "kind": "function",
-          "visibility": "private",
-          "span": {
-            "start": 678,
-            "end": 762
-          },
-          "signature": "fn run_update("
-        },
-        {
-          "name": "run_views",
-          "kind": "function",
-          "visibility": "private",
-          "span": {
-            "start": 1786,
-            "end": 1802
-          },
-          "signature": "fn run_views(cmd: ViewsCommands) -> Result<(), FatalError> {"
-        },
-        {
-          "name": "serialize_subgraph_result",
-          "kind": "function",
-          "visibility": "private",
-          "span": {
-            "start": 1838,
-            "end": 1879
-          },
-          "signature": "fn serialize_subgraph_result(result: &ariadne_graph::model::SubgraphResult) -> serde_json::Value {"
-        }
-      ]
     },
     "src/mcp/annotations.rs": {
       "type": "source",
@@ -4044,8 +4714,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 4,
-      "lines": 198,
-      "hash": "db3294337a82e649",
+      "lines": 201,
+      "hash": "8ebd19ada778fb42",
       "exports": [
         "LockGuard",
         "LockStatus",
@@ -4122,8 +4792,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 148,
-            "end": 159
+            "start": 151,
+            "end": 162
           },
           "signature": "fn current_timestamp() -> String {"
         },
@@ -4165,8 +4835,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 128,
-            "end": 140
+            "start": 131,
+            "end": 143
           },
           "signature": "fn is_process_alive(pid: u32) -> bool {"
         },
@@ -4175,8 +4845,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 143,
-            "end": 146
+            "start": 146,
+            "end": 149
           },
           "signature": "fn is_process_alive(_pid: u32) -> bool {"
         },
@@ -4196,8 +4866,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 194,
-            "end": 198
+            "start": 197,
+            "end": 201
           }
         },
         {
@@ -4215,8 +4885,8 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 164,
-            "end": 190
+            "start": 167,
+            "end": 193
           },
           "signature": "pub fn terminate_process(pid: u32) -> Result<bool, std::io::Error> {"
         },
@@ -4226,7 +4896,7 @@
           "visibility": "private",
           "span": {
             "start": 112,
-            "end": 125
+            "end": 128
           },
           "signature": "fn write_lock(lock_path: &Path) -> Result<(), FatalError> {"
         }
@@ -7440,6 +8110,210 @@
         }
       ]
     },
+    "src/parser/config/bundler.rs": {
+      "type": "source",
+      "layer": "config",
+      "arch_depth": 4,
+      "lines": 931,
+      "hash": "1538a6f2d83dbb5b",
+      "exports": [
+        "BundlerConfig",
+        "parse_vite_config",
+        "parse_webpack_config"
+      ],
+      "cluster": "parser",
+      "symbols": [
+        {
+          "name": "BundlerConfig",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 9,
+            "end": 13
+          },
+          "signature": "pub struct BundlerConfig {"
+        },
+        {
+          "name": "extract_aliases",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 265,
+            "end": 349
+          },
+          "signature": "fn extract_aliases("
+        },
+        {
+          "name": "extract_string_array",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 499,
+            "end": 512
+          },
+          "signature": "fn extract_string_array(node: &tree_sitter::Node, source: &[u8]) -> Vec<String> {"
+        },
+        {
+          "name": "extract_string_literal",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 477,
+            "end": 496
+          },
+          "signature": "fn extract_string_literal(node: &tree_sitter::Node, source: &[u8]) -> Option<String> {"
+        },
+        {
+          "name": "extract_template_path_suffix",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 440,
+            "end": 474
+          },
+          "signature": "fn extract_template_path_suffix(node: &tree_sitter::Node, source: &[u8]) -> Option<String> {"
+        },
+        {
+          "name": "find_define_config_arg",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 105,
+            "end": 134
+          },
+          "signature": "fn find_define_config_arg<'a>("
+        },
+        {
+          "name": "find_export_default_object",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 167,
+            "end": 199
+          },
+          "signature": "fn find_export_default_object<'a>("
+        },
+        {
+          "name": "find_module_exports_object",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 202,
+            "end": 225
+          },
+          "signature": "fn find_module_exports_object<'a>("
+        },
+        {
+          "name": "find_node_recursive",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 532,
+            "end": 563
+          },
+          "signature": "fn find_node_recursive<'a, F>("
+        },
+        {
+          "name": "find_property_object",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 228,
+            "end": 239
+          },
+          "signature": "fn find_property_object<'a>("
+        },
+        {
+          "name": "find_property_value",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 242,
+            "end": 261
+          },
+          "signature": "fn find_property_value<'a>("
+        },
+        {
+          "name": "find_returned_object",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 137,
+            "end": 164
+          },
+          "signature": "fn find_returned_object<'a>("
+        },
+        {
+          "name": "normalize_alias_path",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 515,
+            "end": 523
+          },
+          "signature": "fn normalize_alias_path(path: &str, config_dir: &Path) -> String {"
+        },
+        {
+          "name": "parse_ts",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 94,
+            "end": 102
+          },
+          "signature": "fn parse_ts(source: &[u8]) -> Option<tree_sitter::Tree> {"
+        },
+        {
+          "name": "parse_vite_config",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 16,
+            "end": 43
+          },
+          "signature": "pub fn parse_vite_config("
+        },
+        {
+          "name": "parse_webpack_config",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 46,
+            "end": 88
+          },
+          "signature": "pub fn parse_webpack_config("
+        },
+        {
+          "name": "resolve_alias_value",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 352,
+            "end": 434
+          },
+          "signature": "fn resolve_alias_value("
+        },
+        {
+          "name": "strip_quotes",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 525,
+            "end": 527
+          },
+          "signature": "fn strip_quotes(s: &str) -> &str {"
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 566,
+            "end": 931
+          }
+        }
+      ]
+    },
     "src/parser/config/csproj.rs": {
       "type": "source",
       "layer": "config",
@@ -7583,7 +8457,7 @@
       "layer": "config",
       "arch_depth": 0,
       "lines": 82,
-      "hash": "2eaff37563763af8",
+      "hash": "190626055f56ccfa",
       "exports": [
         "GoModConfig",
         "parse_go_mod"
@@ -7626,7 +8500,7 @@
       "layer": "config",
       "arch_depth": 4,
       "lines": 382,
-      "hash": "474181c02921b343",
+      "hash": "47ca59070be92db5",
       "exports": [
         "GradleConfig",
         "GradleDep",
@@ -7839,9 +8713,10 @@
       "type": "source",
       "layer": "config",
       "arch_depth": 5,
-      "lines": 539,
-      "hash": "b4c2e7dedf409c11",
+      "lines": 797,
+      "hash": "ae076324eed8980d",
       "exports": [
+        "BundlerConfig",
         "CsprojConfig",
         "DotnetSolutionInfo",
         "GoModConfig",
@@ -7852,11 +8727,17 @@
         "MavenConfig",
         "MavenDep",
         "MavenParentRef",
+        "NextRouteInfo",
+        "NextRouteKind",
+        "NextRouterType",
         "ProjectConfig",
         "PyProjectConfig",
         "TsConfig",
+        "TurboConfig",
+        "bundler",
         "csproj",
         "discover_config",
+        "find_nearest_bundler",
         "find_nearest_csproj",
         "find_nearest_gradle",
         "find_nearest_maven",
@@ -7865,8 +8746,10 @@
         "gradle",
         "jsonc",
         "maven",
+        "nextjs",
         "pyproject",
-        "tsconfig"
+        "tsconfig",
+        "turbo"
       ],
       "cluster": "parser",
       "symbols": [
@@ -7875,18 +8758,28 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 23,
-            "end": 38
+            "start": 30,
+            "end": 51
           },
           "signature": "pub struct ProjectConfig {"
+        },
+        {
+          "name": "discover_bundler_configs",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 406,
+            "end": 445
+          },
+          "signature": "fn discover_bundler_configs("
         },
         {
           "name": "discover_config",
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 45,
-            "end": 67
+            "start": 110,
+            "end": 138
           },
           "signature": "pub fn discover_config("
         },
@@ -7895,8 +8788,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 123,
-            "end": 154
+            "start": 194,
+            "end": 225
           },
           "signature": "fn discover_csproj_configs("
         },
@@ -7905,8 +8798,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 157,
-            "end": 200
+            "start": 228,
+            "end": 271
           },
           "signature": "fn discover_dotnet_solution("
         },
@@ -7915,8 +8808,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 105,
-            "end": 111
+            "start": 176,
+            "end": 182
           },
           "signature": "fn discover_go_config(project_root: &Path) -> Option<GoModConfig> {"
         },
@@ -7925,8 +8818,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 203,
-            "end": 279
+            "start": 274,
+            "end": 350
           },
           "signature": "fn discover_gradle_configs("
         },
@@ -7935,8 +8828,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 282,
-            "end": 332
+            "start": 353,
+            "end": 403
           },
           "signature": "fn discover_maven_configs("
         },
@@ -7945,8 +8838,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 114,
-            "end": 120
+            "start": 185,
+            "end": 191
           },
           "signature": "fn discover_py_config(project_root: &Path) -> Option<PyProjectConfig> {"
         },
@@ -7955,18 +8848,49 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 70,
-            "end": 102
+            "start": 141,
+            "end": 173
           },
           "signature": "fn discover_tsconfigs("
+        },
+        {
+          "name": "discover_turbo_config",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 448,
+            "end": 465
+          },
+          "signature": "fn discover_turbo_config("
+        },
+        {
+          "name": "discovered_config_files",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 77,
+            "end": 102
+          },
+          "signature": "pub fn discovered_config_files(&self) -> Vec<std::path::PathBuf> {",
+          "parent": "ProjectConfig"
+        },
+        {
+          "name": "find_nearest_bundler",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 507,
+            "end": 519
+          },
+          "signature": "pub fn find_nearest_bundler<'a>("
         },
         {
           "name": "find_nearest_csproj",
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 338,
-            "end": 350
+            "start": 471,
+            "end": 483
           },
           "signature": "pub fn find_nearest_csproj<'a>("
         },
@@ -7975,8 +8899,8 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 374,
-            "end": 386
+            "start": 525,
+            "end": 537
           },
           "signature": "pub fn find_nearest_gradle<'a>("
         },
@@ -7985,8 +8909,8 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 392,
-            "end": 404
+            "start": 543,
+            "end": 555
           },
           "signature": "pub fn find_nearest_maven<'a>("
         },
@@ -7995,18 +8919,185 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 356,
-            "end": 368
+            "start": 489,
+            "end": 501
           },
           "signature": "pub fn find_nearest_tsconfig<'a>("
+        },
+        {
+          "name": "js_path_aliases",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 61,
+            "end": 69
+          },
+          "signature": "pub fn js_path_aliases(&self) -> BTreeMap<String, Vec<String>> {",
+          "parent": "ProjectConfig"
         },
         {
           "name": "tests",
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 407,
-            "end": 539
+            "start": 558,
+            "end": 797
+          }
+        }
+      ]
+    },
+    "src/parser/config/nextjs.rs": {
+      "type": "source",
+      "layer": "config",
+      "arch_depth": 4,
+      "lines": 463,
+      "hash": "13a8c79d13c680a7",
+      "exports": [
+        "NextRoute",
+        "NextRouteInfo",
+        "NextRouteKind",
+        "NextRouterType",
+        "discover_next_routes"
+      ],
+      "cluster": "parser",
+      "symbols": [
+        {
+          "name": "NON_ROUTE_SECONDARY_EXTS",
+          "kind": "const",
+          "visibility": "private",
+          "span": {
+            "start": 53,
+            "end": 58
+          },
+          "signature": "const NON_ROUTE_SECONDARY_EXTS: &[&str] = &["
+        },
+        {
+          "name": "NextRoute",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 21,
+            "end": 25
+          },
+          "signature": "pub struct NextRoute {"
+        },
+        {
+          "name": "NextRouteInfo",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 14,
+            "end": 17
+          },
+          "signature": "pub struct NextRouteInfo {"
+        },
+        {
+          "name": "NextRouteKind",
+          "kind": "enum",
+          "visibility": "public",
+          "span": {
+            "start": 37,
+            "end": 46
+          },
+          "signature": "pub enum NextRouteKind {"
+        },
+        {
+          "name": "NextRouterType",
+          "kind": "enum",
+          "visibility": "public",
+          "span": {
+            "start": 29,
+            "end": 33
+          },
+          "signature": "pub enum NextRouterType {"
+        },
+        {
+          "name": "ROUTE_EXTENSIONS",
+          "kind": "const",
+          "visibility": "private",
+          "span": {
+            "start": 49,
+            "end": 49
+          },
+          "signature": "const ROUTE_EXTENSIONS: &[&str] = &[\"ts\", \"tsx\", \"js\", \"jsx\"];"
+        },
+        {
+          "name": "classify_app_route",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 175,
+            "end": 213
+          },
+          "signature": "fn classify_app_route(rest: &str) -> Option<(NextRouteKind, String)> {"
+        },
+        {
+          "name": "classify_pages_route",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 216,
+            "end": 251
+          },
+          "signature": "fn classify_pages_route(rest: &str) -> Option<(NextRouteKind, String)> {"
+        },
+        {
+          "name": "dir_to_route_path",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 255,
+            "end": 261
+          },
+          "signature": "fn dir_to_route_path(dir: &str) -> String {"
+        },
+        {
+          "name": "discover_next_routes",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 61,
+            "end": 133
+          },
+          "signature": "pub fn discover_next_routes("
+        },
+        {
+          "name": "has_non_route_secondary_ext",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 160,
+            "end": 172
+          },
+          "signature": "fn has_non_route_secondary_ext(file_name: &str) -> bool {"
+        },
+        {
+          "name": "strip_app_prefix",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 136,
+            "end": 145
+          },
+          "signature": "fn strip_app_prefix(path: &str) -> Option<&str> {"
+        },
+        {
+          "name": "strip_pages_prefix",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 148,
+            "end": 156
+          },
+          "signature": "fn strip_pages_prefix(path: &str) -> Option<&str> {"
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 264,
+            "end": 463
           }
         }
       ]
@@ -8016,7 +9107,7 @@
       "layer": "config",
       "arch_depth": 0,
       "lines": 143,
-      "hash": "b3338996ff589fee",
+      "hash": "5adc3258a5a2a870",
       "exports": [
         "PyProjectConfig",
         "parse_pyproject"
@@ -8079,7 +9170,7 @@
       "layer": "config",
       "arch_depth": 5,
       "lines": 589,
-      "hash": "cb40c84522e5dceb",
+      "hash": "366a031d2813ed39",
       "exports": [
         "TsConfig",
         "parse_tsconfig",
@@ -8199,12 +9290,66 @@
         }
       ]
     },
+    "src/parser/config/turbo.rs": {
+      "type": "source",
+      "layer": "config",
+      "arch_depth": 4,
+      "lines": 199,
+      "hash": "87b92c9fc793f24d",
+      "exports": [
+        "TurboConfig",
+        "TurboPipelineEntry",
+        "parse_turbo_config"
+      ],
+      "cluster": "parser",
+      "symbols": [
+        {
+          "name": "TurboConfig",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 14,
+            "end": 17
+          },
+          "signature": "pub struct TurboConfig {"
+        },
+        {
+          "name": "TurboPipelineEntry",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 21,
+            "end": 24
+          },
+          "signature": "pub struct TurboPipelineEntry {"
+        },
+        {
+          "name": "parse_turbo_config",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 27,
+            "end": 106
+          },
+          "signature": "pub fn parse_turbo_config("
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 109,
+            "end": 199
+          }
+        }
+      ]
+    },
     "src/parser/csharp.rs": {
       "type": "source",
       "layer": "unknown",
       "arch_depth": 5,
-      "lines": 997,
-      "hash": "c62de0e96200ab38",
+      "lines": 995,
+      "hash": "5f229840ed367789",
       "exports": [
         "CSharpParser",
         "parser",
@@ -8229,8 +9374,8 @@
           "kind": "struct",
           "visibility": "private",
           "span": {
-            "start": 476,
-            "end": 483
+            "start": 466,
+            "end": 473
           },
           "signature": "struct CSharpResolver {"
         },
@@ -8239,8 +9384,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 203,
-            "end": 239
+            "start": 193,
+            "end": 229
           },
           "signature": "fn collect_public_declarations("
         },
@@ -8249,8 +9394,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 117,
-            "end": 144
+            "start": 107,
+            "end": 134
           },
           "signature": "fn collect_using_directives(node: &tree_sitter::Node, source: &[u8], imports: &mut Vec<RawImport>) {"
         },
@@ -8259,8 +9404,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 452,
-            "end": 457
+            "start": 442,
+            "end": 447
           },
           "signature": "fn csharp_node_span(node: &tree_sitter::Node) -> LineSpan {"
         },
@@ -8269,8 +9414,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 460,
-            "end": 473
+            "start": 450,
+            "end": 463
           },
           "signature": "fn csharp_truncate_signature("
         },
@@ -8279,8 +9424,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 416,
-            "end": 434
+            "start": 406,
+            "end": 424
           },
           "signature": "fn csharp_visibility(node: &tree_sitter::Node, source: &[u8]) -> Visibility {"
         },
@@ -8300,8 +9445,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 381,
-            "end": 413
+            "start": 371,
+            "end": 403
           },
           "signature": "fn extract_csharp_field_names("
         },
@@ -8310,8 +9455,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 283,
-            "end": 378
+            "start": 273,
+            "end": 368
           },
           "signature": "fn extract_csharp_symbols_from_node("
         },
@@ -8320,8 +9465,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 46,
-            "end": 53
+            "start": 48,
+            "end": 55
           },
           "signature": "fn extract_exports(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Vec<RawExport> {",
           "parent": "LanguageParser"
@@ -8331,8 +9476,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 28,
-            "end": 44
+            "start": 39,
+            "end": 46
           },
           "signature": "fn extract_imports(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Vec<RawImport> {",
           "parent": "LanguageParser"
@@ -8342,8 +9487,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 74,
-            "end": 114
+            "start": 64,
+            "end": 104
           },
           "signature": "fn extract_razor_imports(source: &str) -> Vec<RawImport> {"
         },
@@ -8352,8 +9497,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 274,
-            "end": 279
+            "start": 264,
+            "end": 269
           },
           "signature": "fn extract_symbols(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Vec<SymbolDef> {",
           "parent": "SymbolExtractor"
@@ -8363,8 +9508,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 152,
-            "end": 200
+            "start": 142,
+            "end": 190
           },
           "signature": "fn extract_using_directive(node: &tree_sitter::Node, source: &[u8]) -> Option<RawImport> {"
         },
@@ -8373,8 +9518,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 257,
-            "end": 271
+            "start": 247,
+            "end": 261
           },
           "signature": "fn find_declaration_name(node: &tree_sitter::Node, source: &[u8]) -> Option<String> {"
         },
@@ -8383,8 +9528,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 437,
-            "end": 449
+            "start": 427,
+            "end": 439
           },
           "signature": "fn has_modifier(node: &tree_sitter::Node, source: &[u8], modifier: &str) -> bool {"
         },
@@ -8393,8 +9538,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 506,
-            "end": 509
+            "start": 496,
+            "end": 499
           },
           "signature": "fn is_framework_namespace(&self, namespace: &str) -> bool {",
           "parent": "CSharpResolver"
@@ -8404,8 +9549,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 512,
-            "end": 515
+            "start": 502,
+            "end": 505
           },
           "signature": "fn is_nuget_package(&self, namespace: &str) -> bool {",
           "parent": "CSharpResolver"
@@ -8415,20 +9560,10 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 242,
-            "end": 254
+            "start": 232,
+            "end": 244
           },
           "signature": "fn is_public(node: &tree_sitter::Node, source: &[u8]) -> bool {"
-        },
-        {
-          "name": "is_razor_content",
-          "kind": "function",
-          "visibility": "private",
-          "span": {
-            "start": 60,
-            "end": 66
-          },
-          "signature": "fn is_razor_content(source: &str) -> bool {"
         },
         {
           "name": "language",
@@ -8446,8 +9581,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 486,
-            "end": 492
+            "start": 476,
+            "end": 482
           },
           "signature": "fn new() -> Self {",
           "parent": "CSharpResolver"
@@ -8457,18 +9592,29 @@
           "kind": "function",
           "visibility": "internal",
           "span": {
-            "start": 664,
-            "end": 666
+            "start": 654,
+            "end": 656
           },
           "signature": "pub(crate) fn parser() -> Box<dyn LanguageParser> {"
+        },
+        {
+          "name": "raw_parse",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 28,
+            "end": 37
+          },
+          "signature": "fn raw_parse(&self, source: &[u8], extension: &str, _path: &CanonicalPath)",
+          "parent": "LanguageParser"
         },
         {
           "name": "resolve",
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 635,
-            "end": 661
+            "start": 625,
+            "end": 651
           },
           "signature": "fn resolve(",
           "parent": "ImportResolver"
@@ -8478,8 +9624,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 519,
-            "end": 545
+            "start": 509,
+            "end": 535
           },
           "signature": "fn resolve_naive(",
           "parent": "CSharpResolver"
@@ -8489,8 +9635,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 548,
-            "end": 631
+            "start": 538,
+            "end": 621
           },
           "signature": "fn resolve_with_config(",
           "parent": "CSharpResolver"
@@ -8500,8 +9646,8 @@
           "kind": "function",
           "visibility": "internal",
           "span": {
-            "start": 668,
-            "end": 670
+            "start": 658,
+            "end": 660
           },
           "signature": "pub(crate) fn resolver() -> Box<dyn ImportResolver> {"
         },
@@ -8510,8 +9656,8 @@
           "kind": "function",
           "visibility": "internal",
           "span": {
-            "start": 672,
-            "end": 674
+            "start": 662,
+            "end": 664
           },
           "signature": "pub(crate) fn resolver_with_config(configs: BTreeMap<PathBuf, CsprojConfig>) -> Box<dyn ImportResolver> {"
         },
@@ -8520,8 +9666,8 @@
           "kind": "function",
           "visibility": "internal",
           "span": {
-            "start": 676,
-            "end": 678
+            "start": 666,
+            "end": 668
           },
           "signature": "pub(crate) fn symbol_extractor() -> std::sync::Arc<dyn SymbolExtractor> {"
         },
@@ -8530,8 +9676,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 681,
-            "end": 997
+            "start": 671,
+            "end": 995
           }
         },
         {
@@ -8550,8 +9696,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 494,
-            "end": 503
+            "start": 484,
+            "end": 493
           },
           "signature": "fn with_csproj_configs(mut self, configs: BTreeMap<PathBuf, CsprojConfig>) -> Self {",
           "parent": "CSharpResolver"
@@ -8923,8 +10069,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 5,
-      "lines": 912,
-      "hash": "2cbab2ed8d9573d7",
+      "lines": 913,
+      "hash": "85f9368d6f3bd240",
       "exports": [
         "JavaBuildConfig",
         "JavaParser",
@@ -8940,8 +10086,8 @@
           "kind": "enum",
           "visibility": "public",
           "span": {
-            "start": 437,
-            "end": 450
+            "start": 438,
+            "end": 451
           },
           "signature": "pub enum JavaBuildConfig {"
         },
@@ -8950,8 +10096,8 @@
           "kind": "struct",
           "visibility": "private",
           "span": {
-            "start": 454,
-            "end": 456
+            "start": 455,
+            "end": 457
           },
           "signature": "struct JavaConfigResolver {"
         },
@@ -8990,8 +10136,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 460,
-            "end": 504
+            "start": 461,
+            "end": 505
           },
           "signature": "fn collect_source_dirs(&self) -> Vec<(PathBuf, String)> {",
           "parent": "JavaConfigResolver"
@@ -9095,8 +10241,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 527,
-            "end": 538
+            "start": 528,
+            "end": 539
           },
           "signature": "fn is_external_import(&self, import_path: &str) -> bool {",
           "parent": "JavaConfigResolver"
@@ -9157,8 +10303,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 507,
-            "end": 524
+            "start": 508,
+            "end": 525
           },
           "signature": "fn project_group_prefix(&self) -> Option<String> {",
           "parent": "JavaConfigResolver"
@@ -9179,8 +10325,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 542,
-            "end": 648
+            "start": 543,
+            "end": 649
           },
           "signature": "fn resolve(",
           "parent": "ImportResolver"
@@ -9200,8 +10346,8 @@
           "kind": "function",
           "visibility": "internal",
           "span": {
-            "start": 652,
-            "end": 654
+            "start": 653,
+            "end": 655
           },
           "signature": "pub(crate) fn resolver_with_config(build_config: JavaBuildConfig) -> Box<dyn ImportResolver> {"
         },
@@ -9210,8 +10356,8 @@
           "kind": "function",
           "visibility": "internal",
           "span": {
-            "start": 656,
-            "end": 658
+            "start": 657,
+            "end": 659
           },
           "signature": "pub(crate) fn symbol_extractor() -> std::sync::Arc<dyn SymbolExtractor> {"
         },
@@ -9220,8 +10366,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 661,
-            "end": 912
+            "start": 662,
+            "end": 913
           }
         },
         {
@@ -9560,7 +10706,7 @@
       "layer": "unknown",
       "arch_depth": 5,
       "lines": 53,
-      "hash": "baf34a091b180bf6",
+      "hash": "259a6fc7b39e3866",
       "exports": [
         "ImportKind",
         "ImportResolver",
@@ -9983,31 +11129,20 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 5,
-      "lines": 443,
-      "hash": "7c543a150c2f28e2",
+      "lines": 454,
+      "hash": "189d65c5f859880f",
       "exports": [
-        "ParseOutcome",
         "ParserRegistry"
       ],
       "cluster": "parser",
       "symbols": [
         {
-          "name": "ParseOutcome",
-          "kind": "enum",
-          "visibility": "public",
-          "span": {
-            "start": 22,
-            "end": 29
-          },
-          "signature": "pub enum ParseOutcome {"
-        },
-        {
           "name": "ParserRegistry",
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 32,
-            "end": 40
+            "start": 20,
+            "end": 28
           },
           "signature": "pub struct ParserRegistry {"
         },
@@ -10016,8 +11151,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 99,
-            "end": 109
+            "start": 87,
+            "end": 97
           },
           "signature": "pub fn boundary_extractors_for(&self, extension: &str) -> Vec<&dyn BoundaryExtractor> {",
           "parent": "ParserRegistry"
@@ -10027,8 +11162,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 270,
-            "end": 308
+            "start": 266,
+            "end": 304
           },
           "signature": "fn build_java_config(config: &ProjectConfig) -> Option<java::JavaBuildConfig> {",
           "parent": "ParserRegistry"
@@ -10038,8 +11173,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 410,
-            "end": 412
+            "start": 421,
+            "end": 423
           },
           "signature": "fn default() -> Self {",
           "parent": "Default"
@@ -10049,8 +11184,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 404,
-            "end": 406
+            "start": 415,
+            "end": 417
           },
           "signature": "pub fn language_names(&self) -> Vec<&str> {",
           "parent": "ParserRegistry"
@@ -10060,8 +11195,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 43,
-            "end": 53
+            "start": 31,
+            "end": 41
           },
           "signature": "pub fn new() -> Self {",
           "parent": "ParserRegistry"
@@ -10071,8 +11206,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 314,
-            "end": 383
+            "start": 310,
+            "end": 384
           },
           "signature": "pub fn parse_source(",
           "parent": "ParserRegistry"
@@ -10082,8 +11217,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 112,
-            "end": 116
+            "start": 100,
+            "end": 104
           },
           "signature": "pub fn parser_for(&self, extension: &str) -> Option<&dyn LanguageParser> {",
           "parent": "ParserRegistry"
@@ -10093,8 +11228,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 56,
-            "end": 63
+            "start": 44,
+            "end": 51
           },
           "signature": "pub fn register(&mut self, parser: Box<dyn LanguageParser>, resolver: Box<dyn ImportResolver>) {",
           "parent": "ParserRegistry"
@@ -10104,8 +11239,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 87,
-            "end": 96
+            "start": 75,
+            "end": 84
           },
           "signature": "pub fn register_boundary_extractor(&mut self, extractor: Arc<dyn BoundaryExtractor>) {",
           "parent": "ParserRegistry"
@@ -10115,8 +11250,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 66,
-            "end": 76
+            "start": 54,
+            "end": 64
           },
           "signature": "pub fn register_symbol_extractor(",
           "parent": "ParserRegistry"
@@ -10126,10 +11261,10 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 387,
-            "end": 394
+            "start": 388,
+            "end": 405
           },
-          "signature": "pub fn reparse_imports(&self, extension: &str, source: &[u8]) -> Option<Vec<RawImport>> {",
+          "signature": "pub fn reparse_imports(&self, extension: &str, source: &[u8], path: &CanonicalPath) -> Option<Vec<RawImport>> {",
           "parent": "ParserRegistry"
         },
         {
@@ -10137,8 +11272,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 119,
-            "end": 123
+            "start": 107,
+            "end": 111
           },
           "signature": "pub fn resolver_for(&self, extension: &str) -> Option<&dyn ImportResolver> {",
           "parent": "ParserRegistry"
@@ -10148,8 +11283,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 397,
-            "end": 401
+            "start": 408,
+            "end": 412
           },
           "signature": "pub fn supported_extensions(&self) -> Vec<&str> {",
           "parent": "ParserRegistry"
@@ -10159,8 +11294,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 79,
-            "end": 83
+            "start": 67,
+            "end": 71
           },
           "signature": "pub fn symbol_extractor_for(&self, extension: &str) -> Option<&dyn SymbolExtractor> {",
           "parent": "ParserRegistry"
@@ -10170,8 +11305,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 416,
-            "end": 443
+            "start": 427,
+            "end": 454
           }
         },
         {
@@ -10179,8 +11314,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 186,
-            "end": 266
+            "start": 174,
+            "end": 262
           },
           "signature": "pub fn with_project_config(config: &ProjectConfig) -> Self {",
           "parent": "ParserRegistry"
@@ -10190,8 +11325,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 126,
-            "end": 128
+            "start": 114,
+            "end": 116
           },
           "signature": "pub fn with_tier1() -> Self {",
           "parent": "ParserRegistry"
@@ -10201,8 +11336,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 132,
-            "end": 183
+            "start": 120,
+            "end": 171
           },
           "signature": "pub fn with_tier1_config(rust_crate_name: Option<String>) -> Self {",
           "parent": "ParserRegistry"
@@ -10529,12 +11664,13 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 3,
-      "lines": 57,
-      "hash": "58a87eaeab101192",
+      "lines": 74,
+      "hash": "e6d2cc834f59f019",
       "exports": [
         "ImportKind",
         "ImportResolver",
         "LanguageParser",
+        "ParseOutcome",
         "RawExport",
         "RawImport"
       ],
@@ -10545,8 +11681,8 @@
           "kind": "enum",
           "visibility": "public",
           "span": {
-            "start": 6,
-            "end": 15
+            "start": 8,
+            "end": 17
           },
           "signature": "pub enum ImportKind {"
         },
@@ -10555,8 +11691,8 @@
           "kind": "trait",
           "visibility": "public",
           "span": {
-            "start": 49,
-            "end": 57
+            "start": 66,
+            "end": 74
           },
           "signature": "pub trait ImportResolver: Send + Sync {"
         },
@@ -10565,18 +11701,28 @@
           "kind": "trait",
           "visibility": "public",
           "span": {
-            "start": 35,
-            "end": 46
+            "start": 47,
+            "end": 63
           },
           "signature": "pub trait LanguageParser: Send + Sync {"
+        },
+        {
+          "name": "ParseOutcome",
+          "kind": "enum",
+          "visibility": "public",
+          "span": {
+            "start": 37,
+            "end": 44
+          },
+          "signature": "pub enum ParseOutcome {"
         },
         {
           "name": "RawExport",
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 28,
-            "end": 32
+            "start": 30,
+            "end": 34
           },
           "signature": "pub struct RawExport {"
         },
@@ -10585,8 +11731,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 19,
-            "end": 24
+            "start": 21,
+            "end": 26
           },
           "signature": "pub struct RawImport {"
         }
@@ -10596,8 +11742,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 5,
-      "lines": 1686,
-      "hash": "1366b03ef04fe7a1",
+      "lines": 1872,
+      "hash": "af96caebdd913d9a",
       "exports": [
         "TypeScriptParser",
         "TypeScriptResolver"
@@ -10620,7 +11766,7 @@
           "visibility": "internal",
           "span": {
             "start": 685,
-            "end": 688
+            "end": 690
           },
           "signature": "pub(crate) struct TypeScriptResolver {"
         },
@@ -10629,8 +11775,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 1523,
-            "end": 1686
+            "start": 1592,
+            "end": 1872
           }
         },
         {
@@ -10767,8 +11913,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 704,
-            "end": 706
+            "start": 717,
+            "end": 719
           },
           "signature": "fn is_bare_specifier(path: &str) -> bool {",
           "parent": "TypeScriptResolver"
@@ -10821,8 +11967,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 691,
-            "end": 693
+            "start": 693,
+            "end": 698
           },
           "signature": "pub fn new() -> Self {",
           "parent": "TypeScriptResolver"
@@ -10842,8 +11988,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 838,
-            "end": 864
+            "start": 897,
+            "end": 923
           },
           "signature": "fn probe_ts_extensions(base: &str, known_files: &FileSet) -> Option<CanonicalPath> {",
           "parent": "TypeScriptResolver"
@@ -10853,19 +11999,30 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 868,
-            "end": 944
+            "start": 927,
+            "end": 1013
           },
           "signature": "fn resolve(",
           "parent": "ImportResolver"
+        },
+        {
+          "name": "resolve_via_bundler",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 855,
+            "end": 892
+          },
+          "signature": "fn resolve_via_bundler(",
+          "parent": "TypeScriptResolver"
         },
         {
           "name": "resolve_via_tsconfig",
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 797,
-            "end": 833
+            "start": 810,
+            "end": 846
           },
           "signature": "fn resolve_via_tsconfig(",
           "parent": "TypeScriptResolver"
@@ -10875,8 +12032,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 713,
-            "end": 785
+            "start": 726,
+            "end": 798
           },
           "signature": "fn resolve_workspace_import(",
           "parent": "TypeScriptResolver"
@@ -10897,8 +12054,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 948,
-            "end": 1520
+            "start": 1017,
+            "end": 1589
           }
         },
         {
@@ -10934,12 +12091,23 @@
           "signature": "fn truncate_signature(sig: Option<&str>, max_len: usize) -> Option<String> {"
         },
         {
+          "name": "with_bundler_configs",
+          "kind": "method",
+          "visibility": "public",
+          "span": {
+            "start": 709,
+            "end": 714
+          },
+          "signature": "pub fn with_bundler_configs(mut self, configs: BTreeMap<PathBuf, BundlerConfig>) -> Self {",
+          "parent": "TypeScriptResolver"
+        },
+        {
           "name": "with_ts_configs",
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 696,
-            "end": 701
+            "start": 701,
+            "end": 706
           },
           "signature": "pub fn with_ts_configs(mut self, configs: BTreeMap<PathBuf, TsConfig>) -> Self {",
           "parent": "TypeScriptResolver"
@@ -11143,8 +12311,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 7,
-      "lines": 797,
-      "hash": "0524342eaa267b56",
+      "lines": 798,
+      "hash": "92cf8efb89669e5f",
       "exports": [
         "BuildOptions",
         "BuildOutput",
@@ -11211,8 +12379,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 106,
-            "end": 129
+            "start": 107,
+            "end": 130
           },
           "signature": "fn apply_symbol_limits(",
           "parent": "BuildPipeline"
@@ -11222,8 +12390,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 723,
-            "end": 742
+            "start": 724,
+            "end": 743
           },
           "signature": "fn cluster_map_to_output(cluster_map: &ClusterMap) -> ClusterOutput {"
         },
@@ -11232,8 +12400,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 759,
-            "end": 767
+            "start": 760,
+            "end": 768
           },
           "signature": "fn format_size(bytes: u64) -> String {"
         },
@@ -11242,8 +12410,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 745,
-            "end": 756
+            "start": 746,
+            "end": 757
           },
           "signature": "fn format_utc_timestamp() -> String {"
         },
@@ -11263,8 +12431,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 675,
-            "end": 720
+            "start": 676,
+            "end": 721
           },
           "signature": "fn project_graph_to_output(graph: &ProjectGraph, project_root: &Path) -> GraphOutput {"
         },
@@ -11274,7 +12442,7 @@
           "visibility": "public",
           "span": {
             "start": 96,
-            "end": 102
+            "end": 103
           },
           "signature": "pub fn reparse_imports(",
           "parent": "BuildPipeline"
@@ -11284,8 +12452,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 131,
-            "end": 133
+            "start": 132,
+            "end": 134
           },
           "signature": "pub fn run(&self, root: &Path, config: WalkConfig) -> Result<BuildOutput, FatalError> {",
           "parent": "BuildPipeline"
@@ -11295,8 +12463,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 135,
-            "end": 504
+            "start": 136,
+            "end": 505
           },
           "signature": "pub fn run_with_options(",
           "parent": "BuildPipeline"
@@ -11306,8 +12474,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 770,
-            "end": 797
+            "start": 771,
+            "end": 798
           },
           "signature": "fn skip_reason_to_warning(reason: &FileSkipReason) -> Warning {"
         },
@@ -11327,8 +12495,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 513,
-            "end": 671
+            "start": 514,
+            "end": 672
           },
           "signature": "pub fn update(",
           "parent": "BuildPipeline"
@@ -11573,7 +12741,7 @@
       "layer": "unknown",
       "arch_depth": 0,
       "lines": 280,
-      "hash": "1fdb8c6bbd12088c",
+      "hash": "9fe287468a8a44df",
       "exports": [
         "stoer_wagner"
       ],
@@ -11720,8 +12888,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 6,
-      "lines": 1400,
-      "hash": "0bd00657dea8d132",
+      "lines": 1404,
+      "hash": "895207bb2a3e2501",
       "exports": [
         "find_refactor_opportunities"
       ],
@@ -11742,8 +12910,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 157,
-            "end": 218
+            "start": 161,
+            "end": 222
           },
           "signature": "fn detect_break_cycle("
         },
@@ -11752,8 +12920,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 494,
-            "end": 531
+            "start": 498,
+            "end": 535
           },
           "signature": "fn detect_extract_interface("
         },
@@ -11762,8 +12930,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 409,
-            "end": 492
+            "start": 413,
+            "end": 496
           },
           "signature": "fn detect_merge_modules("
         },
@@ -11772,8 +12940,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 295,
-            "end": 407
+            "start": 299,
+            "end": 411
           },
           "signature": "fn detect_reduce_coupling("
         },
@@ -11782,8 +12950,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 220,
-            "end": 293
+            "start": 224,
+            "end": 297
           },
           "signature": "fn detect_split_file("
         },
@@ -11792,8 +12960,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 606,
-            "end": 615
+            "start": 610,
+            "end": 619
           },
           "signature": "fn determine_data_quality("
         },
@@ -11803,7 +12971,7 @@
           "visibility": "public",
           "span": {
             "start": 24,
-            "end": 155
+            "end": 159
           },
           "signature": "pub fn find_refactor_opportunities("
         },
@@ -11812,8 +12980,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 553,
-            "end": 604
+            "start": 557,
+            "end": 608
           },
           "signature": "fn resolve_conflicts(mut opps: Vec<RefactorOpportunity>) -> Vec<RefactorOpportunity> {"
         },
@@ -11822,8 +12990,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 533,
-            "end": 541
+            "start": 537,
+            "end": 545
           },
           "signature": "fn score_to_effort(score: f64) -> Effort {"
         },
@@ -11832,8 +13000,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 543,
-            "end": 551
+            "start": 547,
+            "end": 555
           },
           "signature": "fn score_to_impact(score: f64) -> Impact {"
         },
@@ -11842,8 +13010,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 618,
-            "end": 1400
+            "start": 622,
+            "end": 1404
           }
         }
       ]
@@ -12177,7 +13345,7 @@
     "src/semantic/dotnet.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 2,
+      "arch_depth": 4,
       "lines": 285,
       "hash": "c73d918728ada316",
       "exports": [
@@ -12303,7 +13471,7 @@
     "src/semantic/events.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 2,
+      "arch_depth": 4,
       "lines": 618,
       "hash": "d12acaaa36df9cfd",
       "exports": [
@@ -12517,7 +13685,7 @@
     "src/semantic/http.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 2,
+      "arch_depth": 4,
       "lines": 899,
       "hash": "c928650d383be02b",
       "exports": [
@@ -12821,7 +13989,7 @@
     "src/semantic/java.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 2,
+      "arch_depth": 4,
       "lines": 719,
       "hash": "d2203e1e2558e1b1",
       "exports": [
@@ -13045,19 +14213,23 @@
     "src/semantic/mod.rs": {
       "type": "source",
       "layer": "unknown",
-      "arch_depth": 2,
-      "lines": 133,
-      "hash": "6e57e5c76b65f1f8",
+      "arch_depth": 4,
+      "lines": 137,
+      "hash": "9a46371f5427f5e9",
       "exports": [
         "BoundaryExtractor",
         "ExtractorRegistry",
         "JavaBoundaryExtractor",
+        "NextBoundaryExtractor",
+        "ReactBoundaryExtractor",
         "analyze",
         "dotnet",
         "edges",
         "events",
         "http",
-        "java"
+        "java",
+        "nextjs",
+        "react"
       ],
       "cluster": "semantic",
       "symbols": [
@@ -13066,8 +14238,8 @@
           "kind": "trait",
           "visibility": "public",
           "span": {
-            "start": 19,
-            "end": 30
+            "start": 23,
+            "end": 34
           },
           "signature": "pub trait BoundaryExtractor: Send + Sync {"
         },
@@ -13076,8 +14248,8 @@
           "kind": "struct",
           "visibility": "public",
           "span": {
-            "start": 36,
-            "end": 39
+            "start": 40,
+            "end": 43
           },
           "signature": "pub struct ExtractorRegistry {"
         },
@@ -13086,8 +14258,8 @@
           "kind": "function",
           "visibility": "public",
           "span": {
-            "start": 88,
-            "end": 112
+            "start": 92,
+            "end": 116
           },
           "signature": "pub fn analyze(file_boundaries: BTreeMap<CanonicalPath, Vec<Boundary>>) -> SemanticState {"
         },
@@ -13096,8 +14268,8 @@
           "kind": "method",
           "visibility": "private",
           "span": {
-            "start": 76,
-            "end": 78
+            "start": 80,
+            "end": 82
           },
           "signature": "fn default() -> Self {",
           "parent": "Default"
@@ -13107,8 +14279,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 62,
-            "end": 72
+            "start": 66,
+            "end": 76
           },
           "signature": "pub fn extractors_for(&self, extension: &str) -> Vec<&dyn BoundaryExtractor> {",
           "parent": "ExtractorRegistry"
@@ -13118,8 +14290,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 42,
-            "end": 47
+            "start": 46,
+            "end": 51
           },
           "signature": "pub fn new() -> Self {",
           "parent": "ExtractorRegistry"
@@ -13129,8 +14301,8 @@
           "kind": "method",
           "visibility": "public",
           "span": {
-            "start": 50,
-            "end": 59
+            "start": 54,
+            "end": 63
           },
           "signature": "pub fn register(&mut self, extractor: Box<dyn BoundaryExtractor>) {",
           "parent": "ExtractorRegistry"
@@ -13140,8 +14312,136 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 115,
-            "end": 133
+            "start": 119,
+            "end": 137
+          }
+        }
+      ]
+    },
+    "src/semantic/nextjs.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 4,
+      "lines": 259,
+      "hash": "a5e66a01136a5899",
+      "exports": [
+        "NextBoundaryExtractor"
+      ],
+      "cluster": "semantic",
+      "symbols": [
+        {
+          "name": "NextBoundaryExtractor",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 12,
+            "end": 12
+          },
+          "signature": "pub struct NextBoundaryExtractor;"
+        },
+        {
+          "name": "derive_route_path",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 88,
+            "end": 120
+          },
+          "signature": "fn derive_route_path(path: &CanonicalPath, convention: &RouteConvention) -> String {"
+        },
+        {
+          "name": "extensions",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 15,
+            "end": 17
+          },
+          "signature": "fn extensions(&self) -> &[&str] {",
+          "parent": "BoundaryExtractor"
+        },
+        {
+          "name": "extract",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 19,
+            "end": 84
+          },
+          "signature": "fn extract(",
+          "parent": "BoundaryExtractor"
+        },
+        {
+          "name": "strip_prefix",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 123,
+            "end": 132
+          },
+          "signature": "fn strip_prefix<'a>(path: &'a str, prefix: &str) -> Option<&'a str> {"
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 135,
+            "end": 259
+          }
+        }
+      ]
+    },
+    "src/semantic/react.rs": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 4,
+      "lines": 143,
+      "hash": "6a63723f5aecc20c",
+      "exports": [
+        "ReactBoundaryExtractor"
+      ],
+      "cluster": "semantic",
+      "symbols": [
+        {
+          "name": "ReactBoundaryExtractor",
+          "kind": "struct",
+          "visibility": "public",
+          "span": {
+            "start": 12,
+            "end": 12
+          },
+          "signature": "pub struct ReactBoundaryExtractor;"
+        },
+        {
+          "name": "extensions",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 15,
+            "end": 17
+          },
+          "signature": "fn extensions(&self) -> &[&str] {",
+          "parent": "BoundaryExtractor"
+        },
+        {
+          "name": "extract",
+          "kind": "method",
+          "visibility": "private",
+          "span": {
+            "start": 19,
+            "end": 54
+          },
+          "signature": "fn extract(",
+          "parent": "BoundaryExtractor"
+        },
+        {
+          "name": "tests",
+          "kind": "module",
+          "visibility": "private",
+          "span": {
+            "start": 58,
+            "end": 143
           }
         }
       ]
@@ -13584,8 +14884,8 @@
       "type": "source",
       "layer": "unknown",
       "arch_depth": 3,
-      "lines": 345,
-      "hash": "a5a5a6aa22281614",
+      "lines": 344,
+      "hash": "d7a6a485d74f98cd",
       "exports": [
         "compute_churn"
       ],
@@ -13596,8 +14896,8 @@
           "kind": "struct",
           "visibility": "private",
           "span": {
-            "start": 104,
-            "end": 114
+            "start": 103,
+            "end": 113
           },
           "signature": "struct FileAccum {"
         },
@@ -13607,7 +14907,7 @@
           "visibility": "internal",
           "span": {
             "start": 13,
-            "end": 101
+            "end": 100
           },
           "signature": "pub(crate) fn compute_churn("
         },
@@ -13616,8 +14916,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 129,
-            "end": 132
+            "start": 128,
+            "end": 131
           },
           "signature": "fn extract_date_prefix(date: &str) -> String {"
         },
@@ -13626,8 +14926,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 141,
-            "end": 165
+            "start": 140,
+            "end": 164
           },
           "signature": "fn parse_date_to_days(date: &str) -> Option<i64> {"
         },
@@ -13636,8 +14936,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 118,
-            "end": 126
+            "start": 117,
+            "end": 125
           },
           "signature": "fn resolve_path("
         },
@@ -13646,8 +14946,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 168,
-            "end": 345
+            "start": 167,
+            "end": 344
           }
         }
       ]
@@ -13965,8 +15265,8 @@
       "type": "source",
       "layer": "component",
       "arch_depth": 3,
-      "lines": 276,
-      "hash": "c1287dc509f5430d",
+      "lines": 271,
+      "hash": "5df8c52cba1582f0",
       "exports": [
         "generate_cluster_view"
       ],
@@ -13978,7 +15278,7 @@
           "visibility": "public",
           "span": {
             "start": 7,
-            "end": 173
+            "end": 168
           },
           "signature": "pub fn generate_cluster_view("
         },
@@ -13987,8 +15287,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 176,
-            "end": 276
+            "start": 171,
+            "end": 271
           }
         }
       ]
@@ -13997,8 +15297,8 @@
       "type": "source",
       "layer": "component",
       "arch_depth": 3,
-      "lines": 220,
-      "hash": "488a618e22af9ac2",
+      "lines": 217,
+      "hash": "0ec892c36a964b42",
       "exports": [
         "generate_blast_radius_view",
         "generate_subgraph_view"
@@ -14021,17 +15321,17 @@
           "visibility": "public",
           "span": {
             "start": 46,
-            "end": 97
+            "end": 94
           },
-          "signature": "pub fn generate_subgraph_view(subgraph: &SubgraphResult) -> String {"
+          "signature": "pub fn generate_subgraph_view(subgraph: &SubgraphResult) -> Result<String, std::fmt::Error> {"
         },
         {
           "name": "tests",
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 100,
-            "end": 220
+            "start": 97,
+            "end": 217
           }
         }
       ]
@@ -14040,8 +15340,8 @@
       "type": "source",
       "layer": "component",
       "arch_depth": 3,
-      "lines": 307,
-      "hash": "031ce16c918e6138",
+      "lines": 308,
+      "hash": "4ae42331a99556d6",
       "exports": [
         "generate_index"
       ],
@@ -14053,17 +15353,17 @@
           "visibility": "public",
           "span": {
             "start": 7,
-            "end": 101
+            "end": 102
           },
-          "signature": "pub fn generate_index(graph: &ProjectGraph, clusters: &ClusterMap, stats: &StatsOutput) -> String {"
+          "signature": "pub fn generate_index("
         },
         {
           "name": "tests",
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 104,
-            "end": 307
+            "start": 105,
+            "end": 308
           }
         }
       ]
@@ -14072,8 +15372,8 @@
       "type": "source",
       "layer": "component",
       "arch_depth": 4,
-      "lines": 95,
-      "hash": "443a544a16a2cdfb",
+      "lines": 103,
+      "hash": "a77d52f4ed656140",
       "exports": [
         "cluster",
         "generate_all_views",
@@ -14088,7 +15388,7 @@
           "visibility": "public",
           "span": {
             "start": 12,
-            "end": 50
+            "end": 58
           },
           "signature": "pub fn generate_all_views("
         },
@@ -14097,8 +15397,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 53,
-            "end": 55
+            "start": 61,
+            "end": 63
           },
           "signature": "fn sanitize_filename(name: &str) -> String {"
         },
@@ -14107,8 +15407,8 @@
           "kind": "module",
           "visibility": "private",
           "span": {
-            "start": 58,
-            "end": 95
+            "start": 66,
+            "end": 103
           }
         }
       ]
@@ -14305,12 +15605,123 @@
         }
       ]
     },
+    "tests/constraints.rs": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 321,
+      "hash": "1c3e045410381026",
+      "exports": [],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "collect_rs_files",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 15,
+            "end": 20
+          },
+          "signature": "fn collect_rs_files(dir: &Path) -> Vec<PathBuf> {"
+        },
+        {
+          "name": "collect_rs_files_recursive",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 22,
+            "end": 35
+          },
+          "signature": "fn collect_rs_files_recursive(dir: &Path, out: &mut Vec<PathBuf>) {"
+        },
+        {
+          "name": "no_god_modules",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 101,
+            "end": 186
+          },
+          "signature": "fn no_god_modules() {"
+        },
+        {
+          "name": "no_hashmap_in_model",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 64,
+            "end": 94
+          },
+          "signature": "fn no_hashmap_in_model() {"
+        },
+        {
+          "name": "no_new_hashmap_imports",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 195,
+            "end": 234
+          },
+          "signature": "fn no_new_hashmap_imports() {"
+        },
+        {
+          "name": "no_silent_errors",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 276,
+            "end": 321
+          },
+          "signature": "fn no_silent_errors() {"
+        },
+        {
+          "name": "no_unwrap_in_production",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 241,
+            "end": 269
+          },
+          "signature": "fn no_unwrap_in_production() {"
+        },
+        {
+          "name": "production_lines",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 41,
+            "end": 50
+          },
+          "signature": "fn production_lines(content: &str) -> Vec<(usize, &str)> {"
+        },
+        {
+          "name": "relative_path",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 52,
+            "end": 58
+          },
+          "signature": "fn relative_path(path: &Path) -> String {"
+        },
+        {
+          "name": "src_dir",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 10,
+            "end": 12
+          },
+          "signature": "fn src_dir() -> PathBuf {"
+        }
+      ]
+    },
     "tests/dotnet_integration_tests.rs": {
       "type": "test",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 278,
-      "hash": "49f82b05255e69bc",
+      "lines": 288,
+      "hash": "315e4fe5852d98ce",
       "exports": [],
       "cluster": "tests",
       "symbols": [
@@ -14319,8 +15730,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 157,
-            "end": 168
+            "start": 167,
+            "end": 178
           },
           "signature": "fn dotnet_blazor_counter_no_imports() {"
         },
@@ -14329,8 +15740,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 143,
-            "end": 154
+            "start": 148,
+            "end": 164
           },
           "signature": "fn dotnet_blazor_extracts_inherits() {"
         },
@@ -14340,7 +15751,7 @@
           "visibility": "private",
           "span": {
             "start": 124,
-            "end": 140
+            "end": 145
           },
           "signature": "fn dotnet_blazor_extracts_razor_imports() {"
         },
@@ -14359,8 +15770,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 185,
-            "end": 193
+            "start": 195,
+            "end": 203
           },
           "signature": "fn dotnet_efcore_detects_dbcontext() {"
         },
@@ -14369,8 +15780,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 196,
-            "end": 204
+            "start": 206,
+            "end": 214
           },
           "signature": "fn dotnet_efcore_detects_migration() {"
         },
@@ -14379,8 +15790,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 207,
-            "end": 224
+            "start": 217,
+            "end": 234
           },
           "signature": "fn dotnet_efcore_extracts_dbset_boundaries() {"
         },
@@ -14389,8 +15800,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 227,
-            "end": 233
+            "start": 237,
+            "end": 243
           },
           "signature": "fn dotnet_efcore_graph_has_edges() {"
         },
@@ -14399,8 +15810,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 175,
-            "end": 182
+            "start": 185,
+            "end": 192
           },
           "signature": "fn dotnet_efcore_pipeline_runs() {"
         },
@@ -14409,8 +15820,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 250,
-            "end": 258
+            "start": 260,
+            "end": 268
           },
           "signature": "fn dotnet_maui_detects_content_page() {"
         },
@@ -14419,8 +15830,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 261,
-            "end": 269
+            "start": 271,
+            "end": 279
           },
           "signature": "fn dotnet_maui_detects_content_view() {"
         },
@@ -14429,8 +15840,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 272,
-            "end": 278
+            "start": 282,
+            "end": 288
           },
           "signature": "fn dotnet_maui_graph_has_edges() {"
         },
@@ -14439,8 +15850,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 240,
-            "end": 247
+            "start": 250,
+            "end": 257
           },
           "signature": "fn dotnet_maui_pipeline_runs() {"
         },
@@ -16179,6 +17590,167 @@
         }
       ]
     },
+    "tests/fixtures/nextjs-app/app/api/users/route.ts": {
+      "type": "source",
+      "layer": "api",
+      "arch_depth": 0,
+      "lines": 3,
+      "hash": "a454a5f499968d47",
+      "exports": [
+        "GET"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "GET",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 1,
+            "end": 3
+          },
+          "signature": "async function GET() {"
+        }
+      ]
+    },
+    "tests/fixtures/nextjs-app/app/dashboard/page.tsx": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 1,
+      "lines": 8,
+      "hash": "0cea520a34b8794b",
+      "exports": [
+        "default"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "Dashboard",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 5,
+            "end": 8
+          },
+          "signature": "function Dashboard() {"
+        }
+      ]
+    },
+    "tests/fixtures/nextjs-app/app/layout.tsx": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 3,
+      "hash": "a1f1b9a1977a95c1",
+      "exports": [
+        "default"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "RootLayout",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 1,
+            "end": 3
+          },
+          "signature": "function RootLayout({ children }: { children: React.ReactNode }) {"
+        }
+      ]
+    },
+    "tests/fixtures/nextjs-app/app/page.tsx": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 1,
+      "lines": 5,
+      "hash": "af874f50a6e974bd",
+      "exports": [
+        "default"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "Home",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 3,
+            "end": 5
+          },
+          "signature": "function Home() {"
+        }
+      ]
+    },
+    "tests/fixtures/nextjs-app/middleware.ts": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 5,
+      "hash": "e2b7c5cc78c5fb7a",
+      "exports": [
+        "middleware"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "middleware",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 3,
+            "end": 5
+          },
+          "signature": "function middleware() {"
+        }
+      ]
+    },
+    "tests/fixtures/nextjs-app/src/lib/data.ts": {
+      "type": "source",
+      "layer": "util",
+      "arch_depth": 0,
+      "lines": 3,
+      "hash": "f8f0ead9d3156f88",
+      "exports": [
+        "getData"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "getData",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 1,
+            "end": 3
+          },
+          "signature": "function getData(): string {"
+        }
+      ]
+    },
+    "tests/fixtures/nextjs-app/src/lib/theme.ts": {
+      "type": "source",
+      "layer": "util",
+      "arch_depth": 0,
+      "lines": 3,
+      "hash": "3dc790b79f04a2f0",
+      "exports": [
+        "ThemeContext"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "ThemeContext",
+          "kind": "variable",
+          "visibility": "public",
+          "span": {
+            "start": 3,
+            "end": 3
+          },
+          "signature": "const ThemeContext = createContext('light');"
+        }
+      ]
+    },
     "tests/fixtures/python-package/.ariadne/graph/clusters.json": {
       "type": "data",
       "layer": "unknown",
@@ -16412,6 +17984,109 @@
           "signature": "def validate_email(email):"
         }
       ]
+    },
+    "tests/fixtures/react-vite/src/App.tsx": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 6,
+      "hash": "93bf1fdec745a2e0",
+      "exports": [
+        "default"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "App",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 4,
+            "end": 6
+          },
+          "signature": "function App() {"
+        }
+      ]
+    },
+    "tests/fixtures/react-vite/src/components/Button.tsx": {
+      "type": "source",
+      "layer": "component",
+      "arch_depth": 0,
+      "lines": 3,
+      "hash": "a1c43ceeeff836a7",
+      "exports": [
+        "Button"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "Button",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 1,
+            "end": 3
+          },
+          "signature": "function Button({ label }: { label: string }) {"
+        }
+      ]
+    },
+    "tests/fixtures/react-vite/src/contexts/theme.ts": {
+      "type": "source",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 3,
+      "hash": "3dc790b79f04a2f0",
+      "exports": [
+        "ThemeContext"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "ThemeContext",
+          "kind": "variable",
+          "visibility": "public",
+          "span": {
+            "start": 3,
+            "end": 3
+          },
+          "signature": "const ThemeContext = createContext('light');"
+        }
+      ]
+    },
+    "tests/fixtures/react-vite/src/utils/format.ts": {
+      "type": "source",
+      "layer": "util",
+      "arch_depth": 0,
+      "lines": 3,
+      "hash": "9ccbee52faf74c41",
+      "exports": [
+        "formatDate"
+      ],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "formatDate",
+          "kind": "function",
+          "visibility": "public",
+          "span": {
+            "start": 1,
+            "end": 3
+          },
+          "signature": "function formatDate(d: Date): string {"
+        }
+      ]
+    },
+    "tests/fixtures/react-vite/vite.config.ts": {
+      "type": "config",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 12,
+      "hash": "7218c22047b4735c",
+      "exports": [
+        "default"
+      ],
+      "cluster": "tests"
     },
     "tests/fixtures/rust-crate/.ariadne/graph/clusters.json": {
       "type": "data",
@@ -18421,12 +20096,133 @@
         }
       ]
     },
+    "tests/js_framework_tests.rs": {
+      "type": "test",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 193,
+      "hash": "a070d906790ee08b",
+      "exports": [],
+      "cluster": "tests",
+      "symbols": [
+        {
+          "name": "build_and_read_boundaries",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 57,
+            "end": 77
+          },
+          "signature": "fn build_and_read_boundaries(fixture: &str) -> BoundaryOutput {"
+        },
+        {
+          "name": "build_and_read_edges",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 32,
+            "end": 54
+          },
+          "signature": "fn build_and_read_edges(fixture: &str) -> Vec<(String, String)> {"
+        },
+        {
+          "name": "fixture_dir",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 15,
+            "end": 20
+          },
+          "signature": "fn fixture_dir(name: &str) -> PathBuf {"
+        },
+        {
+          "name": "make_pipeline",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 22,
+            "end": 29
+          },
+          "signature": "fn make_pipeline() -> BuildPipeline {"
+        },
+        {
+          "name": "nextjs_api_route_boundary",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 149,
+            "end": 163
+          },
+          "signature": "fn nextjs_api_route_boundary() {"
+        },
+        {
+          "name": "nextjs_client_boundary",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 166,
+            "end": 180
+          },
+          "signature": "fn nextjs_client_boundary() {"
+        },
+        {
+          "name": "nextjs_page_boundary",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 132,
+            "end": 146
+          },
+          "signature": "fn nextjs_page_boundary() {"
+        },
+        {
+          "name": "no_bundler_config_no_regression",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 187,
+            "end": 193
+          },
+          "signature": "fn no_bundler_config_no_regression() {"
+        },
+        {
+          "name": "react_context_boundary_in_vite_fixture",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 110,
+            "end": 125
+          },
+          "signature": "fn react_context_boundary_in_vite_fixture() {"
+        },
+        {
+          "name": "vite_alias_resolves_at_sign",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 84,
+            "end": 92
+          },
+          "signature": "fn vite_alias_resolves_at_sign() {"
+        },
+        {
+          "name": "vite_alias_resolves_named",
+          "kind": "function",
+          "visibility": "private",
+          "span": {
+            "start": 95,
+            "end": 103
+          },
+          "signature": "fn vite_alias_resolves_named() {"
+        }
+      ]
+    },
     "tests/mcp_tests.rs": {
       "type": "test",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 808,
-      "hash": "65983bdd4393c98f",
+      "lines": 814,
+      "hash": "39e33b03dc0300d3",
       "exports": [],
       "cluster": "tests",
       "symbols": [
@@ -18445,7 +20241,7 @@
           "visibility": "private",
           "span": {
             "start": 691,
-            "end": 808
+            "end": 814
           }
         },
         {
@@ -18481,8 +20277,8 @@
       "type": "test",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 574,
-      "hash": "a6a076acacbab9ce",
+      "lines": 577,
+      "hash": "ccd040c08083a6b7",
       "exports": [],
       "cluster": "tests",
       "symbols": [
@@ -18531,8 +20327,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 485,
-            "end": 574
+            "start": 488,
+            "end": 577
           },
           "signature": "fn l1_view_export_round_trip() {"
         },
@@ -18612,7 +20408,7 @@
           "visibility": "private",
           "span": {
             "start": 355,
-            "end": 363
+            "end": 364
           },
           "signature": "fn reparse_imports_returns_imports_for_known_extension() {"
         },
@@ -18621,8 +20417,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 377,
-            "end": 382
+            "start": 379,
+            "end": 385
           },
           "signature": "fn reparse_imports_returns_none_for_unknown_extension() {"
         },
@@ -18631,8 +20427,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 366,
-            "end": 374
+            "start": 367,
+            "end": 376
           },
           "signature": "fn reparse_imports_tsx_with_jsx_syntax() {"
         },
@@ -18681,8 +20477,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 393,
-            "end": 432
+            "start": 396,
+            "end": 435
           },
           "signature": "fn watcher_rebuild_edge_parity() {"
         },
@@ -18691,8 +20487,8 @@
           "kind": "function",
           "visibility": "private",
           "span": {
-            "start": 437,
-            "end": 478
+            "start": 440,
+            "end": 481
           },
           "signature": "fn watcher_rebuild_edge_parity_rust_crate() {"
         }
@@ -19992,6 +21788,124 @@
       ]
     ],
     [
+      "src/conventions/imports.rs",
+      "src/conventions/types.rs",
+      "imports",
+      [
+        "ImportCategory",
+        "ImportPattern"
+      ]
+    ],
+    [
+      "src/conventions/imports.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "EdgeType",
+        "FileType",
+        "ProjectGraph"
+      ]
+    ],
+    [
+      "src/conventions/mod.rs",
+      "src/conventions/imports.rs",
+      "imports",
+      [
+        "imports"
+      ]
+    ],
+    [
+      "src/conventions/mod.rs",
+      "src/conventions/naming.rs",
+      "imports",
+      [
+        "naming"
+      ]
+    ],
+    [
+      "src/conventions/mod.rs",
+      "src/conventions/tech_stack.rs",
+      "imports",
+      [
+        "tech_stack"
+      ]
+    ],
+    [
+      "src/conventions/mod.rs",
+      "src/conventions/trends.rs",
+      "imports",
+      [
+        "trends"
+      ]
+    ],
+    [
+      "src/conventions/mod.rs",
+      "src/conventions/types.rs",
+      "imports",
+      [
+        "types"
+      ]
+    ],
+    [
+      "src/conventions/naming.rs",
+      "src/conventions/types.rs",
+      "imports",
+      [
+        "NamingCase",
+        "NamingConvention"
+      ]
+    ],
+    [
+      "src/conventions/naming.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "FileType",
+        "ProjectGraph",
+        "SymbolKind"
+      ]
+    ],
+    [
+      "src/conventions/tech_stack.rs",
+      "src/conventions/types.rs",
+      "imports",
+      [
+        "FrameworkInfo",
+        "ScriptCategory",
+        "ScriptInfo",
+        "TechStack",
+        "TestConfig"
+      ]
+    ],
+    [
+      "src/conventions/tech_stack.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "FileType",
+        "ProjectGraph"
+      ]
+    ],
+    [
+      "src/conventions/trends.rs",
+      "src/conventions/types.rs",
+      "imports",
+      [
+        "TemporalTrend",
+        "Trend"
+      ]
+    ],
+    [
+      "src/conventions/trends.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "FileType",
+        "ProjectGraph",
+        "TemporalState"
+      ]
+    ],
+    [
       "src/detect/case_sensitivity.rs",
       "src/model/types.rs",
       "imports",
@@ -20007,6 +21921,14 @@
       [
         "CanonicalPath",
         "FileType"
+      ]
+    ],
+    [
+      "src/detect/js_framework.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath"
       ]
     ],
     [
@@ -20049,6 +21971,14 @@
       "imports",
       [
         "java_framework"
+      ]
+    ],
+    [
+      "src/detect/mod.rs",
+      "src/detect/js_framework.rs",
+      "imports",
+      [
+        "js_framework"
       ]
     ],
     [
@@ -20133,6 +22063,14 @@
       "imports",
       [
         "cluster"
+      ]
+    ],
+    [
+      "src/lib.rs",
+      "src/conventions/mod.rs",
+      "imports",
+      [
+        "conventions"
       ]
     ],
     [
@@ -20934,6 +22872,24 @@
       ]
     ],
     [
+      "src/parser/config/bundler.rs",
+      "src/diagnostic.rs",
+      "imports",
+      [
+        "DiagnosticCollector",
+        "Warning",
+        "WarningCode"
+      ]
+    ],
+    [
+      "src/parser/config/bundler.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath"
+      ]
+    ],
+    [
       "src/parser/config/csproj.rs",
       "src/diagnostic.rs",
       "imports",
@@ -21008,6 +22964,14 @@
     ],
     [
       "src/parser/config/mod.rs",
+      "src/parser/config/bundler.rs",
+      "imports",
+      [
+        "bundler"
+      ]
+    ],
+    [
+      "src/parser/config/mod.rs",
       "src/parser/config/csproj.rs",
       "imports",
       [
@@ -21048,6 +23012,14 @@
     ],
     [
       "src/parser/config/mod.rs",
+      "src/parser/config/nextjs.rs",
+      "imports",
+      [
+        "nextjs"
+      ]
+    ],
+    [
+      "src/parser/config/mod.rs",
       "src/parser/config/pyproject.rs",
       "imports",
       [
@@ -21060,6 +23032,31 @@
       "imports",
       [
         "tsconfig"
+      ]
+    ],
+    [
+      "src/parser/config/mod.rs",
+      "src/parser/config/turbo.rs",
+      "imports",
+      [
+        "turbo"
+      ]
+    ],
+    [
+      "src/parser/config/nextjs.rs",
+      "src/diagnostic.rs",
+      "imports",
+      [
+        "DiagnosticCollector"
+      ]
+    ],
+    [
+      "src/parser/config/nextjs.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath",
+        "FileSet"
       ]
     ],
     [
@@ -21086,6 +23083,32 @@
       "imports",
       [
         "strip_jsonc_comments"
+      ]
+    ],
+    [
+      "src/parser/config/turbo.rs",
+      "src/diagnostic.rs",
+      "imports",
+      [
+        "DiagnosticCollector",
+        "Warning",
+        "WarningCode"
+      ]
+    ],
+    [
+      "src/parser/config/turbo.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath"
+      ]
+    ],
+    [
+      "src/parser/config/turbo.rs",
+      "src/parser/config/jsonc.rs",
+      "imports",
+      [
+        "jsonc"
       ]
     ],
     [
@@ -21148,6 +23171,7 @@
         "ImportKind",
         "ImportResolver",
         "LanguageParser",
+        "ParseOutcome",
         "RawExport",
         "RawImport"
       ]
@@ -21508,22 +23532,6 @@
     ],
     [
       "src/parser/registry.rs",
-      "src/model/semantic.rs",
-      "imports",
-      [
-        "Boundary"
-      ]
-    ],
-    [
-      "src/parser/registry.rs",
-      "src/model/symbol.rs",
-      "imports",
-      [
-        "SymbolDef"
-      ]
-    ],
-    [
-      "src/parser/registry.rs",
       "src/model/types.rs",
       "imports",
       [
@@ -21621,6 +23629,22 @@
     ],
     [
       "src/parser/traits.rs",
+      "src/model/semantic.rs",
+      "imports",
+      [
+        "Boundary"
+      ]
+    ],
+    [
+      "src/parser/traits.rs",
+      "src/model/symbol.rs",
+      "imports",
+      [
+        "SymbolDef"
+      ]
+    ],
+    [
+      "src/parser/traits.rs",
       "src/model/workspace.rs",
       "imports",
       [
@@ -21660,6 +23684,7 @@
       "src/parser/config/mod.rs",
       "imports",
       [
+        "BundlerConfig",
         "TsConfig"
       ]
     ],
@@ -22421,6 +24446,91 @@
       ]
     ],
     [
+      "src/semantic/mod.rs",
+      "src/semantic/nextjs.rs",
+      "imports",
+      [
+        "nextjs"
+      ]
+    ],
+    [
+      "src/semantic/mod.rs",
+      "src/semantic/react.rs",
+      "imports",
+      [
+        "react"
+      ]
+    ],
+    [
+      "src/semantic/nextjs.rs",
+      "src/detect/js_framework.rs",
+      "imports",
+      [
+        "RouteConvention",
+        "js_framework"
+      ]
+    ],
+    [
+      "src/semantic/nextjs.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath"
+      ]
+    ],
+    [
+      "src/semantic/nextjs.rs",
+      "src/model/semantic.rs",
+      "imports",
+      [
+        "Boundary",
+        "BoundaryKind",
+        "BoundaryRole"
+      ]
+    ],
+    [
+      "src/semantic/nextjs.rs",
+      "src/semantic/mod.rs",
+      "imports",
+      [
+        "BoundaryExtractor"
+      ]
+    ],
+    [
+      "src/semantic/react.rs",
+      "src/detect/js_framework.rs",
+      "imports",
+      [
+        "js_framework"
+      ]
+    ],
+    [
+      "src/semantic/react.rs",
+      "src/model/mod.rs",
+      "imports",
+      [
+        "CanonicalPath"
+      ]
+    ],
+    [
+      "src/semantic/react.rs",
+      "src/model/semantic.rs",
+      "imports",
+      [
+        "Boundary",
+        "BoundaryKind",
+        "BoundaryRole"
+      ]
+    ],
+    [
+      "src/semantic/react.rs",
+      "src/semantic/mod.rs",
+      "imports",
+      [
+        "BoundaryExtractor"
+      ]
+    ],
+    [
       "src/serial/convert.rs",
       "src/model/mod.rs",
       "imports",
@@ -22785,6 +24895,22 @@
       "imports",
       [
         "Button"
+      ]
+    ],
+    [
+      "tests/fixtures/nextjs-app/app/dashboard/page.tsx",
+      "tests/fixtures/nextjs-app/src/lib/theme.ts",
+      "imports",
+      [
+        "ThemeContext"
+      ]
+    ],
+    [
+      "tests/fixtures/nextjs-app/app/page.tsx",
+      "tests/fixtures/nextjs-app/src/lib/data.ts",
+      "imports",
+      [
+        "getData"
       ]
     ],
     [

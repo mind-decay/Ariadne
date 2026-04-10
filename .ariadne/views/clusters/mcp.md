@@ -12,8 +12,8 @@
 | `src/mcp/prompts.rs` | source | 7 | 1 | 4 | 0.0000 |
 | `src/mcp/resources.rs` | source | 7 | 1 | 2 | 0.0000 |
 | `src/mcp/server.rs` | source | 9 | 1 | 8 | 0.0002 |
-| `src/mcp/state.rs` | source | 6 | 6 | 9 | 0.0006 |
-| `src/mcp/tools.rs` | source | 8 | 2 | 14 | 0.0004 |
+| `src/mcp/state.rs` | source | 6 | 6 | 9 | 0.0005 |
+| `src/mcp/tools.rs` | source | 8 | 2 | 14 | 0.0003 |
 | `src/mcp/tools_context.rs` | source | 0 | 2 | 0 | 0.0000 |
 | `src/mcp/tools_recommend.rs` | source | 0 | 2 | 0 | 0.0000 |
 | `src/mcp/tools_semantic.rs` | source | 0 | 2 | 0 | 0.0000 |

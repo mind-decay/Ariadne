@@ -1,0 +1,223 @@
+{
+  "version": 1,
+  "boundaries": {
+    "tests/fixtures/dotnet-efcore/DataApp/Data/AppDbContext.cs": [
+      {
+        "kind": "EventChannel",
+        "name": "Entity:User",
+        "role": "Producer",
+        "line": 8,
+        "framework": "efcore",
+        "method": null
+      },
+      {
+        "kind": "EventChannel",
+        "name": "Entity:Order",
+        "role": "Producer",
+        "line": 9,
+        "framework": "efcore",
+        "method": null
+      }
+    ],
+    "tests/fixtures/dotnet-webapi/MyApi/Program.cs": [
+      {
+        "kind": "EventChannel",
+        "name": "DI:IWeatherService",
+        "role": "Producer",
+        "line": 5,
+        "framework": "dotnet_di",
+        "method": null
+      }
+    ],
+    "tests/fixtures/jakarta-ee/src/main/java/com/example/UserResource.java": [
+      {
+        "kind": "EventChannel",
+        "name": "DI:UserService",
+        "role": "Consumer",
+        "line": 13,
+        "framework": "jakarta",
+        "method": null
+      },
+      {
+        "kind": "HttpRoute",
+        "name": "/users",
+        "role": "Producer",
+        "line": 16,
+        "framework": "jakarta",
+        "method": "GET"
+      },
+      {
+        "kind": "HttpRoute",
+        "name": "/users/{id}",
+        "role": "Producer",
+        "line": 21,
+        "framework": "jakarta",
+        "method": "GET"
+      },
+      {
+        "kind": "HttpRoute",
+        "name": "/users",
+        "role": "Producer",
+        "line": 27,
+        "framework": "jakarta",
+        "method": "POST"
+      }
+    ],
+    "tests/fixtures/jakarta-ee/src/main/java/com/example/UserService.java": [
+      {
+        "kind": "EventChannel",
+        "name": "DI:UserService",
+        "role": "Producer",
+        "line": 5,
+        "framework": "jakarta",
+        "method": null
+      }
+    ],
+    "tests/fixtures/semantic/spring_routes.java": [
+      {
+        "kind": "HttpRoute",
+        "name": "/api/api/users",
+        "role": "Producer",
+        "line": 14,
+        "framework": "spring",
+        "method": "GET"
+      },
+      {
+        "kind": "HttpRoute",
+        "name": "/api/api/users",
+        "role": "Producer",
+        "line": 19,
+        "framework": "spring",
+        "method": "POST"
+      },
+      {
+        "kind": "HttpRoute",
+        "name": "/api/api/users/{id}",
+        "role": "Producer",
+        "line": 24,
+        "framework": "spring",
+        "method": "DELETE"
+      }
+    ],
+    "tests/fixtures/spring-boot/src/main/java/com/example/UserController.java": [
+      {
+        "kind": "EventChannel",
+        "name": "DI:UserService",
+        "role": "Consumer",
+        "line": 15,
+        "framework": "spring",
+        "method": null
+      },
+      {
+        "kind": "HttpRoute",
+        "name": "/users",
+        "role": "Producer",
+        "line": 18,
+        "framework": "spring",
+        "method": "GET"
+      },
+      {
+        "kind": "HttpRoute",
+        "name": "/users/{id}",
+        "role": "Producer",
+        "line": 23,
+        "framework": "spring",
+        "method": "GET"
+      },
+      {
+        "kind": "HttpRoute",
+        "name": "/users",
+        "role": "Producer",
+        "line": 28,
+        "framework": "spring",
+        "method": "POST"
+      },
+      {
+        "kind": "HttpRoute",
+        "name": "/users/{id}",
+        "role": "Producer",
+        "line": 33,
+        "framework": "spring",
+        "method": "DELETE"
+      }
+    ],
+    "tests/fixtures/spring-boot/src/main/java/com/example/UserRepository.java": [
+      {
+        "kind": "EventChannel",
+        "name": "DI:UserRepository",
+        "role": "Producer",
+        "line": 5,
+        "framework": "spring",
+        "method": null
+      }
+    ],
+    "tests/fixtures/spring-boot/src/main/java/com/example/UserService.java": [
+      {
+        "kind": "EventChannel",
+        "name": "DI:UserService",
+        "role": "Producer",
+        "line": 7,
+        "framework": "spring",
+        "method": null
+      },
+      {
+        "kind": "EventChannel",
+        "name": "DI:UserRepository",
+        "role": "Consumer",
+        "line": 10,
+        "framework": "spring",
+        "method": null
+      }
+    ]
+  },
+  "edges": [
+    {
+      "from": "tests/fixtures/jakarta-ee/src/main/java/com/example/UserService.java",
+      "to": "tests/fixtures/jakarta-ee/src/main/java/com/example/UserResource.java",
+      "kind": "EventChannel",
+      "name": "DI:UserService",
+      "confidence": 1.0
+    },
+    {
+      "from": "tests/fixtures/jakarta-ee/src/main/java/com/example/UserService.java",
+      "to": "tests/fixtures/spring-boot/src/main/java/com/example/UserController.java",
+      "kind": "EventChannel",
+      "name": "DI:UserService",
+      "confidence": 1.0
+    },
+    {
+      "from": "tests/fixtures/spring-boot/src/main/java/com/example/UserRepository.java",
+      "to": "tests/fixtures/spring-boot/src/main/java/com/example/UserService.java",
+      "kind": "EventChannel",
+      "name": "DI:UserRepository",
+      "confidence": 1.0
+    },
+    {
+      "from": "tests/fixtures/spring-boot/src/main/java/com/example/UserService.java",
+      "to": "tests/fixtures/jakarta-ee/src/main/java/com/example/UserResource.java",
+      "kind": "EventChannel",
+      "name": "DI:UserService",
+      "confidence": 1.0
+    },
+    {
+      "from": "tests/fixtures/spring-boot/src/main/java/com/example/UserService.java",
+      "to": "tests/fixtures/spring-boot/src/main/java/com/example/UserController.java",
+      "kind": "EventChannel",
+      "name": "DI:UserService",
+      "confidence": 1.0
+    }
+  ],
+  "route_count": 10,
+  "event_count": 9,
+  "orphan_routes": [
+    "/api/api/users",
+    "/api/api/users/{id}",
+    "/users",
+    "/users/{id}"
+  ],
+  "orphan_events": [
+    "DI:IWeatherService",
+    "Entity:Order",
+    "Entity:User"
+  ]
+}
