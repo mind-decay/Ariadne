@@ -122,10 +122,15 @@ fn dotnet_blazor_pipeline_runs() {
 
 #[test]
 fn dotnet_blazor_extracts_razor_imports() {
+    // .razor files use raw_parse (D-145), bypassing tree-sitter
     let source = read_fixture_file("dotnet-blazor", "BlazorApp/Pages/Index.razor");
     let parser = parser::csharp_parser();
-    let tree = parse_csharp(&source);
-    let imports = parser.extract_imports(&tree, source.as_bytes());
+    let path = CanonicalPath::new("BlazorApp/Pages/Index.razor".to_string());
+    let outcome = parser.raw_parse(source.as_bytes(), "razor", &path);
+    let imports = match outcome {
+        Some(parser::ParseOutcome::Ok(imports, _, _, _)) => imports,
+        _ => panic!("expected ParseOutcome::Ok for .razor file"),
+    };
     let import_paths: Vec<&str> = imports.iter().map(|i| i.path.as_str()).collect();
     assert!(
         import_paths.contains(&"BlazorApp.Data"),
@@ -141,10 +146,15 @@ fn dotnet_blazor_extracts_razor_imports() {
 
 #[test]
 fn dotnet_blazor_extracts_inherits() {
+    // .razor files use raw_parse (D-145), bypassing tree-sitter
     let source = read_fixture_file("dotnet-blazor", "BlazorApp/Shared/MainLayout.razor");
     let parser = parser::csharp_parser();
-    let tree = parse_csharp(&source);
-    let imports = parser.extract_imports(&tree, source.as_bytes());
+    let path = CanonicalPath::new("BlazorApp/Shared/MainLayout.razor".to_string());
+    let outcome = parser.raw_parse(source.as_bytes(), "razor", &path);
+    let imports = match outcome {
+        Some(parser::ParseOutcome::Ok(imports, _, _, _)) => imports,
+        _ => panic!("expected ParseOutcome::Ok for .razor file"),
+    };
     let import_paths: Vec<&str> = imports.iter().map(|i| i.path.as_str()).collect();
     assert!(
         import_paths.contains(&"LayoutComponentBase"),

@@ -355,7 +355,8 @@ fn pipeline_produces_raw_imports_json() {
 fn reparse_imports_returns_imports_for_known_extension() {
     let pipeline = make_pipeline();
     let source = b"import { foo } from './bar';";
-    let result = pipeline.reparse_imports("ts", source);
+    let path = ariadne_graph::model::CanonicalPath::new("src/test.ts".to_string());
+    let result = pipeline.reparse_imports("ts", source, &path);
     assert!(result.is_some());
     let imports = result.unwrap();
     assert!(!imports.is_empty());
@@ -366,7 +367,8 @@ fn reparse_imports_returns_imports_for_known_extension() {
 fn reparse_imports_tsx_with_jsx_syntax() {
     let pipeline = make_pipeline();
     let source = b"import React from 'react';\nexport const A = () => <div style={{ color: 'red' }}>text</div>;\n";
-    let result = pipeline.reparse_imports("tsx", source);
+    let path = ariadne_graph::model::CanonicalPath::new("src/test.tsx".to_string());
+    let result = pipeline.reparse_imports("tsx", source, &path);
     assert!(result.is_some(), "reparse_imports should work for tsx extension");
     let imports = result.unwrap();
     assert_eq!(imports.len(), 1);
@@ -377,7 +379,8 @@ fn reparse_imports_tsx_with_jsx_syntax() {
 fn reparse_imports_returns_none_for_unknown_extension() {
     let pipeline = make_pipeline();
     let source = b"some random content";
-    let result = pipeline.reparse_imports("xyz", source);
+    let path = ariadne_graph::model::CanonicalPath::new("src/test.xyz".to_string());
+    let result = pipeline.reparse_imports("xyz", source, &path);
     assert!(result.is_none());
 }
 

@@ -3,8 +3,12 @@ pub mod edges;
 pub mod events;
 pub mod http;
 pub mod java;
+pub mod nextjs;
+pub mod react;
 
 pub use java::JavaBoundaryExtractor;
+pub use nextjs::NextBoundaryExtractor;
+pub use react::ReactBoundaryExtractor;
 
 use std::collections::{BTreeMap, HashMap};
 

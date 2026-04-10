@@ -13,9 +13,9 @@ pub mod traits;
 mod typescript;
 mod yaml;
 
-pub use registry::{ParseOutcome, ParserRegistry};
+pub use registry::ParserRegistry;
 pub use symbols::SymbolExtractor;
-pub use traits::{ImportKind, ImportResolver, LanguageParser, RawExport, RawImport};
+pub use traits::{ImportKind, ImportResolver, LanguageParser, ParseOutcome, RawExport, RawImport};
 
 /// Create a TypeScript/JS symbol extractor for testing.
 pub fn typescript_symbol_extractor() -> impl SymbolExtractor {

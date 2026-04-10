@@ -97,8 +97,9 @@ impl BuildPipeline {
         &self,
         extension: &str,
         source: &[u8],
+        path: &crate::model::CanonicalPath,
     ) -> Option<Vec<crate::parser::RawImport>> {
-        self.registry.reparse_imports(extension, source)
+        self.registry.reparse_imports(extension, source, path)
     }
 
     /// Apply symbol limits (W020 overflow guard) and sort for determinism.

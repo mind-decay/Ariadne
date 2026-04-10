@@ -84,6 +84,10 @@ pub enum WarningCode {
     W040MavenModuleNotFound,
     W041GradleSubprojectNotFound,
     W042AndroidManifestParseError,
+    W044BundlerConfigParseError,
+    W045DynamicAliasSkipped,
+    W047TurboConfigParseError,
+    W048NextConfigParseError,
 }
 
 impl WarningCode {
@@ -131,6 +135,10 @@ impl WarningCode {
             Self::W040MavenModuleNotFound => "W040",
             Self::W041GradleSubprojectNotFound => "W041",
             Self::W042AndroidManifestParseError => "W042",
+            Self::W044BundlerConfigParseError => "W044",
+            Self::W045DynamicAliasSkipped => "W045",
+            Self::W047TurboConfigParseError => "W047",
+            Self::W048NextConfigParseError => "W048",
         }
     }
 }
@@ -385,6 +393,10 @@ impl DiagnosticCollector {
             WarningCode::W040MavenModuleNotFound => {}
             WarningCode::W041GradleSubprojectNotFound => {}
             WarningCode::W042AndroidManifestParseError => {}
+            WarningCode::W044BundlerConfigParseError => {}
+            WarningCode::W045DynamicAliasSkipped => {}
+            WarningCode::W047TurboConfigParseError => {}
+            WarningCode::W048NextConfigParseError => {}
         }
         guard.0.push(warning);
     }

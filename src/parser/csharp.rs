@@ -7,7 +7,7 @@ use crate::model::{CanonicalPath, FileSet};
 use crate::parser::config::csproj::CsprojConfig;
 use crate::parser::config::find_nearest_csproj;
 use crate::parser::symbols::SymbolExtractor;
-use crate::parser::traits::{ImportKind, ImportResolver, LanguageParser, RawExport, RawImport};
+use crate::parser::traits::{ImportKind, ImportResolver, LanguageParser, ParseOutcome, RawExport, RawImport};
 
 /// C# language parser.
 pub(crate) struct CSharpParser;
@@ -25,16 +25,18 @@ impl LanguageParser for CSharpParser {
         tree_sitter::Language::from(tree_sitter_c_sharp::LANGUAGE)
     }
 
-    fn extract_imports(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Vec<RawImport> {
-        let source_str = std::str::from_utf8(source).unwrap_or("");
-
-        // Detect .razor content: these files use Razor directives (@using, @inject, etc.)
-        // which are not valid C#. tree-sitter C# parser will produce ERROR nodes for them,
-        // so we use regex-based extraction instead.
-        if is_razor_content(source_str) {
-            return extract_razor_imports(source_str);
+    fn raw_parse(&self, source: &[u8], extension: &str, _path: &CanonicalPath)
+        -> Option<ParseOutcome>
+    {
+        if extension == "razor" {
+            let source_str = std::str::from_utf8(source).unwrap_or("");
+            let imports = extract_razor_imports(source_str);
+            return Some(ParseOutcome::Ok(imports, vec![], vec![], vec![]));
         }
+        None
+    }
 
+    fn extract_imports(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Vec<RawImport> {
         let mut imports = Vec::new();
         let root = tree.root_node();
 
@@ -51,18 +53,6 @@ impl LanguageParser for CSharpParser {
 
         exports
     }
-}
-
-/// Detect whether source content is a .razor file by checking for Razor directives.
-///
-/// .razor files typically start with @-prefixed directives (@page, @using, @inject, etc.).
-/// We check if the first non-empty line starts with '@'.
-fn is_razor_content(source: &str) -> bool {
-    source
-        .lines()
-        .find(|line| !line.trim().is_empty())
-        .map(|line| line.trim_start().starts_with('@'))
-        .unwrap_or(false)
 }
 
 /// Extract imports from .razor file content using text-based parsing.
@@ -926,31 +916,34 @@ namespace MyApp {
         assert_eq!(result, Some(CanonicalPath::new("Models/User.cs")));
     }
 
-    // ---- Razor tests ----
+    // ---- Razor tests (via raw_parse, D-145) ----
+
+    fn razor_imports(source: &str) -> Vec<RawImport> {
+        let path = CanonicalPath::new("Pages/Counter.razor".to_string());
+        let outcome = CSharpParser.raw_parse(source.as_bytes(), "razor", &path);
+        match outcome {
+            Some(ParseOutcome::Ok(imports, _, _, _)) => imports,
+            other => panic!("expected ParseOutcome::Ok, got {:?}", other.is_some()),
+        }
+    }
 
     #[test]
     fn test_razor_using_directive() {
-        let source = "@using MyApp.Models\n<h1>Hello</h1>";
-        let tree = parse(source);
-        let imports = CSharpParser.extract_imports(&tree, source.as_bytes());
+        let imports = razor_imports("@using MyApp.Models\n<h1>Hello</h1>");
         assert_eq!(imports.len(), 1);
         assert_eq!(imports[0].path, "MyApp.Models");
     }
 
     #[test]
     fn test_razor_inject_directive() {
-        let source = "@inject IUserService UserService\n<p>@UserService.Name</p>";
-        let tree = parse(source);
-        let imports = CSharpParser.extract_imports(&tree, source.as_bytes());
+        let imports = razor_imports("@inject IUserService UserService\n<p>@UserService.Name</p>");
         assert_eq!(imports.len(), 1);
         assert_eq!(imports[0].path, "IUserService");
     }
 
     #[test]
     fn test_razor_inherits_directive() {
-        let source = "@inherits LayoutComponentBase\n<div>@Body</div>";
-        let tree = parse(source);
-        let imports = CSharpParser.extract_imports(&tree, source.as_bytes());
+        let imports = razor_imports("@inherits LayoutComponentBase\n<div>@Body</div>");
         assert_eq!(imports.len(), 1);
         assert_eq!(imports[0].path, "LayoutComponentBase");
     }
@@ -970,17 +963,22 @@ namespace MyApp {
     private void Increment() { count++; }
 }
 "#;
-        let tree = parse(source);
-        let imports = CSharpParser.extract_imports(&tree, source.as_bytes());
-        // Should extract @using and @inject, but not @page or @code
+        let imports = razor_imports(source);
         assert_eq!(imports.len(), 2);
         assert_eq!(imports[0].path, "MyApp.Data");
         assert_eq!(imports[1].path, "WeatherService");
     }
 
     #[test]
-    fn test_cs_file_not_detected_as_razor() {
-        // Regular C# file starting with "using" should NOT be detected as razor
+    fn test_raw_parse_returns_none_for_cs() {
+        // raw_parse should return None for .cs files (handled by tree-sitter)
+        let path = CanonicalPath::new("src/App.cs".to_string());
+        let result = CSharpParser.raw_parse(b"using System;", "cs", &path);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_cs_file_uses_tree_sitter() {
         let source = r#"using System;
 using System.Linq;
 

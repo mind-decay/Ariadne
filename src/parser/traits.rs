@@ -1,3 +1,5 @@
+use crate::model::semantic::Boundary;
+use crate::model::symbol::SymbolDef;
 use crate::model::workspace::WorkspaceInfo;
 use crate::model::{CanonicalPath, FileSet};
 
@@ -31,6 +33,16 @@ pub struct RawExport {
     pub source: Option<String>,
 }
 
+/// Result of parsing a source file.
+pub enum ParseOutcome {
+    /// Parsed successfully with no errors.
+    Ok(Vec<RawImport>, Vec<RawExport>, Vec<SymbolDef>, Vec<Boundary>),
+    /// Parsed with partial errors (>0% but ≤50% ERROR nodes) — W007.
+    Partial(Vec<RawImport>, Vec<RawExport>, Vec<SymbolDef>, Vec<Boundary>),
+    /// Parse failed (>50% ERROR nodes or no tree produced) — W001.
+    Failed,
+}
+
 /// Extracts imports/exports from AST (language syntax knowledge).
 pub trait LanguageParser: Send + Sync {
     fn language(&self) -> &str;
@@ -43,6 +55,11 @@ pub trait LanguageParser: Send + Sync {
     }
     fn extract_imports(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Vec<RawImport>;
     fn extract_exports(&self, tree: &tree_sitter::Tree, source: &[u8]) -> Vec<RawExport>;
+
+    /// Bypass tree-sitter for file formats that need custom parsing (D-145).
+    /// Return `Some(outcome)` to skip tree-sitter parse entirely.
+    fn raw_parse(&self, _source: &[u8], _extension: &str, _path: &CanonicalPath)
+        -> Option<ParseOutcome> { None }
 }
 
 /// Resolves raw import paths to canonical file paths (filesystem knowledge).

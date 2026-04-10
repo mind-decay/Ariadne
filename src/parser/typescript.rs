@@ -5,7 +5,7 @@ use crate::model::symbol::{LineSpan, SymbolDef, SymbolKind, Visibility};
 use crate::model::workspace::WorkspaceInfo;
 use crate::model::{CanonicalPath, FileSet};
 use crate::parser::helpers;
-use crate::parser::config::TsConfig;
+use crate::parser::config::{BundlerConfig, TsConfig};
 use crate::parser::symbols::SymbolExtractor;
 use crate::parser::traits::{ImportKind, ImportResolver, LanguageParser, RawExport, RawImport};
 
@@ -685,17 +685,30 @@ fn truncate_signature(sig: Option<&str>, max_len: usize) -> Option<String> {
 pub(crate) struct TypeScriptResolver {
     /// TypeScript path alias configs, keyed by directory containing tsconfig.json.
     ts_configs: Option<BTreeMap<PathBuf, TsConfig>>,
+    /// Bundler alias configs (Vite/Webpack), keyed by directory containing config file.
+    bundler_configs: Option<BTreeMap<PathBuf, BundlerConfig>>,
 }
 
 impl TypeScriptResolver {
     pub fn new() -> Self {
-        Self { ts_configs: None }
+        Self {
+            ts_configs: None,
+            bundler_configs: None,
+        }
     }
 
     /// Inject tsconfig path alias configurations for config-aware resolution (D-118).
     pub fn with_ts_configs(mut self, configs: BTreeMap<PathBuf, TsConfig>) -> Self {
         if !configs.is_empty() {
             self.ts_configs = Some(configs);
+        }
+        self
+    }
+
+    /// Inject bundler alias configurations for Vite/Webpack resolution (D-150).
+    pub fn with_bundler_configs(mut self, configs: BTreeMap<PathBuf, BundlerConfig>) -> Self {
+        if !configs.is_empty() {
+            self.bundler_configs = Some(configs);
         }
         self
     }
@@ -832,6 +845,52 @@ impl TypeScriptResolver {
         None
     }
 
+    /// Try to resolve an import specifier via bundler alias configs (D-150).
+    ///
+    /// Finds the nearest bundler config for the importing file, then checks
+    /// if the specifier starts with any alias prefix. If match, substitutes
+    /// the prefix and probes extensions against known_files.
+    ///
+    /// Priority: tsconfig paths > bundler aliases (D-150).
+    fn resolve_via_bundler(
+        &self,
+        specifier: &str,
+        from_file: &CanonicalPath,
+        known_files: &FileSet,
+        configs: &BTreeMap<PathBuf, BundlerConfig>,
+    ) -> Option<CanonicalPath> {
+        let from_dir = from_file.parent().unwrap_or("");
+        let from_dir_path = PathBuf::from(from_dir);
+
+        let bundler_config = crate::parser::config::find_nearest_bundler(&from_dir_path, configs)?;
+
+        // Check aliases: longest prefix match first for specificity
+        let mut matching_aliases: Vec<(&String, &String)> = bundler_config
+            .aliases
+            .iter()
+            .filter(|(prefix, _)| specifier.starts_with(prefix.as_str()))
+            .collect();
+        matching_aliases.sort_by(|a, b| b.0.len().cmp(&a.0.len()));
+
+        for (prefix, target) in matching_aliases {
+            let rest = &specifier[prefix.len()..];
+            // Rest may start with / — strip it
+            let rest = rest.strip_prefix('/').unwrap_or(rest);
+
+            let candidate_base = if rest.is_empty() {
+                target.clone()
+            } else {
+                format!("{}/{}", target, rest)
+            };
+
+            if let Some(resolved) = Self::probe_ts_extensions(&candidate_base, known_files) {
+                return Some(resolved);
+            }
+        }
+
+        None
+    }
+
     /// Probe a base path with TypeScript/JavaScript extension variants.
     ///
     /// Tries: exact match, .ts, .tsx, .js, .jsx, .mjs, .cjs, then index files.
@@ -888,12 +947,22 @@ impl ImportResolver for TypeScriptResolver {
             }
         }
 
-        // Try tsconfig path alias resolution for bare specifiers (D-118).
+        // Priority 1: tsconfig path alias resolution (D-118).
         // This MUST come before the bare-specifier skip, because aliases like
         // `@/components/Button` look like bare specifiers but should resolve
         // via tsconfig paths.
         if let Some(ref configs) = self.ts_configs {
             if let Some(resolved) = self.resolve_via_tsconfig(specifier, from_file, known_files, configs) {
+                return Some(resolved);
+            }
+        }
+
+        // Priority 2: bundler alias resolution (D-150).
+        // After tsconfig paths (which are the language-level standard) but before
+        // bare specifier skip. Bundler aliases like `@` → `./src` look like bare
+        // specifiers but should resolve via bundler config.
+        if let Some(ref configs) = self.bundler_configs {
+            if let Some(resolved) = self.resolve_via_bundler(specifier, from_file, known_files, configs) {
                 return Some(resolved);
             }
         }
@@ -1682,5 +1751,122 @@ mod config_resolution_tests {
         // with_ts_configs with empty map should behave like no config
         let resolver = TypeScriptResolver::new().with_ts_configs(BTreeMap::new());
         assert!(resolver.ts_configs.is_none());
+    }
+
+    // --- Bundler alias resolution (D-150) ---
+
+    fn make_bundler_resolver(aliases: Vec<(&str, &str)>) -> TypeScriptResolver {
+        use crate::parser::config::BundlerConfig;
+        let mut alias_map = BTreeMap::new();
+        for (k, v) in aliases {
+            alias_map.insert(k.to_string(), v.to_string());
+        }
+        let mut configs = BTreeMap::new();
+        configs.insert(
+            PathBuf::from(""),
+            BundlerConfig {
+                config_dir: PathBuf::from(""),
+                aliases: alias_map,
+                modules: Vec::new(),
+            },
+        );
+        TypeScriptResolver::new().with_bundler_configs(configs)
+    }
+
+    #[test]
+    fn bundler_alias_resolves() {
+        let resolver = make_bundler_resolver(vec![("@", "src")]);
+        let known = FileSet::from_iter(vec![
+            CanonicalPath::new("src/components/Button.tsx"),
+        ]);
+
+        let import = make_import("@/components/Button");
+        let from = CanonicalPath::new("src/app.ts");
+
+        let result = resolver.resolve(&import, &from, &known, None);
+        assert_eq!(
+            result,
+            Some(CanonicalPath::new("src/components/Button.tsx"))
+        );
+    }
+
+    #[test]
+    fn bundler_alias_exact_match() {
+        let resolver = make_bundler_resolver(vec![("~utils", "src/utils")]);
+        let known = FileSet::from_iter(vec![
+            CanonicalPath::new("src/utils/index.ts"),
+        ]);
+
+        let import = make_import("~utils");
+        let from = CanonicalPath::new("src/app.ts");
+
+        let result = resolver.resolve(&import, &from, &known, None);
+        assert_eq!(
+            result,
+            Some(CanonicalPath::new("src/utils/index.ts"))
+        );
+    }
+
+    #[test]
+    fn tsconfig_takes_priority_over_bundler() {
+        // SC-10: tsconfig paths > bundler aliases
+        let mut ts_configs = BTreeMap::new();
+        let mut paths = BTreeMap::new();
+        paths.insert("@/*".to_string(), vec!["lib/*".to_string()]);
+        ts_configs.insert(
+            PathBuf::from(""),
+            TsConfig {
+                config_dir: PathBuf::from(""),
+                base_url: Some(".".to_string()),
+                paths,
+            },
+        );
+
+        let mut bundler_aliases = BTreeMap::new();
+        bundler_aliases.insert("@".to_string(), "src".to_string());
+        let mut bundler_configs = BTreeMap::new();
+        bundler_configs.insert(
+            PathBuf::from(""),
+            BundlerConfig {
+                config_dir: PathBuf::from(""),
+                aliases: bundler_aliases,
+                modules: Vec::new(),
+            },
+        );
+
+        let resolver = TypeScriptResolver::new()
+            .with_ts_configs(ts_configs)
+            .with_bundler_configs(bundler_configs);
+
+        // File exists in lib/ (tsconfig target) but NOT in src/ (bundler target)
+        let known = FileSet::from_iter(vec![
+            CanonicalPath::new("lib/utils.ts"),
+        ]);
+
+        let import = make_import("@/utils");
+        let from = CanonicalPath::new("src/app.ts");
+
+        let result = resolver.resolve(&import, &from, &known, None);
+        // Should resolve via tsconfig (lib/), not bundler (src/)
+        assert_eq!(result, Some(CanonicalPath::new("lib/utils.ts")));
+    }
+
+    #[test]
+    fn bundler_alias_no_match_falls_through() {
+        let resolver = make_bundler_resolver(vec![("@", "src")]);
+        let known = FileSet::new();
+
+        let import = make_import("lodash");
+        let from = CanonicalPath::new("src/app.ts");
+
+        // "lodash" doesn't match "@" alias, bare specifier → None
+        let result = resolver.resolve(&import, &from, &known, None);
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn empty_bundler_configs_no_effect() {
+        let resolver = TypeScriptResolver::new().with_bundler_configs(BTreeMap::new());
+        assert!(resolver.bundler_configs.is_none());
     }
 }

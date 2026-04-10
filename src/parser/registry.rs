@@ -9,24 +9,12 @@ use super::markdown;
 use super::python::{PythonParser, PythonResolver};
 use super::rust_lang::{RustParser, RustResolver};
 use super::symbols::SymbolExtractor;
-use super::traits::{ImportResolver, LanguageParser, RawExport, RawImport};
+use super::traits::{ImportResolver, LanguageParser, ParseOutcome, RawImport};
 use super::typescript::{TypeScriptParser, TypeScriptResolver};
 use super::yaml;
-use crate::model::semantic::Boundary;
-use crate::model::symbol::SymbolDef;
 use crate::model::types::CanonicalPath;
 use crate::semantic::BoundaryExtractor;
 use crate::parser::config::ProjectConfig;
-
-/// Result of parsing a source file.
-pub enum ParseOutcome {
-    /// Parsed successfully with no errors.
-    Ok(Vec<RawImport>, Vec<RawExport>, Vec<SymbolDef>, Vec<Boundary>),
-    /// Parsed with partial errors (>0% but ≤50% ERROR nodes) — W007.
-    Partial(Vec<RawImport>, Vec<RawExport>, Vec<SymbolDef>, Vec<Boundary>),
-    /// Parse failed (>50% ERROR nodes or no tree produced) — W001.
-    Failed,
-}
 
 /// Registry of language parsers and resolvers, indexed by file extension.
 pub struct ParserRegistry {
@@ -195,13 +183,15 @@ impl ParserRegistry {
         let csharp_extractor: Arc<dyn SymbolExtractor> = csharp::symbol_extractor();
         let java_extractor: Arc<dyn SymbolExtractor> = java::symbol_extractor();
 
-        // TypeScript: inject tsconfig path aliases if discovered
-        let ts_resolver: Box<dyn ImportResolver> = if !config.ts_configs.is_empty() {
-            Box::new(TypeScriptResolver::new().with_ts_configs(config.ts_configs.clone()))
-        } else {
-            Box::new(TypeScriptResolver::new())
-        };
-        registry.register(Box::new(TypeScriptParser::new()), ts_resolver);
+        // TypeScript: inject tsconfig path aliases + bundler aliases if discovered
+        let mut ts_resolver = TypeScriptResolver::new();
+        if !config.ts_configs.is_empty() {
+            ts_resolver = ts_resolver.with_ts_configs(config.ts_configs.clone());
+        }
+        if !config.bundler_configs.is_empty() {
+            ts_resolver = ts_resolver.with_bundler_configs(config.bundler_configs.clone());
+        }
+        registry.register(Box::new(TypeScriptParser::new()), Box::new(ts_resolver));
 
         // Python: inject pyproject config if discovered
         let py_resolver: Box<dyn ImportResolver> = if let Some(ref py_config) = config.py_config {
@@ -261,6 +251,12 @@ impl ParserRegistry {
         registry.register_boundary_extractor(Arc::new(
             crate::semantic::java::JavaBoundaryExtractor,
         ));
+        registry.register_boundary_extractor(Arc::new(
+            crate::semantic::ReactBoundaryExtractor,
+        ));
+        registry.register_boundary_extractor(Arc::new(
+            crate::semantic::NextBoundaryExtractor,
+        ));
 
         registry
     }
@@ -318,6 +314,11 @@ impl ParserRegistry {
         extension: &str,
         path: &CanonicalPath,
     ) -> Result<ParseOutcome, String> {
+        // D-145: allow parsers to bypass tree-sitter for custom formats
+        if let Some(outcome) = parser.raw_parse(source, extension, path) {
+            return Ok(outcome);
+        }
+
         let mut ts_parser = tree_sitter::Parser::new();
         ts_parser
             .set_language(&parser.tree_sitter_language_for_ext(extension))
@@ -384,8 +385,18 @@ impl ParserRegistry {
 
     /// Re-parse imports from source bytes for a given file extension.
     /// Used by the freshness engine for lightweight import change detection.
-    pub fn reparse_imports(&self, extension: &str, source: &[u8]) -> Option<Vec<RawImport>> {
+    pub fn reparse_imports(&self, extension: &str, source: &[u8], path: &CanonicalPath) -> Option<Vec<RawImport>> {
         let parser = self.parser_for(extension)?;
+
+        // D-145: allow parsers to bypass tree-sitter for custom formats
+        if let Some(outcome) = parser.raw_parse(source, extension, path) {
+            return match outcome {
+                ParseOutcome::Ok(imports, _, _, _)
+                | ParseOutcome::Partial(imports, _, _, _) => Some(imports),
+                ParseOutcome::Failed => Some(Vec::new()),
+            };
+        }
+
         let ts_lang = parser.tree_sitter_language_for_ext(extension);
         let mut ts_parser = tree_sitter::Parser::new();
         ts_parser.set_language(&ts_lang).ok()?;
