@@ -173,6 +173,7 @@
         "design/specs/2026-04-04-phase11-implementation-plan.md",
         "design/specs/2026-04-10-phase13-js-frameworks.md",
         "design/specs/2026-04-10-phase13a-implementation-plan.md",
+        "design/specs/2026-04-12-phase14-script-discovery.md",
         "design/specs/archive/2026-03-17-phase1-core-cli.md",
         "design/specs/archive/2026-03-17-phase1-implementation-plan.md",
         "design/specs/archive/2026-03-17-phase1a-implementation-plan.md",
@@ -194,7 +195,7 @@
         "design/specs/archive/2026-03-25-phase7-implementation-plan.md",
         "design/testing.md"
       ],
-      "file_count": 42,
+      "file_count": 43,
       "internal_edges": 0,
       "external_edges": 0,
       "cohesion": 1.0

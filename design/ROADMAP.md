@@ -2011,16 +2011,347 @@ If layers 1-3 yield `scripts: []`, Theseus prompts the user: "No build/test/lint
 
 ---
 
-## Future (Beyond Phase 14)
+## Phase 15: Hardening — Audit Fixes
+
+**Goal:** Fix systemic issues found in the April 2026 full-codebase audit. No new features — only correctness, observability, and robustness improvements to existing code.
+
+**Depends on:** None (can run in parallel with Phase 13b or 14).
+
+**Evidence:** All items trace to specific code locations found during the audit. No speculative work.
+
+### Phase 15a: Silent Data Loss → Observable Warnings
+
+**Problem:** Parsers silently return `None` for unresolved imports instead of emitting warnings. Users cannot know their graph is incomplete. Symbol extractors catch panics via `catch_unwind()` and return empty Vec with no diagnostic.
+
+**Scope:**
+
+- Add warning codes for unresolved imports (new W050-W055 range):
+  - **W050** — Unresolved bare specifier (TS npm packages, Go external, Rust external crates)
+  - **W051** — Tsconfig/bundler path alias matched no file
+  - **W052** — Relative import target not found (Python, TS)
+  - **W053** — Namespace-to-file mapping failed (C#, Java)
+  - **W054** — Symbol extractor panicked (with source file path + language)
+  - **W055** — Boundary extractor panicked (with source file path + extractor name)
+- Emit warnings via `DiagnosticCollector` — NOT errors, NOT blocking. Graph builds successfully but with visibility into gaps.
+- Add `unresolved_import_count` to graph stats output
+- Replace `catch_unwind()` silent empty Vec with warning + empty Vec (`registry.rs:359-376`)
+
+**Evidence:**
+- `typescript.rs:809,855-891,971-972` — silent None on alias/bare specifier resolution
+- `python.rs:652` — silent None on relative import failure
+- `go.rs:354-356,361-362` — silent None on stdlib/external
+- `rust_lang.rs:231,807-824` — silent None + symbol name trimming
+- `csharp.rs:490-499,635,640` — silent None on framework/NuGet filter
+- `java.rs:528-539,553-554,637-645` — silent None on external heuristic + source dir fallback
+- `registry.rs:359-376` — catch_unwind swallows panics with no trace
+
+**Not in scope:** Changing resolution logic. This phase only adds observability to existing behavior.
+
+**Deliverables:**
+- Warning codes W050-W055 in `diagnostic.rs`
+- Updated resolvers in all 6 language parsers (emit warning before returning None)
+- Updated `registry.rs` panic guards (emit W054/W055 before returning empty)
+- `unresolved_import_count` field in `StatsOutput`
+- Tests: each new warning code has a fixture that triggers it
+
+### Phase 15b: MCP Response Bounds
+
+**Problem:** Several MCP tools can return unbounded responses that overwhelm LLM clients.
+
+**Scope:**
+
+- `ariadne_hidden_deps`: Add `top` parameter (default 50), truncate response. Currently returns up to 10,000 pairs (`coupling.rs:MAX_PAIRS`).
+- `ariadne_subgraph`: Enforce max depth cap (default 10). Currently user-configurable without upper bound (`tools.rs:632`).
+- `ariadne_boundaries`: Add `top` parameter (default 100). Currently returns all boundaries across all files.
+- All three tools: add `truncated: bool` field to response when results are capped.
+- MCP rebuild failure: propagate error state to `ariadne_freshness` response (currently `watch.rs:203-205` logs to stderr only, clients get stale data without knowing).
+
+**Evidence:**
+- `tools.rs:2345-2385` — hidden_deps no truncation, up to 10k pairs
+- `tools.rs:612` — subgraph depth unlimited
+- `tools.rs:2393-2443` — boundaries iterates all files, no cap
+- `watch.rs:203-205` — rebuild failure swallowed, graph stays stale
+
+**Deliverables:**
+- Updated `ariadne_hidden_deps`, `ariadne_subgraph`, `ariadne_boundaries` tool handlers
+- `truncated` field in responses
+- `last_rebuild_error: Option<String>` in freshness state
+- Tests: verify truncation at limits, verify freshness reports rebuild errors
+
+### Phase 15c: Threshold Documentation & Boundary Tests
+
+**Problem:** 14 hardcoded thresholds in smell detection, context assembly, and metrics without documented justification or boundary-case tests.
+
+**Scope:**
+
+- Extract all thresholds to named constants with documentation comments explaining rationale:
+  - `smells.rs` — God File (0.8 centrality, 20 out-degree, 500 LOC), Hub-and-Spoke (0.5), Unstable Foundation (0.7 instability, 10 Ca), Temporal Coupling (0.5), Shotgun Surgery (0.3)
+  - `context.rs` — distance scoring (0.8/0.5/0.3/0.05/0.02), centrality bonus (0.2), task weights (1.5/1.3)
+  - `metrics.rs` — abstractness thresholds (3 public symbols, 0.5 trait ratio, 0.8 re-export ratio, 0.3 zone distance)
+- Add boundary-case tests: exactly-at-threshold, one-below-threshold for each smell detector
+- Remove unused `_clusters` parameter from `assemble_context()` (`context.rs:354`)
+- Make `analyze_impact()` blast radius depth configurable (currently hardcoded to 3 at `impact.rs:73`)
+
+**Evidence:**
+- `smells.rs:55,61,166,192,270,361` — 6 smell thresholds, only Shotgun Surgery has a comment
+- `context.rs:94-99,107,145-171` — 7 scoring constants, zero comments
+- `metrics.rs:145,149,157,162` — 4 classification thresholds
+- `context.rs:354` — `_clusters` parameter accepted but unused
+- `impact.rs:73` — `Some(3)` hardcoded depth
+
+**Deliverables:**
+- Named constants with `///` doc comments for all 14+ thresholds
+- Boundary tests for each smell detector (at threshold, below threshold)
+- `assemble_context()` signature cleaned up (clusters removed)
+- `analyze_impact()` accepts optional `depth` parameter
+- Architecture decision D-153: threshold rationale document
+
+### Phase 15d: Test Coverage Gaps
+
+**Problem:** 4 modules have zero integration tests. Only 8 property-based tests exist. Fixtures are small (2-10 files).
+
+**Scope:**
+
+- Integration tests for modules that only have inline tests:
+  - `tests/analysis_integration.rs` — Martin metrics, smell detection, structural diff on real fixtures
+  - `tests/conventions_integration.rs` — naming conventions, import patterns, temporal trends on fixtures
+  - `tests/recommend_integration.rs` — suggest_split, suggest_placement, refactor_opportunities on fixtures
+- Property-based tests (proptest) for graph algorithm invariants:
+  - Topological sort respects all edges
+  - Centrality values always in [0.0, 1.0]
+  - Blast radius always includes the source node
+  - Symbol index search is deterministic across runs
+- Medium-scale fixture (50-100 files) for invariant testing beyond current 2-10 file fixtures
+- Fix hotspot LOC=0 scoring bug (`hotspot.rs:27`): files with 0 LOC get worst rank, not best
+
+**Evidence:**
+- `analysis/` — 29 inline tests, 0 integration
+- `conventions/` — 47 inline tests, 0 integration
+- `recommend/` — 93 inline tests, 0 integration
+- `properties.rs` — only 8 property tests (CanonicalPath + hash)
+- `hotspot.rs:27` — `unwrap_or(0)` gives rank 1 to missing-LOC files
+
+**Deliverables:**
+- 3 new integration test files (analysis, conventions, recommend)
+- 8+ new property-based tests in `properties.rs`
+- 1 medium-scale fixture (50-100 files, multi-language)
+- Hotspot LOC=0 fix in `hotspot.rs`
+- Tests: hotspot scoring with missing LOC files
+
+### Phase 15e: Minor Algorithmic Improvements
+
+**Problem:** Small inefficiencies and dead code in core algorithms.
+
+**Scope:**
+
+- Fix double-cloning in BFS (`context.rs:259-269`): clone once, reuse
+- Fix double-cloning in reading_order BFS (same pattern)
+- Clean up dead code in `impact.rs:101-107`: layer_direction else branch unreachable
+- Replace hardcoded `Some(1)` with `libc::EPERM` in `lock.rs:142` (correctness, not functionality)
+- Java wildcard import directory scan (`java.rs:558-604`): add early exit when match found
+
+**Evidence:**
+- `context.rs:259-269` — two `.clone()` calls per BFS edge where one suffices (~30k extra allocations on 5k-node graph)
+- `impact.rs:101-107` — else branch is dead code (if layers_crossed > 0 then max_depth > min_depth always)
+- `lock.rs:142` — `Some(1)` works but `libc::EPERM` is self-documenting
+- `java.rs:558-604` — wildcard scan doesn't short-circuit
+
+**Deliverables:**
+- Optimized BFS in context.rs and reading_order.rs
+- Cleaned up impact.rs layer_direction
+- libc constant in lock.rs
+- Java wildcard early exit
+- Benchmark comparison: before/after for context assembly on 3000-node graph
+
+---
+
+## Phase 16: Ariadne–Theseus Integration Improvements
+
+**Goal:** New Ariadne capabilities specifically motivated by documented Theseus pain points and telemetry signals. Each item traces to a Theseus issue, audit finding, or telemetry metric.
+
+**Depends on:** Phase 15 (fixes should land first). Phase 14 can proceed independently.
+
+### Phase 16a: Test Framework Config Enrichment
+
+**Problem:** Theseus test_gen receives only framework name from `TechStack.test_framework`. It doesn't know config path, test glob patterns, or test directory conventions. LLM wastes turns discovering these.
+
+**Evidence:**
+- Theseus Phase 8b audit — item B2 (upstream Ariadne)
+- `stream_telemetry.rs:12-14` — every Grep/Glob call is a signal Ariadne could have answered
+- `tech_stack.rs` — `test_framework` is `Option<(String, Option<String>)>` (name + version only)
+
+**Scope:**
+
+- Extend `TechStack.test_framework` to a struct:
+  ```
+  TestFrameworkInfo {
+      name: String,
+      version: Option<String>,
+      config_path: Option<CanonicalPath>,  // jest.config.ts, vitest.config.ts, pytest.ini, etc.
+      test_glob: Option<String>,           // **/*.test.ts, tests/**/*.py, etc.
+      test_dir: Option<String>,            // __tests__, tests/, spec/, etc.
+  }
+  ```
+- Discovery sources:
+  - package.json `jest` config key → config_path
+  - Separate config files: `jest.config.*`, `vitest.config.*`, `.mocharc.*`, `pytest.ini`, `conftest.py`, `phpunit.xml`
+  - Config file contents: extract `testMatch`, `testPathPattern`, `testDir` from Jest/Vitest configs
+  - Convention-based: scan for `__tests__/`, `tests/`, `spec/`, `test/` directories
+- MCP: `ariadne_overview` includes test framework details
+
+**Deliverables:**
+- `TestFrameworkInfo` struct in `model/`
+- Discovery logic in `conventions/tech_stack.rs`
+- Updated `ariadne_overview` MCP tool
+- Test fixtures with various test framework configs
+
+### Phase 16b: CallGraph in Context Assembly
+
+**Problem:** Theseus retry/implementer prompts lack callers/callees of changed symbols. LLM greps for them, wasting turns and producing non-deterministic results.
+
+**Evidence:**
+- `stream_telemetry.rs:12-14` — "Ariadne's SymbolIndex / CallGraph could in principle have provided the answer deterministically"
+- Theseus Phase 8e candidate — "symbol-level enrichment for retry prompts"
+- CallGraph exists since Phase 4 but `assemble_context()` doesn't use it
+
+**Scope:**
+
+- Extend `ContextResult` with optional `symbol_context: Vec<SymbolContext>`:
+  ```
+  SymbolContext {
+      file: CanonicalPath,
+      symbol: String,
+      kind: SymbolKind,
+      callers: Vec<(CanonicalPath, String)>,   // (file, caller_symbol)
+      callees: Vec<(CanonicalPath, String)>,   // (file, callee_symbol)
+  }
+  ```
+- When `task_type` is `FixBug` or `Refactor`, include symbol context for symbols in target files
+- Token budget awareness: symbol context has its own sub-budget (10% of total), prioritized by call count
+- Library API: `assemble_context()` accepts optional `&CallGraph` parameter
+
+**Deliverables:**
+- `SymbolContext` struct in `model/`
+- Updated `algo/context.rs` — symbol context tier in budget allocation
+- Updated `ariadne_context` MCP tool — includes symbol context when available
+- Tests: context assembly with call graph, budget respects sub-limit
+
+### Phase 16c: Semantic-Aware Blast Radius
+
+**Problem:** Theseus gates use `blast_radius()` which follows only import edges. If a file changes an HTTP route handler, consumers via route matching are invisible to the gate. This is a false negative.
+
+**Evidence:**
+- Ariadne Phase 8 — semantic boundaries exist (`route_map`, `event_map`)
+- `algo/blast_radius.rs:25` — only uses `index.reverse` (import edges)
+- Theseus gate checks blast radius for plan validation — missing semantic links = missed affected files
+
+**Scope:**
+
+- Add `include_semantic: bool` parameter to `blast_radius()` library function (default false for backwards compatibility)
+- When enabled, extend BFS to also follow semantic edges (route matches, event links) with separate distance tracking
+- `analyze_impact()` gains `include_semantic` parameter, passes through to blast_radius
+- Semantic neighbors marked distinctly in result: `SemanticLink { kind: Route|Event, confidence: f64 }`
+- MCP `ariadne_blast_radius` already has `include_semantic` parameter — wire it to the new library function
+
+**Deliverables:**
+- Updated `algo/blast_radius.rs` — semantic edge traversal
+- Updated `algo/impact.rs` — semantic parameter passthrough
+- `SemanticLink` annotation in blast radius results
+- Tests: blast radius with/without semantic edges, route-based propagation
+
+### Phase 16d: Architecture Conformance Rules
+
+**Problem:** Ariadne detects architectural smells via hardcoded heuristics. Users cannot define project-specific rules like "api/ must not import from data/ directly" or "every controller must be in layer=api". There's no way to verify changes against architectural contracts.
+
+**Evidence:**
+- ROADMAP formal methods list — FM-6.1 "Architecture Conformance" (Tier B)
+- Theseus gates verify layer direction and cycles, but cannot enforce custom rules
+- No competing MCP code graph tool offers user-defined architecture rules
+
+**Scope:**
+
+- `.ariadne/rules.json` — user-defined conformance rules:
+  ```
+  [
+    {
+      "id": "no-api-to-data",
+      "description": "API layer must not import data layer directly",
+      "type": "deny_edge",
+      "from": { "path_glob": "src/api/**" },
+      "to": { "path_glob": "src/data/**" },
+      "severity": "error"
+    },
+    {
+      "id": "controllers-in-api",
+      "description": "Controllers must be in API layer",
+      "type": "require_layer",
+      "path_glob": "**/*.controller.*",
+      "layer": "api",
+      "severity": "warning"
+    }
+  ]
+  ```
+- Rule types: `deny_edge` (no import from A to B), `require_layer` (files matching glob must be in layer), `max_dependencies` (file has at most N dependents), `require_test` (files matching glob must have test edge)
+- `ariadne_conformance` MCP tool — returns violations
+- CLI: `ariadne query conformance` — check rules against current graph
+- Rules validated at load time (glob syntax, referenced layers exist)
+
+**Deliverables:**
+- `src/analysis/conformance.rs` — rule parser, rule checker
+- `.ariadne/rules.json` schema and loader
+- `ariadne_conformance` MCP tool
+- `ariadne query conformance` CLI command
+- 4 rule types implemented: deny_edge, require_layer, max_dependencies, require_test
+- Test fixtures with intentional violations
+- Decision D-154: conformance rule design
+
+### Phase 16e: Graph Health Delta
+
+**Problem:** `ariadne_diff` tracks structural changes (added/removed nodes/edges) but doesn't quantify whether the architecture improved or degraded. Theseus result gate can check "tests pass" but not "architecture didn't get worse."
+
+**Evidence:**
+- `analysis/diff.rs` — computes change_magnitude but no health direction
+- Theseus verify phase runs Ariadne consistency check but only for convention conformance
+- Martin metrics (instability, abstractness) computed per-cluster but not compared pre/post
+
+**Scope:**
+
+- Extend `StructuralDiff` with health metrics:
+  ```
+  HealthDelta {
+      cycle_count_delta: i32,        // +N = new cycles, -N = resolved
+      smell_count_delta: i32,        // +N = new smells, -N = resolved
+      avg_instability_delta: f64,    // direction of Martin instability
+      max_centrality_delta: f64,     // bottleneck risk change
+      conformance_delta: i32,        // rule violations change (if rules exist)
+      direction: Improved | Degraded | Neutral,
+  }
+  ```
+- `ariadne_diff` MCP tool includes `health_delta` in response
+- Library API: `analysis::diff::compute_health_delta(before, after)` — pure function
+- Direction classification: `Improved` if all deltas ≤ 0, `Degraded` if any > 0, `Neutral` if all = 0
+
+**Deliverables:**
+- `HealthDelta` struct in `analysis/diff.rs`
+- Updated `ariadne_diff` MCP tool
+- Library function `compute_health_delta()`
+- Tests: health delta for cycle resolution, new smell introduction, neutral changes
+
+---
+
+## Future (Beyond Phase 16)
 
 - Tier 2/3 language parsers (Kotlin, Swift, C/C++, PHP, Ruby, Dart)
-- Config file (.ariadne.toml)
+- Config file (.ariadne.toml) for threshold overrides and project settings
 - Plugin system for external parsers
 - `ariadne self-update`
 - Package manager distribution (brew, nix, AUR)
 - Multi-project graph federation (monorepo cross-project dependencies)
 - IDE integration (LSP-based real-time graph updates)
 - Web dashboard for graph visualization
+- Dominator trees (Lengauer-Tarjan) for single points of failure detection (FM-4.1)
+- Compressed views consumption for Theseus parallel mode
+- Incremental in-process graph rebuild for Theseus sequential mode
 - Lattice-based layer inference (Galois connection on dependency partial order)
 - Node embeddings (node2vec / GNN) for similarity-based recommendations
 - Anomaly detection for architectural drift (ML-based, needs training data)

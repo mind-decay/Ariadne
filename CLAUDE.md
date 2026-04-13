@@ -30,6 +30,44 @@ Before working on any part of Ariadne, read the relevant docs:
 - Before starting a phase, read its spec for completion criteria. A phase is DONE only when ALL its GIVEN/WHEN/THEN assertions pass.
 - After completing a phase, update the Progress Tracking in ROADMAP.md.
 
+## Dogfooding: Use Ariadne to Navigate Ariadne
+
+Ariadne MCP server is wired into this environment (`mcp__ariadne__*` tools). The graph in `.ariadne/graph/` is the live index of this repo. **Use it as the primary navigation layer.** Ariadne is not just a structure analyzer — it is a code-navigation tool. It finds symbols, ranks files by importance, suggests reading order, compresses a module into a summary, follows call chains, and jumps to tests and call sites. Most of what you used to do with blind `Grep`/`Glob`/`Read` is faster and cheaper through MCP. Eating our own dog food also surfaces MCP bugs and UX gaps before users hit them.
+
+**Rule of thumb — Ariadne first, raw file tools second:**
+- **Ariadne MCP** — *finding* things (symbols, files, owners, tests, entry points), *understanding* things (what a module does, what depends on it, how to read it), *impact* reasoning (blast radius, plan impact, cycles, smells).
+- **`Read`** — only after Ariadne points you at the right file and you need exact current bytes (diffs, line numbers, edits).
+- **`Grep`/`Glob`** — only for string-level searches Ariadne can't answer (literal text, config values, non-code assets) or when the graph is known-stale.
+
+**Common task → tool mapping:**
+
+| Task | Tool |
+|---|---|
+| Find a symbol / fuzzy name lookup | `ariadne_symbol_search`, `ariadne_symbols` |
+| Jump to a file's role, imports, exports, summary | `ariadne_file`, `ariadne_context`, `ariadne_compressed` |
+| Understand a module before editing | `ariadne_file`, `ariadne_context`, `ariadne_symbols` |
+| Pick reading order for unfamiliar code | `ariadne_reading_order`, `ariadne_overview`, `ariadne_importance` |
+| Find who calls / who is called by a symbol | `ariadne_callers`, `ariadne_callees` |
+| Trace dependencies of a file | `ariadne_dependencies`, `ariadne_subgraph` |
+| Assess change impact before refactor | `ariadne_blast_radius`, `ariadne_symbol_blast_radius`, `ariadne_plan_impact` |
+| Find tests that cover a file/symbol | `ariadne_tests_for` |
+| Locate where new code should live | `ariadne_suggest_placement` |
+| Split a large file | `ariadne_suggest_split`, `ariadne_refactor_opportunities` |
+| Spot architectural issues | `ariadne_smells`, `ariadne_cycles`, `ariadne_hidden_deps`, `ariadne_coupling` |
+| Hot/churn/ownership questions | `ariadne_hotspots`, `ariadne_churn`, `ariadne_ownership`, `ariadne_freshness` |
+| Cluster / layer / boundary questions | `ariadne_cluster`, `ariadne_layers`, `ariadne_boundaries`, `ariadne_boundary_for` |
+| Route / event maps (HTTP, pub/sub) | `ariadne_route_map`, `ariadne_event_map` |
+| Structural diff across a change | `ariadne_diff` |
+| Personal notes / waypoints in the graph | `ariadne_bookmark`, `ariadne_bookmarks`, `ariadne_annotate`, `ariadne_annotations` |
+
+**Workflow expectations:**
+- Before editing a file, run `ariadne_file` + `ariadne_callers` on affected symbols. Do not guess impact.
+- Before a refactor, run `ariadne_plan_impact` / `ariadne_blast_radius`. Attach the result to your reasoning.
+- After structural changes, rebuild the graph (`cargo run -- build` or let the watcher do it) before trusting MCP answers — stale graph = stale advice.
+- If an MCP tool returns wrong/empty/confusing output, that is a **bug report**, not a reason to stop dogfooding. Capture it (input, output, expected) and surface it to the human or drop a note in `design/reports/`.
+
+**Do not** use Ariadne MCP tools as a substitute for reading the design docs listed above. Graph answers "what is connected to what"; design docs answer "why it is that way".
+
 ## Locked Constraints (NOT debatable during implementation)
 
 - **Language:** Rust only. No bash scripts, no Python, no TypeScript.

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "project_root": "/Users/minddecay/Documents/Projects/Ariadne",
-  "node_count": 396,
+  "node_count": 397,
   "edge_count": 461,
   "nodes": {
     ".claude/CLAUDE.md": {
@@ -386,8 +386,8 @@
       "type": "doc",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 214,
-      "hash": "61c69cf3163c6a6d",
+      "lines": 252,
+      "hash": "599466346cb121a4",
       "exports": [],
       "cluster": "root"
     },
@@ -1184,8 +1184,8 @@
       "type": "doc",
       "layer": "unknown",
       "arch_depth": 0,
-      "lines": 2010,
-      "hash": "ada8cf678453346d",
+      "lines": 2357,
+      "hash": "56dfb97960aaacb0",
       "exports": [],
       "cluster": "design"
     },
@@ -1375,6 +1375,15 @@
       "arch_depth": 0,
       "lines": 302,
       "hash": "7c90ee72cb46a435",
+      "exports": [],
+      "cluster": "design"
+    },
+    "design/specs/2026-04-12-phase14-script-discovery.md": {
+      "type": "doc",
+      "layer": "unknown",
+      "arch_depth": 0,
+      "lines": 624,
+      "hash": "9092472a2588b379",
       "exports": [],
       "cluster": "design"
     },
