@@ -1,0 +1,59 @@
+# Release pipeline scaffold.
+#
+# Final shape is produced by `dist init` (cargo-dist) once tier-10 lands the
+# `ariadne` binary. Until then this workflow only validates that a tag of the
+# form `v*` would trigger a build, and runs `cog changelog` against the tag
+# range so we exercise the cocogitto path. Real artifact build/upload steps
+# come in tier-10 via `dist init`.
+#
+# Reference: https://opensource.axo.dev/cargo-dist/
+
+name: release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-*"
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    name: plan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: oknozor/setup-cocogitto@v1
+      - name: Verify tag commit history is conventional
+        run: cog check --from-latest-tag
+
+  build:
+    name: build (${{ matrix.target }})
+    needs: plan
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: x86_64-apple-darwin
+            os: macos-latest
+          - target: aarch64-apple-darwin
+            os: macos-latest
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+      - name: No-op build (tier-10 will replace via `dist init`)
+        run: echo "release pipeline scaffold — replaced by cargo-dist in tier-10"

@@ -1,0 +1,4 @@
+# Default owner for everything. Per-crate owners reserved for post-v1.
+# Syntax: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+*       @mind-decay

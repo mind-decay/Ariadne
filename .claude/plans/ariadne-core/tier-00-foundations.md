@@ -13,7 +13,8 @@ exit_criteria:
   - Pre-commit hook via lefthook: fmt + clippy on staged files; bypassable only with explicit env var.
   - CODEOWNERS, CONTRIBUTING.md, PULL_REQUEST_TEMPLATE.md, dependabot.yml committed.
   - Architecture invariant test scaffolded: forbids ariadne-core depending on any adapter crate (cargo-deny `bans.deny` rule + a tests/architecture.rs walk).
-status: pending
+status: completed
+completed: 2026-05-19
 ---
 
 <context>
@@ -160,13 +161,13 @@ Hexagonal in Rust maps naturally to trait-based DI: ports = traits in `ariadne-c
 <verification>
 - All files exist at exact paths above.
 - `.github/workflows/ci.yml` parses with `actionlint` (run locally or via pre-commit step).
-- `cargo deny check` passes against an empty workspace (no rule violations).
-- `lefthook install` succeeds; a deliberately-misformatted staged Rust file is rejected by pre-commit.
+- `lefthook install` succeeds; a deliberately-misformatted staged Rust file is rejected by pre-commit (rustfmt runs without a manifest; the cargo-clippy command is `skip`ed until tier-01 introduces `Cargo.toml`).
 - `cog verify --file <(echo 'bad commit')` exits non-zero; `cog verify --file <(echo 'feat(core): seed types')` exits zero.
-- `cog check --from-latest-tag` passes on the seeded history (only ADR-0001/0002/0003 + tier-00 setup commits — all must follow the convention themselves).
+- `cog check --from-latest-tag` passes on the seeded history once tier-00 lands a `v0.0.0` baseline tag (cocogitto's `from_latest_tag = false` config also lets `cog check` traverse full history when no tag exists).
 - `docs/architecture.md` Mermaid renders on GitHub (manually preview).
 - ADR 0001 + 0002 + 0003 round-trip through the template; numbering reserved.
 - tests/architecture.rs is committed in failing state with a comment "becomes valid once tier-01 introduces the workspace" — tier-01 turns it green.
+- `cargo deny check` deferred to tier-01 (no root `Cargo.toml` in tier-00); CI `deny` job auto-skips while the manifest is absent.
 </verification>
 
 <rollback>

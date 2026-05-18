@@ -1,0 +1,23 @@
+# Lefthook config — see https://lefthook.dev/configuration/
+# Bypass with `LEFTHOOK=0 git commit …` only when explicitly justified.
+#
+# Pre-commit must not require a root Cargo.toml: tier-00 ships these hooks
+# before tier-01 introduces the workspace. rustfmt is invoked directly (no
+# manifest needed); cargo-based checks are skipped until a Cargo.toml exists.
+
+pre-commit:
+  parallel: true
+  commands:
+    fmt:
+      glob: "*.rs"
+      run: rustfmt --edition 2024 --check {staged_files}
+    clippy:
+      glob: "*.rs"
+      skip:
+        - run: "! test -f Cargo.toml"
+      run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+commit-msg:
+  commands:
+    cog:
+      run: cog verify --file {1}

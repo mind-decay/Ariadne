@@ -1,0 +1,77 @@
+# cocogitto config — see https://docs.cocogitto.io/reference/config.html
+# Pinned by ADR-0003 (commit convention). Adding a scope requires touching
+# both this file's top-level `scopes` array and the `pr-title` job in
+# .github/workflows/ci.yml.
+#
+# Schema: cocogitto v7+ (`packages` block moved under `[monorepo]`, scope
+# allowlist promoted to top-level `scopes`).
+
+from_latest_tag = false
+ignore_merge_commits = true
+ignore_fixup_commits = true
+tag_prefix = "v"
+branch_whitelist = ["main", "release/**", "feat/**", "fix/**", "chore/**"]
+scopes = [
+    "core",
+    "storage",
+    "parser",
+    "scip",
+    "graph",
+    "salsa",
+    "watcher",
+    "mcp",
+    "cli",
+    "e2e",
+    "docs",
+    "ci",
+    "deps",
+]
+
+[commit_types]
+feat     = { changelog_title = "Features" }
+fix      = { changelog_title = "Bug Fixes" }
+perf     = { changelog_title = "Performance" }
+refactor = { changelog_title = "Refactors" }
+docs     = { changelog_title = "Documentation" }
+test     = { changelog_title = "Tests" }
+build    = { changelog_title = "Build" }
+ci       = { changelog_title = "CI" }
+chore    = { changelog_title = "Chores", omit_from_changelog = true }
+revert   = { changelog_title = "Reverts" }
+style    = { changelog_title = "Style", omit_from_changelog = true }
+
+# Crate-scoped packages. Paths come live once tier-01 scaffolds the workspace.
+# Cross-cutting scopes accepted without path binding: docs, ci, deps.
+
+[monorepo]
+resolver = "Cargo"
+
+[monorepo.packages.core]
+path = "crates/ariadne-core"
+
+[monorepo.packages.storage]
+path = "crates/ariadne-storage"
+
+[monorepo.packages.parser]
+path = "crates/ariadne-parser"
+
+[monorepo.packages.scip]
+path = "crates/ariadne-scip"
+
+[monorepo.packages.graph]
+path = "crates/ariadne-graph"
+
+[monorepo.packages.salsa]
+path = "crates/ariadne-salsa"
+
+[monorepo.packages.watcher]
+path = "crates/ariadne-watcher"
+
+[monorepo.packages.mcp]
+path = "crates/ariadne-mcp"
+
+[monorepo.packages.cli]
+path = "crates/ariadne-cli"
+
+[monorepo.packages.e2e]
+path = "crates/ariadne-e2e"

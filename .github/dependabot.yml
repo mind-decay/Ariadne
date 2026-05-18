@@ -1,0 +1,31 @@
+version: 2
+updates:
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore"
+      scope: "deps"
+      include: "scope"
+    groups:
+      cargo-patch-and-minor:
+        applies-to: version-updates
+        update-types: ["patch", "minor"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci"
+      scope: "deps"
+      include: "scope"
+    groups:
+      actions-patch-and-minor:
+        applies-to: version-updates
+        update-types: ["patch", "minor"]
