@@ -1,0 +1,17 @@
+---
+source: crates/ariadne-scip/tests/ingest_clang.rs
+expression: summary
+---
+lang: other:clang
+docs: 1
+symbols: 3
+occurrences: 11
+relationships: 3
+top_symbols_by_occurrence:
+  - scip-clang cmake demo 1.0 demo/run(). (6 occ)
+  - scip-clang cmake demo 1.0 demo/Demo# (4 occ)
+  - scip-clang cmake demo 1.0 demo/Demo#run(). (1 occ)
+normalized_symbol_ids:
+  - 2d823373cf1dc5e6
+  - 66c2c85530622c3b
+  - d4c8806473814cc7

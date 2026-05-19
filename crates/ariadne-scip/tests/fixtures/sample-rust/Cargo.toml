@@ -1,0 +1,10 @@
+[package]
+name = "ariadne-scip-sample"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+# Standalone fixture crate. Not a workspace member — `tests/fixtures/` is
+# explicitly excluded from the root `[workspace] members` glob, and Cargo
+# silently treats nested crates outside that glob as independent.
+[workspace]

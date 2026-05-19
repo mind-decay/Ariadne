@@ -1,0 +1,17 @@
+---
+source: crates/ariadne-scip/tests/ingest_typescript.rs
+expression: summary
+---
+lang: typescript
+docs: 1
+symbols: 3
+occurrences: 12
+relationships: 2
+top_symbols_by_occurrence:
+  - scip-typescript npm demo 1.0 src/index/Foo# (6 occ)
+  - scip-typescript npm demo 1.0 src/index/run(). (4 occ)
+  - scip-typescript npm demo 1.0 src/index/Foo#bar(). (2 occ)
+normalized_symbol_ids:
+  - 77ae6d19cbad7863
+  - 78af52a09c70e625
+  - ff8aabaa6fa6b4bf

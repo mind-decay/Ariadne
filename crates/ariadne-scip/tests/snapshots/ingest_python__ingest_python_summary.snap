@@ -1,0 +1,17 @@
+---
+source: crates/ariadne-scip/tests/ingest_python.rs
+expression: summary
+---
+lang: python
+docs: 1
+symbols: 3
+occurrences: 9
+relationships: 3
+top_symbols_by_occurrence:
+  - scip-python pip demo 1.0 demo/Module/Demo# (4 occ)
+  - scip-python pip demo 1.0 demo/Module/run(). (4 occ)
+  - scip-python pip demo 1.0 demo/Module/Demo#greet(). (1 occ)
+normalized_symbol_ids:
+  - 335f6350594e02d7
+  - 4889f2597cb4283b
+  - 59ece06fcb02a8c7

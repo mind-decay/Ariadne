@@ -1,0 +1,17 @@
+---
+source: crates/ariadne-scip/tests/ingest_go.rs
+expression: summary
+---
+lang: go
+docs: 1
+symbols: 3
+occurrences: 9
+relationships: 3
+top_symbols_by_occurrence:
+  - scip-go gomod demo 1.0 demo/Run(). (4 occ)
+  - scip-go gomod demo 1.0 demo/Demo# (3 occ)
+  - scip-go gomod demo 1.0 demo/Demo#Field. (2 occ)
+normalized_symbol_ids:
+  - 662dc92e7cba6608
+  - 795825f1e83e5ae0
+  - 8da52317af059231

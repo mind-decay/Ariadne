@@ -1,11 +1,24 @@
-//! SCIP adapter façade — re-exports the subprocess+protobuf implementation
-//! of `ariadne_core::Indexer`. No logic in this file.
+//! SCIP adapter façade — re-exports the protobuf types, the per-language
+//! `Indexer` driver trait, the `ingest_repo` orchestrator types, and the
+//! canonical-symbol normalizer. No logic in this file
+//! [src: docs/folder-layout.md rule 3].
+//!
+//! Plan ref: `.claude/plans/ariadne-core/tier-05-scip-ingest.md`.
 
 #![deny(missing_docs)]
 
-pub mod adapters;
 pub mod domain;
 pub mod errors;
+pub mod indexer;
+pub mod normalize;
+pub mod proto;
 
-pub use adapters::scip_subprocess::ScipSubprocessIndexer;
 pub use errors::ScipError;
+pub use indexer::{
+    IndexerWarning, IngestPlan, IngestReport, LsifGoIndexer, RustAnalyzerIndexer, ScipClangIndexer,
+    ScipDoc, ScipDotnetIndexer, ScipIndexer, ScipJavaIndexer, ScipPythonIndexer,
+    ScipTypescriptIndexer, parse,
+};
+pub use normalize::{
+    CanonicalSymbol, Descriptor, DescriptorSuffix, SymbolId, normalize_scip_symbol,
+};
