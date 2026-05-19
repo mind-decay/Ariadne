@@ -1,0 +1,878 @@
+---
+source: crates/ariadne-storage/tests/changeset.rs
+expression: out
+---
+== FILES ==
+1: Some(
+    FileRecord {
+        path: "src/file_1.rs",
+        lang: Rust,
+        size: 1000,
+        blake3: [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+        ],
+        mtime_ns: 1,
+    },
+)
+2: Some(
+    FileRecord {
+        path: "src/file_2.rs",
+        lang: Rust,
+        size: 2000,
+        blake3: [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+        ],
+        mtime_ns: 2,
+    },
+)
+3: Some(
+    FileRecord {
+        path: "src/file_3.rs",
+        lang: Rust,
+        size: 3000,
+        blake3: [
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+        ],
+        mtime_ns: 3,
+    },
+)
+4: Some(
+    FileRecord {
+        path: "src/file_4.rs",
+        lang: Rust,
+        size: 4000,
+        blake3: [
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+        ],
+        mtime_ns: 4,
+    },
+)
+5: Some(
+    FileRecord {
+        path: "src/file_5.rs",
+        lang: Rust,
+        size: 5000,
+        blake3: [
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+        ],
+        mtime_ns: 5,
+    },
+)
+== SYMBOLS (per file, sorted by name) ==
+file 1:
+  SymbolRecord {
+    canonical_name: "sym_01",
+    kind: "function",
+    defining_file: FileId(
+        1,
+    ),
+    defining_span: Span {
+        file: FileId(
+            1,
+        ),
+        byte_start: 10,
+        byte_end: 15,
+    },
+}
+  SymbolRecord {
+    canonical_name: "sym_02",
+    kind: "function",
+    defining_file: FileId(
+        1,
+    ),
+    defining_span: Span {
+        file: FileId(
+            1,
+        ),
+        byte_start: 20,
+        byte_end: 25,
+    },
+}
+  SymbolRecord {
+    canonical_name: "sym_03",
+    kind: "function",
+    defining_file: FileId(
+        1,
+    ),
+    defining_span: Span {
+        file: FileId(
+            1,
+        ),
+        byte_start: 30,
+        byte_end: 35,
+    },
+}
+file 2:
+  SymbolRecord {
+    canonical_name: "sym_04",
+    kind: "function",
+    defining_file: FileId(
+        2,
+    ),
+    defining_span: Span {
+        file: FileId(
+            2,
+        ),
+        byte_start: 40,
+        byte_end: 45,
+    },
+}
+  SymbolRecord {
+    canonical_name: "sym_05",
+    kind: "function",
+    defining_file: FileId(
+        2,
+    ),
+    defining_span: Span {
+        file: FileId(
+            2,
+        ),
+        byte_start: 50,
+        byte_end: 55,
+    },
+}
+  SymbolRecord {
+    canonical_name: "sym_06",
+    kind: "function",
+    defining_file: FileId(
+        2,
+    ),
+    defining_span: Span {
+        file: FileId(
+            2,
+        ),
+        byte_start: 60,
+        byte_end: 65,
+    },
+}
+file 3:
+  SymbolRecord {
+    canonical_name: "sym_07",
+    kind: "function",
+    defining_file: FileId(
+        3,
+    ),
+    defining_span: Span {
+        file: FileId(
+            3,
+        ),
+        byte_start: 70,
+        byte_end: 75,
+    },
+}
+  SymbolRecord {
+    canonical_name: "sym_08",
+    kind: "function",
+    defining_file: FileId(
+        3,
+    ),
+    defining_span: Span {
+        file: FileId(
+            3,
+        ),
+        byte_start: 80,
+        byte_end: 85,
+    },
+}
+  SymbolRecord {
+    canonical_name: "sym_09",
+    kind: "function",
+    defining_file: FileId(
+        3,
+    ),
+    defining_span: Span {
+        file: FileId(
+            3,
+        ),
+        byte_start: 90,
+        byte_end: 95,
+    },
+}
+file 4:
+  SymbolRecord {
+    canonical_name: "sym_10",
+    kind: "function",
+    defining_file: FileId(
+        4,
+    ),
+    defining_span: Span {
+        file: FileId(
+            4,
+        ),
+        byte_start: 100,
+        byte_end: 105,
+    },
+}
+  SymbolRecord {
+    canonical_name: "sym_11",
+    kind: "function",
+    defining_file: FileId(
+        4,
+    ),
+    defining_span: Span {
+        file: FileId(
+            4,
+        ),
+        byte_start: 110,
+        byte_end: 115,
+    },
+}
+  SymbolRecord {
+    canonical_name: "sym_12",
+    kind: "function",
+    defining_file: FileId(
+        4,
+    ),
+    defining_span: Span {
+        file: FileId(
+            4,
+        ),
+        byte_start: 120,
+        byte_end: 125,
+    },
+}
+file 5:
+  SymbolRecord {
+    canonical_name: "sym_13",
+    kind: "function",
+    defining_file: FileId(
+        5,
+    ),
+    defining_span: Span {
+        file: FileId(
+            5,
+        ),
+        byte_start: 130,
+        byte_end: 135,
+    },
+}
+  SymbolRecord {
+    canonical_name: "sym_14",
+    kind: "function",
+    defining_file: FileId(
+        5,
+    ),
+    defining_span: Span {
+        file: FileId(
+            5,
+        ),
+        byte_start: 140,
+        byte_end: 145,
+    },
+}
+  SymbolRecord {
+    canonical_name: "sym_15",
+    kind: "function",
+    defining_file: FileId(
+        5,
+    ),
+    defining_span: Span {
+        file: FileId(
+            5,
+        ),
+        byte_start: 150,
+        byte_end: 155,
+    },
+}
+== EDGES (outgoing per symbol) ==
+src 1:
+  EdgeKey {
+    src: SymbolId(
+        1,
+    ),
+    kind: Defines,
+    dst: SymbolId(
+        8,
+    ),
+} -> EdgeRecord {
+    source_span: Span {
+        file: FileId(
+            1,
+        ),
+        byte_start: 1500,
+        byte_end: 1510,
+    },
+    evidence_lang: Rust,
+    weight: 15,
+}
+src 2:
+  EdgeKey {
+    src: SymbolId(
+        2,
+    ),
+    kind: References,
+    dst: SymbolId(
+        9,
+    ),
+} -> EdgeRecord {
+    source_span: Span {
+        file: FileId(
+            2,
+        ),
+        byte_start: 1600,
+        byte_end: 1610,
+    },
+    evidence_lang: Rust,
+    weight: 16,
+}
+src 3:
+  EdgeKey {
+    src: SymbolId(
+        3,
+    ),
+    kind: Imports,
+    dst: SymbolId(
+        10,
+    ),
+} -> EdgeRecord {
+    source_span: Span {
+        file: FileId(
+            3,
+        ),
+        byte_start: 1700,
+        byte_end: 1710,
+    },
+    evidence_lang: Rust,
+    weight: 17,
+}
+src 4:
+  EdgeKey {
+    src: SymbolId(
+        4,
+    ),
+    kind: Defines,
+    dst: SymbolId(
+        11,
+    ),
+} -> EdgeRecord {
+    source_span: Span {
+        file: FileId(
+            4,
+        ),
+        byte_start: 1800,
+        byte_end: 1810,
+    },
+    evidence_lang: Rust,
+    weight: 18,
+}
+src 5:
+  EdgeKey {
+    src: SymbolId(
+        5,
+    ),
+    kind: References,
+    dst: SymbolId(
+        12,
+    ),
+} -> EdgeRecord {
+    source_span: Span {
+        file: FileId(
+            5,
+        ),
+        byte_start: 1900,
+        byte_end: 1910,
+    },
+    evidence_lang: Rust,
+    weight: 19,
+}
+src 6:
+  EdgeKey {
+    src: SymbolId(
+        6,
+    ),
+    kind: Imports,
+    dst: SymbolId(
+        13,
+    ),
+} -> EdgeRecord {
+    source_span: Span {
+        file: FileId(
+            1,
+        ),
+        byte_start: 500,
+        byte_end: 510,
+    },
+    evidence_lang: Rust,
+    weight: 5,
+}
+src 7:
+  EdgeKey {
+    src: SymbolId(
+        7,
+    ),
+    kind: Defines,
+    dst: SymbolId(
+        14,
+    ),
+} -> EdgeRecord {
+    source_span: Span {
+        file: FileId(
+            2,
+        ),
+        byte_start: 600,
+        byte_end: 610,
+    },
+    evidence_lang: Rust,
+    weight: 6,
+}
+src 8:
+  EdgeKey {
+    src: SymbolId(
+        8,
+    ),
+    kind: References,
+    dst: SymbolId(
+        15,
+    ),
+} -> EdgeRecord {
+    source_span: Span {
+        file: FileId(
+            3,
+        ),
+        byte_start: 700,
+        byte_end: 710,
+    },
+    evidence_lang: Rust,
+    weight: 7,
+}
+src 9:
+  EdgeKey {
+    src: SymbolId(
+        9,
+    ),
+    kind: Imports,
+    dst: SymbolId(
+        1,
+    ),
+} -> EdgeRecord {
+    source_span: Span {
+        file: FileId(
+            4,
+        ),
+        byte_start: 800,
+        byte_end: 810,
+    },
+    evidence_lang: Rust,
+    weight: 8,
+}
+src 10:
+  EdgeKey {
+    src: SymbolId(
+        10,
+    ),
+    kind: Defines,
+    dst: SymbolId(
+        2,
+    ),
+} -> EdgeRecord {
+    source_span: Span {
+        file: FileId(
+            5,
+        ),
+        byte_start: 900,
+        byte_end: 910,
+    },
+    evidence_lang: Rust,
+    weight: 9,
+}
+src 11:
+  EdgeKey {
+    src: SymbolId(
+        11,
+    ),
+    kind: References,
+    dst: SymbolId(
+        3,
+    ),
+} -> EdgeRecord {
+    source_span: Span {
+        file: FileId(
+            1,
+        ),
+        byte_start: 1000,
+        byte_end: 1010,
+    },
+    evidence_lang: Rust,
+    weight: 10,
+}
+src 12:
+  EdgeKey {
+    src: SymbolId(
+        12,
+    ),
+    kind: Imports,
+    dst: SymbolId(
+        4,
+    ),
+} -> EdgeRecord {
+    source_span: Span {
+        file: FileId(
+            2,
+        ),
+        byte_start: 1100,
+        byte_end: 1110,
+    },
+    evidence_lang: Rust,
+    weight: 11,
+}
+src 13:
+  EdgeKey {
+    src: SymbolId(
+        13,
+    ),
+    kind: Defines,
+    dst: SymbolId(
+        5,
+    ),
+} -> EdgeRecord {
+    source_span: Span {
+        file: FileId(
+            3,
+        ),
+        byte_start: 1200,
+        byte_end: 1210,
+    },
+    evidence_lang: Rust,
+    weight: 12,
+}
+src 14:
+  EdgeKey {
+    src: SymbolId(
+        14,
+    ),
+    kind: References,
+    dst: SymbolId(
+        6,
+    ),
+} -> EdgeRecord {
+    source_span: Span {
+        file: FileId(
+            4,
+        ),
+        byte_start: 1300,
+        byte_end: 1310,
+    },
+    evidence_lang: Rust,
+    weight: 13,
+}
+src 15:
+  EdgeKey {
+    src: SymbolId(
+        15,
+    ),
+    kind: Imports,
+    dst: SymbolId(
+        7,
+    ),
+} -> EdgeRecord {
+    source_span: Span {
+        file: FileId(
+            5,
+        ),
+        byte_start: 1400,
+        byte_end: 1410,
+    },
+    evidence_lang: Rust,
+    weight: 14,
+}
+== EDGES_BY_FILE ==
+1: [
+    EdgeKey {
+        src: SymbolId(
+            1,
+        ),
+        kind: Defines,
+        dst: SymbolId(
+            8,
+        ),
+    },
+    EdgeKey {
+        src: SymbolId(
+            6,
+        ),
+        kind: Imports,
+        dst: SymbolId(
+            13,
+        ),
+    },
+    EdgeKey {
+        src: SymbolId(
+            11,
+        ),
+        kind: References,
+        dst: SymbolId(
+            3,
+        ),
+    },
+]
+2: [
+    EdgeKey {
+        src: SymbolId(
+            2,
+        ),
+        kind: References,
+        dst: SymbolId(
+            9,
+        ),
+    },
+    EdgeKey {
+        src: SymbolId(
+            7,
+        ),
+        kind: Defines,
+        dst: SymbolId(
+            14,
+        ),
+    },
+    EdgeKey {
+        src: SymbolId(
+            12,
+        ),
+        kind: Imports,
+        dst: SymbolId(
+            4,
+        ),
+    },
+]
+3: [
+    EdgeKey {
+        src: SymbolId(
+            3,
+        ),
+        kind: Imports,
+        dst: SymbolId(
+            10,
+        ),
+    },
+    EdgeKey {
+        src: SymbolId(
+            8,
+        ),
+        kind: References,
+        dst: SymbolId(
+            15,
+        ),
+    },
+    EdgeKey {
+        src: SymbolId(
+            13,
+        ),
+        kind: Defines,
+        dst: SymbolId(
+            5,
+        ),
+    },
+]
+4: [
+    EdgeKey {
+        src: SymbolId(
+            4,
+        ),
+        kind: Defines,
+        dst: SymbolId(
+            11,
+        ),
+    },
+    EdgeKey {
+        src: SymbolId(
+            9,
+        ),
+        kind: Imports,
+        dst: SymbolId(
+            1,
+        ),
+    },
+    EdgeKey {
+        src: SymbolId(
+            14,
+        ),
+        kind: References,
+        dst: SymbolId(
+            6,
+        ),
+    },
+]
+5: [
+    EdgeKey {
+        src: SymbolId(
+            5,
+        ),
+        kind: References,
+        dst: SymbolId(
+            12,
+        ),
+    },
+    EdgeKey {
+        src: SymbolId(
+            10,
+        ),
+        kind: Defines,
+        dst: SymbolId(
+            2,
+        ),
+    },
+    EdgeKey {
+        src: SymbolId(
+            15,
+        ),
+        kind: Imports,
+        dst: SymbolId(
+            7,
+        ),
+    },
+]

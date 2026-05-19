@@ -1,10 +1,10 @@
-//! Stable domain value objects.
-//!
-//! These IDs are the on-disk and on-wire identity of every entity Ariadne
-//! tracks. Their byte encodings are part of the storage contract consumed
-//! by tier-02 (redb codec) [src: .claude/plans/ariadne-core/tier-01-workspace.md step 6].
+//! Stable id types. Their byte encodings are part of the storage contract
+//! consumed by the redb adapter
+//! [src: .claude/plans/ariadne-core/tier-01-workspace.md step 6].
 
 use std::num::{NonZeroU32, NonZeroU64};
+
+use serde::{Deserialize, Serialize};
 
 /// 8-byte fixed-width id encoding used as the redb key/value codec contract.
 pub trait IdEncode: Sized {
@@ -19,7 +19,7 @@ pub trait IdEncode: Sized {
 
 /// Interned file path identity. The interner lives in tier-02 storage; this
 /// crate fixes only the on-disk shape.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct FileId(NonZeroU32);
 
 impl FileId {
@@ -54,7 +54,7 @@ impl IdEncode for FileId {
 
 /// Symbol identity. Wider than `FileId` because symbols outnumber files
 /// at ~10:1 in indexed repos.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct SymbolId(NonZeroU64);
 
 impl SymbolId {
@@ -82,7 +82,7 @@ impl IdEncode for SymbolId {
 }
 
 /// Edge identity (def→ref, ref→def, contains, calls, …).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct EdgeId(NonZeroU64);
 
 impl EdgeId {
@@ -107,45 +107,4 @@ impl IdEncode for EdgeId {
     fn from_bytes(bytes: [u8; 8]) -> Option<Self> {
         NonZeroU64::new(u64::from_be_bytes(bytes)).map(Self)
     }
-}
-
-/// Language tag attached to files and symbols.
-///
-/// `Other(&'static str)` lets adapters carry a syntactic-only language that
-/// the semantic pipeline (tier-05) does not understand.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-#[non_exhaustive]
-pub enum Lang {
-    /// TypeScript.
-    TypeScript,
-    /// JavaScript.
-    JavaScript,
-    /// Python.
-    Python,
-    /// Rust.
-    Rust,
-    /// Go.
-    Go,
-    /// Java.
-    Java,
-    /// Kotlin.
-    Kotlin,
-    /// C#.
-    CSharp,
-    /// Any other tree-sitter grammar; carries its `tree-sitter-<lang>` name.
-    Other(&'static str),
-}
-
-/// Half-open byte range inside a single file: `[byte_start, byte_end)`.
-///
-/// `Ord` is derived field-wise: `file`, then `byte_start`, then `byte_end`.
-/// This total order is what query results sort on.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct Span {
-    /// File the span belongs to.
-    pub file: FileId,
-    /// Inclusive start byte offset.
-    pub byte_start: u32,
-    /// Exclusive end byte offset.
-    pub byte_end: u32,
 }

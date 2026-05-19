@@ -8,5 +8,5 @@ pub mod adapters;
 pub mod domain;
 pub mod errors;
 
-pub use adapters::redb::RedbStorage;
-pub use errors::StorageError;
+pub use adapters::redb::{RedbReadSnapshot, RedbStorage, RedbWriteTxn};
+pub use errors::RedbStorageError;
