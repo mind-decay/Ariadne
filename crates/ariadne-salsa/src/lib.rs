@@ -1,9 +1,36 @@
-//! Salsa incremental query DB use case. Tier-04 wires the actual Salsa
-//! database, durabilities, and per-table memory probes.
+//! Ariadne incremental query database. Tier-04 wires the salsa surface
+//! (inputs, derived queries, per-table memory probe). Real parser/SCIP
+//! orchestration is performed by the driver layer in later tiers — salsa
+//! holds inputs + tracked-fn shells and never imports adapter crates
+//! [src: tests/architecture.rs lines 30-33].
 
 #![deny(missing_docs)]
 
-pub mod domain;
+pub mod db;
+// `salsa::input` and `salsa::tracked` macros generate public methods without
+// `///` doc comments; `missing_docs` would block compilation. Limit the
+// allow to the modules where salsa codegen lives; hand-authored items in
+// the rest of the crate keep the deny.
+#[allow(missing_docs)]
+pub mod derived;
 pub mod errors;
+#[allow(missing_docs)]
+pub mod inputs;
+pub mod memory;
 
+mod domain;
+
+pub use db::{AriadneDb, EventLog};
+pub use derived::{
+    CallRaw, DeclRaw, EdgeFactsRaw, ImportRaw, SymbolFactsRaw, SyntacticFactsRaw, blast_radius,
+    edges_for_file, scip_symbols, symbols_for_file, syntactic_facts,
+};
 pub use errors::SalsaError;
+pub use inputs::{
+    FileContentInput, FileMetadataInput, ProjectConfigInput, ScipDocInput, durability_for,
+};
+pub use memory::{MemoryReport, TABLE_BUDGET_BYTES};
+
+// Re-export salsa's durability tag so callers don't need to add salsa to
+// their direct deps just to set the policy.
+pub use salsa::Durability;

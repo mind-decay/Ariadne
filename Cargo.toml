@@ -29,6 +29,7 @@ publish = false
 # architecture invariant (tests/architecture.rs) policies these edges.
 ariadne-core = { path = "crates/ariadne-core" }
 ariadne-storage = { path = "crates/ariadne-storage" }
+ariadne-salsa = { path = "crates/ariadne-salsa" }
 
 # Runtime
 thiserror = "2"
@@ -39,6 +40,9 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 dashmap = "6"
 parking_lot = "0.12"
+# Incremental query DB (tier-04). Pin exact; bumps via ADR.
+# salsa 0.26.2 published 2026-05-03 [src: https://crates.io/crates/salsa/versions].
+salsa = "=0.26.2"
 
 # Test + bench (consumed via dev-dependencies in members)
 proptest = "1"
