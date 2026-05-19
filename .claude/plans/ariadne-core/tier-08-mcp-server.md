@@ -65,6 +65,7 @@ Claude Code natively spawns MCP stdio servers per session, listing them in mcp.j
 - `cargo nextest run -p ariadne-mcp` green; handshake + 10 per-tool tests pass.
 - `cargo bench -p ariadne-mcp` p95 ≤100ms per tool call under 8-way concurrency.
 - Manual: add `ariadne` to a local Claude Code project's `.mcp.json`, restart session, run `/mcp` and confirm tools listed; invoke "blast radius of …" on the ariadne_v2 self-index; output reasonable. Compare against tier-07 golden.
+- Manual (fulfills tier-07 `<verification>` bullet 3 — deferred while SCIP→storage commit pipeline was being wired): run `plan_assist` for `ariadne_storage::WriteTxn::apply_changeset` against the ariadne_v2 self-index via the MCP `plan_assist` tool. Expect every direct caller's file plus the storage crate itself in the returned `PlanFile` list. Document outcome in this tier's audit report.
 - Negative: kill the binary mid-request; client receives error frame, no zombie processes (`ps -ax | grep ariadne-mcp` empty).
 </verification>
 

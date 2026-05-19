@@ -1,15 +1,34 @@
 //! Read-snapshot accessors. Each function opens its target table on demand
 //! against the owning `ReadTransaction` so the snapshot stays cheap when an
 //! upstream query touches only a subset of the schema.
+//!
+//! Chunked full-table scanners (`iter_files`, `iter_symbols`, `iter_edges`)
+//! live in [`super::scan`] so this file stays inside the project's
+//! 200-line authored cap (CLAUDE.md `<rules>`).
 
 use ariadne_core::{EdgeKey, EdgeRecord, FileId, FileRecord, IdEncode, SymbolId, SymbolRecord};
-use redb::{ReadTransaction, ReadableTable, ReadableTableMetadata};
+use redb::{ReadTransaction, ReadableTable};
 
 use super::tables::{EDGES, EDGES_BY_FILE, FILES, SYMBOLS};
 use crate::adapters::codec::{
     decode_edge_key, decode_edge_record, decode_file_record, decode_symbol_record, encode_file_id,
 };
 use crate::errors::RedbStorageError;
+
+pub(super) fn decode_file_id(bytes: &[u8]) -> Result<FileId, RedbStorageError> {
+    let arr: [u8; 8] = bytes
+        .try_into()
+        .map_err(|_| RedbStorageError::Corrupted("FileId wrong length".to_owned()))?;
+    FileId::from_bytes(arr)
+        .ok_or_else(|| RedbStorageError::Corrupted("FileId zero or out-of-range".to_owned()))
+}
+
+pub(super) fn decode_symbol_id(bytes: &[u8]) -> Result<SymbolId, RedbStorageError> {
+    let arr: [u8; 8] = bytes
+        .try_into()
+        .map_err(|_| RedbStorageError::Corrupted("SymbolId wrong length".to_owned()))?;
+    SymbolId::from_bytes(arr).ok_or_else(|| RedbStorageError::Corrupted("SymbolId zero".to_owned()))
+}
 
 pub(super) fn file(
     txn: &ReadTransaction,
@@ -27,7 +46,7 @@ pub(super) fn symbols_in_file(
     id: FileId,
 ) -> Result<Vec<SymbolRecord>, RedbStorageError> {
     let symbols = txn.open_table(SYMBOLS)?;
-    let mut out = Vec::with_capacity(usize::try_from(symbols.len()?).unwrap_or(0));
+    let mut out = Vec::new();
     for entry in symbols.iter()? {
         let (_, vg) = entry?;
         let rec = decode_symbol_record(vg.value())?;

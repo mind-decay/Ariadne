@@ -1,0 +1,6 @@
+---
+source: crates/ariadne-graph/tests/golden_repo.rs
+expression: fmt_plan(&plan)
+---
+file=1 certainty=1.000 why=[1]
+file=6 certainty=1.000 why=[8]

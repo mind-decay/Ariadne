@@ -57,6 +57,16 @@ blake3 = "1"
 # Data-parallel driver fan-out (tier-05 IngestPlan). Pure Rust, no cgo.
 rayon = "1"
 
+# Graph analytics (tier-07). petgraph 0.8 is the current stable; ships
+# StableDiGraph + tarjan_scc + dominators::simple_fast [src:
+# https://docs.rs/petgraph/latest, https://crates.io/crates/petgraph].
+# bitflags 2.x for EdgeKindSet filter sets; fxhash for FxHashMap node
+# index; smallvec for compact predecessor lists in dominator output.
+petgraph = "0.8"
+bitflags = "2"
+fxhash = "0.2"
+smallvec = "1"
+
 # File-system watcher (tier-06). notify 8.2.0 is the current stable line;
 # notify-debouncer-full 0.7.0 wraps it with rename-pair coalescing + a
 # quiet period and pulls notify v8.2 transitively

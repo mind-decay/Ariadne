@@ -14,5 +14,21 @@ workspace = true
 
 [dependencies]
 ariadne-core = { workspace = true }
-ariadne-storage = { workspace = true }
 thiserror = { workspace = true }
+# Tier-07 analytics: in-RAM graph + algorithms.
+# [src: .claude/plans/ariadne-core/tier-07-graph-analytics.md <files>].
+petgraph = { workspace = true }
+bitflags = { workspace = true }
+fxhash = { workspace = true }
+smallvec = { workspace = true }
+rayon = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+insta = { workspace = true }
+criterion = { workspace = true }
+pretty_assertions = { workspace = true }
+
+[[bench]]
+name = "blast"
+harness = false

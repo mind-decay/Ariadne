@@ -57,6 +57,12 @@ pub trait WriteTxn {
     fn apply(self, changeset: &Changeset) -> Result<RevisionId, StorageError>;
 }
 
+/// Lazy stream of decoded chunks. Each item is one chunk; chunk size is
+/// the caller-supplied `chunk_size` argument on the originating
+/// `iter_*` call (the final chunk may be short). Boxed so the trait
+/// stays dyn-compatible.
+pub type ChunkStream<'a, T> = Box<dyn Iterator<Item = Result<Vec<T>, StorageError>> + 'a>;
+
 /// Read half of the [`Storage`] port. All accessors take `&self` so the
 /// snapshot can be shared across multiple query threads.
 pub trait ReadSnapshot {
@@ -90,6 +96,39 @@ pub trait ReadSnapshot {
     /// # Errors
     /// Backend-level IO or corruption.
     fn edges_in_file(&self, file: FileId) -> Result<Vec<EdgeKey>, StorageError>;
+
+    /// Stream every file record in lazy chunks. Each yielded item is a
+    /// `Vec` of up to `chunk_size` decoded `(FileId, FileRecord)` pairs;
+    /// the final chunk may be short. Callers materialise at most one
+    /// chunk in RAM at a time so the cold-start 100K-file / 10M-LOC
+    /// scan respects the workspace memory ceiling.
+    ///
+    /// # Errors
+    /// Backend-level IO or corruption.
+    fn iter_files(
+        &self,
+        chunk_size: usize,
+    ) -> Result<ChunkStream<'_, (FileId, FileRecord)>, StorageError>;
+
+    /// Stream every symbol record in lazy chunks (same contract as
+    /// [`ReadSnapshot::iter_files`]).
+    ///
+    /// # Errors
+    /// Backend-level IO or corruption.
+    fn iter_symbols(
+        &self,
+        chunk_size: usize,
+    ) -> Result<ChunkStream<'_, (SymbolId, SymbolRecord)>, StorageError>;
+
+    /// Stream every edge record in lazy chunks (same contract as
+    /// [`ReadSnapshot::iter_files`]).
+    ///
+    /// # Errors
+    /// Backend-level IO or corruption.
+    fn iter_edges(
+        &self,
+        chunk_size: usize,
+    ) -> Result<ChunkStream<'_, (EdgeKey, EdgeRecord)>, StorageError>;
 }
 
 /// Parsing port. Implemented by `ariadne-parser` (tree-sitter) in tier-03.

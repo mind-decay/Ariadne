@@ -1,0 +1,5 @@
+---
+source: crates/ariadne-graph/tests/golden_repo.rs
+expression: fmt_cycles(&repo.graph.cycle_report())
+---
+

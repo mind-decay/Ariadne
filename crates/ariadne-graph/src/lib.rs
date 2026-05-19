@@ -1,9 +1,25 @@
-//! Graph analytics use cases. Builds on `ariadne-core` ports + reads from
-//! `ariadne-storage`. Tier-07 wires petgraph + Tarjan + dominators.
+//! Graph analytics use case. Tier-07 wires petgraph-backed in-RAM
+//! reachability, dominators, SCC, coupling, dead-code, and plan-assist on
+//! top of `ariadne-core` ports + `ariadne-storage` reads.
+//!
+//! All public surface is re-exported from this façade; the analytics live
+//! in dedicated sibling modules so each stays under the project's
+//! ≤200-line authored-file cap (CLAUDE.md `<rules>`).
 
 #![deny(missing_docs)]
 
-pub mod domain;
+mod blast;
+mod build;
+mod coupling;
+mod cycles;
+mod dead;
 pub mod errors;
+mod plan_assist;
 
+pub use blast::BlastRadius;
+pub use build::{EdgeDelta, EdgeKind, EdgeKindSet, EdgeMeta, GraphIndex};
+pub use coupling::{CouplingMetrics, CouplingReport, ModuleSpec};
+pub use cycles::{Cycle, CycleReport};
+pub use dead::{DeadCodeConfig, DeadCodeReport, DeadSymbol};
 pub use errors::GraphError;
+pub use plan_assist::{PlanAssist, PlanFile};

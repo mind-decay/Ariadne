@@ -1,0 +1,5 @@
+---
+source: crates/ariadne-graph/tests/golden_repo.rs
+expression: "fmt_blast(\"model::User\", &br)"
+---
+model::User: must=[3, 6] may=[1, 2, 8] depth_used=3

@@ -14,6 +14,7 @@
 //! per `adapters/<tech>` location).
 
 mod apply;
+mod scan;
 mod snapshot;
 mod tables;
 
@@ -24,8 +25,8 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use ariadne_core::{
-    Changeset, EdgeKey, EdgeRecord, FileId, FileRecord, ReadSnapshot, RevisionId, Storage,
-    StorageError, SymbolId, SymbolRecord, WriteTxn,
+    Changeset, ChunkStream, EdgeKey, EdgeRecord, FileId, FileRecord, ReadSnapshot, RevisionId,
+    Storage, StorageError, SymbolId, SymbolRecord, WriteTxn,
 };
 use redb::{Database, ReadTransaction, ReadableDatabase, ReadableTable, WriteTransaction};
 
@@ -171,5 +172,23 @@ impl ReadSnapshot for RedbReadSnapshot {
     }
     fn edges_in_file(&self, file: FileId) -> Result<Vec<EdgeKey>, StorageError> {
         snapshot::edges_in_file(&self.txn, file).map_err(Into::into)
+    }
+    fn iter_files(
+        &self,
+        chunk_size: usize,
+    ) -> Result<ChunkStream<'_, (FileId, FileRecord)>, StorageError> {
+        scan::iter_files(&self.txn, chunk_size)
+    }
+    fn iter_symbols(
+        &self,
+        chunk_size: usize,
+    ) -> Result<ChunkStream<'_, (SymbolId, SymbolRecord)>, StorageError> {
+        scan::iter_symbols(&self.txn, chunk_size)
+    }
+    fn iter_edges(
+        &self,
+        chunk_size: usize,
+    ) -> Result<ChunkStream<'_, (EdgeKey, EdgeRecord)>, StorageError> {
+        scan::iter_edges(&self.txn, chunk_size)
     }
 }

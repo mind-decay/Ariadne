@@ -1,0 +1,6 @@
+---
+source: crates/ariadne-graph/tests/golden_repo.rs
+expression: fmt_dead(&repo.graph.dead_code(&cfg))
+---
+sid=6 reason=no callers, no exports
+sid=7 reason=no callers, no exports

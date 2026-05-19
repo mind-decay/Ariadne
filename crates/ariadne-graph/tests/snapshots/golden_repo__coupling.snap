@@ -1,0 +1,7 @@
+---
+source: crates/ariadne-graph/tests/golden_repo.rs
+expression: fmt_coupling(&repo.graph.coupling_report(&repo.modules))
+---
+lib: Ca=1 Ce=2 I=0.67 A=0.00 d=0.33
+model: Ca=1 Ce=0 I=0.00 A=0.50 d=0.50
+util: Ca=1 Ce=0 I=0.00 A=0.00 d=1.00

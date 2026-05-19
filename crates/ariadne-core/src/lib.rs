@@ -10,7 +10,9 @@ pub mod domain;
 pub mod errors;
 
 pub use domain::changeset::{Changeset, RevisionId};
-pub use domain::ports::{Indexer, Parser, ReadSnapshot, Storage, WatcherSink, WriteTxn};
+pub use domain::ports::{
+    ChunkStream, Indexer, Parser, ReadSnapshot, Storage, WatcherSink, WriteTxn,
+};
 pub use domain::records::{EdgeKey, EdgeKind, EdgeRecord, FileRecord, SymbolRecord};
 pub use domain::types::{EdgeId, FileId, IdEncode, Lang, Span, SymbolId};
 pub use domain::watcher::{ContentHash, Invalidation, ReconciliationReport};
