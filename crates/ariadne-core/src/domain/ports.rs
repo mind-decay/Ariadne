@@ -6,6 +6,7 @@
 use crate::domain::changeset::{Changeset, RevisionId};
 use crate::domain::records::{EdgeKey, EdgeRecord, FileRecord, SymbolRecord};
 use crate::domain::types::{FileId, SymbolId};
+use crate::domain::watcher::Invalidation;
 use crate::errors::StorageError;
 
 /// Persistent storage port. Implemented by `ariadne-storage` (redb) in
@@ -97,6 +98,13 @@ pub trait Parser {}
 /// Semantic indexing port. Implemented by `ariadne-scip` in tier-05.
 pub trait Indexer {}
 
-/// File-system event sink port. Implemented by `ariadne-watcher` (notify)
-/// in tier-06.
-pub trait WatcherSink {}
+/// File-system event sink port. The driving watcher in `ariadne-watcher`
+/// pushes [`Invalidation`]s here; downstream sinks translate them into
+/// salsa input updates (tier-06). The `Send` bound is required so the
+/// watcher can hand the sink across to its event thread.
+pub trait WatcherSink: Send {
+    /// Apply a single invalidation. Implementations log internal failures
+    /// (IO during file read, lock contention) rather than propagating —
+    /// the watcher must keep running.
+    fn apply_invalidation(&mut self, invalidation: &Invalidation);
+}

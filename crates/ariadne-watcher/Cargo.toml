@@ -14,4 +14,27 @@ workspace = true
 
 [dependencies]
 ariadne-core = { workspace = true }
+ariadne-salsa = { workspace = true }
 thiserror = { workspace = true }
+tracing = { workspace = true }
+notify = { workspace = true }
+notify-debouncer-full = { workspace = true }
+ignore = { workspace = true }
+blake3 = { workspace = true }
+parking_lot = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+tempfile = { workspace = true }
+criterion = { workspace = true }
+pretty_assertions = { workspace = true }
+insta = { workspace = true }
+# Dev-only async runtime for tier-06 exit_criterion #5: the e2e test calls
+# `tokio::fs::write` to satisfy the plan's literal text. Scoped to the
+# `rt`, `macros`, `fs`, `io-util` features so no networking or threadpool
+# pulls into the test binary.
+tokio = { version = "1", default-features = false, features = ["rt", "macros", "fs", "io-util"] }
+
+[[bench]]
+name = "sink"
+harness = false

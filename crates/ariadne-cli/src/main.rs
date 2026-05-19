@@ -15,13 +15,24 @@ use ariadne_salsa::{AriadneDb, TABLE_BUDGET_BYTES};
 
 fn main() -> ExitCode {
     let mut args = std::env::args().skip(1);
-    if let (Some("debug"), Some("mem")) = (args.next().as_deref(), args.next().as_deref()) {
-        debug_mem()
-    } else {
-        let pkg_version = env!("CARGO_PKG_VERSION");
-        println!("ariadne {pkg_version} — stub binary; tier-10 wires real commands");
-        ExitCode::SUCCESS
+    let first = args.next();
+    let second = args.next();
+    match (first.as_deref(), second.as_deref()) {
+        (Some("debug"), Some("mem")) => debug_mem(),
+        (Some("watch"), _) => watch_stub(),
+        _ => {
+            let pkg_version = env!("CARGO_PKG_VERSION");
+            println!("ariadne {pkg_version} — stub binary; tier-10 wires real commands");
+            ExitCode::SUCCESS
+        }
     }
+}
+
+fn watch_stub() -> ExitCode {
+    // tier-06 ships only the stub; tier-10 wires the full pipeline
+    // (ariadne_watcher::NotifyWatcher::start + AriadneDbSink).
+    println!("ariadne watch — tier-06 stub; full pipeline arrives in tier-10");
+    ExitCode::SUCCESS
 }
 
 fn debug_mem() -> ExitCode {

@@ -31,6 +31,7 @@ pub use inputs::{
 };
 pub use memory::{MemoryReport, TABLE_BUDGET_BYTES};
 
-// Re-export salsa's durability tag so callers don't need to add salsa to
-// their direct deps just to set the policy.
-pub use salsa::Durability;
+// Re-export salsa's durability tag + the `Setter` trait so callers (e.g.
+// `ariadne-watcher`) don't need to add salsa to their direct deps just to
+// drive input mutations via the `.with_durability(...).to(...)` chain.
+pub use salsa::{Durability, Setter};

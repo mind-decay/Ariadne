@@ -8,7 +8,8 @@ exit_criteria:
   - Filesystem events translate to `Invalidation { path, kind }` and are applied to `AriadneDb` inputs via `apply_invalidation` in tier-04.
   - Reconciliation pass: every 60s a full gitignore-aware walk computes content hashes for files unseen via notify and reconciles drift (R7 mitigation).
   - End-to-end test: edit a file via tokio::fs, assert that within 500ms `symbols_for_file` reflects the change (insta snapshot before/after).
-status: pending
+status: completed
+completed: 2026-05-20
 ---
 
 <context>

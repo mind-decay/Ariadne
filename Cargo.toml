@@ -57,6 +57,16 @@ blake3 = "1"
 # Data-parallel driver fan-out (tier-05 IngestPlan). Pure Rust, no cgo.
 rayon = "1"
 
+# File-system watcher (tier-06). notify 8.2.0 is the current stable line;
+# notify-debouncer-full 0.7.0 wraps it with rename-pair coalescing + a
+# quiet period and pulls notify v8.2 transitively
+# [src: `cargo info notify-debouncer-full`, https://docs.rs/notify-debouncer-full/0.7.0].
+# ignore 0.4 provides .gitignore / .ariadneignore semantics
+# [src: https://docs.rs/ignore].
+notify = "8.2"
+notify-debouncer-full = "0.7"
+ignore = "0.4"
+
 # Test + bench (consumed via dev-dependencies in members)
 proptest = "1"
 insta = "1"

@@ -1,0 +1,5 @@
+---
+source: crates/ariadne-watcher/tests/events.rs
+expression: "&*before"
+---
+[]
