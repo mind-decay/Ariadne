@@ -1,0 +1,17 @@
+[package]
+name = "ariadne-watcher"
+description = "Driving adapter: notify-rs file-system watcher feeding the index pipeline."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+ariadne-core = { workspace = true }
+thiserror = { workspace = true }

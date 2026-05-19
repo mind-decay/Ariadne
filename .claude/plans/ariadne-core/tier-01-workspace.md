@@ -9,7 +9,8 @@ exit_criteria:
   - `cargo bench --workspace --no-run` builds (criterion benches scaffolded).
   - tier-00 `tests/architecture.rs` (was failing) now passes — `ariadne-core` has zero in-workspace deps; adapter crates depend only on `ariadne-core`.
   - ariadne-core exports stable IDs (`FileId`, `SymbolId`, `EdgeId`, `Span`, `Lang`) with proptest round-trip invariants AND port traits (`Storage`, `Parser`, `Indexer`, `WatcherSink`) as empty marker traits filled in by adapter tiers.
-status: pending
+status: completed
+completed: 2026-05-19
 ---
 
 <context>

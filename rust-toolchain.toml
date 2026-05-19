@@ -1,0 +1,8 @@
+# Pins the toolchain used by `cargo`/`rustup` in this repo.
+# Observed at first tier-01 build: rustc 1.95.0 (Homebrew, 2026-04-14).
+# MSRV in clippy.toml/CI is 1.85 (first stable supporting edition 2024).
+# `channel = "stable"` keeps local + CI on whatever stable is current; the
+# `msrv` CI job pins to 1.85 to guard the MSRV floor.
+[toolchain]
+channel = "stable"
+components = ["rustfmt", "clippy", "rust-src"]

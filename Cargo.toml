@@ -1,0 +1,87 @@
+# Workspace root.
+#
+# Hybrid layout: this file declares both `[workspace]` (the 10 ariadne-*
+# member crates under crates/) and `[package]` (a stub root package named
+# `ariadne-workspace`). The root package exists solely to own
+# `tests/architecture.rs` — the hexagonal-boundary invariant scaffolded in
+# tier-00 [src: tests/architecture.rs] [src: docs/folder-layout.md].
+#
+# Shared metadata + dependency + lint pins live in `[workspace.package]`,
+# `[workspace.dependencies]`, and `[workspace.lints]`; members inherit via
+# `*.workspace = true`. [src: https://doc.rust-lang.org/cargo/reference/workspaces.html]
+
+[workspace]
+members = ["crates/*"]
+resolver = "2"
+
+[workspace.package]
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.85"
+license = "MIT OR Apache-2.0"
+authors = ["Ariadne contributors"]
+repository = "https://github.com/mind-decay/ariadne"
+publish = false
+
+[workspace.dependencies]
+# Intra-workspace path deps. Adapters import only `ariadne-core`; the
+# salsa/graph use-case crates additionally import `ariadne-storage`. The
+# architecture invariant (tests/architecture.rs) policies these edges.
+ariadne-core = { path = "crates/ariadne-core" }
+ariadne-storage = { path = "crates/ariadne-storage" }
+
+# Runtime
+thiserror = "2"
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+bincode = "2"
+dashmap = "6"
+parking_lot = "0.12"
+
+# Test + bench (consumed via dev-dependencies in members)
+proptest = "1"
+insta = "1"
+rstest = "0.23"
+criterion = "0.5"
+tempfile = "3"
+pretty_assertions = "1"
+
+# Workspace introspection (root architecture test only)
+cargo_metadata = "0.20"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_debug_implementations = "warn"
+rust_2018_idioms = { level = "warn", priority = -1 }
+
+[workspace.lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+
+# ---- Root package: workspace-architecture test harness -------------------
+[package]
+name = "ariadne-workspace"
+description = "Workspace root harness for ariadne. Holds tests/architecture.rs."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lib]
+name = "ariadne_workspace"
+path = "src/_root.rs"
+
+[[test]]
+name = "architecture"
+path = "tests/architecture.rs"
+
+[dev-dependencies]
+cargo_metadata = { workspace = true }
+
+[lints]
+workspace = true

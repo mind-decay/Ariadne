@@ -1,0 +1,17 @@
+# Cargo
+target/
+**/*.rs.bk
+Cargo.lock.bak
+
+# Coverage
+*.profraw
+*.profdata
+
+# Per-project Ariadne index (D10)
+.ariadne/
+
+# Editor/OS noise
+.DS_Store
+.idea/
+.vscode/
+*.swp

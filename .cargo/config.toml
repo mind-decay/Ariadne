@@ -1,0 +1,14 @@
+# Workspace-wide cargo config.
+# Profile tweaks per tier-01 plan: thin LTO on release, incremental on dev.
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+debug = "line-tables-only"
+
+[profile.dev]
+incremental = true
+
+[profile.bench]
+lto = "thin"
+codegen-units = 1
