@@ -12,6 +12,43 @@ publish.workspace = true
 [lints]
 workspace = true
 
+[[bin]]
+name = "ariadne-mcp"
+path = "src/bin/ariadne-mcp.rs"
+
 [dependencies]
 ariadne-core = { workspace = true }
+ariadne-storage = { workspace = true }
+ariadne-salsa = { workspace = true }
+ariadne-graph = { workspace = true }
 thiserror = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+# Pinned to ride the mcp-rs 1.7 protocol surface; bumps require an ADR
+# (R5 in plan.md `<risks>`).
+# [src: https://crates.io/api/v1/crates/rmcp/versions — 1.7.0 published 2026-05-13].
+rmcp = { version = "=1.7.0", default-features = false, features = ["server", "macros", "transport-io"] }
+# rmcp's `server` feature already pulls schemars; depend on it explicitly so
+# `#[derive(schemars::JsonSchema)]` calls compile in this crate.
+schemars = "1"
+# `transport-io` requires the multi-thread runtime + macros + io-std.
+tokio = { version = "1", default-features = false, features = ["rt-multi-thread", "macros", "io-std", "signal", "sync"] }
+
+[dev-dependencies]
+ariadne-core = { workspace = true }
+ariadne-storage = { workspace = true }
+rmcp = { version = "=1.7.0", default-features = false, features = ["client", "transport-child-process", "macros"] }
+tokio = { version = "1", default-features = false, features = ["rt-multi-thread", "macros", "process", "time", "io-util"] }
+serde_json = { workspace = true }
+insta = { workspace = true }
+tempfile = { workspace = true }
+pretty_assertions = { workspace = true }
+
+[[bench]]
+name = "concurrent"
+harness = false
+
+[[bench]]
+name = "cold_start"
+harness = false

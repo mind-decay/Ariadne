@@ -8,7 +8,8 @@ exit_criteria:
   - Concurrent reads: 8 simultaneous tool calls on a fixture project succeed in <100ms p95 each (criterion).
   - Cold start: from `ariadne-mcp serve` to first tools/list response <100ms on a fully-built 10K-file index.
   - Graceful shutdown on SIGINT/EOF; no orphaned threads.
-status: pending
+status: completed
+completed: 2026-05-20
 ---
 
 <context>
@@ -53,7 +54,8 @@ Claude Code natively spawns MCP stdio servers per session, listing them in mcp.j
 7. Concurrency model: `AriadneDb` is `RwLock` — tools take read locks via Salsa snapshot (cheap; multiple readers concurrent). Writer is the watcher loop (or `ariadne-cli index` one-shot).
 8. Cancellation: on Claude session shutdown, rmcp sends EOF on stdin → tokio task ends → server drops db handle → no orphan threads. Use `tokio::signal::ctrl_c` for SIGINT.
 9. **Failing tests** per tool (tests/tools_<name>.rs): for each tool spawn the bin, send `initialize`+`tools/call`, assert response matches golden insta snapshot on the tiny fixture.
-10. Criterion (benches/concurrent.rs): 8 tokio tasks each calling blast_radius+list_symbols 100 times on a 10K-symbol fixture index; assert per-call p95 <100ms; gate in CI.
+10. Concurrency bench (benches/concurrent.rs, `harness = false`): 8 tokio tasks each calling blast_radius+list_symbols 100 times on a 10K-symbol fixture index; assert per-call p95 <100ms; gate in CI. Custom percentile harness rather than the `criterion` crate — child-process spawn-per-iter doesn't fit criterion's sampling model and the SLO is a single p95 gate, not regression detection.
+10b. Cold-start bench (benches/cold_start.rs, `harness = false`): seed a redb fixture with 10 000 files (one symbol each, sparse references), spawn `ariadne-mcp serve`, drive `initialize` → `notifications/initialized` → `tools/list`, measure wall-clock from `Command::spawn` to the `tools/list` response. Assert <100ms; gate exit_criteria 4. Sibling test `tests/shutdown.rs` covers exit_criteria 5 (EOF → clean exit, no zombie).
 11. Document mcp.json snippet in README:
     ```json
     { "mcpServers": { "ariadne": { "command": "ariadne-mcp", "args": ["serve", "--root", "."] } } }
@@ -64,6 +66,8 @@ Claude Code natively spawns MCP stdio servers per session, listing them in mcp.j
 <verification>
 - `cargo nextest run -p ariadne-mcp` green; handshake + 10 per-tool tests pass.
 - `cargo bench -p ariadne-mcp` p95 ≤100ms per tool call under 8-way concurrency.
+- `cargo bench -p ariadne-mcp --bench cold_start` wall-clock ≤100ms on a 10 000-file fixture (exit_criteria 4).
+- `cargo nextest run -p ariadne-mcp --test shutdown` confirms EOF → clean exit + reaped child (exit_criteria 5).
 - Manual: add `ariadne` to a local Claude Code project's `.mcp.json`, restart session, run `/mcp` and confirm tools listed; invoke "blast radius of …" on the ariadne_v2 self-index; output reasonable. Compare against tier-07 golden.
 - Manual (fulfills tier-07 `<verification>` bullet 3 — deferred while SCIP→storage commit pipeline was being wired): run `plan_assist` for `ariadne_storage::WriteTxn::apply_changeset` against the ariadne_v2 self-index via the MCP `plan_assist` tool. Expect every direct caller's file plus the storage crate itself in the returned `PlanFile` list. Document outcome in this tier's audit report.
 - Negative: kill the binary mid-request; client receives error frame, no zombie processes (`ps -ax | grep ariadne-mcp` empty).
@@ -72,3 +76,7 @@ Claude Code natively spawns MCP stdio servers per session, listing them in mcp.j
 <rollback>
 `git rm -r crates/ariadne-mcp` + workspace member removal. Remove ariadne entry from any local mcp.json files.
 </rollback>
+
+<deferred>
+The manual `<verification>` bullets 3-5 (Claude Code `.mcp.json` round-trip, `plan_assist` for `ariadne_storage::WriteTxn::apply_changeset` against the ariadne_v2 self-index, mid-request kill check) are deferred to tier-10. They require the SCIP→storage commit pipeline + `ariadne index` CLI, both stubbed until tier-09/10 (see `ariadne-salsa::AriadneDb::commit_revision` returning an empty `Changeset`, and `ariadne-cli::main` printing a tier-10 stub). Tier-10 already gates "All MCP tools exercised end-to-end via spawned client; insta golden outputs stable" against real OSS fixtures, which subsumes these checks.
+</deferred>

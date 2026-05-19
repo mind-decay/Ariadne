@@ -30,6 +30,7 @@ publish = false
 ariadne-core = { path = "crates/ariadne-core" }
 ariadne-storage = { path = "crates/ariadne-storage" }
 ariadne-salsa = { path = "crates/ariadne-salsa" }
+ariadne-graph = { path = "crates/ariadne-graph" }
 
 # Runtime
 thiserror = "2"

@@ -1,0 +1,243 @@
+---
+source: crates/ariadne-mcp/tests/handshake.rs
+assertion_line: 22
+expression: golden
+---
+{
+  "blast_radius": {
+    "$defs": {
+      "EdgeKindFilter": {
+        "description": "Edge-kind filter exposed to clients. Subset of the in-RAM graph\nalphabet — clients pick which edge classes the analytic walks.",
+        "oneOf": [
+          {
+            "const": "calls",
+            "description": "Call edges.",
+            "type": "string"
+          },
+          {
+            "const": "imports",
+            "description": "Import edges.",
+            "type": "string"
+          },
+          {
+            "const": "type_of",
+            "description": "Type-of edges.",
+            "type": "string"
+          },
+          {
+            "const": "defines",
+            "description": "Definition edges.",
+            "type": "string"
+          },
+          {
+            "const": "overrides",
+            "description": "Override edges.",
+            "type": "string"
+          },
+          {
+            "const": "reads",
+            "description": "Read edges.",
+            "type": "string"
+          },
+          {
+            "const": "writes",
+            "description": "Write edges.",
+            "type": "string"
+          },
+          {
+            "const": "inherits",
+            "description": "Inheritance edges.",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Input to `blast_radius`.",
+    "properties": {
+      "depth": {
+        "default": null,
+        "description": "Reverse-BFS hop limit. Defaults to 3.",
+        "format": "uint8",
+        "maximum": 255,
+        "minimum": 0,
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
+      "kinds": {
+        "default": null,
+        "description": "Edge-kind filter set. Empty / missing = all kinds.",
+        "items": {
+          "$ref": "#/$defs/EdgeKindFilter"
+        },
+        "type": [
+          "array",
+          "null"
+        ]
+      },
+      "symbol": {
+        "description": "Target symbol canonical name.",
+        "type": "string"
+      }
+    },
+    "required": [
+      "symbol"
+    ],
+    "title": "BlastRadiusInput",
+    "type": "object"
+  },
+  "coupling_report": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Input to `coupling_report` and `weak_spots`. Empty = all files.",
+    "properties": {
+      "prefix": {
+        "default": null,
+        "description": "Optional path-prefix filter (project-root-relative).",
+        "type": [
+          "string",
+          "null"
+        ]
+      }
+    },
+    "title": "ScopeInput",
+    "type": "object"
+  },
+  "doc_for": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Input to `find_definition` / `find_references` / `doc_for`.",
+    "properties": {
+      "symbol": {
+        "description": "Canonical name of the queried symbol.",
+        "type": "string"
+      }
+    },
+    "required": [
+      "symbol"
+    ],
+    "title": "SymbolQuery",
+    "type": "object"
+  },
+  "file_summary": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Input to `file_summary`.",
+    "properties": {
+      "path": {
+        "description": "Project-root-relative file path.",
+        "type": "string"
+      }
+    },
+    "required": [
+      "path"
+    ],
+    "title": "FileQuery",
+    "type": "object"
+  },
+  "find_definition": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Input to `find_definition` / `find_references` / `doc_for`.",
+    "properties": {
+      "symbol": {
+        "description": "Canonical name of the queried symbol.",
+        "type": "string"
+      }
+    },
+    "required": [
+      "symbol"
+    ],
+    "title": "SymbolQuery",
+    "type": "object"
+  },
+  "find_references": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Input to `find_definition` / `find_references` / `doc_for`.",
+    "properties": {
+      "symbol": {
+        "description": "Canonical name of the queried symbol.",
+        "type": "string"
+      }
+    },
+    "required": [
+      "symbol"
+    ],
+    "title": "SymbolQuery",
+    "type": "object"
+  },
+  "list_symbols": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Input to `list_symbols`.",
+    "properties": {
+      "kind": {
+        "default": null,
+        "description": "Optional kind filter.",
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "limit": {
+        "default": null,
+        "description": "Maximum rows returned. Defaults to 64.",
+        "format": "uint32",
+        "minimum": 0,
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
+      "query": {
+        "default": "",
+        "description": "Substring filter on canonical name (case-insensitive). Empty = no filter.",
+        "type": "string"
+      }
+    },
+    "title": "ListSymbolsInput",
+    "type": "object"
+  },
+  "plan_assist": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Input to `plan_assist`.",
+    "properties": {
+      "max_files": {
+        "default": null,
+        "description": "Maximum file rows. Defaults to 16.",
+        "format": "uint32",
+        "minimum": 0,
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
+      "symbol": {
+        "description": "Target symbol canonical name.",
+        "type": "string"
+      }
+    },
+    "required": [
+      "symbol"
+    ],
+    "title": "PlanAssistInput",
+    "type": "object"
+  },
+  "project_status": {
+    "properties": {},
+    "type": "object"
+  },
+  "weak_spots": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Input to `coupling_report` and `weak_spots`. Empty = all files.",
+    "properties": {
+      "prefix": {
+        "default": null,
+        "description": "Optional path-prefix filter (project-root-relative).",
+        "type": [
+          "string",
+          "null"
+        ]
+      }
+    },
+    "title": "ScopeInput",
+    "type": "object"
+  }
+}

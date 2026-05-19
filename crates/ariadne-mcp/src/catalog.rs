@@ -1,0 +1,135 @@
+//! In-RAM derived indices the MCP tools query against. Built once at
+//! `serve_stdio` startup (cold start <100ms on 10K files — tier-08
+//! `exit_criteria`) by streaming the redb snapshot and the petgraph
+//! `GraphIndex`.
+//!
+//! Tier-08 keeps these indices immutable for a server lifetime; tier-10
+//! orchestration will trigger a rebuild whenever the watcher commits a
+//! revision (`Storage::revision()` bump). The MCP-side data path stays
+//! read-only.
+
+use std::collections::BTreeMap;
+
+use ariadne_core::{FileId, ReadSnapshot, Storage, SymbolId, SymbolRecord};
+use ariadne_graph::GraphIndex;
+
+use crate::errors::McpError;
+
+const SCAN_CHUNK: usize = 4096;
+
+/// Per-symbol cached metadata. The records returned by `Storage::iter_symbols`
+/// own their strings — we keep just the fields the tools need.
+#[derive(Debug, Clone)]
+pub struct SymbolMeta {
+    /// Canonical name.
+    pub name: String,
+    /// Free-form kind tag.
+    pub kind: String,
+    /// File the defining occurrence lives in.
+    pub file: FileId,
+    /// Defining span `byte_start`.
+    pub byte_start: u32,
+    /// Defining span `byte_end`.
+    pub byte_end: u32,
+}
+
+impl SymbolMeta {
+    fn from_record(rec: &SymbolRecord) -> Self {
+        Self {
+            name: rec.canonical_name.clone(),
+            kind: rec.kind.clone(),
+            file: rec.defining_file,
+            byte_start: rec.defining_span.byte_start,
+            byte_end: rec.defining_span.byte_end,
+        }
+    }
+}
+
+/// Read-only catalog driving all MCP tools.
+#[derive(Debug)]
+pub struct Catalog {
+    /// [`FileId`] → project-root-relative path.
+    pub paths: BTreeMap<FileId, String>,
+    /// Path → [`FileId`] reverse map.
+    pub path_to_id: BTreeMap<String, FileId>,
+    /// [`SymbolId`] → per-symbol metadata.
+    pub symbols: BTreeMap<SymbolId, SymbolMeta>,
+    /// Canonical name → all [`SymbolId`]s with that name. Multiple entries
+    /// are possible across files; the tools surface the full list and let
+    /// the caller disambiguate.
+    pub by_name: BTreeMap<String, Vec<SymbolId>>,
+    /// In-RAM graph: `(src, kind, dst)` adjacency for analytics.
+    pub graph: GraphIndex,
+    /// Latest persisted revision the catalog snapshotted from.
+    pub revision: u64,
+    /// Project root the server was launched against.
+    pub root: String,
+}
+
+impl Catalog {
+    /// Build a fresh catalog from a `Storage` snapshot. Streams files +
+    /// symbols in 4096-record chunks (constant working-set memory).
+    ///
+    /// # Errors
+    /// Propagates [`ariadne_core::StorageError`] from snapshot scans and
+    /// [`ariadne_graph::GraphError`] from the petgraph build step.
+    pub fn build<S: Storage>(storage: &S, root: String) -> Result<Self, McpError> {
+        let snap = storage.snapshot().map_err(McpError::Storage)?;
+        let mut paths = BTreeMap::new();
+        let mut path_to_id = BTreeMap::new();
+        for chunk in snap.iter_files(SCAN_CHUNK).map_err(McpError::Storage)? {
+            for (id, rec) in chunk.map_err(McpError::Storage)? {
+                path_to_id.insert(rec.path.clone(), id);
+                paths.insert(id, rec.path);
+            }
+        }
+
+        let mut symbols: BTreeMap<SymbolId, SymbolMeta> = BTreeMap::new();
+        let mut by_name: BTreeMap<String, Vec<SymbolId>> = BTreeMap::new();
+        for chunk in snap.iter_symbols(SCAN_CHUNK).map_err(McpError::Storage)? {
+            for (id, rec) in chunk.map_err(McpError::Storage)? {
+                let meta = SymbolMeta::from_record(&rec);
+                by_name.entry(meta.name.clone()).or_default().push(id);
+                symbols.insert(id, meta);
+            }
+        }
+
+        let graph = GraphIndex::build_from_snapshot(&snap).map_err(McpError::Graph)?;
+        let revision = storage.revision().0;
+
+        Ok(Self {
+            paths,
+            path_to_id,
+            symbols,
+            by_name,
+            graph,
+            revision,
+            root,
+        })
+    }
+
+    /// Look up the first symbol with `name`, if any. Tools that need
+    /// disambiguation iterate `by_name` directly.
+    #[must_use]
+    pub fn find_symbol(&self, name: &str) -> Option<SymbolId> {
+        self.by_name.get(name).and_then(|v| v.first().copied())
+    }
+
+    /// Fetch the file path for a [`FileId`].
+    #[must_use]
+    pub fn path_of(&self, file: FileId) -> Option<&str> {
+        self.paths.get(&file).map(String::as_str)
+    }
+
+    /// Fetch metadata for a symbol.
+    #[must_use]
+    pub fn meta_of(&self, id: SymbolId) -> Option<&SymbolMeta> {
+        self.symbols.get(&id)
+    }
+
+    /// Resolve `SymbolId → FileId` (used by `plan_assist`).
+    #[must_use]
+    pub fn file_of(&self, id: SymbolId) -> Option<FileId> {
+        self.symbols.get(&id).map(|m| m.file)
+    }
+}
