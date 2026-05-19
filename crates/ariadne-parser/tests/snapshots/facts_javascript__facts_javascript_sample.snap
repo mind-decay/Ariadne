@@ -1,0 +1,124 @@
+---
+source: crates/ariadne-parser/tests/facts_javascript.rs
+expression: facts
+---
+SyntacticFacts {
+    decls: [
+        Decl {
+            kind: Class,
+            name: "Counter",
+            name_byte_range: (
+                59,
+                66,
+            ),
+            def_byte_range: (
+                53,
+                190,
+            ),
+        },
+        Decl {
+            kind: Method,
+            name: "constructor",
+            name_byte_range: (
+                71,
+                82,
+            ),
+            def_byte_range: (
+                71,
+                123,
+            ),
+        },
+        Decl {
+            kind: Method,
+            name: "increment",
+            name_byte_range: (
+                127,
+                136,
+            ),
+            def_byte_range: (
+                127,
+                188,
+            ),
+        },
+        Decl {
+            kind: Function,
+            name: "makeCounter",
+            name_byte_range: (
+                208,
+                219,
+            ),
+            def_byte_range: (
+                199,
+                304,
+            ),
+        },
+        Decl {
+            kind: Variable,
+            name: "counter",
+            name_byte_range: (
+                237,
+                244,
+            ),
+            def_byte_range: (
+                231,
+                266,
+            ),
+        },
+        Decl {
+            kind: Function,
+            name: "loadConfig",
+            name_byte_range: (
+                328,
+                338,
+            ),
+            def_byte_range: (
+                313,
+                420,
+            ),
+        },
+        Decl {
+            kind: Variable,
+            name: "text",
+            name_byte_range: (
+                355,
+                359,
+            ),
+            def_byte_range: (
+                349,
+                391,
+            ),
+        },
+    ],
+    imports: [
+        Import {
+            path: "\"node:fs/promises\"",
+            byte_range: (
+                25,
+                43,
+            ),
+        },
+    ],
+    calls: [
+        CallSite {
+            callee: "increment",
+            byte_range: (
+                290,
+                299,
+            ),
+        },
+        CallSite {
+            callee: "readFile",
+            byte_range: (
+                368,
+                376,
+            ),
+        },
+        CallSite {
+            callee: "parse",
+            byte_range: (
+                406,
+                411,
+            ),
+        },
+    ],
+}

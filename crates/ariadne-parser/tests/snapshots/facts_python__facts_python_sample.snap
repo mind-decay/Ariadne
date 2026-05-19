@@ -1,0 +1,114 @@
+---
+source: crates/ariadne-parser/tests/facts_python.rs
+expression: facts
+---
+SyntacticFacts {
+    decls: [
+        Decl {
+            kind: Class,
+            name: "Counter",
+            name_byte_range: (
+                45,
+                52,
+            ),
+            def_byte_range: (
+                39,
+                211,
+            ),
+        },
+        Decl {
+            kind: Function,
+            name: "__init__",
+            name_byte_range: (
+                62,
+                70,
+            ),
+            def_byte_range: (
+                58,
+                128,
+            ),
+        },
+        Decl {
+            kind: Function,
+            name: "increment",
+            name_byte_range: (
+                138,
+                147,
+            ),
+            def_byte_range: (
+                134,
+                211,
+            ),
+        },
+        Decl {
+            kind: Function,
+            name: "make_counter",
+            name_byte_range: (
+                218,
+                230,
+            ),
+            def_byte_range: (
+                214,
+                280,
+            ),
+        },
+        Decl {
+            kind: Function,
+            name: "load_config",
+            name_byte_range: (
+                287,
+                298,
+            ),
+            def_byte_range: (
+                283,
+                380,
+            ),
+        },
+    ],
+    imports: [
+        Import {
+            path: "json",
+            byte_range: (
+                7,
+                11,
+            ),
+        },
+        Import {
+            path: "pathlib",
+            byte_range: (
+                17,
+                24,
+            ),
+        },
+    ],
+    calls: [
+        CallSite {
+            callee: "Counter",
+            byte_range: (
+                266,
+                273,
+            ),
+        },
+        CallSite {
+            callee: "Path",
+            byte_range: (
+                330,
+                334,
+            ),
+        },
+        CallSite {
+            callee: "read_text",
+            byte_range: (
+                341,
+                350,
+            ),
+        },
+        CallSite {
+            callee: "loads",
+            byte_range: (
+                369,
+                374,
+            ),
+        },
+    ],
+}

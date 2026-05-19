@@ -1,0 +1,78 @@
+---
+source: crates/ariadne-parser/tests/facts_kotlin.rs
+expression: facts
+---
+SyntacticFacts {
+    decls: [
+        Decl {
+            kind: Class,
+            name: "Counter",
+            name_byte_range: (
+                59,
+                66,
+            ),
+            def_byte_range: (
+                53,
+                163,
+            ),
+        },
+        Decl {
+            kind: Function,
+            name: "increment",
+            name_byte_range: (
+                97,
+                106,
+            ),
+            def_byte_range: (
+                93,
+                161,
+            ),
+        },
+        Decl {
+            kind: Object,
+            name: "Singleton",
+            name_byte_range: (
+                172,
+                181,
+            ),
+            def_byte_range: (
+                165,
+                255,
+            ),
+        },
+        Decl {
+            kind: Function,
+            name: "greet",
+            name_byte_range: (
+                192,
+                197,
+            ),
+            def_byte_range: (
+                188,
+                253,
+            ),
+        },
+        Decl {
+            kind: Function,
+            name: "distance",
+            name_byte_range: (
+                261,
+                269,
+            ),
+            def_byte_range: (
+                257,
+                430,
+            ),
+        },
+    ],
+    imports: [
+        Import {
+            path: "kotlin.math.sqrt",
+            byte_range: (
+                35,
+                51,
+            ),
+        },
+    ],
+    calls: [],
+}

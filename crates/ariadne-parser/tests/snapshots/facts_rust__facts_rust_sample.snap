@@ -1,0 +1,134 @@
+---
+source: crates/ariadne-parser/tests/facts_rust.rs
+expression: facts
+---
+SyntacticFacts {
+    decls: [
+        Decl {
+            kind: Struct,
+            name: "Counter",
+            name_byte_range: (
+                43,
+                50,
+            ),
+            def_byte_range: (
+                32,
+                74,
+            ),
+        },
+        Decl {
+            kind: Enum,
+            name: "Tick",
+            name_byte_range: (
+                85,
+                89,
+            ),
+            def_byte_range: (
+                76,
+                111,
+            ),
+        },
+        Decl {
+            kind: Trait,
+            name: "Step",
+            name_byte_range: (
+                123,
+                127,
+            ),
+            def_byte_range: (
+                113,
+                164,
+            ),
+        },
+        Decl {
+            kind: TypeAlias,
+            name: "Bag",
+            name_byte_range: (
+                175,
+                178,
+            ),
+            def_byte_range: (
+                166,
+                202,
+            ),
+        },
+        Decl {
+            kind: Function,
+            name: "new",
+            name_byte_range: (
+                230,
+                233,
+            ),
+            def_byte_range: (
+                223,
+                291,
+            ),
+        },
+        Decl {
+            kind: Function,
+            name: "increment",
+            name_byte_range: (
+                304,
+                313,
+            ),
+            def_byte_range: (
+                297,
+                383,
+            ),
+        },
+        Decl {
+            kind: Function,
+            name: "fresh",
+            name_byte_range: (
+                394,
+                399,
+            ),
+            def_byte_range: (
+                387,
+                436,
+            ),
+        },
+        Decl {
+            kind: Module,
+            name: "inner",
+            name_byte_range: (
+                442,
+                447,
+            ),
+            def_byte_range: (
+                438,
+                495,
+            ),
+        },
+        Decl {
+            kind: Function,
+            name: "ping",
+            name_byte_range: (
+                461,
+                465,
+            ),
+            def_byte_range: (
+                454,
+                493,
+            ),
+        },
+    ],
+    imports: [
+        Import {
+            path: "std::collections::HashMap",
+            byte_range: (
+                4,
+                29,
+            ),
+        },
+    ],
+    calls: [
+        CallSite {
+            callee: "new",
+            byte_range: (
+                428,
+                431,
+            ),
+        },
+    ],
+}

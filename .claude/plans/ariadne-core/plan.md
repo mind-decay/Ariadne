@@ -127,7 +127,7 @@ Dataflow: watcher → invalidate file input → Salsa re-derives parse/symbols/g
 | tech | role | pin in tier | source verified this session |
 |---|---|---|---|
 | Rust stable + MSRV | core | tier-01 | n/a |
-| tree-sitter + grammars (ts/js/py/rs/go/java/kotlin/c-sharp) | CST + incremental | tier-03 | https://github.com/tree-sitter/tree-sitter |
+| tree-sitter + grammars (ts/js/py/rs/go/java/kotlin-ng¹/c-sharp) | CST + incremental | tier-03 | https://github.com/tree-sitter/tree-sitter |
 | salsa | incremental query DB | tier-04 | https://github.com/salsa-rs/salsa |
 | redb | embedded ACID kv | tier-02 | https://github.com/cberner/redb |
 | petgraph | in-RAM graph + algos | tier-07 | https://docs.rs/petgraph |
@@ -137,6 +137,8 @@ Dataflow: watcher → invalidate file input → Salsa re-derives parse/symbols/g
 | rmcp = 1.7.0 | MCP server | tier-08 | https://docs.rs/rmcp |
 | cargo-nextest, insta, proptest, rstest, criterion | tests | tier-01 | https://nexte.st, https://insta.rs, https://proptest-rs.github.io |
 | External SCIP indexers (on PATH): rust-analyzer, scip-typescript, scip-python, scip-java, scip-clang, scip-dotnet, lsif-go, scip CLI | semantic per lang | tier-05 | https://github.com/sourcegraph/scip |
+
+¹ `tree-sitter-kotlin-ng` (amaanq, `tree-sitter-grammars` org) substitutes for the legacy `tree-sitter-kotlin` crate, which pins tree-sitter <0.23 and is incompatible with the v1 0.26.x pin [src: docs/adr/0006-tree-sitter-kotlin-ng.md].
 </tech_inventory>
 
 <risks>

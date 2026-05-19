@@ -1,0 +1,153 @@
+---
+source: crates/ariadne-parser/tests/facts_typescript.rs
+expression: facts
+---
+SyntacticFacts {
+    decls: [
+        Decl {
+            kind: Interface,
+            name: "Point",
+            name_byte_range: (
+                52,
+                57,
+            ),
+            def_byte_range: (
+                42,
+                87,
+            ),
+        },
+        Decl {
+            kind: TypeAlias,
+            name: "Vec2",
+            name_byte_range: (
+                101,
+                105,
+            ),
+            def_byte_range: (
+                96,
+                124,
+            ),
+        },
+        Decl {
+            kind: Enum,
+            name: "Side",
+            name_byte_range: (
+                138,
+                142,
+            ),
+            def_byte_range: (
+                133,
+                163,
+            ),
+        },
+        Decl {
+            kind: Class,
+            name: "Origin",
+            name_byte_range: (
+                178,
+                184,
+            ),
+            def_byte_range: (
+                172,
+                325,
+            ),
+        },
+        Decl {
+            kind: Method,
+            name: "constructor",
+            name_byte_range: (
+                189,
+                200,
+            ),
+            def_byte_range: (
+                189,
+                222,
+            ),
+        },
+        Decl {
+            kind: Method,
+            name: "translate",
+            name_byte_range: (
+                226,
+                235,
+            ),
+            def_byte_range: (
+                226,
+                323,
+            ),
+        },
+        Decl {
+            kind: Function,
+            name: "distance",
+            name_byte_range: (
+                343,
+                351,
+            ),
+            def_byte_range: (
+                334,
+                470,
+            ),
+        },
+        Decl {
+            kind: Variable,
+            name: "dx",
+            name_byte_range: (
+                390,
+                392,
+            ),
+            def_byte_range: (
+                384,
+                405,
+            ),
+        },
+        Decl {
+            kind: Variable,
+            name: "dy",
+            name_byte_range: (
+                414,
+                416,
+            ),
+            def_byte_range: (
+                408,
+                429,
+            ),
+        },
+        Decl {
+            kind: Function,
+            name: "_hidden",
+            name_byte_range: (
+                481,
+                488,
+            ),
+            def_byte_range: (
+                472,
+                527,
+            ),
+        },
+    ],
+    imports: [
+        Import {
+            path: "\"node:path\"",
+            byte_range: (
+                21,
+                32,
+            ),
+        },
+    ],
+    calls: [
+        CallSite {
+            callee: "sqrt",
+            byte_range: (
+                444,
+                448,
+            ),
+        },
+        CallSite {
+            callee: "join",
+            byte_range: (
+                510,
+                514,
+            ),
+        },
+    ],
+}

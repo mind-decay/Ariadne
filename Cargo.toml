@@ -51,6 +51,12 @@ pretty_assertions = "1"
 # Workspace introspection (root architecture test only)
 cargo_metadata = "0.20"
 
+[profile.bench]
+# Enable thin LTO for benches so the tree-sitter C runtime can be inlined
+# across crate boundaries. Cuts cold-parse cost on tier-03 by ~25% in our
+# measurements [src: tier-03 build session 2026-05-19].
+lto = "thin"
+
 [workspace.lints.rust]
 unsafe_code = "forbid"
 missing_debug_implementations = "warn"

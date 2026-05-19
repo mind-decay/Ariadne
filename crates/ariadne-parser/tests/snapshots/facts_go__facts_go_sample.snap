@@ -1,0 +1,112 @@
+---
+source: crates/ariadne-parser/tests/facts_go.rs
+expression: facts
+---
+SyntacticFacts {
+    decls: [
+        Decl {
+            kind: TypeAlias,
+            name: "Counter",
+            name_byte_range: (
+                51,
+                58,
+            ),
+            def_byte_range: (
+                46,
+                80,
+            ),
+        },
+        Decl {
+            kind: TypeAlias,
+            name: "Direction",
+            name_byte_range: (
+                87,
+                96,
+            ),
+            def_byte_range: (
+                82,
+                100,
+            ),
+        },
+        Decl {
+            kind: Method,
+            name: "Increment",
+            name_byte_range: (
+                120,
+                129,
+            ),
+            def_byte_range: (
+                102,
+                166,
+            ),
+        },
+        Decl {
+            kind: Function,
+            name: "New",
+            name_byte_range: (
+                173,
+                176,
+            ),
+            def_byte_range: (
+                168,
+                231,
+            ),
+        },
+        Decl {
+            kind: Function,
+            name: "describe",
+            name_byte_range: (
+                238,
+                246,
+            ),
+            def_byte_range: (
+                233,
+                312,
+            ),
+        },
+        Decl {
+            kind: Function,
+            name: "joinParts",
+            name_byte_range: (
+                319,
+                328,
+            ),
+            def_byte_range: (
+                314,
+                388,
+            ),
+        },
+    ],
+    imports: [
+        Import {
+            path: "\"fmt\"",
+            byte_range: (
+                26,
+                31,
+            ),
+        },
+        Import {
+            path: "\"strings\"",
+            byte_range: (
+                33,
+                42,
+            ),
+        },
+    ],
+    calls: [
+        CallSite {
+            callee: "Sprintf",
+            byte_range: (
+                280,
+                287,
+            ),
+        },
+        CallSite {
+            callee: "Join",
+            byte_range: (
+                370,
+                374,
+            ),
+        },
+    ],
+}

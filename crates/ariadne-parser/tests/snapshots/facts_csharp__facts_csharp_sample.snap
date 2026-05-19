@@ -1,0 +1,136 @@
+---
+source: crates/ariadne-parser/tests/facts_csharp.rs
+expression: facts
+---
+SyntacticFacts {
+    decls: [
+        Decl {
+            kind: Interface,
+            name: "IStep",
+            name_byte_range: (
+                97,
+                102,
+            ),
+            def_byte_range: (
+                80,
+                145,
+            ),
+        },
+        Decl {
+            kind: Method,
+            name: "Next",
+            name_byte_range: (
+                121,
+                125,
+            ),
+            def_byte_range: (
+                117,
+                139,
+            ),
+        },
+        Decl {
+            kind: Enum,
+            name: "Side",
+            name_byte_range: (
+                163,
+                167,
+            ),
+            def_byte_range: (
+                151,
+                208,
+            ),
+        },
+        Decl {
+            kind: Struct,
+            name: "Point",
+            name_byte_range: (
+                228,
+                233,
+            ),
+            def_byte_range: (
+                214,
+                289,
+            ),
+        },
+        Decl {
+            kind: Record,
+            name: "Vec",
+            name_byte_range: (
+                309,
+                312,
+            ),
+            def_byte_range: (
+                295,
+                327,
+            ),
+        },
+        Decl {
+            kind: Class,
+            name: "Counter",
+            name_byte_range: (
+                346,
+                353,
+            ),
+            def_byte_range: (
+                333,
+                655,
+            ),
+        },
+        Decl {
+            kind: Method,
+            name: "Increment",
+            name_byte_range: (
+                406,
+                415,
+            ),
+            def_byte_range: (
+                395,
+                487,
+            ),
+        },
+        Decl {
+            kind: Method,
+            name: "Tick",
+            name_byte_range: (
+                515,
+                519,
+            ),
+            def_byte_range: (
+                497,
+                649,
+            ),
+        },
+    ],
+    imports: [
+        Import {
+            path: "System",
+            byte_range: (
+                6,
+                12,
+            ),
+        },
+        Import {
+            path: "System.Collections.Generic",
+            byte_range: (
+                20,
+                46,
+            ),
+        },
+    ],
+    calls: [
+        CallSite {
+            callee: "Add",
+            byte_range: (
+                594,
+                597,
+            ),
+        },
+        CallSite {
+            callee: "Read",
+            byte_range: (
+                632,
+                636,
+            ),
+        },
+    ],
+}

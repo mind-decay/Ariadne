@@ -1,0 +1,112 @@
+---
+source: crates/ariadne-parser/tests/facts_java.rs
+expression: facts
+---
+SyntacticFacts {
+    decls: [
+        Decl {
+            kind: Class,
+            name: "Sample",
+            name_byte_range: (
+                94,
+                100,
+            ),
+            def_byte_range: (
+                81,
+                425,
+            ),
+        },
+        Decl {
+            kind: Interface,
+            name: "Step",
+            name_byte_range: (
+                124,
+                128,
+            ),
+            def_byte_range: (
+                107,
+                167,
+            ),
+        },
+        Decl {
+            kind: Method,
+            name: "next",
+            name_byte_range: (
+                143,
+                147,
+            ),
+            def_byte_range: (
+                139,
+                161,
+            ),
+        },
+        Decl {
+            kind: Enum,
+            name: "Side",
+            name_byte_range: (
+                185,
+                189,
+            ),
+            def_byte_range: (
+                173,
+                226,
+            ),
+        },
+        Decl {
+            kind: Record,
+            name: "Point",
+            name_byte_range: (
+                246,
+                251,
+            ),
+            def_byte_range: (
+                232,
+                268,
+            ),
+        },
+        Decl {
+            kind: Method,
+            name: "increment",
+            name_byte_range: (
+                292,
+                301,
+            ),
+            def_byte_range: (
+                274,
+                423,
+            ),
+        },
+    ],
+    imports: [
+        Import {
+            path: "java.util.ArrayList",
+            byte_range: (
+                36,
+                55,
+            ),
+        },
+        Import {
+            path: "java.util.List",
+            byte_range: (
+                64,
+                78,
+            ),
+        },
+    ],
+    calls: [
+        CallSite {
+            callee: "add",
+            byte_range: (
+                376,
+                379,
+            ),
+        },
+        CallSite {
+            callee: "get",
+            byte_range: (
+                410,
+                413,
+            ),
+        },
+    ],
+}

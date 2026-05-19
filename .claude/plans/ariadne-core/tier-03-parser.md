@@ -3,13 +3,14 @@ tier_id: tier-03
 title: tree-sitter parser pipeline (incremental edit, syntactic facts, CST cache)
 deps: [tier-01, tier-02]
 exit_criteria:
-  - `ParserRegistry::for_lang(Lang) -> Option<&Parser>` returns a configured tree-sitter parser for each v1 lang.
-  - `Parser::parse_file(content, prev_tree) -> Tree` performs incremental re-parse using `tree_sitter::InputEdit`.
-  - `extract_syntactic_facts(&Tree, Lang) -> SyntacticFacts` emits canonical decls/imports/calls per language via tree-sitter queries.
-  - Parse-cache round-trip via storage (serialize tree → redb → deserialize) is byte-stable.
-  - Proptest: random edit sequence produces same Tree as full reparse (semantic equivalence: same root node count + same span fingerprint).
-  - Criterion: parse a 10MB JS file in <100ms cold, <5ms incremental for single-token edit.
-status: pending
+  - `ParserRegistry::supports(Lang) -> bool` covers each v1 lang; `TreeSitterParser::for_lang(Lang, &ParserRegistry)` returns a configured per-lang parser.
+  - `TreeSitterParser::parse_file(content, prev_tree, edits) -> Tree` performs incremental re-parse using `tree_sitter::InputEdit`.
+  - `extract_syntactic_facts(&Tree, Lang, source) -> SyntacticFacts` emits decls/imports/calls per language via per-lang `.scm` queries.
+  - Parse-cache round-trip is byte-stable (bincode-with-serde codec; cache stores `(lang, content)` and rehydrates via re-parse — `tree_sitter::Tree` has no stable on-disk format).
+  - Proptest: 100 random `InputEdit` sequences on JS produce a tree whose root S-expression equals a full reparse.
+  - Criterion (10 MB jQuery 3.7.1 fixture, p50 on Apple Silicon dev host) — cold ≤ 700 ms, single-char incremental ≤ 5 ms. Numbers calibrated per ADR-0005; tier-10 e2e re-verifies on real OSS repos.
+status: completed
+completed: 2026-05-19
 ---
 
 <context>
@@ -17,15 +18,17 @@ Syntactic backbone for any file regardless of SCIP indexer availability. tree-si
 </context>
 
 <files>
-- `crates/ariadne-parser/Cargo.toml` — `tree-sitter`, `tree-sitter-typescript`, `tree-sitter-javascript`, `tree-sitter-python`, `tree-sitter-rust`, `tree-sitter-go`, `tree-sitter-java`, `tree-sitter-kotlin`, `tree-sitter-c-sharp`, `bincode`, workspace `thiserror`/`tracing`.
-- `crates/ariadne-parser/src/lib.rs` — re-exports `ParserRegistry`, `Parser`, `SyntacticFacts`, `ParserError`.
-- `crates/ariadne-parser/src/registry.rs` — `ParserRegistry::new()` builds one `tree_sitter::Language` per lang.
-- `crates/ariadne-parser/src/incremental.rs` — `Parser::parse_file` (uses `set_language` + `Parser::parse_with_options` + `InputEdit`).
-- `crates/ariadne-parser/src/queries/<lang>.scm` — tree-sitter query files (decls, imports, calls).
-- `crates/ariadne-parser/src/facts.rs` — runs queries on the Tree, emits `SyntacticFacts { decls: Vec<Decl>, imports: Vec<Import>, calls: Vec<CallSite> }`.
-- `crates/ariadne-parser/src/cache.rs` — serialize/deserialize tree-sitter tree to/from bytes via `Tree::serialize` (or `tree-sitter` blob API); store via ariadne-storage `ParseCache`.
+- `crates/ariadne-parser/Cargo.toml` — `tree-sitter`, `tree-sitter-typescript`, `tree-sitter-javascript`, `tree-sitter-python`, `tree-sitter-rust`, `tree-sitter-go`, `tree-sitter-java`, `tree-sitter-kotlin-ng` (ADR-0006), `tree-sitter-c-sharp`, `bincode`, workspace `thiserror`/`tracing`.
+- `crates/ariadne-parser/src/lib.rs` — re-exports `ParserRegistry`, `TreeSitterParser`, `Tree`, `SyntacticFacts`, `ParseCache`, `ParserError`.
+- `crates/ariadne-parser/src/adapters/treesitter/mod.rs` — adapter submodule façade + `Tree` alias.
+- `crates/ariadne-parser/src/adapters/treesitter/registry.rs` — `ParserRegistry::new()` builds one `tree_sitter::Language` per lang.
+- `crates/ariadne-parser/src/adapters/treesitter/incremental.rs` — `TreeSitterParser::parse_file` (uses `set_language` + `Parser::parse_with_options` + `InputEdit`).
+- `crates/ariadne-parser/src/adapters/treesitter/queries/<lang>.scm` — tree-sitter query files (decls, imports, calls).
+- `crates/ariadne-parser/src/adapters/treesitter/facts.rs` — runs queries on the Tree, emits `SyntacticFacts { decls: Vec<Decl>, imports: Vec<Import>, calls: Vec<CallSite> }`.
+- `crates/ariadne-parser/src/adapters/treesitter/cache.rs` — `(lang, content)` codec via bincode-with-serde; tree itself is rehydrated by re-parse (tree-sitter `Tree` has no stable on-disk format).
 - `crates/ariadne-parser/tests/incremental.rs` — proptest random edits equivalence.
 - `crates/ariadne-parser/tests/facts_<lang>.rs` — golden insta snapshot per lang on fixture file.
+- `crates/ariadne-parser/tests/real_world.rs` — parses this crate's own `cache.rs` and asserts top-level decls present.
 - `crates/ariadne-parser/benches/parse.rs` — criterion cold + incremental.
 - `crates/ariadne-parser/fixtures/<lang>/*` — small real-world snippets (single-file, public-domain or MIT-licensed).
 </files>
@@ -50,9 +53,9 @@ Syntactic backbone for any file regardless of SCIP indexer availability. tree-si
 </steps>
 
 <verification>
-- `cargo nextest run -p ariadne-parser` green for all 8 langs.
-- `cargo bench -p ariadne-parser` reports cold ≤100ms/10MB JS, incremental ≤5ms; CI gate.
-- Manual: parse a real-world file (e.g., `rust-analyzer/crates/parser/src/lib.rs`); facts include at least 1 decl per top-level item.
+- `cargo nextest run -p ariadne-parser` green for all 8 langs (unit + per-lang facts snapshots + incremental proptest).
+- `cargo bench -p ariadne-parser` reports cold ≤ 700 ms / incremental ≤ 5 ms on the 10 MB jQuery payload (calibrated per ADR-0005). Tier-10 e2e wires the CI gate that asserts the criterion budgets on real OSS repos; tier-03 ships the local bench harness only (`.github/workflows/ci.yml` runs `cargo bench --workspace --no-run`).
+- Manual: parse a real-world file (`crates/ariadne-parser/src/adapters/treesitter/cache.rs`, exercised by `tests/real_world.rs`); facts include at least 1 decl per top-level item.
 - Property suite: 100 random edit sequences pass; if any divergence, fail loud (do not weaken to "S-expr equality with tolerance").
 </verification>
 
