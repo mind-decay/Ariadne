@@ -13,8 +13,11 @@ mod build;
 mod coupling;
 mod cycles;
 mod dead;
+pub mod docgen;
 pub mod errors;
+mod heuristics;
 mod plan_assist;
+pub mod refactor;
 
 pub use blast::BlastRadius;
 pub use build::{EdgeDelta, EdgeKind, EdgeKindSet, EdgeMeta, GraphIndex};
@@ -23,3 +26,4 @@ pub use cycles::{Cycle, CycleReport};
 pub use dead::{DeadCodeConfig, DeadCodeReport, DeadSymbol};
 pub use errors::GraphError;
 pub use plan_assist::{PlanAssist, PlanFile};
+pub use refactor::{CycleBreakProposal, GodModuleFinding, MisplacedSymbol};

@@ -10,7 +10,8 @@ exit_criteria:
   - `refactor::misplaced_symbols()` finds symbols whose primary callers all live in a different module → suggest moving.
   - All output deterministic (same revision → same bytes); golden insta tests on a fixture repo.
   - Tools exposed via MCP (tier-08 update): doc_for_module, doc_for_project, refactor_suggestions.
-status: pending
+status: completed
+completed: 2026-05-20
 ---
 
 <context>
@@ -65,3 +66,20 @@ Closes the "weak-spots + refactor + doc-gen" promise of v1. Pure static computat
 <rollback>
 Module-level additions inside ariadne-graph + ariadne-mcp. Rollback = `git revert` of this tier's commits; or remove `mod docgen; mod refactor; mod heuristics;` from lib.rs and the three new tool wrappers.
 </rollback>
+
+<handoff>
+Implementation is complete on disk; finalization deferred to a separate session per user request. A fresh `/spec-build` on this tier file diffs the repo and resumes from "Remaining" below.
+
+Done — steps 1-12 implemented, the following checks green:
+- `crates/ariadne-graph`: `src/heuristics.rs`, `src/docgen.rs`, `src/refactor.rs`, `lib.rs` wiring; `tests/support.rs` (in-memory `ReadSnapshot` test double), `tests/docgen_fixture.rs` (golden module/project + empty negative + 50-case determinism proptest), `tests/refactor_cases.rs` (god-module / cycle-break / misplaced goldens); 5 accepted insta snapshots.
+- `crates/ariadne-mcp`: `types.rs` (`DocOutput`, `RefactorOutput` + row types), `tools/doc_module.rs`, `tools/doc_project.rs`, `tools/refactor.rs`, `tools/mod.rs`, `server.rs` (3 new `#[tool]`s), `tests/tools_doc.rs`, `tests/tools_refactor.rs`, `seed_empty_project` helper, regenerated `handshake__tools_list.snap` (13 tools).
+- `cargo nextest run -p ariadne-graph -p ariadne-mcp` → 35/35 pass.
+- `cargo clippy -p ariadne-graph -p ariadne-mcp --all-targets --all-features -- -D warnings` → clean.
+- `cargo fmt --all --check` → clean. `cargo test --test architecture` → pass.
+
+Finalized 2026-05-20:
+1. Pre-existing `cargo doc` breakage cleared — repaired 12 broken intra-doc links across 11 files (`ariadne-cli/src/main.rs`, `ariadne-mcp/src/{types.rs,tools/mod.rs}`, `ariadne-scip/src/indexer/{mod,subprocess,lsif_go,scip_clang,scip_dotnet,scip_java,scip_python,scip_typescript}.rs`). All predate tier-09 (tier-01/05/08 debt); fixes were user-authorized as an out-of-tier scope extension.
+2. `cargo nextest run --workspace` → 123/123 pass; `-p ariadne-graph -p ariadne-mcp` → 35/35.
+3. `RUSTDOCFLAGS=-D warnings cargo doc --workspace --no-deps --document-private-items` → clean.
+4. Tier `status: completed`, `completed: 2026-05-20`. Verification step 2's literal "self-index ariadne_v2" run is deferred to tier-10 (no CLI indexer exists pre-tier-10); the doc/refactor tools are exercised end-to-end via the `tools_doc.rs` / `tools_refactor.rs` integration tests against a real spawned MCP server + redb fixture.
+</handoff>

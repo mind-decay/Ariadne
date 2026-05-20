@@ -180,6 +180,42 @@ impl AriadneServer {
         let out = tools::project_status::handle(cat);
         wire(&out)
     }
+
+    #[tool(description = "Markdown documentation summary for one module (file path)")]
+    async fn doc_for_module(
+        &self,
+        Parameters(input): Parameters<FileQuery>,
+    ) -> Result<CallToolResult, ErrorData> {
+        let cat = &*self.catalog;
+        let out =
+            tools::doc_module::handle(cat, &*self.storage, &input).map_err(McpError::into_rmcp)?;
+        wire(&out)
+    }
+
+    #[tool(description = "Markdown architecture overview for the whole project")]
+    async fn doc_for_project(
+        &self,
+        Parameters(input): Parameters<ScopeInput>,
+    ) -> Result<CallToolResult, ErrorData> {
+        let cat = &*self.catalog;
+        let out =
+            tools::doc_project::handle(cat, &*self.storage, &input).map_err(McpError::into_rmcp)?;
+        wire(&out)
+    }
+
+    #[tool(
+        description = "Static refactor suggestions (god modules, cycle breaks, misplaced \
+symbols). Findings are hints for review, not authoritative commands."
+    )]
+    async fn refactor_suggestions(
+        &self,
+        Parameters(input): Parameters<ScopeInput>,
+    ) -> Result<CallToolResult, ErrorData> {
+        let cat = &*self.catalog;
+        let out =
+            tools::refactor::handle(cat, &*self.storage, &input).map_err(McpError::into_rmcp)?;
+        wire(&out)
+    }
 }
 
 #[tool_handler]

@@ -3,7 +3,7 @@
 //! `tools/list`. All wire ids are `u64` / `String` — the salsa-internal
 //! `NonZeroU64`/`Lang::Other(&'static str)` shapes never leak to clients.
 //!
-//! [src: .claude/plans/ariadne-core/tier-08-mcp-server.md `<files>`]
+//! \[src: .claude/plans/ariadne-core/tier-08-mcp-server.md `<files>`]
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -110,7 +110,8 @@ pub struct BlastRadiusOutput {
     pub depth_used: u8,
 }
 
-/// Input to `file_summary`.
+/// Path-keyed input shared by `file_summary` and `doc_for_module`
+/// (for `doc_for_module` the file path is the module identity).
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
 pub struct FileQuery {
     /// Project-root-relative file path.
@@ -169,7 +170,8 @@ pub struct PlanFileRow {
     pub certainty: f32,
 }
 
-/// Input to `coupling_report` and `weak_spots`. Empty = all files.
+/// Path-prefix scope shared by `coupling_report`, `weak_spots`,
+/// `doc_for_project`, and `refactor_suggestions`. Empty = all files.
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema, Default)]
 pub struct ScopeInput {
     /// Optional path-prefix filter (project-root-relative).
@@ -248,4 +250,74 @@ pub struct ProjectStatusOutput {
     pub edge_count: u32,
     /// Project root path.
     pub root: String,
+}
+
+/// Output of `doc_for_module` / `doc_for_project` — one rendered
+/// Markdown document.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct DocOutput {
+    /// Rendered Markdown body.
+    pub markdown: String,
+}
+
+/// One outbound-traffic row inside a [`GodModuleRow`].
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct OutboundRow {
+    /// Target symbol canonical name.
+    pub symbol: String,
+    /// Number of edges flowing to that symbol.
+    pub edges: u32,
+}
+
+/// One god-module finding in [`RefactorOutput`].
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct GodModuleRow {
+    /// Module (file) name.
+    pub module: String,
+    /// Efferent coupling (Ce).
+    pub efferent: u32,
+    /// Cohesion proxy in `[0, 1]`.
+    pub cohesion: f32,
+    /// Outbound traffic grouped by target symbol.
+    pub top_outbound: Vec<OutboundRow>,
+    /// Human-readable split suggestion.
+    pub suggestion: String,
+}
+
+/// One cycle-break candidate in [`RefactorOutput`].
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct CycleBreakRow {
+    /// Source symbol canonical name.
+    pub from: String,
+    /// Destination symbol canonical name.
+    pub to: String,
+    /// Cut score in `(0, 1]`; higher = cheaper to cut.
+    pub score: f32,
+    /// Static design-principle rationale.
+    pub rationale: String,
+}
+
+/// One misplaced-symbol finding in [`RefactorOutput`].
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct MisplacedRow {
+    /// Symbol canonical name.
+    pub symbol: String,
+    /// Module the symbol currently lives in.
+    pub current_module: String,
+    /// Module most of its callers belong to.
+    pub target_module: String,
+    /// Ratio of dominant-external call count to own-module call count.
+    pub ratio: f32,
+}
+
+/// Output of `refactor_suggestions`. Every entry is a *hint* for review,
+/// never an authoritative command (tier-09 step 12).
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct RefactorOutput {
+    /// God-module split candidates.
+    pub god_modules: Vec<GodModuleRow>,
+    /// Cycle-break edge candidates.
+    pub cycle_breaks: Vec<CycleBreakRow>,
+    /// Symbols whose callers live mostly in another module.
+    pub misplaced_symbols: Vec<MisplacedRow>,
 }

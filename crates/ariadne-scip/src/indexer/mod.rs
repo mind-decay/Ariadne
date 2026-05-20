@@ -7,7 +7,7 @@
 //! "missing indexers degrade to syntactic-only … never crash"
 //! [src: `.claude/plans/ariadne-core/tier-05-scip-ingest.md`]).
 //!
-//! `IngestPlan` (plan step 12) lives in [`plan`]; the driver-agnostic
+//! `IngestPlan` (plan step 12) lives in the `plan` module; the driver-agnostic
 //! [`parse`] free function exists so consumers of `ScipDocInput.raw_proto`
 //! (tier-04 salsa input → driving adapters in tier-07+) can decode raw
 //! SCIP bytes without first instantiating a per-language driver
@@ -43,7 +43,7 @@ pub use scip_typescript::ScipTypescriptIndexer;
 /// Decode raw SCIP protobuf bytes (e.g. the `raw_proto` payload pulled
 /// from `ariadne_salsa::ScipDocInput`) into a typed [`ScipDoc`]. Free
 /// function because driving adapters know the file's [`Lang`] from
-/// [`ariadne_salsa::FileMetadataInput`] long before they touch a driver
+/// `ariadne_salsa::FileMetadataInput` long before they touch a driver
 /// instance; round-tripping through `ScipIndexer::parse` would only force
 /// them to keep a registry of drivers for what is essentially a stateless
 /// decode [src: `.claude/plans/ariadne-core/tier-05-scip-ingest.md`

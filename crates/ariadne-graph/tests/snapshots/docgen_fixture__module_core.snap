@@ -1,0 +1,51 @@
+---
+source: crates/ariadne-graph/tests/docgen_fixture.rs
+expression: md
+---
+# Module `core`
+
+## Purpose
+
+Intermediate module — balanced inbound and outbound coupling.
+
+Members: 3 · cohesion 0.17 · abstractness 0.00.
+
+## Public API
+
+_Visibility metadata is unavailable pre-SCIP-refinement; the table lists every module member._
+
+| Symbol | Kind | Inbound refs |
+| --- | --- | --- |
+| `core::init` | function | 0 |
+| `core::run` | function | 2 |
+| `core::shutdown` | function | 0 |
+
+## Inbound coupling
+
+Afferent coupling (Ca): 2.
+
+| Caller | Kind | Edges |
+| --- | --- | --- |
+| `api::serve` | function | 1 |
+| `db::connect` | function | 1 |
+
+## Outbound coupling
+
+Efferent coupling (Ce): 3 · instability (I): 0.60.
+
+| Callee | Kind | Edges |
+| --- | --- | --- |
+| `db::query` | function | 1 |
+| `util::log` | function | 1 |
+| `types::Config` | struct | 1 |
+
+## Cycles
+
+Module participates in 1 dependency cycle(s):
+
+- `core::run` ⇄ `db::query` ⇄ `db::connect`
+
+## Dead Code
+
+- `core::init` (function) — no callers, no exports
+- `core::shutdown` (function) — no callers, no exports

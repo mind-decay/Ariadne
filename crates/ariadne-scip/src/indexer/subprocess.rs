@@ -6,7 +6,7 @@
 //! warning rather than a crash (plan §scope:
 //! "missing indexers degrade to syntactic-only … never crash"
 //! [src: `.claude/plans/ariadne-core/tier-05-scip-ingest.md`]), bound the
-//! captured stderr so a runaway indexer cannot blow the [`IngestReport`]
+//! captured stderr so a runaway indexer cannot blow the [`IngestReport`](super::IngestReport)
 //! memory budget, and surface non-zero exit codes as a structured
 //! [`ScipError::SubprocessFailed`].
 

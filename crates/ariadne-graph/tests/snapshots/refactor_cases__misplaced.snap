@@ -1,0 +1,5 @@
+---
+source: crates/ariadne-graph/tests/refactor_cases.rs
+expression: fmt_misplaced(&mis)
+---
+symbol=1 mod_a -> mod_b ratio=3.00

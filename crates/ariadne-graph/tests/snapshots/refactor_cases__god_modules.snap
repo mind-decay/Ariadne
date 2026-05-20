@@ -1,0 +1,6 @@
+---
+source: crates/ariadne-graph/tests/refactor_cases.rs
+expression: fmt_gods(&gods)
+---
+module=core Ce=3 cohesion=0.1667 top_outbound=[(5, 1), (7, 1), (8, 1)]
+  suggestion=Consider splitting `db::query` out into its own module — currently 33% of outbound traffic flows through it.

@@ -1,5 +1,5 @@
 //! `ariadne` CLI entrypoint. Tier-10 wires subcommands; tier-04 adds the
-//! `debug mem` stub the plan's verification step asks for [src:
+//! `debug mem` stub the plan's verification step asks for \[src:
 //! .claude/plans/ariadne-core/tier-04-salsa.md `<verification>` line 3].
 //!
 //! The `anyhow` dependency is declared at the crate level (per ADR-0001 /

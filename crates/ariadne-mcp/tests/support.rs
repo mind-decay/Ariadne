@@ -47,6 +47,19 @@ pub fn seed_tiny_project() -> (PathBuf, TempDir) {
     (project_root, dir)
 }
 
+/// Seed a project whose `.ariadne/index.redb` has bootstrapped-but-empty
+/// tables — no files, symbols, or edges. Drives the negative
+/// `doc_for_project` case (tier-09 `<verification>`).
+#[must_use]
+pub fn seed_empty_project() -> (PathBuf, TempDir) {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let project_root = dir.path().to_path_buf();
+    let storage_path = project_root.join(".ariadne").join("index.redb");
+    let storage = RedbStorage::open(&storage_path).expect("open redb");
+    drop(storage);
+    (project_root, dir)
+}
+
 fn span(file: u32, start: u32, end: u32) -> Span {
     Span {
         file: fid(file),

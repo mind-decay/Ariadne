@@ -1,0 +1,53 @@
+---
+source: crates/ariadne-graph/tests/docgen_fixture.rs
+expression: md
+---
+# Project Architecture Overview
+
+## Overview
+
+5 modules · 8 symbols · 7 edges · 1 dependency cycle(s).
+
+## Layers
+
+```mermaid
+flowchart TD
+    g0["api"]
+    g1["core ⇄ db"]
+    g2["util"]
+    g3["types"]
+    g0 --> g1
+    g1 --> g2
+    g1 --> g3
+```
+
+## Hot-Spots
+
+| Module | Ce | Cycles | Dead | Score |
+| --- | --- | --- | --- | --- |
+| `core` | 3 | 1 | 2 | 6 |
+| `api` | 1 | 0 | 1 | 2 |
+| `db` | 1 | 1 | 0 | 2 |
+| `types` | 0 | 0 | 0 | 0 |
+| `util` | 0 | 0 | 0 | 0 |
+
+## Coupling
+
+| Module | Ca | Ce | I | A | Distance |
+| --- | --- | --- | --- | --- | --- |
+| `api` | 0 | 1 | 1.00 | 0.00 | 0.00 |
+| `core` | 2 | 3 | 0.60 | 0.00 | 0.40 |
+| `db` | 1 | 1 | 0.50 | 0.00 | 0.50 |
+| `types` | 1 | 0 | 0.00 | 0.00 | 1.00 |
+| `util` | 1 | 0 | 0.00 | 0.00 | 1.00 |
+
+## Glossary
+
+- `core::run` (function) — `src/core.rs`
+- `db::query` (function) — `src/db.rs`
+- `db::connect` (function) — `src/db.rs`
+- `util::log` (function) — `src/util.rs`
+- `types::Config` (struct) — `src/types.rs`
+- `core::init` (function) — `src/core.rs`
+- `core::shutdown` (function) — `src/core.rs`
+- `api::serve` (function) — `src/api.rs`

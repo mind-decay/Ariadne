@@ -1,7 +1,7 @@
 //! `scip-dotnet` driver.
 //!
 //! Invocation: `scip-dotnet index --output <out>` run with `current_dir =
-//! <root>` [src: `.claude/plans/ariadne-core/tier-05-scip-ingest.md`
+//! <root>` \[src: `.claude/plans/ariadne-core/tier-05-scip-ingest.md`
 //! step 10, <https://github.com/sourcegraph/scip-dotnet>]. Detect-fires
 //! on any `*.sln` or `*.csproj` directly under the project root; the
 //! shallow walk is intentional — recursing the entire repo on every

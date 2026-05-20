@@ -4,7 +4,7 @@
 //! [src: `.claude/plans/ariadne-core/plan.md`]). Two-step pipeline:
 //!
 //! 1. `lsif-go --no-animation --output <tmp>/dump.lsif` in `cwd = <root>`
-//!    [src: `.claude/plans/ariadne-core/tier-05-scip-ingest.md` step 11,
+//!    \[src: `.claude/plans/ariadne-core/tier-05-scip-ingest.md` step 11,
 //!    <https://github.com/sourcegraph/lsif-go>].
 //! 2. `scip convert --from=lsif --in=<tmp>/dump.lsif --out=<out>`
 //!    [src: <https://github.com/sourcegraph/scip> CLI docs].

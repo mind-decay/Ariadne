@@ -1,7 +1,7 @@
 //! `scip-java` driver.
 //!
 //! Invocation: `scip-java index --output <out> --build-tool <gradle|maven|bazel|sbt>`
-//! [src: `.claude/plans/ariadne-core/tier-05-scip-ingest.md` step 8,
+//! \[src: `.claude/plans/ariadne-core/tier-05-scip-ingest.md` step 8,
 //! <https://github.com/sourcegraph/scip-java>]. The `--build-tool` flag
 //! is mandatory; we pick the first marker present on the project root.
 //! `detect` covers any of the four marker files / dirs.

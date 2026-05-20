@@ -1,7 +1,7 @@
 //! `scip-clang` driver.
 //!
 //! Invocation: `scip-clang --compdb <compile_commands.json> --out <out>`
-//! [src: `.claude/plans/ariadne-core/tier-05-scip-ingest.md` step 9,
+//! \[src: `.claude/plans/ariadne-core/tier-05-scip-ingest.md` step 9,
 //! <https://github.com/sourcegraph/scip-clang>]. Requires a
 //! `compile_commands.json` produced by `CMake` (`-DCMAKE_EXPORT_COMPILE_COMMANDS=ON`),
 //! Bear, Bazel `bazel-compdb`, or an equivalent tool.

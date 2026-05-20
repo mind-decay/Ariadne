@@ -1,7 +1,7 @@
 //! `scip-typescript` driver.
 //!
 //! Invocation: `scip-typescript index --cwd <root> --output <out>`
-//! [src: `.claude/plans/ariadne-core/tier-05-scip-ingest.md` step 6,
+//! \[src: `.claude/plans/ariadne-core/tier-05-scip-ingest.md` step 6,
 //! <https://github.com/sourcegraph/scip-typescript>]. Reports `Lang::TypeScript`
 //! for both `.ts` and `.js` projects — the indexer itself walks both file
 //! types when a `tsconfig.json` permits, and the salsa layer distinguishes

@@ -1,7 +1,7 @@
 //! `scip-python` driver.
 //!
 //! Invocation: `scip-python index --project-name <name> --output <out> --cwd <root>`
-//! [src: `.claude/plans/ariadne-core/tier-05-scip-ingest.md` step 7,
+//! \[src: `.claude/plans/ariadne-core/tier-05-scip-ingest.md` step 7,
 //! <https://github.com/sourcegraph/scip-python>]. The `--project-name`
 //! flag is mandatory; we derive it from the root directory's file name
 //! (falling back to `"project"` when the root has no terminal component,

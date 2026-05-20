@@ -1,18 +1,21 @@
 //! Per-tool handlers. Each `<name>.rs` exposes a single `handle` function
 //! that turns the typed input into the typed output by querying the
-//! [`Catalog`](crate::catalog::Catalog). The `#[tool]` methods on
+//! [`Catalog`]. The `#[tool]` methods on
 //! `AriadneServer` delegate one-line so the macro-expanded router stays
 //! small.
 
 pub mod blast_radius;
 pub mod coupling_report;
 pub mod doc_for;
+pub mod doc_module;
+pub mod doc_project;
 pub mod file_summary;
 pub mod find_definition;
 pub mod find_references;
 pub mod list_symbols;
 pub mod plan_assist;
 pub mod project_status;
+pub mod refactor;
 pub mod weak_spots;
 
 use ariadne_core::SymbolId;

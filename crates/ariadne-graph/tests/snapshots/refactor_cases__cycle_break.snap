@@ -1,0 +1,10 @@
+---
+source: crates/ariadne-graph/tests/refactor_cases.rs
+expression: fmt_props(&props)
+---
+5 -> 6 score=1.0000
+  rationale=Dependency-Inversion Principle: invert this edge behind an abstraction owned by the dependee. Lowest combined fan-in/fan-out makes it the cheapest cut (Martin instability metric I).
+6 -> 2 score=0.5000
+  rationale=Dependency-Inversion Principle: invert this edge behind an abstraction owned by the dependee. Lowest combined fan-in/fan-out makes it the cheapest cut (Martin instability metric I).
+2 -> 5 score=0.3333
+  rationale=Dependency-Inversion Principle: invert this edge behind an abstraction owned by the dependee. Lowest combined fan-in/fan-out makes it the cheapest cut (Martin instability metric I).
