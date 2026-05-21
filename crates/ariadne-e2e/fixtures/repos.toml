@@ -1,0 +1,45 @@
+# Pinned OSS fixture repositories for the end-to-end suite.
+#
+# Each commit SHA is frozen so an upstream change cannot silently break a
+# test — the per-language suites shallow-fetch exactly this commit
+# [src: .claude/plans/ariadne-core/tier-10-cli-e2e.md step 10].
+#
+# tier-12 adds the C/C++ fixtures: `torvalds/linux` is the C-heavy repo that
+# carries the SLO corpus past the 100K genuinely-indexed-file floor
+# [src: .claude/plans/ariadne-core/tier-12-parallel-cold-index.md step 7].
+
+[rust]
+url = "https://github.com/tokio-rs/tokio.git"
+sha = "c6d58ce7e7bf4a6e7e6efc1ffeb42daa3a627c17"
+
+[typescript]
+url = "https://github.com/microsoft/vscode.git"
+sha = "1c2dc57c63f6ad24693144660b318d3268f5d6cf"
+
+[python]
+url = "https://github.com/pandas-dev/pandas.git"
+sha = "d2dc148a71b44ff76431e2c2e249bf453bea7254"
+
+[go]
+url = "https://github.com/kubernetes/kubernetes.git"
+sha = "661b086ee0d115150cb222694b44b103c88a3a5d"
+
+[java]
+url = "https://github.com/spring-projects/spring-boot.git"
+sha = "23bcc680d5c49b1eec85fb34d8cebb0c546ddabd"
+
+[csharp]
+url = "https://github.com/dotnet/runtime.git"
+sha = "b129b7c103a567531537d2256e58aaa1dc76dbdf"
+
+# C fixture — Linux kernel v6.12. ~58K .c/.h files; the SLO corpus's
+# >=100K-indexed-file headroom comes from here.
+[c]
+url = "https://github.com/torvalds/linux.git"
+sha = "06090c9b622a7e1f797e775db4c035e0d779b76e"
+
+# C++ fixture — nlohmann/json v3.11.3. A compact, unambiguously-C++ tree
+# (.hpp / .cpp) for the per-language syntactic suite.
+[cpp]
+url = "https://github.com/nlohmann/json.git"
+sha = "9cca280a4d0ccf0c08f47a99aa71d1b0e52f8d03"

@@ -17,6 +17,9 @@ tiers:
   - tier-08-mcp-server
   - tier-09-docgen-refactor
   - tier-10-cli-e2e
+  - tier-11-c-cpp-indexing
+  - tier-12-parallel-cold-index
+  - tier-13-cold-index-slo
 ---
 
 <context>
@@ -128,6 +131,7 @@ Dataflow: watcher → invalidate file input → Salsa re-derives parse/symbols/g
 |---|---|---|---|
 | Rust stable + MSRV | core | tier-01 | n/a |
 | tree-sitter + grammars (ts/js/py/rs/go/java/kotlin-ng¹/c-sharp) | CST + incremental | tier-03 | https://github.com/tree-sitter/tree-sitter |
+| tree-sitter-c 0.24, tree-sitter-cpp 0.23 | C/C++ syntactic grammars | tier-11 | https://crates.io/crates/tree-sitter-c ; https://docs.rs/tree-sitter-cpp ; docs/adr/0008-c-cpp-syntactic-indexing.md |
 | salsa | incremental query DB | tier-04 | https://github.com/salsa-rs/salsa |
 | redb | embedded ACID kv | tier-02 | https://github.com/cberner/redb |
 | petgraph | in-RAM graph + algos | tier-07 | https://docs.rs/petgraph |
@@ -151,7 +155,8 @@ Dataflow: watcher → invalidate file input → Salsa re-derives parse/symbols/g
 | R5 | rmcp API churn between minor versions | medium | pin `rmcp = "=1.7.0"`; integration test in tier-08 against fixed schema |
 | R6 | SCIP indexers diverge in symbol grammar | medium | tier-05 normalizes to canonical form; per-language golden fixtures |
 | R7 | Watcher misses events on macOS under load | medium | union with periodic gitignore-aware scan; reconcile by content-hash |
-| R8 | 60s cold-index SLO unachievable on 100K files | medium | tier-10 bench on `microsoft/vscode` + `torvalds/linux` subset; fail loud if breached |
+| R8 | 60s cold-index SLO unachievable on 100K files | high | tier-10 measured 442.8s/55,527 files; tier-12 parallelised parse but the gate still failed at 84.3s/121,100 files; tier-13 streams the redb commit behind parse + reuses the tree-sitter `Query` per worker to close the residual gap — a non-lossy lever exhaustion escalates to the user, not a silent miss [src: tier-12, tier-13, ADR-0009, ADR-0010] |
+| R9 | incremental + query p95 SLOs unverified at 100K scale (`slo.rs` panics at the cold stage first) | medium | tier-13 fixes cold-index so the `slo` gate reaches both stages, then verifies incremental p95 < 500ms (named risk: the `apply.rs` SYMBOLS full-scan on file delete) and query p95 < 100ms at 121K [src: tier-13] |
 </risks>
 
 <verification>
@@ -164,7 +169,9 @@ v1 is "done" when all of:
 </verification>
 
 <sources>
-- tree-sitter: https://github.com/tree-sitter/tree-sitter
+- tree-sitter: https://github.com/tree-sitter/tree-sitter ; tree-sitter-c: https://crates.io/crates/tree-sitter-c ; tree-sitter-cpp: https://crates.io/crates/tree-sitter-cpp
+- rayon (data-parallel iterator, map_init): https://docs.rs/rayon ; ignore (parallel walk): https://docs.rs/ignore
+- peak-RSS measurement (/usr/bin/time): https://www.baeldung.com/linux/process-peak-memory-usage
 - Salsa: https://github.com/salsa-rs/salsa ; https://rust-analyzer.github.io/blog/2023/07/24/durable-incrementality.html
 - rust-analyzer memory regression: https://github.com/rust-lang/rust-analyzer/issues/19402
 - SCIP: https://scip-code.org ; https://github.com/sourcegraph/scip ; https://sourcegraph.com/blog/announcing-scip
@@ -186,4 +193,6 @@ v1 is "done" when all of:
 - Conventional Commits v1.0.0: https://www.conventionalcommits.org/en/v1.0.0/
 - cocogitto: https://github.com/cocogitto/cocogitto ; https://docs.cocogitto.io/
 - semantic PR title action: https://github.com/amannn/action-semantic-pull-request
+- tree-sitter QueryCursor (Query/cursor reuse): https://docs.rs/tree-sitter/0.26.8/tree_sitter/struct.QueryCursor.html
+- redb WriteTransaction (per-batch commit): https://docs.rs/redb/4.1.0/redb/struct.WriteTransaction.html
 </sources>

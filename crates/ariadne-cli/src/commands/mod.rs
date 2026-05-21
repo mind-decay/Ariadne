@@ -1,0 +1,11 @@
+//! Per-subcommand implementations. `main.rs` parses the clap tree and
+//! dispatches one of these; each module owns exactly one subcommand
+//! (src: .claude/plans/ariadne-core/tier-10-cli-e2e.md `<files>`).
+
+pub mod index;
+pub mod init;
+pub mod mem;
+pub mod query;
+pub mod serve;
+pub mod status;
+pub mod watch;

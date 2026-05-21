@@ -22,6 +22,8 @@ const V1_LANGS: &[Lang] = &[
     Lang::Java,
     Lang::Kotlin,
     Lang::CSharp,
+    Lang::C,
+    Lang::Cpp,
 ];
 
 /// Per-`Lang` `tree_sitter::Language` table. Cloning is `O(1)`; new
@@ -81,6 +83,8 @@ fn language_for(lang: Lang) -> Language {
         Lang::Java => tree_sitter_java::LANGUAGE.into(),
         Lang::Kotlin => tree_sitter_kotlin_ng::LANGUAGE.into(),
         Lang::CSharp => tree_sitter_c_sharp::LANGUAGE.into(),
+        Lang::C => tree_sitter_c::LANGUAGE.into(),
+        Lang::Cpp => tree_sitter_cpp::LANGUAGE.into(),
         _ => unreachable!("V1_LANGS covers all registered Lang variants"),
     }
 }

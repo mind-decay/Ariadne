@@ -38,7 +38,7 @@ Hard rules — violations are audit hard-fails:
 3. `src/lib.rs` re-exports only. No `fn`, no `impl`, no inline logic.
 4. Each adapter location matches one external tech and re-exports a single port implementation plus its error type. A "location" is either `adapters/<tech>.rs` (single file) or `adapters/<tech>/` (submodule directory whose `mod.rs` is the port-impl entry point) — see [ADR-0004](adr/0004-adapter-submodule-layout.md). The underlying crate's types (`redb::Database`, `tree_sitter::Parser`, `prost::Message`) never leak into the public API.
 5. `errors.rs` uses `thiserror::Error` for the crate's public error enum. `anyhow::Error` is permitted only inside `ariadne-cli` (binary entrypoint) and `ariadne-e2e` (harness). All other crates return concrete `thiserror` enums or `Result<T, OurError>`.
-6. Driving adapter crates may depend on use-case crates; driven adapter crates may not.
+6. Driving adapter crates may depend on use-case crates; driven adapter crates may not. The composition root `ariadne-cli` additionally may depend on the other driving adapters (`ariadne-mcp`, `ariadne-watcher`) — it is the unique place the whole object graph is wired; no other crate may ([ADR-0007](adr/0007-cli-composition-root.md)).
 7. Test code lives in `tests/` (integration) or as `#[cfg(test)] mod tests` next to the unit under test. In-memory fakes for port traits are allowed for unit tests of pure domain logic; module-boundary mocks are not ([plan `<constraints>`](../.claude/plans/ariadne-core/plan.md)).
 </rules>
 

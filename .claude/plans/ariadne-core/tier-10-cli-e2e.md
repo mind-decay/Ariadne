@@ -11,7 +11,8 @@ exit_criteria:
   - All MCP tools exercised end-to-end via spawned client; insta golden outputs stable.
   - Release artifacts: `cargo dist`-built single static binaries for x86_64-linux, aarch64-linux, x86_64-macos, aarch64-macos, x86_64-windows.
   - README documents install + Claude Code mcp.json snippet + Go-indexer setup (R3 install hint).
-status: pending
+status: completed
+completed: 2026-05-21
 ---
 
 <context>
@@ -64,3 +65,112 @@ Final tier. Glues every prior tier behind a single binary, then proves SLOs agai
 <rollback>
 `git rm -r crates/ariadne-cli crates/ariadne-e2e .github/workflows/release.yml` + workspace member removal + delete `docs/architecture.md`. Distribution artifacts on GitHub Releases need manual takedown if already published.
 </rollback>
+
+<progress>
+Partial build (session 2026-05-20). Resume with `/spec-build` on this file.
+
+DONE — verified building + clippy-clean + smoke-tested end to end:
+- ADR-0007 (`docs/adr/0007-cli-composition-root.md`): `ariadne-cli` is the
+  composition root, may depend on driving adapters. `tests/architecture.rs`
+  rule 4 amended (`COMPOSITION_ROOT` split); `docs/folder-layout.md` rule 6
+  amended. Arch test passes.
+- `ariadne-cli` complete: `Cargo.toml`, `src/config.rs`, `src/domain/mod.rs`
+  (cold-index engine), `src/commands/{mod,init,index,watch,serve,query,status,mem}.rs`,
+  `src/main.rs`. `init/index/status/query/mem` exercised on a temp repo.
+- `ariadne-e2e`: `Cargo.toml`, `fixtures/repos.toml` (6 pinned SHAs),
+  `src/domain/mod.rs` (harness).
+
+REMAINING:
+- `ariadne-e2e`: `src/lib.rs` re-exports, `src/errors.rs`,
+  `tests/repos/{rust,typescript,python,go,java,csharp}.rs`, `tests/slo.rs`,
+  `tests/mcp_session.rs`.
+- `[workspace.metadata.dist]` + regenerate `.github/workflows/release.yml`.
+- `README.md`; docgen snapshot.
+- Full verification (build/clippy/fmt/nextest, run e2e clones, `dist build`),
+  then set `status`.
+
+DECISIONS / DEVIATIONS — carry into the audit report, do not re-litigate:
+- D-A: `index` materialises the **syntactic** graph (decls→symbols,
+  calls→`References` edges). SCIP ingest runs and is reported in the JSON
+  summary, but the `ScipDoc`→`Changeset` bridge was never built by tier-05
+  (`ariadne_salsa::scip_symbols` is still a stub) — that bridge is an
+  unbuilt-pipeline gap; flag as a follow-up tier, do not silently skip.
+- D-B: tier-09 docgen output is written to **`docs/codebase-overview.md`**.
+  `docs/architecture.md` is a hand-authored foundational doc imported by
+  CLAUDE.md and cited by ADRs — step 14 / `<files>` wrongly assume it is
+  generated; **do not overwrite it**.
+- D-C: `ariadne-e2e` shallow-clones via the system `git` binary, not the
+  `git2` crate named in `<files>` — SHA-pinned fetch is more reliable and a
+  test harness need not link `libgit2`.
+- D-D: `directories` (named in the cli `<files>` line) is omitted — the
+  config model is project-local `.ariadne/config.toml` + `ARIADNE_*` env
+  overrides, with no global-config use for it.
+- D-E: step 10b references an 8th subcommand `ariadne ingest-scip`; the
+  fixed surface is 7 subcommands, so SCIP ingest is folded into `index`.
+
+ENVIRONMENT (tier-10 verification host):
+- 7 SCIP indexers installed: `rust-analyzer`, `scip-typescript`,
+  `scip-python`, `scip-java`, `scip-clang`, `scip-dotnet`, `scip` CLI.
+  PATHs: npm `~/.nvm/versions/node/v24.14.0/bin`, go `~/go/bin`, dotnet
+  `~/.dotnet/tools`, coursier `~/Library/Application Support/Coursier/bin`.
+  `scip-java` needs `JAVA_HOME=/opt/homebrew/opt/openjdk/libexec/openjdk.jdk/Contents/Home`.
+- `lsif-go` unavailable — upstream `sourcegraph/sourcegraph` + `slimsag/godocmd`
+  repos are deleted, so it cannot build. This is plan risk **R3** materialising;
+  the Go SCIP path (step 10b) is blocked. Go still indexes syntactically.
+- `cargo-dist` installed as `dist` 0.31.0.
+</progress>
+
+<blockers>
+RESOLVED 2026-05-21 — risk R8 closed across tier-12 (parallel pipeline) and
+tier-13 (streaming cold-index + edge-batch tuning); the SLO release gate is
+green at 121,100 files (cold 40.8s, peak 3434 MiB, incremental p95 408µs,
+query p95 168µs). tier-10 is `completed`; the failure analysis below is
+retained as the historical record [src: tier-13-cold-index-slo.md].
+
+Build session 2026-05-20 (resume) — all tier code landed and non-SLO
+verification is green, but the SLO release gate FAILS. By this tier's own
+`<verification>` rule ("if ANY SLO fails … v1 does not ship — open a
+follow-up tier"), tier-10 cannot be marked completed.
+
+Verification — GREEN:
+- build / clippy (`-D warnings`) / `fmt --check` — clean workspace-wide.
+- `cargo test --test architecture` — hexagonal invariant holds.
+- `cargo nextest run --workspace` — 125 passed, 7 skipped.
+- `mcp_session` end-to-end — 50 `tools/call` < 100ms p95, zero error frames.
+- `dist build` — host artifact + SHA256 sums, no warnings (the other 4
+  targets cross-build in CI only).
+- `cargo install --path crates/ariadne-cli` works; `ariadne --help` lists
+  the 7 subcommands.
+
+SLO release gate — FAILED (risk R8 materialised). cold-index SLO is < 60s;
+observed on the release binary:
+- repos_csharp  (dotnet/runtime)            354.2s
+- repos_typescript (microsoft/vscode)        76.3s
+- slo corpus (kubernetes+vscode+dotnet)     442.8s for 55,527 files
+repos_go 40.8s, repos_java 20.0s, repos_python 21.8s, repos_rust 30.8s pass.
+Incremental-p95 and query-p95 SLOs are unverified at 100K-file scale — the
+`slo` test panics at the cold-index stage before reaching them (verified
+only small-scale via mcp_session).
+
+Secondary finding: the slo corpus assembled only 55,527 *indexed* files,
+short of the 100K floor. `lang_for_path` recognises no C/C++ extension so
+dotnet/runtime's native tree is skipped, and vendored dirs are ignored — no
+combination of the six pinned fixtures reaches 100K indexed source files.
+
+Follow-up tier required:
+1. Parallelise / stream the single-threaded walk→parse→materialise loop
+   (crates/ariadne-cli/src/domain/mod.rs); review its hold-everything-in-RAM
+   model against the 4GB ceiling.
+2. Reconcile exit_criteria #3 ("≥100K files") with real indexed-file yields
+   — broaden language coverage (C/C++) or revise the workload + fixture set.
+3. Re-run the slo gate after the throughput fix.
+
+Session deviations (carry to audit, in addition to D-A..D-E):
+- D-F: `dist init` (cargo-dist 0.31) writes `dist-workspace.toml`, not the
+  `[workspace.metadata.dist]` block named in step 12 — config moved there in
+  modern `dist`.
+- D-G: `ariadne-e2e` drives the `ariadne` binary as a subprocess speaking
+  newline-delimited JSON-RPC directly; the prior session's staged
+  `assert_cmd` / `tokio` / `rmcp` dev-deps were unused and removed.
+- docgen snapshot written to `docs/codebase-overview.md` per D-B.
+</blockers>

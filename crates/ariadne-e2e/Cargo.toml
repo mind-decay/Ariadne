@@ -16,7 +16,45 @@ workspace = true
 ariadne-core = { workspace = true }
 anyhow = { workspace = true }
 thiserror = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+# `fixtures/repos.toml` decode [src: https://docs.rs/toml].
+toml = "0.9"
 
 [dev-dependencies]
 tempfile = { workspace = true }
 pretty_assertions = { workspace = true }
+
+# Per-language suites live under tests/repos/ and are declared explicitly —
+# cargo only auto-discovers test files directly under tests/.
+[[test]]
+name = "repos_rust"
+path = "tests/repos/rust.rs"
+
+[[test]]
+name = "repos_typescript"
+path = "tests/repos/typescript.rs"
+
+[[test]]
+name = "repos_python"
+path = "tests/repos/python.rs"
+
+[[test]]
+name = "repos_go"
+path = "tests/repos/go.rs"
+
+[[test]]
+name = "repos_java"
+path = "tests/repos/java.rs"
+
+[[test]]
+name = "repos_csharp"
+path = "tests/repos/csharp.rs"
+
+[[test]]
+name = "repos_c"
+path = "tests/repos/c.rs"
+
+[[test]]
+name = "repos_cpp"
+path = "tests/repos/cpp.rs"

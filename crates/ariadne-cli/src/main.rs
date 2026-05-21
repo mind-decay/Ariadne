@@ -1,57 +1,130 @@
-//! `ariadne` CLI entrypoint. Tier-10 wires subcommands; tier-04 adds the
-//! `debug mem` stub the plan's verification step asks for \[src:
-//! .claude/plans/ariadne-core/tier-04-salsa.md `<verification>` line 3].
+//! `ariadne` CLI entrypoint — clap subcommand dispatch over the whole stack.
 //!
-//! The `anyhow` dependency is declared at the crate level (per ADR-0001 /
-//! folder-layout rule 5: `anyhow` is only permitted inside `ariadne-cli`
-//! and `ariadne-e2e`) so later tiers do not need to amend the manifest.
+//! `ariadne-cli` is the application's composition root: the one crate that
+//! wires every adapter together, so it alone depends on the driving adapters
+//! `ariadne-mcp` and `ariadne-watcher` [src: docs/adr/0007-cli-composition-root.md].
+//!
+//! `anyhow` is permitted here per the folder-layout rule (binary entrypoint);
+//! each subcommand returns `anyhow::Result` and `main` renders the error.
 
+mod commands;
+mod config;
 mod domain;
 mod errors;
 
+use std::path::PathBuf;
 use std::process::ExitCode;
 
-use ariadne_salsa::{AriadneDb, TABLE_BUDGET_BYTES};
+use clap::{Parser, Subcommand};
+
+/// Local-first code-intelligence for Claude.
+#[derive(Debug, Parser)]
+#[command(name = "ariadne", version, about, long_about = None)]
+struct Cli {
+    #[command(subcommand)]
+    command: Cmd,
+}
+
+/// The seven `ariadne` subcommands [src: tier-10 `exit_criteria` #1].
+#[derive(Debug, Subcommand)]
+enum Cmd {
+    /// Scaffold `.ariadne/` and write a default `config.toml`.
+    Init {
+        /// Project root.
+        #[arg(default_value = ".")]
+        root: PathBuf,
+    },
+    /// Cold-index the repository into `.ariadne/index.redb`.
+    Index {
+        /// Project root.
+        #[arg(default_value = ".")]
+        root: PathBuf,
+        /// Discard any existing index before re-indexing.
+        #[arg(long)]
+        fresh: bool,
+        /// Also run the external SCIP indexers. Off by default — they
+        /// perform full language builds and are not part of the measured
+        /// cold-index wall-clock [src: docs/adr/0009-parallel-cold-index.md].
+        #[arg(long)]
+        scip: bool,
+    },
+    /// Watch the repository and log invalidations until Ctrl-C.
+    Watch {
+        /// Project root.
+        #[arg(default_value = ".")]
+        root: PathBuf,
+    },
+    /// Host the MCP stdio server (alias for `ariadne-mcp serve`).
+    Serve {
+        /// Project root.
+        #[arg(default_value = ".")]
+        root: PathBuf,
+        /// Also run the file watcher in this process.
+        #[arg(long)]
+        watch: bool,
+    },
+    /// Call one MCP tool in-process and print its JSON result.
+    Query {
+        /// Tool name, e.g. `blast_radius`.
+        tool: String,
+        /// JSON arguments object.
+        #[arg(default_value = "{}")]
+        args_json: String,
+        /// Project root.
+        #[arg(long, default_value = ".")]
+        root: PathBuf,
+    },
+    /// Print index counts and the indexer availability matrix.
+    Status {
+        /// Project root.
+        #[arg(default_value = ".")]
+        root: PathBuf,
+    },
+    /// Print salsa per-table memory against the 256 MiB budget.
+    Mem {
+        /// Project root.
+        #[arg(default_value = ".")]
+        root: PathBuf,
+    },
+}
 
 fn main() -> ExitCode {
-    let mut args = std::env::args().skip(1);
-    let first = args.next();
-    let second = args.next();
-    match (first.as_deref(), second.as_deref()) {
-        (Some("debug"), Some("mem")) => debug_mem(),
-        (Some("watch"), _) => watch_stub(),
-        _ => {
-            let pkg_version = env!("CARGO_PKG_VERSION");
-            println!("ariadne {pkg_version} — stub binary; tier-10 wires real commands");
-            ExitCode::SUCCESS
+    init_tracing();
+    match run(Cli::parse().command) {
+        Ok(true) => ExitCode::SUCCESS,
+        Ok(false) => ExitCode::FAILURE,
+        Err(e) => {
+            eprintln!("ariadne: {e:#}");
+            ExitCode::FAILURE
         }
     }
 }
 
-fn watch_stub() -> ExitCode {
-    // tier-06 ships only the stub; tier-10 wires the full pipeline
-    // (ariadne_watcher::NotifyWatcher::start + AriadneDbSink).
-    println!("ariadne watch — tier-06 stub; full pipeline arrives in tier-10");
-    ExitCode::SUCCESS
+/// Dispatch one parsed subcommand. The `bool` is the success flag — only
+/// `mem` returns `false` (a table over budget) without an error.
+fn run(cmd: Cmd) -> anyhow::Result<bool> {
+    match cmd {
+        Cmd::Init { root } => commands::init::run(&root).map(|()| true),
+        Cmd::Index { root, fresh, scip } => commands::index::run(&root, fresh, scip).map(|()| true),
+        Cmd::Watch { root } => commands::watch::run(&root).map(|()| true),
+        Cmd::Serve { root, watch } => commands::serve::run(&root, watch).map(|()| true),
+        Cmd::Query {
+            tool,
+            args_json,
+            root,
+        } => commands::query::run(&root, &tool, &args_json).map(|()| true),
+        Cmd::Status { root } => commands::status::run(&root).map(|()| true),
+        Cmd::Mem { root } => Ok(commands::mem::run(&root)),
+    }
 }
 
-fn debug_mem() -> ExitCode {
-    let db = AriadneDb::new();
-    let report = db.memory_report();
-    println!("salsa table\testimated_bytes");
-    for (name, bytes) in &report.tables {
-        println!("{name}\t{bytes}");
-    }
-    println!("total\t{}", report.total_bytes());
-
-    let over: Vec<_> = report.over_budget().collect();
-    if over.is_empty() {
-        println!("ok: no table exceeds the {TABLE_BUDGET_BYTES} byte per-table budget");
-        ExitCode::SUCCESS
-    } else {
-        for (name, bytes) in over {
-            eprintln!("error: table {name} is {bytes} bytes (over {TABLE_BUDGET_BYTES})");
-        }
-        ExitCode::FAILURE
-    }
+/// Install a stderr tracing subscriber so adapter logs never pollute the
+/// stdout JSON / MCP stream. Honours `RUST_LOG`, defaulting to `warn`.
+fn init_tracing() {
+    use tracing_subscriber::EnvFilter;
+    let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("warn"));
+    let _ = tracing_subscriber::fmt()
+        .with_env_filter(filter)
+        .with_writer(std::io::stderr)
+        .try_init();
 }

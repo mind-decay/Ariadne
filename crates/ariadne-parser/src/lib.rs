@@ -10,7 +10,7 @@ pub mod errors;
 
 pub use adapters::treesitter::cache::ParseCache;
 pub use adapters::treesitter::facts::{
-    CallSite, Decl, DeclKind, Import, SyntacticFacts, extract_syntactic_facts,
+    CallSite, Decl, DeclKind, FactExtractor, Import, SyntacticFacts, extract_syntactic_facts,
 };
 pub use adapters::treesitter::registry::ParserRegistry;
 pub use adapters::treesitter::{Tree, TreeSitterParser};

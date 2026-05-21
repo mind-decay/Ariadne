@@ -17,9 +17,10 @@
 //! (src: <https://docs.rs/tree-sitter/0.26.8/tree_sitter/struct.QueryCursor.html>)
 
 use ariadne_core::Lang;
-use tree_sitter::{Node, Query, QueryCursor, StreamingIterator};
+use tree_sitter::{Language, Node, Query, QueryCursor, StreamingIterator};
 
 use super::Tree;
+use super::registry::ParserRegistry;
 use crate::errors::ParserError;
 
 /// Declaration kind tag — kept loose this tier; tier-05 canonicalizes from
@@ -124,6 +125,8 @@ const QUERY_GO: &str = include_str!("queries/go.scm");
 const QUERY_JAVA: &str = include_str!("queries/java.scm");
 const QUERY_KOTLIN: &str = include_str!("queries/kotlin.scm");
 const QUERY_CSHARP: &str = include_str!("queries/csharp.scm");
+const QUERY_C: &str = include_str!("queries/c.scm");
+const QUERY_CPP: &str = include_str!("queries/cpp.scm");
 
 fn query_source(lang: Lang) -> Option<&'static str> {
     Some(match lang {
@@ -135,11 +138,130 @@ fn query_source(lang: Lang) -> Option<&'static str> {
         Lang::Java => QUERY_JAVA,
         Lang::Kotlin => QUERY_KOTLIN,
         Lang::CSharp => QUERY_CSHARP,
+        Lang::C => QUERY_C,
+        Lang::Cpp => QUERY_CPP,
         _ => return None,
     })
 }
 
+/// Compiled per-language fact query plus a reusable [`QueryCursor`].
+///
+/// `Query::new` compiles a bundled `.scm` source against a grammar — a
+/// non-trivial cost the cold index previously paid once per file. A
+/// `FactExtractor` compiles the query once and reuses one cursor across
+/// every [`FactExtractor::extract`] call, so a parse worker that caches one
+/// extractor per [`Lang`] never recompiles
+/// [src: <https://docs.rs/tree-sitter/0.26.8/tree_sitter/struct.QueryCursor.html>].
+pub struct FactExtractor {
+    lang: Lang,
+    query: Query,
+    cursor: QueryCursor,
+}
+
+impl FactExtractor {
+    /// Compile the fact query for `lang`, resolving its grammar from
+    /// `registry`. The parse-worker entry point: build one per [`Lang`] and
+    /// keep it for the worker's lifetime.
+    ///
+    /// # Errors
+    /// [`ParserError::UnsupportedLang`] when no query or grammar is bundled
+    /// for `lang`; [`ParserError::QueryCompile`] when the query source fails
+    /// to compile against the grammar (indicates a node-type drift).
+    pub fn for_lang(lang: Lang, registry: &ParserRegistry) -> Result<Self, ParserError> {
+        let language = registry
+            .language(lang)
+            .ok_or(ParserError::UnsupportedLang(lang))?;
+        Self::compile(lang, language)
+    }
+
+    /// Compile against an already-resolved `tree_sitter::Language`. Crate-
+    /// internal so the grammar type never crosses the adapter boundary
+    /// [src: docs/folder-layout.md rule 4].
+    pub(crate) fn compile(lang: Lang, language: &Language) -> Result<Self, ParserError> {
+        let query_src = query_source(lang).ok_or(ParserError::UnsupportedLang(lang))?;
+        let query = Query::new(language, query_src)
+            .map_err(|source| ParserError::QueryCompile { lang, source })?;
+        Ok(Self {
+            lang,
+            query,
+            cursor: QueryCursor::new(),
+        })
+    }
+
+    /// [`Lang`] this extractor compiled its query for.
+    #[must_use]
+    pub fn lang(&self) -> Lang {
+        self.lang
+    }
+
+    /// Run the compiled query over `tree` and collect [`SyntacticFacts`].
+    /// Reuses the owned [`QueryCursor`], so no cursor scratch buffers are
+    /// allocated per call.
+    #[must_use]
+    pub fn extract(&mut self, tree: &Tree, source: &[u8]) -> SyntacticFacts {
+        let names = self.query.capture_names();
+        let mut matches = self.cursor.matches(&self.query, tree.root_node(), source);
+        let mut facts = SyntacticFacts::default();
+
+        while let Some(m) = matches.next() {
+            let mut def_node: Option<(Node<'_>, DeclKind)> = None;
+            let mut name_node: Option<Node<'_>> = None;
+            let mut import_path_node: Option<Node<'_>> = None;
+            let mut call_callee_node: Option<Node<'_>> = None;
+
+            for capture in m.captures {
+                let name = names[capture.index as usize];
+                if let Some(rest) = name.strip_prefix("def.") {
+                    def_node = Some((capture.node, DeclKind::from_tag(rest)));
+                } else if name == "name" {
+                    name_node = Some(capture.node);
+                } else if name == "import.path" {
+                    import_path_node = Some(capture.node);
+                } else if name == "call.callee" {
+                    call_callee_node = Some(capture.node);
+                }
+            }
+
+            if let (Some((def, kind)), Some(name)) = (def_node, name_node) {
+                facts.decls.push(Decl {
+                    kind,
+                    name: text_of(name, source),
+                    name_byte_range: byte_range(name),
+                    def_byte_range: byte_range(def),
+                });
+            } else if let Some(path) = import_path_node {
+                facts.imports.push(Import {
+                    path: text_of(path, source),
+                    byte_range: byte_range(path),
+                });
+            } else if let Some(callee) = call_callee_node {
+                facts.calls.push(CallSite {
+                    callee: text_of(callee, source),
+                    byte_range: byte_range(callee),
+                });
+            }
+        }
+
+        facts.decls.sort_by_key(|d| d.def_byte_range.0);
+        facts.imports.sort_by_key(|i| i.byte_range.0);
+        facts.calls.sort_by_key(|c| c.byte_range.0);
+        facts
+    }
+}
+
+impl std::fmt::Debug for FactExtractor {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("FactExtractor")
+            .field("lang", &self.lang)
+            .finish_non_exhaustive()
+    }
+}
+
 /// Run the per-lang fact query over `tree` and collect [`SyntacticFacts`].
+///
+/// Thin wrapper that builds a one-shot [`FactExtractor`] — kept so callers
+/// with no per-worker cache (the parser test suites) stay unchanged. The
+/// cold-index pipeline caches a [`FactExtractor`] per [`Lang`] instead.
 ///
 /// # Errors
 /// [`ParserError::UnsupportedLang`] when no query is bundled for `lang`;
@@ -151,59 +273,8 @@ pub fn extract_syntactic_facts(
     lang: Lang,
     source: &[u8],
 ) -> Result<SyntacticFacts, ParserError> {
-    let query_src = query_source(lang).ok_or(ParserError::UnsupportedLang(lang))?;
-    let language = tree.language();
-    let query = Query::new(&language, query_src)
-        .map_err(|source| ParserError::QueryCompile { lang, source })?;
-
-    let mut cursor = QueryCursor::new();
-    let mut matches = cursor.matches(&query, tree.root_node(), source);
-    let names = query.capture_names();
-    let mut facts = SyntacticFacts::default();
-
-    while let Some(m) = matches.next() {
-        let mut def_node: Option<(Node<'_>, DeclKind)> = None;
-        let mut name_node: Option<Node<'_>> = None;
-        let mut import_path_node: Option<Node<'_>> = None;
-        let mut call_callee_node: Option<Node<'_>> = None;
-
-        for capture in m.captures {
-            let name = names[capture.index as usize];
-            if let Some(rest) = name.strip_prefix("def.") {
-                def_node = Some((capture.node, DeclKind::from_tag(rest)));
-            } else if name == "name" {
-                name_node = Some(capture.node);
-            } else if name == "import.path" {
-                import_path_node = Some(capture.node);
-            } else if name == "call.callee" {
-                call_callee_node = Some(capture.node);
-            }
-        }
-
-        if let (Some((def, kind)), Some(name)) = (def_node, name_node) {
-            facts.decls.push(Decl {
-                kind,
-                name: text_of(name, source),
-                name_byte_range: byte_range(name),
-                def_byte_range: byte_range(def),
-            });
-        } else if let Some(path) = import_path_node {
-            facts.imports.push(Import {
-                path: text_of(path, source),
-                byte_range: byte_range(path),
-            });
-        } else if let Some(callee) = call_callee_node {
-            facts.calls.push(CallSite {
-                callee: text_of(callee, source),
-                byte_range: byte_range(callee),
-            });
-        }
-    }
-
-    facts.decls.sort_by_key(|d| d.def_byte_range.0);
-    facts.imports.sort_by_key(|i| i.byte_range.0);
-    facts.calls.sort_by_key(|c| c.byte_range.0);
-    Ok(facts)
+    let mut extractor = FactExtractor::compile(lang, &tree.language())?;
+    Ok(extractor.extract(tree, source))
 }
 
 fn byte_range(node: Node<'_>) -> (u32, u32) {

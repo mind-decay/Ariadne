@@ -31,6 +31,10 @@ pub enum Lang {
     Kotlin,
     /// C#.
     CSharp,
+    /// C.
+    C,
+    /// C++.
+    Cpp,
     /// Any other tree-sitter grammar; carries its `tree-sitter-<lang>` name.
     Other(&'static str),
 }
@@ -49,6 +53,8 @@ impl Lang {
             Self::Java => "java".to_owned(),
             Self::Kotlin => "kotlin".to_owned(),
             Self::CSharp => "csharp".to_owned(),
+            Self::C => "c".to_owned(),
+            Self::Cpp => "cpp".to_owned(),
             Self::Other(s) => format!("other:{s}"),
         }
     }
@@ -67,6 +73,8 @@ impl Lang {
             "java" => Self::Java,
             "kotlin" => Self::Kotlin,
             "csharp" => Self::CSharp,
+            "c" => Self::C,
+            "cpp" => Self::Cpp,
             other => {
                 let suffix = other.strip_prefix("other:")?;
                 Self::Other(Box::leak(suffix.to_owned().into_boxed_str()))

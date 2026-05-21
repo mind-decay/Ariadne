@@ -6,8 +6,9 @@
 //! 1. `ariadne-core` has zero in-workspace dependencies.
 //! 2. `ariadne-graph` and `ariadne-salsa` depend only on `ariadne-core` and
 //!    `ariadne-storage` (read-only port).
-//! 3. Driving adapters (`ariadne-mcp`, `ariadne-cli`, `ariadne-watcher`) are
-//!    not depended on by any other crate.
+//! 3. Driving adapters (`ariadne-mcp`, `ariadne-watcher`) are not depended on
+//!    by any crate except the composition root `ariadne-cli`; the composition
+//!    root itself is depended on by nothing (ADR-0007).
 //! 4. Driven adapters (`ariadne-storage`, `ariadne-parser`, `ariadne-scip`)
 //!    depend only on `ariadne-core`; never on each other.
 //!
@@ -35,8 +36,13 @@ const USE_CASE_ALLOWED_DEPS: &[&str] = &["ariadne-core", "ariadne-storage"];
 /// Driven adapters: may depend only on `ariadne-core`.
 const DRIVEN_ADAPTERS: &[&str] = &["ariadne-storage", "ariadne-parser", "ariadne-scip"];
 
-/// Driving adapters: nothing else in the workspace may depend on them.
-const DRIVING_ADAPTERS: &[&str] = &["ariadne-cli", "ariadne-mcp", "ariadne-watcher"];
+/// Composition root: wires every adapter together; nothing may depend on it,
+/// and it alone may depend on a driving adapter [src: docs/adr/0007-cli-composition-root.md].
+const COMPOSITION_ROOT: &str = "ariadne-cli";
+
+/// Pure driving adapters: nothing may depend on them except the composition
+/// root [src: docs/adr/0007-cli-composition-root.md].
+const DRIVING_ADAPTERS: &[&str] = &["ariadne-mcp", "ariadne-watcher"];
 
 #[test]
 fn architecture_invariants_hold() {
@@ -101,14 +107,24 @@ fn architecture_invariants_hold() {
         }
     }
 
-    // (4) Nothing depends on a driving adapter.
+    // (4) Driving-adapter containment (ADR-0007):
+    //   - nothing may depend on the composition root `ariadne-cli`;
+    //   - nothing may depend on a pure driving adapter except the
+    //     composition root, which exists precisely to wire them.
     let driving: BTreeSet<&str> = DRIVING_ADAPTERS.iter().copied().collect();
     for (name, deps) in &deps_by_crate {
         for dep in deps {
-            assert!(
-                !driving.contains(dep.as_str()),
-                "{name} must not depend on driving adapter {dep}",
+            assert_ne!(
+                dep, COMPOSITION_ROOT,
+                "{name} must not depend on the composition root {COMPOSITION_ROOT}",
             );
+            if driving.contains(dep.as_str()) {
+                assert_eq!(
+                    name, COMPOSITION_ROOT,
+                    "{name} must not depend on driving adapter {dep}; only the \
+                     composition root {COMPOSITION_ROOT} may (ADR-0007)",
+                );
+            }
         }
     }
 }

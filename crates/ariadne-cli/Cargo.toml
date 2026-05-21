@@ -16,8 +16,46 @@ workspace = true
 name = "ariadne"
 path = "src/main.rs"
 
+# The whole workspace sets `publish = false`; this opt-in tells `dist` that
+# `ariadne-cli` nonetheless ships a distributable binary (the `ariadne`
+# release artifact) [src: https://opensource.axo.dev/cargo-dist/].
+[package.metadata.dist]
+dist = true
+
 [dependencies]
+# `ariadne-cli` is the composition root: it alone may depend on every other
+# in-workspace crate, including the driving adapters `ariadne-mcp` and
+# `ariadne-watcher`. The architecture invariant carves this out
+# [src: docs/adr/0007-cli-composition-root.md].
 ariadne-core = { workspace = true }
+ariadne-storage = { workspace = true }
 ariadne-salsa = { workspace = true }
+ariadne-graph = { workspace = true }
+ariadne-parser = { path = "../ariadne-parser" }
+ariadne-scip = { path = "../ariadne-scip" }
+ariadne-mcp = { path = "../ariadne-mcp" }
+ariadne-watcher = { path = "../ariadne-watcher" }
+
 anyhow = { workspace = true }
 thiserror = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+ignore = { workspace = true }
+blake3 = { workspace = true }
+# Data-parallel cold-index walk + parse fan-out [src: tier-12 step 4].
+rayon = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+# clap 4.x derive for subcommand dispatch [src: https://docs.rs/clap].
+clap = { version = "4.6", features = ["derive"] }
+# `.ariadne/config.toml` load + serialize [src: https://docs.rs/toml].
+toml = "0.9"
+# Cold-index progress reporting [src: https://docs.rs/indicatif].
+indicatif = "0.18"
+# `serve` blocks on the async rmcp stdio loop; `watch` idles on a signal.
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal", "time"] }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+pretty_assertions = { workspace = true }

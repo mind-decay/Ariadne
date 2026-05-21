@@ -40,6 +40,11 @@ tree-sitter-go = "=0.25.0"
 tree-sitter-java = "=0.23.5"
 tree-sitter-kotlin-ng = "=1.1.0"
 tree-sitter-c-sharp = "=0.23.5"
+# Tier-11: C/C++ syntactic grammars. Both export `LANGUAGE: LanguageFn` via
+# `tree-sitter-language ^0.1`, the same `Into<Language>` pattern as the eight
+# grammars above [src: docs/adr/0008-c-cpp-syntactic-indexing.md].
+tree-sitter-c = "=0.24.2"
+tree-sitter-cpp = "=0.23.4"
 # Parse-cache codec [src: tier-03 step 8, plan files list]. 3.0 release was
 # yanked from active maintenance (upstream notice on docs.rs); 2.0.1 is the
 # last stable line and exposes the `serde` feature the cache module relies on.

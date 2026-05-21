@@ -95,6 +95,11 @@ cargo_metadata = "0.20"
 # measurements [src: tier-03 build session 2026-05-19].
 lto = "thin"
 
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
+
 [workspace.lints.rust]
 unsafe_code = "forbid"
 missing_debug_implementations = "warn"
