@@ -90,7 +90,7 @@ checksum = "7f202df86484c868dbad7eaa557ef785d5c66295e41b460ef922eca0723b842c"
 
 [[package]]
 name = "ariadne-cli"
-version = "0.0.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "ariadne-core",
@@ -119,7 +119,7 @@ dependencies = [
 
 [[package]]
 name = "ariadne-core"
-version = "0.0.0"
+version = "1.0.0"
 dependencies = [
  "criterion",
  "pretty_assertions",
@@ -130,7 +130,7 @@ dependencies = [
 
 [[package]]
 name = "ariadne-e2e"
-version = "0.0.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "ariadne-core",
@@ -144,7 +144,7 @@ dependencies = [
 
 [[package]]
 name = "ariadne-graph"
-version = "0.0.0"
+version = "1.0.0"
 dependencies = [
  "ariadne-core",
  "bitflags",
@@ -161,7 +161,7 @@ dependencies = [
 
 [[package]]
 name = "ariadne-mcp"
-version = "0.0.0"
+version = "1.0.0"
 dependencies = [
  "ariadne-core",
  "ariadne-graph",
@@ -181,7 +181,7 @@ dependencies = [
 
 [[package]]
 name = "ariadne-parser"
-version = "0.0.0"
+version = "1.0.0"
 dependencies = [
  "ariadne-core",
  "bincode",
@@ -211,7 +211,7 @@ dependencies = [
 
 [[package]]
 name = "ariadne-salsa"
-version = "0.0.0"
+version = "1.0.0"
 dependencies = [
  "ariadne-core",
  "ariadne-storage",
@@ -226,7 +226,7 @@ dependencies = [
 
 [[package]]
 name = "ariadne-scip"
-version = "0.0.0"
+version = "1.0.0"
 dependencies = [
  "ariadne-core",
  "blake3",
@@ -244,7 +244,7 @@ dependencies = [
 
 [[package]]
 name = "ariadne-storage"
-version = "0.0.0"
+version = "1.0.0"
 dependencies = [
  "ariadne-core",
  "blake3",
@@ -263,7 +263,7 @@ dependencies = [
 
 [[package]]
 name = "ariadne-watcher"
-version = "0.0.0"
+version = "1.0.0"
 dependencies = [
  "ariadne-core",
  "ariadne-salsa",
@@ -284,7 +284,7 @@ dependencies = [
 
 [[package]]
 name = "ariadne-workspace"
-version = "0.0.0"
+version = "1.0.0"
 dependencies = [
  "cargo_metadata",
 ]
