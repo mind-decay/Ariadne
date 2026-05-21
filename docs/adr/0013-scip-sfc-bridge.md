@@ -1,8 +1,9 @@
-# ADR-0013: SCIP SFC bridge — Volar-based Vue semantic indexing
+# ADR-0013: SCIP SFC bridge — Vue and Svelte semantic indexing
 
 <status>
 Accepted
 Date: 2026-05-21
+Amended: 2026-05-21 (tier-08 — Svelte path; see the amendment section)
 Decider: user / claude
 </status>
 
@@ -107,16 +108,59 @@ vendored — the minimal writer is smaller and dependency-free, which the Rust
   scope here.
 - Pin bumps of `@volar/typescript` or `@vue/language-core` are a follow-up with
   a fixture re-generation, since Volar's mapping internals are version-coupled.
-- Svelte semantic indexing (tier-08) is expected to reuse this same bridge shape
-  (`svelte2tsx` in place of the Vue plugin); `.astro` semantic indexing remains
-  deferred (plan.md D11, R-Astro).
+- Svelte semantic indexing (tier-08) reuses the bridge's subprocess + minimal
+  SCIP-emit shape; its transform path differs from Vue's — see the tier-08
+  amendment below. `.astro` semantic indexing remains deferred (plan.md D11,
+  R-Astro).
 </consequences>
+
+<amendment>
+Tier-08 — Svelte semantic indexing.
+
+The bridge gains a `--framework svelte` mode and `ariadne-scip` gains a
+`ScipSvelteIndexer` driver. The driver, fixture, and minimal SCIP-emit shape
+mirror the Vue path; the transform path does not.
+
+Volar check — **negative.** Vue's path depends on `@vue/language-core` exposing
+a Volar `LanguagePlugin` that `proxyCreateProgram` consumes. The Svelte tooling
+exposes no such plugin: `svelte2tsx` only transforms `.svelte` to TypeScript and
+explicitly "leaves type checking to consumers", and the official
+`svelte-language-server` is not Volar-based [src: github.com/sveltejs/language-
+tools — svelte2tsx]. So tier-08 step 2's documented fallback is the path taken.
+
+Decision (Svelte) — transpile each `.svelte` to TypeScript with `svelte2tsx`
+(`mode: 'ts'`); back a plain `ts.createProgram` with the generated modules (a
+synthetic `.ts` entry side-effect-imports every `.svelte`, and `.svelte` import
+specifiers resolve to the sibling generated module via a
+`resolveModuleNameLiterals` host hook); walk the checker; remap each occurrence
+from generated positions to the original `.svelte` source through `svelte2tsx`'s
+Source Map v3 output. The Base64-VLQ source-map decode is hand-written in
+`index.ts` — no sourcemap-codec dependency — consistent with `scip.ts`'s
+hand-written protobuf writer, keeping the new deps to exactly the Svelte tooling
+pair: `svelte2tsx` 0.7.55 and `svelte` 5.55.9 (pinned). The Svelte symbol scheme
+is `scip-svelte-bridge`, distinct from `scip-vue-bridge`.
+
+Consequences — the default driver set grows from eight to nine indexers; the
+`IngestPlan` registration test tracks the count. R-Map mitigation: the committed
+`sample-svelte` fixture's 16 occurrence ranges were decoded and verified
+in-bounds against the SFC text before the snapshot was accepted, and the bridge
+was additionally run over an independent three-component Svelte 5 project with
+three ranges spot-checked by byte offset.
+
+Astro — no Volar→SCIP path for `.astro` was found this tier either; `.astro`
+semantic indexing stays deferred (R-Astro). `.astro` is syntactic-only —
+tree-sitter parsing only, tier-04.
+</amendment>
 
 <sources>
 - `[src: .claude/plans/js-framework-support/tier-07-scip-bridge-vue.md]`
-- `[src: .claude/plans/js-framework-support/plan.md D5, D10]`
+- `[src: .claude/plans/js-framework-support/tier-08-scip-bridge-svelte.md]`
+- `[src: .claude/plans/js-framework-support/plan.md D5, D10, D11]`
 - `[src: https://deepwiki.com/vuejs/language-tools/7.1-vue-tsc]`
 - `[src: https://github.com/sourcegraph/scip-typescript]`
+- `[src: https://github.com/sveltejs/language-tools]` — svelte2tsx, no Volar plugin
+- `[src: https://tc39.es/ecma426/]` — Source Map v3 mappings / Base64-VLQ
 - `[src: crates/ariadne-scip/src/indexer/scip_vue.rs]`
+- `[src: crates/ariadne-scip/src/indexer/scip_svelte.rs]`
 - `[src: tools/ariadne-sfc-scip/src/index.ts]`
 </sources>

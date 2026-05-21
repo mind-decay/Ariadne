@@ -9,7 +9,8 @@ exit_criteria:
   - "`crates/ariadne-scip/tests/ingest_svelte.rs` golden snapshot committed and green."
   - "ADR-0013 amended with the Svelte path; `.astro` semantic is explicitly recorded as deferred (R-Astro)."
   - "`cargo nextest run -p ariadne-scip`, `cargo clippy ... -D warnings`, `cargo test --test architecture` all green."
-status: pending
+status: completed
+completed: 2026-05-21
 ---
 
 <context>

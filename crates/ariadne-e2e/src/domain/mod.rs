@@ -360,6 +360,72 @@ pub fn verify_fixture_index(lang: &str, dest: &Path) {
     );
 }
 
+/// Distinct component files `verify_framework_fixture` probes for a
+/// `Renders` edge before giving up — a real component app surfaces one in
+/// its first handful of components.
+const FRAMEWORK_RENDER_PROBE: usize = 64;
+
+/// Clone, init, and index the JS-framework fixture keyed `repo` into `dest`,
+/// then assert via the MCP query surface that the index carries `Component`
+/// symbols and at least one `Renders` edge — the tier-09 component-graph
+/// contract for React / Vue / Svelte / Astro
+/// [src: .claude/plans/js-framework-support/tier-09-component-graph-e2e.md step 5].
+///
+/// # Panics
+/// Panics when the pipeline fails or any assertion is unmet.
+pub fn verify_framework_fixture(repo: &str, dest: &Path) {
+    let report =
+        clone_init_index(repo, dest).unwrap_or_else(|e| panic!("index `{repo}` fixture: {e:#}"));
+    assert!(
+        report.is_non_empty(),
+        "`{repo}` fixture produced an empty graph: {report:?}"
+    );
+
+    let mut client = McpClient::connect(dest)
+        .unwrap_or_else(|e| panic!("connect MCP client for `{repo}`: {e:#}"));
+
+    // `Component` symbols — `DeclKind::Component` decls and the synthesized
+    // per-file SFC component both carry the `component` kind tag.
+    let listed = client
+        .call_tool(
+            "list_symbols",
+            &json!({ "kind": "component", "limit": 256 }),
+        )
+        .unwrap_or_else(|e| panic!("list_symbols on `{repo}`: {e:#}"));
+    let rows: Vec<Value> = serde_json::from_str(&tool_text(&listed).expect("list_symbols text"))
+        .expect("parse list_symbols rows");
+    assert!(
+        !rows.is_empty(),
+        "`{repo}` fixture produced no `Component` symbols",
+    );
+
+    // `Renders` edges — surfaced per component by `file_summary`. Probe the
+    // distinct component files until one reports a rendered child.
+    let mut files: Vec<String> = rows
+        .iter()
+        .filter_map(|r| r.get("file").and_then(Value::as_str).map(str::to_owned))
+        .collect();
+    files.sort();
+    files.dedup();
+    let probed = files.len().min(FRAMEWORK_RENDER_PROBE);
+    let renders_found = files.iter().take(FRAMEWORK_RENDER_PROBE).any(|file| {
+        let summary = client
+            .call_tool("file_summary", &json!({ "path": file }))
+            .unwrap_or_else(|e| panic!("file_summary `{file}` on `{repo}`: {e:#}"));
+        let v: Value = serde_json::from_str(&tool_text(&summary).expect("file_summary text"))
+            .expect("parse file_summary output");
+        v["components"].as_array().is_some_and(|components| {
+            components
+                .iter()
+                .any(|c| c["renders"].as_array().is_some_and(|r| !r.is_empty()))
+        })
+    });
+    assert!(
+        renders_found,
+        "`{repo}` fixture produced no `Renders` edges across {probed} component files",
+    );
+}
+
 /// The `p`-th percentile of `samples` (`p` in `0.0..=100.0`). Sorts in place.
 ///
 /// # Panics

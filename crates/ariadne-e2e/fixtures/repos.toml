@@ -43,3 +43,28 @@ sha = "06090c9b622a7e1f797e775db4c035e0d779b76e"
 [cpp]
 url = "https://github.com/nlohmann/json.git"
 sha = "9cca280a4d0ccf0c08f47a99aa71d1b0e52f8d03"
+
+# JS-framework fixtures — tier-09. Each is a real app / docs site that
+# genuinely renders components, so the index carries `Component` symbols
+# and `Renders` edges over `.jsx`/`.tsx`/`.vue`/`.svelte`/`.astro` files
+# [src: .claude/plans/js-framework-support/tier-09-component-graph-e2e.md step 5].
+
+# React fixture — the official React docs site (`.js`/`.tsx` components).
+[react]
+url = "https://github.com/reactjs/react.dev.git"
+sha = "47e64bf7ad81aab8bacfa791a37816ee869135eb"
+
+# Vue fixture — VitePress; its default theme is a tree of `.vue` SFCs.
+[vue]
+url = "https://github.com/vuejs/vitepress.git"
+sha = "6ee01bf30534cbf7847fe8c94fbf23efd9637f68"
+
+# Svelte fixture — the RealWorld "Conduit" app in `.svelte` SFCs.
+[svelte]
+url = "https://github.com/sveltejs/realworld.git"
+sha = "ec8552fee0d0b7e8ad3c6a6818f3fe9ee7d861f5"
+
+# Astro fixture — the official Astro docs site (`.astro` components).
+[astro]
+url = "https://github.com/withastro/docs.git"
+sha = "bddc95657829257812652c7dcde6445edb7f4622"

@@ -8,7 +8,8 @@ exit_criteria:
   - "`ariadne-e2e` indexes a real React, Vue, Svelte, and Astro repository; each asserts non-zero `Component` symbols and `Renders` edges."
   - "The tier-13 SLO gate is re-run on the framework corpus: cold <60s, incremental p95 <500ms, query p95 <100ms — green or an explicit, sourced escalation."
   - "`cargo nextest run --workspace`, `cargo clippy ... -D warnings`, `cargo test --test architecture` all green."
-status: pending
+status: completed
+completed: 2026-05-22
 ---
 
 <context>
@@ -58,6 +59,10 @@ real repositories under the v1 SLOs. Full context: plan.md `<verification>`.
    measured breakdown. Never weaken an assertion or silently drop SFC files.
 8. Per-tier memory probe (plan.md R1 rule): report `memory_report()` deltas for
    any Salsa/graph table the framework langs grow; >256MB per table is a hard fail.
+   Verified: tier-09 adds no new Salsa or in-RAM graph table — the graph change
+   is test-only, the MCP change reads existing snapshot state — so there is no
+   per-table delta; the SLO gate's 4 GiB `PEAK_RSS_BUDGET` (observed 3523 MiB)
+   covers R1.
 </steps>
 
 <verification>

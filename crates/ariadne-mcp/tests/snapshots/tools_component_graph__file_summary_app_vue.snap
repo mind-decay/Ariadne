@@ -1,0 +1,29 @@
+---
+source: crates/ariadne-mcp/tests/tools_component_graph.rs
+expression: golden
+---
+{
+  "components": [
+    {
+      "component": "App",
+      "hooks": [],
+      "renders": [
+        "Card"
+      ]
+    }
+  ],
+  "fan_in": 0,
+  "fan_out": 1,
+  "path": "src/App.vue",
+  "symbols": [
+    {
+      "byte_end": 64,
+      "byte_start": 0,
+      "file": "src/App.vue",
+      "id": 1,
+      "kind": "component",
+      "name": "App"
+    }
+  ],
+  "top_dependencies": []
+}

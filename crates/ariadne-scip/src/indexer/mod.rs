@@ -20,6 +20,7 @@ mod scip_clang;
 mod scip_dotnet;
 mod scip_java;
 mod scip_python;
+mod scip_svelte;
 mod scip_typescript;
 mod scip_vue;
 mod subprocess;
@@ -39,6 +40,7 @@ pub use scip_clang::ScipClangIndexer;
 pub use scip_dotnet::ScipDotnetIndexer;
 pub use scip_java::ScipJavaIndexer;
 pub use scip_python::ScipPythonIndexer;
+pub use scip_svelte::ScipSvelteIndexer;
 pub use scip_typescript::ScipTypescriptIndexer;
 pub use scip_vue::ScipVueIndexer;
 

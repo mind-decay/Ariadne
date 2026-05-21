@@ -79,6 +79,88 @@ pub fn seed_god_module_project() -> (PathBuf, TempDir) {
     (project_root, dir)
 }
 
+/// Seed a Vue single-file-component project: three `.vue` components
+/// (`App` renders `Card`; `Card` renders `Button` and uses the `useToggle`
+/// composable) plus the `composables.ts` the hook is defined in. Drives the
+/// `file_summary` component-graph golden (tier-09 step 4).
+#[must_use]
+pub fn seed_component_project() -> (PathBuf, TempDir) {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let project_root = dir.path().to_path_buf();
+    let storage_path = project_root.join(".ariadne").join("index.redb");
+    let storage = RedbStorage::open(&storage_path).expect("open redb");
+    let cs = component_changeset();
+    let txn = storage.begin_write().expect("begin");
+    txn.apply(&cs).expect("apply changeset");
+    drop(storage);
+    (project_root, dir)
+}
+
+fn component_changeset() -> Changeset {
+    let mut cs = Changeset::new();
+    let files = [
+        (1, "src/App.vue", Lang::Vue),
+        (2, "src/Card.vue", Lang::Vue),
+        (3, "src/Button.vue", Lang::Vue),
+        (4, "src/composables.ts", Lang::TypeScript),
+    ];
+    for (id, path, lang) in files {
+        cs = cs.upsert_file(
+            fid(id),
+            FileRecord {
+                path: path.into(),
+                lang,
+                size: 128,
+                blake3: [u8::try_from(id).expect("file id fits u8"); 32],
+                mtime_ns: i128::from(id),
+            },
+        );
+    }
+    let symbols = [
+        (1u64, "App", "component", 1u32),
+        (2, "Card", "component", 2),
+        (3, "Button", "component", 3),
+        (4, "useToggle", "function", 4),
+    ];
+    for (id, name, kind, file) in symbols {
+        cs = cs.upsert_symbol(
+            sid(id),
+            SymbolRecord {
+                canonical_name: name.into(),
+                kind: kind.into(),
+                defining_file: fid(file),
+                defining_span: span(file, 0, 64),
+            },
+        );
+    }
+    // `src` is the rendering/using component, `file` the SFC the render or
+    // hook site sits in — the source span of the resolved edge.
+    let edges = [
+        (1u64, 2, EdgeKind::Renders, 1u32),
+        (2, 3, EdgeKind::Renders, 2),
+        (2, 4, EdgeKind::UsesHook, 2),
+    ];
+    for (src, dst, kind, file) in edges {
+        cs = cs.add_edge(
+            EdgeKey {
+                src: sid(src),
+                kind,
+                dst: sid(dst),
+            },
+            EdgeRecord {
+                source_span: span(file, 64, 96),
+                evidence_lang: if file == 4 {
+                    Lang::TypeScript
+                } else {
+                    Lang::Vue
+                },
+                weight: 1,
+            },
+        );
+    }
+    cs
+}
+
 fn god_module_changeset() -> Changeset {
     let mut cs = Changeset::new();
     // File 1 = library target, file 2 = integration-test target, file 4

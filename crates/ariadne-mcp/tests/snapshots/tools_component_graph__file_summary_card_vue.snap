@@ -1,0 +1,31 @@
+---
+source: crates/ariadne-mcp/tests/tools_component_graph.rs
+expression: golden
+---
+{
+  "components": [
+    {
+      "component": "Card",
+      "hooks": [
+        "useToggle"
+      ],
+      "renders": [
+        "Button"
+      ]
+    }
+  ],
+  "fan_in": 1,
+  "fan_out": 2,
+  "path": "src/Card.vue",
+  "symbols": [
+    {
+      "byte_end": 64,
+      "byte_start": 0,
+      "file": "src/Card.vue",
+      "id": 2,
+      "kind": "component",
+      "name": "Card"
+    }
+  ],
+  "top_dependencies": []
+}

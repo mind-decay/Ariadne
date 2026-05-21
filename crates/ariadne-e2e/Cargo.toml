@@ -58,3 +58,20 @@ path = "tests/repos/c.rs"
 [[test]]
 name = "repos_cpp"
 path = "tests/repos/cpp.rs"
+
+# JS-framework component-graph suites — tier-09.
+[[test]]
+name = "repos_react"
+path = "tests/repos/react.rs"
+
+[[test]]
+name = "repos_vue"
+path = "tests/repos/vue.rs"
+
+[[test]]
+name = "repos_svelte"
+path = "tests/repos/svelte.rs"
+
+[[test]]
+name = "repos_astro"
+path = "tests/repos/astro.rs"

@@ -16,7 +16,7 @@ pub mod proto;
 pub use errors::ScipError;
 pub use indexer::{
     IndexerWarning, IngestPlan, IngestReport, LsifGoIndexer, RustAnalyzerIndexer, ScipClangIndexer,
-    ScipDoc, ScipDotnetIndexer, ScipIndexer, ScipJavaIndexer, ScipPythonIndexer,
+    ScipDoc, ScipDotnetIndexer, ScipIndexer, ScipJavaIndexer, ScipPythonIndexer, ScipSvelteIndexer,
     ScipTypescriptIndexer, ScipVueIndexer, parse,
 };
 pub use normalize::{

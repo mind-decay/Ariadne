@@ -25,15 +25,22 @@ use ariadne_e2e::domain::{
 use serde_json::{Value, json};
 use tempfile::tempdir;
 
-/// SLO corpus: `(manifest key, clone subdirectory)`. Four real OSS
-/// repositories spanning four languages; `torvalds/linux` carries the corpus
-/// past the 100K genuinely-indexed-file floor now that C/C++ are wired
-/// [src: .claude/plans/ariadne-core/tier-12-parallel-cold-index.md step 7].
+/// SLO corpus: `(manifest key, clone subdirectory)`. `torvalds/linux`
+/// carries the corpus past the 100K genuinely-indexed-file floor
+/// [src: .claude/plans/ariadne-core/tier-12-parallel-cold-index.md step 7];
+/// the four JS-framework repos add `.jsx`/`.tsx`/`.vue`/`.svelte`/`.astro`
+/// files so the gate measures the multi-region SFC parse against the v1
+/// SLOs (tier-09 step 6, risk R-SLO)
+/// [src: .claude/plans/js-framework-support/tier-09-component-graph-e2e.md step 6].
 const CORPUS: &[(&str, &str)] = &[
     ("go", "kubernetes"),
     ("typescript", "vscode"),
     ("csharp", "dotnet-runtime"),
     ("c", "linux"),
+    ("react", "react-dev"),
+    ("vue", "vitepress"),
+    ("svelte", "svelte-realworld"),
+    ("astro", "astro-docs"),
 ];
 
 /// Cold-index peak-RSS ceiling — 4 GiB, plan risk R1

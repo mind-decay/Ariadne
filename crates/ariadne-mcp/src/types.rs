@@ -136,6 +136,24 @@ pub struct FileSummaryOutput {
     pub fan_out: u32,
     /// Top-5 files this file's symbols depend on (by outgoing edge count).
     pub top_dependencies: Vec<DependencyRow>,
+    /// `Component` symbols defined in this file, each with the child
+    /// components it renders and the hooks it uses. Empty for files that
+    /// carry no framework components (ADR-0012).
+    pub components: Vec<ComponentRow>,
+}
+
+/// One row of `file_summary.components` — a `Component` symbol paired with
+/// its component-graph neighbourhood (ADR-0012). `renders` follows the
+/// `Renders` edges to child components; `hooks` follows the `UsesHook`
+/// edges to hooks / reactive primitives.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct ComponentRow {
+    /// Canonical name of the component symbol.
+    pub component: String,
+    /// Canonical names of the child components it renders, sorted.
+    pub renders: Vec<String>,
+    /// Canonical names of the hooks / reactive primitives it uses, sorted.
+    pub hooks: Vec<String>,
 }
 
 /// One row of `file_summary.top_dependencies`.
