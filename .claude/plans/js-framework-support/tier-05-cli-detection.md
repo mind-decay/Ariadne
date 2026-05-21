@@ -8,7 +8,8 @@ exit_criteria:
   - "`ariadne index` on a Vue, a Svelte, and an Astro tree each reports the matching lang tag with non-zero symbols and >=1 `Renders` edge."
   - "`enabled_langs` autodetect enables the framework langs when the repo carries `.vue`/`.svelte`/`.astro`/`.tsx` files or matching `package.json` deps."
   - "`cargo nextest run -p ariadne-cli`, `cargo clippy ... -D warnings`, `cargo test --test architecture` all green."
-status: pending
+status: completed
+completed: 2026-05-21
 ---
 
 <context>

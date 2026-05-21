@@ -1,8 +1,8 @@
 {
   "slug": "js-framework-support",
-  "audited_commit": "627776868f355abdcd110c23749294cc94638f87",
-  "tier_id": "tier-04",
+  "audited_commit": "d44f683913102f857382c6e83ca82db0600d37b6",
+  "tier_id": "tier-05",
   "verdict": "PASS",
-  "audited_at": "2026-05-21T00:00:00Z",
-  "report": "audit/tier-04-report.md"
+  "audited_at": "2026-05-21T21:23:20+03:00",
+  "report": "audit/tier-05-report.md"
 }

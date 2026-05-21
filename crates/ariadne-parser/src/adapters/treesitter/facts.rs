@@ -55,8 +55,8 @@ pub enum DeclKind {
     /// body renders JSX (covers `function Foo()` and the idiomatic arrow form
     /// `const Foo = () => <jsx/>`). Assigned by a post-filter in
     /// [`FactExtractor::extract`], not a query tag, so the `"component"` arm of
-    /// [`DeclKind::from_tag`] is reserved for any future query that captures
-    /// `@def.component` directly.
+    /// the private `DeclKind::from_tag` tag dispatch is reserved for any future
+    /// query that captures `@def.component` directly.
     Component,
     /// Any other `@def.<tag>` suffix.
     Other(String),
@@ -145,6 +145,47 @@ pub struct SyntacticFacts {
     pub renders: Vec<RenderSite>,
     /// Hook / reactive-primitive call sites in source order.
     pub hooks: Vec<HookSite>,
+}
+
+impl SyntacticFacts {
+    /// Append one parse layer's facts onto the running merge.
+    ///
+    /// Every layer of a [`ParsedFile`] parses over the full file bytes
+    /// (injected layers via `set_included_ranges`), so all spans share one
+    /// file-absolute coordinate space and a plain concatenation is sound.
+    /// Call [`SyntacticFacts::finalize`] once after the last layer to restore
+    /// source order.
+    ///
+    /// This is the single per-layer merge point: callers that fold layers
+    /// themselves — [`extract_syntactic_facts`] and the cold-index parse
+    /// worker — both route through here, so a new `SyntacticFacts` field is
+    /// handled in this method and [`SyntacticFacts::finalize`], never at a
+    /// call site.
+    pub fn absorb_layer(&mut self, layer: SyntacticFacts) {
+        self.decls.extend(layer.decls);
+        self.imports.extend(layer.imports);
+        self.calls.extend(layer.calls);
+        self.renders.extend(layer.renders);
+        self.hooks.extend(layer.hooks);
+    }
+
+    /// Sort every fact vector into file-absolute source order and drop exact
+    /// duplicates. Spans are already file-absolute, so a plain byte-offset
+    /// sort merges the absorbed layers; the dedup guards against a fact
+    /// captured by two overlapping layer queries. Run once after the final
+    /// [`SyntacticFacts::absorb_layer`].
+    pub fn finalize(&mut self) {
+        self.decls.sort_by_key(|d| d.def_byte_range.0);
+        self.imports.sort_by_key(|i| i.byte_range.0);
+        self.calls.sort_by_key(|c| c.byte_range.0);
+        self.renders.sort_by_key(|r| r.byte_range.0);
+        self.hooks.sort_by_key(|h| h.byte_range.0);
+        self.decls.dedup();
+        self.imports.dedup();
+        self.calls.dedup();
+        self.renders.dedup();
+        self.hooks.dedup();
+    }
 }
 
 const QUERY_TYPESCRIPT: &str = include_str!("queries/typescript.scm");
@@ -369,26 +410,9 @@ pub fn extract_syntactic_facts(
     let mut merged = SyntacticFacts::default();
     for (lang, tree) in std::iter::once(&parsed.host).chain(parsed.injected.iter()) {
         let mut extractor = FactExtractor::compile(*lang, &tree.language())?;
-        let layer = extractor.extract(tree, source);
-        merged.decls.extend(layer.decls);
-        merged.imports.extend(layer.imports);
-        merged.calls.extend(layer.calls);
-        merged.renders.extend(layer.renders);
-        merged.hooks.extend(layer.hooks);
+        merged.absorb_layer(extractor.extract(tree, source));
     }
-    // Spans are already file-absolute, so a plain byte-offset sort merges
-    // the layers into source order; the exact-duplicate dedup guards against
-    // a fact captured by two overlapping layer queries.
-    merged.decls.sort_by_key(|d| d.def_byte_range.0);
-    merged.imports.sort_by_key(|i| i.byte_range.0);
-    merged.calls.sort_by_key(|c| c.byte_range.0);
-    merged.renders.sort_by_key(|r| r.byte_range.0);
-    merged.hooks.sort_by_key(|h| h.byte_range.0);
-    merged.decls.dedup();
-    merged.imports.dedup();
-    merged.calls.dedup();
-    merged.renders.dedup();
-    merged.hooks.dedup();
+    merged.finalize();
     Ok(merged)
 }
 

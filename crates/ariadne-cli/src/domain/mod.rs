@@ -5,10 +5,10 @@
 //! hands the per-file facts down a bounded `sync_channel` to a single
 //! committer thread that writes redb in bounded file/symbol/edge batches.
 //! Commit overlaps parse, and the in-RAM working set is bounded by the
-//! batch size, not the corpus size. Each worker caches a tree-sitter
-//! `Parser` and a compiled-`Query` `FactExtractor` per `Lang`, so neither
-//! the grammar nor the fact query is rebuilt per file
-//! [src: docs/adr/0010-streaming-cold-index.md].
+//! batch size, not the corpus size. Each worker caches a compiled-`Query`
+//! `FactExtractor` per `Lang`, so the fact query is not recompiled per
+//! file; the host and injected tree-sitter parsers are built per file by
+//! `ariadne_parser::parse_file` [src: docs/adr/0010-streaming-cold-index.md].
 
 use std::collections::hash_map::Entry;
 use std::collections::{HashMap, HashSet};
@@ -24,7 +24,7 @@ use ariadne_core::{
     Changeset, EdgeKey, EdgeKind, EdgeRecord, FileId, FileRecord, Lang, Span, Storage, SymbolId,
     SymbolRecord, WriteTxn,
 };
-use ariadne_parser::{DeclKind, FactExtractor, ParserRegistry, SyntacticFacts, TreeSitterParser};
+use ariadne_parser::{DeclKind, FactExtractor, ParserRegistry, SyntacticFacts};
 use ariadne_scip::IngestPlan;
 use ariadne_storage::RedbStorage;
 use ignore::{DirEntry, WalkBuilder, WalkState};
@@ -59,9 +59,14 @@ pub fn index_path(root: &Path) -> PathBuf {
     root.join(".ariadne").join("index.redb")
 }
 
-/// Map a path to its [`Lang`] by file extension. Only the ten tree-sitter
-/// grammars registered in [`ParserRegistry`] are recognised; everything else
-/// returns `None` and is skipped by the syntactic indexer.
+/// Map a path to its [`Lang`] by file extension. Only the fourteen
+/// tree-sitter grammars registered in [`ParserRegistry`] are recognised;
+/// everything else returns `None` and is skipped by the syntactic indexer.
+///
+/// `.tsx` maps to its own [`Lang::Tsx`] grammar — the non-TSX TypeScript
+/// grammar mis-parses the `<Foo/>` element vs `<T>x` cast ambiguity (plan.md
+/// D2). `.jsx` stays [`Lang::JavaScript`]: `tree-sitter-javascript` parses
+/// JSX natively (plan.md D3).
 ///
 /// The `.h` header extension is C-vs-C++ ambiguous; v1 resolves it to C with
 /// no content sniffing [src: docs/adr/0008-c-cpp-syntactic-indexing.md].
@@ -70,8 +75,12 @@ pub fn lang_for_path(path: &Path) -> Option<Lang> {
     let ext = path.extension()?.to_str()?;
     Some(match ext {
         "rs" => Lang::Rust,
-        "ts" | "tsx" | "mts" | "cts" => Lang::TypeScript,
+        "ts" | "mts" | "cts" => Lang::TypeScript,
+        "tsx" => Lang::Tsx,
         "js" | "jsx" | "mjs" | "cjs" => Lang::JavaScript,
+        "vue" => Lang::Vue,
+        "svelte" => Lang::Svelte,
+        "astro" => Lang::Astro,
         "py" | "pyi" => Lang::Python,
         "go" => Lang::Go,
         "java" => Lang::Java,
@@ -184,12 +193,17 @@ struct SymbolCandidate {
     def_start: u32,
 }
 
-/// Per-file facts retained between the symbol pass and the edge pass.
+/// Per-file facts retained between the symbol pass and the edge pass. Each
+/// `(name, range)` pair is an unresolved site — a callee, a rendered child
+/// component, or a hook — the edge pass resolves against the global symbol
+/// table [src: tier-05 step 4].
 struct FileFacts {
     file_id: FileId,
     lang: Lang,
     symbols: Vec<LocalSymbol>,
     calls: Vec<(String, (u32, u32))>,
+    renders: Vec<(String, (u32, u32))>,
+    hooks: Vec<(String, (u32, u32))>,
 }
 
 /// One file's parse output, streamed to the committer. Holds no raw bytes —
@@ -243,7 +257,6 @@ pub fn run_index(
     paths.par_iter().enumerate().for_each_init(
         || ThreadState {
             registry: registry.clone(),
-            parsers: HashMap::new(),
             extractors: HashMap::new(),
             sender: tx.clone(),
         },
@@ -369,13 +382,16 @@ fn is_config_ignored(root: &Path, path: &Path, patterns: &[String]) -> bool {
 }
 
 /// Per-worker parse state. `for_each_init` builds one per `rayon` worker, so
-/// no `tree_sitter::Parser` or `FactExtractor` is ever shared — both are
-/// `!Send`, built lazily on the worker thread. The `SyncSender` clone is the
-/// worker's handle onto the bounded parse → commit channel
-/// [src: tier-13 step 3].
+/// no `FactExtractor` is ever shared — it is `!Send`, built lazily on the
+/// worker thread. The `SyncSender` clone is the worker's handle onto the
+/// bounded parse → commit channel [src: tier-13 step 3].
+///
+/// `extractors` is keyed by *every* [`Lang`] a worker meets across all
+/// parse layers — a Vue SFC contributes both the `Vue` host-layer extractor
+/// and the injected `TypeScript` extractor — so an SFC's `<script>` facts
+/// reuse the same compiled query as a plain `.ts` file [src: tier-05 step 3].
 struct ThreadState {
     registry: ParserRegistry,
-    parsers: HashMap<Lang, TreeSitterParser>,
     extractors: HashMap<Lang, FactExtractor>,
     sender: SyncSender<ParsedFile>,
 }
@@ -434,32 +450,43 @@ fn parse_one(
     })
 }
 
-/// Parse `content` and extract its facts, reusing the worker's cached
-/// per-`Lang` parser and `FactExtractor`. `None` on a parser/extractor build
-/// failure or a parse abort — the file is still recorded, just factless.
+/// Parse `content` into a tier-03 multi-layer `ParsedFile` and extract its
+/// merged facts. `None` on a parser/extractor build failure or a parse abort
+/// — the file is still recorded, just factless.
+///
+/// A single-grammar file (`.rs`/`.ts`/`.tsx`/…) is the host-only degenerate
+/// case; an SFC (`.vue`/`.svelte`/`.astro`) adds an injected `<script>` /
+/// frontmatter layer. Every layer's facts are extracted with the worker's
+/// cached `FactExtractor` for *that layer's* `Lang`, then folded through the
+/// shared `SyntacticFacts::absorb_layer` + `finalize` merge that
+/// `ariadne_parser::extract_syntactic_facts` also uses; this path differs
+/// only in sourcing extractors from the per-worker cache instead of a
+/// one-shot compile [src: tier-05 step 3].
 fn parse_facts(
     lang: Lang,
     content: &[u8],
     state: &mut ThreadState,
     probe: &ParseProbe,
 ) -> Option<SyntacticFacts> {
-    let parser = match state.parsers.entry(lang) {
-        Entry::Occupied(e) => e.into_mut(),
-        Entry::Vacant(e) => e.insert(TreeSitterParser::for_lang(lang, &state.registry).ok()?),
-    };
     let parse_started = Instant::now();
-    let tree = parser.parse_file(content, None, &[]).ok();
+    let parsed = ariadne_parser::parse_file(lang, &state.registry, content, None, &[]);
     add_ns(&probe.parse, parse_started.elapsed());
-    let tree = tree?;
+    let parsed = parsed.ok()?;
 
-    let extractor = match state.extractors.entry(lang) {
-        Entry::Occupied(e) => e.into_mut(),
-        Entry::Vacant(e) => e.insert(FactExtractor::for_lang(lang, &state.registry).ok()?),
-    };
     let extract_started = Instant::now();
-    let facts = extractor.extract(&tree, content);
+    let mut merged = SyntacticFacts::default();
+    for (layer_lang, tree) in std::iter::once(&parsed.host).chain(parsed.injected.iter()) {
+        let extractor = match state.extractors.entry(*layer_lang) {
+            Entry::Occupied(e) => e.into_mut(),
+            Entry::Vacant(e) => {
+                e.insert(FactExtractor::for_lang(*layer_lang, &state.registry).ok()?)
+            }
+        };
+        merged.absorb_layer(extractor.extract(tree, content));
+    }
+    merged.finalize();
     add_ns(&probe.extract, extract_started.elapsed());
-    Some(facts)
+    Some(merged)
 }
 
 /// Counts + timings the committer hands back on join.
@@ -503,13 +530,47 @@ impl CommitState {
             .entry(lang.tag())
             .and_modify(|seen| *seen = (*seen).min(id))
             .or_insert(id);
+        // Captured before `record` moves into the batch — bounds the
+        // synthesized SFC component's whole-file definition span below.
+        let file_len = u32::try_from(record.size).unwrap_or(u32::MAX);
         self.batch.file_upserts.push((id, record));
 
         let Some(facts) = facts else {
             self.parse_failures += 1;
             return;
         };
-        let mut locals = Vec::with_capacity(facts.decls.len());
+        let mut locals = Vec::with_capacity(facts.decls.len() + 1);
+        // An SFC (`.vue`/`.svelte`/`.astro`) carries exactly one component —
+        // the file itself — but emits no enclosing `Component` decl: its
+        // template render sites sit in the host layer, its decls in the
+        // injected `<script>` layer. Synthesize a file-spanning `Component`
+        // symbol named for the file stem so those renders have a graph
+        // source, and so a cross-file `<Child/>` resolves to `Child`'s
+        // SFC [src: tier-05 step 4; user scope decision].
+        if is_sfc_lang(lang) {
+            let name = sfc_component_name(&rel_path);
+            let sid = symbol_id(&rel_path, &name, 0);
+            let def_range = (0, file_len);
+            self.batch.symbol_upserts.push((
+                sid,
+                SymbolRecord {
+                    canonical_name: name.clone(),
+                    kind: "component".to_owned(),
+                    defining_file: id,
+                    defining_span: span(id, def_range),
+                },
+            ));
+            self.name_to_symbols
+                .entry(name)
+                .or_default()
+                .push(SymbolCandidate {
+                    id: sid,
+                    file: id,
+                    def_start: 0,
+                });
+            locals.push(LocalSymbol { id: sid, def_range });
+            self.symbols += 1;
+        }
         for decl in &facts.decls {
             let sid = symbol_id(&rel_path, &decl.name, decl.def_byte_range.0);
             self.batch.symbol_upserts.push((
@@ -544,8 +605,33 @@ impl CommitState {
                 .iter()
                 .map(|c| (c.callee.clone(), c.byte_range))
                 .collect(),
+            renders: facts
+                .renders
+                .iter()
+                .map(|r| (r.component.clone(), r.byte_range))
+                .collect(),
+            hooks: facts
+                .hooks
+                .iter()
+                .map(|h| (h.callee.clone(), h.byte_range))
+                .collect(),
         });
     }
+}
+
+/// True for the framework single-file-component langs. An SFC's template
+/// render sites have no enclosing function declaration, so the committer
+/// synthesizes a per-file `Component` symbol for them [src: tier-05 step 4].
+fn is_sfc_lang(lang: Lang) -> bool {
+    matches!(lang, Lang::Vue | Lang::Svelte | Lang::Astro)
+}
+
+/// Component name for a synthesized SFC symbol: the file stem (`Card` for
+/// `ui/Card.vue`). Falls back to the whole relative path if it has no stem.
+fn sfc_component_name(rel_path: &str) -> String {
+    Path::new(rel_path)
+        .file_stem()
+        .map_or_else(|| rel_path.to_owned(), |s| s.to_string_lossy().into_owned())
 }
 
 /// Drain the parse → commit channel, writing redb in bounded batches.
@@ -639,9 +725,15 @@ fn ordered_langs(first_seen: &HashMap<String, FileId>) -> Vec<String> {
     langs
 }
 
-/// Resolve every call site to a `src -> dst` `References` edge: `src` is the
-/// innermost declaration whose span contains the call, `dst` is the callee
-/// symbol (same file preferred, else the first global match).
+/// Resolve every call / render / hook site to a typed `src -> dst` edge.
+///
+/// A call site becomes a [`EdgeKind::References`] edge, a render site a
+/// [`EdgeKind::Renders`] edge, a hook site a [`EdgeKind::UsesHook`] edge.
+/// For each, `src` is the innermost declaration whose span contains the site
+/// (the enclosing component, for a render or hook) and `dst` is the named
+/// symbol — same-file match preferred, else the first global match. An
+/// unresolved `src` or `dst`, or a self-loop, drops the edge: the same
+/// best-effort policy for all three kinds [src: tier-05 step 4].
 fn resolve_edges(
     facts_by_file: &[FileFacts],
     name_to_symbols: &HashMap<String, Vec<SymbolId>>,
@@ -650,12 +742,12 @@ fn resolve_edges(
     let mut out = Vec::new();
     for facts in facts_by_file {
         let local_ids: HashSet<SymbolId> = facts.symbols.iter().map(|l| l.id).collect();
-        for (callee, range) in &facts.calls {
-            let Some(src) = enclosing_symbol(&facts.symbols, *range) else {
-                continue;
+        let mut resolve = |kind: EdgeKind, name: &str, range: (u32, u32)| {
+            let Some(src) = enclosing_symbol(&facts.symbols, range) else {
+                return;
             };
-            let Some(candidates) = name_to_symbols.get(callee) else {
-                continue;
+            let Some(candidates) = name_to_symbols.get(name) else {
+                return;
             };
             let Some(dst) = candidates
                 .iter()
@@ -663,27 +755,32 @@ fn resolve_edges(
                 .or_else(|| candidates.first())
                 .copied()
             else {
-                continue;
+                return;
             };
             if dst == src {
-                continue;
+                return;
             }
-            let key = EdgeKey {
-                src,
-                kind: EdgeKind::References,
-                dst,
-            };
+            let key = EdgeKey { src, kind, dst };
             if !seen.insert(key) {
-                continue;
+                return;
             }
             out.push((
                 key,
                 EdgeRecord {
-                    source_span: span(facts.file_id, *range),
+                    source_span: span(facts.file_id, range),
                     evidence_lang: facts.lang,
                     weight: 1,
                 },
             ));
+        };
+        for (callee, range) in &facts.calls {
+            resolve(EdgeKind::References, callee, *range);
+        }
+        for (component, range) in &facts.renders {
+            resolve(EdgeKind::Renders, component, *range);
+        }
+        for (callee, range) in &facts.hooks {
+            resolve(EdgeKind::UsesHook, callee, *range);
         }
     }
     out

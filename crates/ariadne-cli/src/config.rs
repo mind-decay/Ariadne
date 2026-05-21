@@ -86,6 +86,12 @@ impl Config {
     }
 
     /// Build a default config by detecting languages present under `root`.
+    ///
+    /// Two autodetect signals feed `enabled_langs`: a source file whose
+    /// extension maps to a [`Lang`], and a framework dependency named in a
+    /// root `package.json` (`react`/`vue`/`svelte`/`astro`/`solid-js`) — so
+    /// a `.vue`/`.svelte`/`.astro`/`.tsx` repo, or one that merely declares
+    /// the dependency, enables the framework langs [src: tier-05 step 5].
     #[must_use]
     pub fn detect(root: &Path) -> Self {
         let mut tags: Vec<String> = Vec::new();
@@ -100,6 +106,7 @@ impl Config {
                 }
             }
         }
+        detect_package_json_langs(root, &mut tags);
         tags.sort();
         Self {
             schema_version: SCHEMA_VERSION,
@@ -173,6 +180,45 @@ fn split_csv(value: &str) -> Vec<String> {
         .collect()
 }
 
+/// Framework `package.json` dependency → the [`Lang`] tags its presence
+/// enables. React and `SolidJS` share the JSX (`javascript`) / TSX (`tsx`)
+/// path — no dedicated grammar (plan.md D3, D7); Vue / Svelte / Astro each
+/// map to their own host lang [src: tier-05 step 5].
+const FRAMEWORK_DEPS: &[(&str, &[&str])] = &[
+    ("react", &["javascript", "tsx"]),
+    ("solid-js", &["javascript", "tsx"]),
+    ("vue", &["vue"]),
+    ("svelte", &["svelte"]),
+    ("astro", &["astro"]),
+];
+
+/// Append language tags implied by framework dependencies in a root
+/// `package.json`. Best-effort: a missing or malformed `package.json`, or
+/// one naming no recognised framework, leaves `tags` untouched. A dependency
+/// counts whether it sits under `dependencies` or `devDependencies`.
+fn detect_package_json_langs(root: &Path, tags: &mut Vec<String>) {
+    let Ok(text) = std::fs::read_to_string(root.join("package.json")) else {
+        return;
+    };
+    let Ok(json) = serde_json::from_str::<serde_json::Value>(&text) else {
+        return;
+    };
+    for (dep, dep_tags) in FRAMEWORK_DEPS {
+        let declared = ["dependencies", "devDependencies"].iter().any(|section| {
+            json.get(section)
+                .and_then(serde_json::Value::as_object)
+                .is_some_and(|deps| deps.contains_key(*dep))
+        });
+        if declared {
+            for tag in *dep_tags {
+                if !tags.iter().any(|t| t == tag) {
+                    tags.push((*tag).to_owned());
+                }
+            }
+        }
+    }
+}
+
 /// Resolve `binary` against `$PATH`, returning the first executable match.
 #[must_use]
 pub fn resolve_on_path(binary: &str) -> Option<PathBuf> {
@@ -180,4 +226,45 @@ pub fn resolve_on_path(binary: &str) -> Option<PathBuf> {
     std::env::split_paths(&path)
         .map(|dir| dir.join(binary))
         .find(|candidate| candidate.is_file())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A root `package.json` naming a framework dependency enables its
+    /// langs even when the repo carries no source file of that framework
+    /// [src: tier-05 `exit_criteria` #4 — "or matching `package.json` deps"].
+    #[test]
+    fn package_json_deps_enable_framework_langs() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        std::fs::write(
+            tmp.path().join("package.json"),
+            r#"{ "dependencies": { "vue": "^3.4.0" },
+                "devDependencies": { "svelte": "^4.2.0", "react": "^18.2.0" } }"#,
+        )
+        .expect("write package.json");
+
+        let config = Config::detect(tmp.path());
+
+        for tag in ["vue", "svelte", "tsx", "javascript"] {
+            assert!(
+                config.enabled_langs.iter().any(|t| t == tag),
+                "expected `{tag}` enabled from package.json deps; got {:?}",
+                config.enabled_langs,
+            );
+        }
+    }
+
+    /// A repo with neither framework files nor a `package.json` detects no
+    /// framework langs — the autodetect stays a signal, never a default.
+    #[test]
+    fn no_package_json_leaves_framework_langs_off() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        std::fs::write(tmp.path().join("main.rs"), "fn main() {}\n").expect("write rs");
+
+        let config = Config::detect(tmp.path());
+
+        assert_eq!(config.enabled_langs, vec!["rust".to_owned()]);
+    }
 }
