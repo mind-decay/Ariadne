@@ -59,37 +59,14 @@ pub fn index_path(root: &Path) -> PathBuf {
     root.join(".ariadne").join("index.redb")
 }
 
-/// Map a path to its [`Lang`] by file extension. Only the fourteen
-/// tree-sitter grammars registered in [`ParserRegistry`] are recognised;
-/// everything else returns `None` and is skipped by the syntactic indexer.
-///
-/// `.tsx` maps to its own [`Lang::Tsx`] grammar — the non-TSX TypeScript
-/// grammar mis-parses the `<Foo/>` element vs `<T>x` cast ambiguity (plan.md
-/// D2). `.jsx` stays [`Lang::JavaScript`]: `tree-sitter-javascript` parses
-/// JSX natively (plan.md D3).
-///
-/// The `.h` header extension is C-vs-C++ ambiguous; v1 resolves it to C with
-/// no content sniffing [src: docs/adr/0008-c-cpp-syntactic-indexing.md].
+/// Map a path to its [`Lang`] by file extension, via the canonical
+/// [`Lang::from_extension`] table. Only the fourteen tree-sitter grammars
+/// registered in [`ParserRegistry`] are recognised; everything else returns
+/// `None` and is skipped by the syntactic indexer. The `.tsx`/`.jsx`/`.h`
+/// rationale lives on [`Lang::from_extension`].
 #[must_use]
 pub fn lang_for_path(path: &Path) -> Option<Lang> {
-    let ext = path.extension()?.to_str()?;
-    Some(match ext {
-        "rs" => Lang::Rust,
-        "ts" | "mts" | "cts" => Lang::TypeScript,
-        "tsx" => Lang::Tsx,
-        "js" | "jsx" | "mjs" | "cjs" => Lang::JavaScript,
-        "vue" => Lang::Vue,
-        "svelte" => Lang::Svelte,
-        "astro" => Lang::Astro,
-        "py" | "pyi" => Lang::Python,
-        "go" => Lang::Go,
-        "java" => Lang::Java,
-        "kt" | "kts" => Lang::Kotlin,
-        "cs" => Lang::CSharp,
-        "c" | "h" => Lang::C,
-        "cpp" | "cc" | "cxx" | "c++" | "hpp" | "hh" | "hxx" => Lang::Cpp,
-        _ => return None,
-    })
+    Lang::from_extension(path.extension()?.to_str()?)
 }
 
 /// JSON-line summary emitted on stdout when `index` completes

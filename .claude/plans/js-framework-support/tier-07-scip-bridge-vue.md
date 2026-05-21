@@ -9,7 +9,8 @@ exit_criteria:
   - "Ingesting the bridge output over a Vue fixture resolves a cross-component definition→reference edge (`<script setup>` import used in another `.vue`)."
   - "`crates/ariadne-scip/tests/ingest_vue.rs` golden snapshot committed and green."
   - "`cargo nextest run -p ariadne-scip`, `cargo clippy ... -D warnings`, `cargo test --test architecture` all green."
-status: pending
+status: completed
+completed: 2026-05-21
 ---
 
 <context>
@@ -29,7 +30,10 @@ binary (plan.md D5 holds). Highest-risk tier: spike-gated.
 - `tools/ariadne-sfc-scip/` — NEW. Node CLI: `package.json`, `src/index.ts`, `README.md`. Outside the Cargo workspace; built/vendored separately.
 - `crates/ariadne-scip/src/indexer/scip_vue.rs` — NEW. `ScipVueIndexer` driver.
 - `crates/ariadne-scip/src/indexer/mod.rs` — `mod scip_vue;` + `pub use scip_vue::ScipVueIndexer;`.
+- `crates/ariadne-scip/src/indexer/plan.rs` — register `ScipVueIndexer` in the `IngestPlan` driver set (step 5).
+- `crates/ariadne-scip/src/lib.rs` — façade re-export of `ScipVueIndexer`.
 - `crates/ariadne-scip/tests/ingest_vue.rs`, `tests/fixtures/sample-vue/`, `tests/snapshots/ingest_vue__*.snap` — NEW.
+- `crates/ariadne-scip/tests/ingest_plan.rs` — driver-count assertion follows the seven→eight registration change.
 </files>
 
 <steps>

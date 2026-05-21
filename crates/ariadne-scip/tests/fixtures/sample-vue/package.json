@@ -1,0 +1,9 @@
+{
+  "name": "sample-vue",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Minimal license-clean Vue SFC fixture for ariadne-scip tier-07 ingest tests.",
+  "dependencies": {
+    "vue": "^3.5.0"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "name": "ariadne-sfc-scip",
+  "version": "0.1.0",
+  "description": "Volar-based SCIP bridge: emits a SCIP index for Vue single-file components so ariadne-scip can ingest .vue semantics. Built and vendored separately from the Cargo workspace.",
+  "license": "MIT OR Apache-2.0",
+  "private": true,
+  "type": "commonjs",
+  "bin": {
+    "ariadne-sfc-scip": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@volar/typescript": "2.4.28",
+    "@vue/language-core": "3.3.1",
+    "typescript": "5.9.3"
+  },
+  "devDependencies": {
+    "@types/node": "25.9.1"
+  }
+}

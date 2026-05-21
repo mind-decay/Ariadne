@@ -224,16 +224,17 @@ fn empty_driver_set_yields_empty_report() {
 }
 
 #[test]
-fn default_driver_set_registers_seven_drivers() {
+fn default_driver_set_registers_eight_drivers() {
     // Use a guaranteed-missing path so every driver's run() returns
     // IndexerMissing and we observe the full registration in `warnings`
     // without needing any real binaries on PATH.
     let plan = IngestPlan::with_default_drivers().with_temp_root(temp_root());
     // We don't trigger run() (detect() = false on /tmp/empty); rather
-    // assert by Debug that 7 drivers are registered.
+    // assert by Debug that 8 drivers are registered — the seven tier-05
+    // indexers plus the tier-07 Vue bridge.
     let dbg = format!("{plan:?}");
     assert!(
-        dbg.contains("driver_count: 7"),
-        "default driver set must register all 7 indexers: {dbg}"
+        dbg.contains("driver_count: 8"),
+        "default driver set must register all 8 indexers: {dbg}"
     );
 }

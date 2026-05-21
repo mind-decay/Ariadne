@@ -8,7 +8,8 @@ exit_criteria:
   - "`.tsx`-originated symbols carry `Lang::Tsx` and `.jsx`-originated symbols carry `Lang::JavaScript` through the normalize layer."
   - "`crates/ariadne-scip/tests/ingest_react.rs` golden `insta` snapshot is committed and green."
   - "`cargo nextest run -p ariadne-scip`, `cargo clippy ... -D warnings`, `cargo test --test architecture` all green."
-status: pending
+status: completed
+completed: 2026-05-21
 ---
 
 <context>

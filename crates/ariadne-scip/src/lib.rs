@@ -17,7 +17,7 @@ pub use errors::ScipError;
 pub use indexer::{
     IndexerWarning, IngestPlan, IngestReport, LsifGoIndexer, RustAnalyzerIndexer, ScipClangIndexer,
     ScipDoc, ScipDotnetIndexer, ScipIndexer, ScipJavaIndexer, ScipPythonIndexer,
-    ScipTypescriptIndexer, parse,
+    ScipTypescriptIndexer, ScipVueIndexer, parse,
 };
 pub use normalize::{
     CanonicalSymbol, Descriptor, DescriptorSuffix, SymbolId, normalize_scip_symbol,

@@ -21,6 +21,7 @@ mod scip_dotnet;
 mod scip_java;
 mod scip_python;
 mod scip_typescript;
+mod scip_vue;
 mod subprocess;
 
 use std::path::Path;
@@ -39,6 +40,7 @@ pub use scip_dotnet::ScipDotnetIndexer;
 pub use scip_java::ScipJavaIndexer;
 pub use scip_python::ScipPythonIndexer;
 pub use scip_typescript::ScipTypescriptIndexer;
+pub use scip_vue::ScipVueIndexer;
 
 /// Decode raw SCIP protobuf bytes (e.g. the `raw_proto` payload pulled
 /// from `ariadne_salsa::ScipDocInput`) into a typed [`ScipDoc`]. Free

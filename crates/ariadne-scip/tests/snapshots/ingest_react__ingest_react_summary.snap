@@ -1,0 +1,26 @@
+---
+source: crates/ariadne-scip/tests/ingest_react.rs
+expression: summary
+---
+lang: typescript
+docs: 3
+symbols: 10
+occurrences: 22
+relationships: 0
+top_symbols_by_occurrence:
+  - scip-typescript npm sample-react 0.0.0 src/`Button.tsx`/Button(). (4 occ)
+  - scip-typescript npm sample-react 0.0.0 src/`Button.tsx`/ButtonProps#label. (4 occ)
+  - local 2 (2 occ)
+  - scip-typescript npm sample-react 0.0.0 src/`Button.tsx`/ (2 occ)
+  - scip-typescript npm sample-react 0.0.0 src/`Button.tsx`/Button().(props) (2 occ)
+normalized_symbol_ids:
+  - 04d67f5fe1f1c338
+  - 2fbc8b22d73431c3
+  - 37b336e9fbbdf211
+  - 5b09ece46e9540b3
+  - 7b8e8dcdfd5d4c5c
+  - a8587e4d4abfbb50
+  - b32274f481b045f1
+  - c698058901e4ccac
+  - e78688801766d64b
+  - fdf5e2a59f5207f6

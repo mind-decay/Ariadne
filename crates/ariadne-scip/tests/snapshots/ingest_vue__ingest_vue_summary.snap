@@ -1,0 +1,23 @@
+---
+source: crates/ariadne-scip/tests/ingest_vue.rs
+expression: summary
+---
+lang: vue
+docs: 3
+symbols: 7
+occurrences: 18
+relationships: 0
+top_symbols_by_occurrence:
+  - scip-vue-bridge npm sample-vue 0.0.0 src/`Button.vue`/buttonName. (5 occ)
+  - local 0 (2 occ)
+  - local 4 (2 occ)
+  - scip-vue-bridge npm sample-vue 0.0.0 src/`Button.vue`/default. (2 occ)
+  - scip-vue-bridge npm sample-vue 0.0.0 src/`Card.vue`/default. (2 occ)
+normalized_symbol_ids:
+  - 38f7445ab95073c1
+  - 8b06bb7e42bea19f
+  - 9b4458970f4b6c42
+  - 9b66c96bd133f898
+  - 9bd483095854e66c
+  - a416b411483ba771
+  - c4f6d8d3a98bc71a

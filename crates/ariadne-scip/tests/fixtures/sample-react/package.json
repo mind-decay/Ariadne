@@ -1,0 +1,6 @@
+{
+  "name": "sample-react",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Minimal license-clean React/Solid TSX fixture for ariadne-scip tier-06 ingest tests."
+}

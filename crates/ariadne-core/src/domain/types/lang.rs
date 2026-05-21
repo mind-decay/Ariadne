@@ -97,6 +97,38 @@ impl Lang {
             }
         })
     }
+
+    /// Map a bare file extension — no leading dot, e.g. `"rs"` or `"tsx"` —
+    /// to its [`Lang`]. The canonical extension→`Lang` table; the syntactic
+    /// indexer skips any extension that resolves to `None`. The match is
+    /// case-sensitive, mirroring `std::path::Path::extension`.
+    ///
+    /// `.tsx` maps to its own [`Lang::Tsx`] grammar — the non-TSX TypeScript
+    /// grammar mis-parses the `<Foo/>` element vs `<T>x` cast ambiguity
+    /// (plan.md D2). `.jsx` stays [`Lang::JavaScript`]: `tree-sitter-javascript`
+    /// parses JSX natively (plan.md D3). The `.h` header extension is
+    /// C-vs-C++ ambiguous; v1 resolves it to C with no content sniffing
+    /// [src: docs/adr/0008-c-cpp-syntactic-indexing.md].
+    #[must_use]
+    pub fn from_extension(ext: &str) -> Option<Self> {
+        Some(match ext {
+            "rs" => Self::Rust,
+            "ts" | "mts" | "cts" => Self::TypeScript,
+            "tsx" => Self::Tsx,
+            "js" | "jsx" | "mjs" | "cjs" => Self::JavaScript,
+            "vue" => Self::Vue,
+            "svelte" => Self::Svelte,
+            "astro" => Self::Astro,
+            "py" | "pyi" => Self::Python,
+            "go" => Self::Go,
+            "java" => Self::Java,
+            "kt" | "kts" => Self::Kotlin,
+            "cs" => Self::CSharp,
+            "c" | "h" => Self::C,
+            "cpp" | "cc" | "cxx" | "c++" | "hpp" | "hh" | "hxx" => Self::Cpp,
+            _ => return None,
+        })
+    }
 }
 
 impl Serialize for Lang {
