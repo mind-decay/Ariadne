@@ -9,7 +9,8 @@ exit_criteria:
   - "`setup` is fully idempotent: a second consecutive run leaves `.ariadne/config.toml`, `.mcp.json`, and `CLAUDE.md` byte-identical. The CLI test asserts this."
   - "README quickstart documents `ariadne setup` as the one-command onboarding path, ahead of `ariadne index`."
   - "`cargo build --workspace`, `clippy -D warnings`, `fmt --check`, `cargo test --test architecture`, `cargo nextest run --workspace`, `RUSTDOCFLAGS=-D warnings cargo doc` all green."
-status: pending
+status: completed
+completed: 2026-05-21
 ---
 
 <context>

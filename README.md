@@ -32,38 +32,46 @@ binaries for Linux, macOS, and Windows are published to GitHub Releases by the
 
 ```sh
 cd your-project
-ariadne init      # scaffold .ariadne/ + config.toml, gitignore it
+ariadne setup     # write .ariadne/ config + .mcp.json + the CLAUDE.md block
 ariadne index     # cold-index the repository into .ariadne/index.redb
 ariadne status    # confirm file / symbol / edge counts
 ```
 
-Then register the server with Claude Code (see below) and ask structural
-questions in a session.
+`ariadne setup` is the one-command onboarding path: it scaffolds `.ariadne/`,
+registers the `ariadne` MCP server in the project's `.mcp.json`, and writes a
+discoverability block into `CLAUDE.md` so Claude prefers the Ariadne tools. It
+runs no index — `ariadne index` stays an explicit step. Open a Claude Code
+session in the project and ask structural questions.
 
 ## Claude Code integration
 
-Add Ariadne to the project's `.mcp.json` (or the global Claude Code MCP
-config):
+`ariadne setup` writes the project's `.mcp.json` automatically:
 
 ```json
 {
   "mcpServers": {
     "ariadne": {
-      "command": "ariadne",
-      "args": ["serve", "/absolute/path/to/your-project"]
+      "command": "/absolute/path/to/ariadne",
+      "args": ["serve", "--watch"],
+      "env": {}
     }
   }
 }
 ```
 
+`command` is the absolute path of the `ariadne` binary that ran `setup`, so it
+resolves even when `ariadne` is not on `PATH`. A pre-existing `.mcp.json` is
+merged non-destructively — only the `ariadne` key is inserted or replaced.
+
 `ariadne serve` hosts the MCP stdio server against the project's `.ariadne/`
-index. Pass `--watch` to also run the file watcher in the same process so the
-index tracks edits made during the session.
+index. `--watch` also runs the file watcher in the same process so the index
+tracks edits made during the session.
 
 ## Commands
 
 | Command | Purpose |
 |---|---|
+| `ariadne setup [root]` | One-shot onboarding: `.ariadne/` config + `.mcp.json` + `CLAUDE.md` block. |
 | `ariadne init [root]` | Scaffold `.ariadne/`, write `config.toml`, gitignore it. |
 | `ariadne index [root] [--fresh]` | Run the full cold-index pipeline into redb. |
 | `ariadne watch [root]` | Watch the repo, log invalidations + apply latency. |

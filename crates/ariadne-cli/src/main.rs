@@ -25,11 +25,20 @@ struct Cli {
     command: Cmd,
 }
 
-/// The seven `ariadne` subcommands [src: tier-10 `exit_criteria` #1].
+/// The eight `ariadne` subcommands [src: tier-10 `exit_criteria` #1;
+/// tier-16 adds `setup`].
 #[derive(Debug, Subcommand)]
 enum Cmd {
     /// Scaffold `.ariadne/` and write a default `config.toml`.
     Init {
+        /// Project root.
+        #[arg(default_value = ".")]
+        root: PathBuf,
+    },
+    /// One-shot project onboarding: scaffold `.ariadne/` config, merge the
+    /// `ariadne` entry into `.mcp.json`, and refresh the Ariadne
+    /// discoverability block in `CLAUDE.md`. Does not run an index.
+    Setup {
         /// Project root.
         #[arg(default_value = ".")]
         root: PathBuf,
@@ -105,6 +114,7 @@ fn main() -> ExitCode {
 fn run(cmd: Cmd) -> anyhow::Result<bool> {
     match cmd {
         Cmd::Init { root } => commands::init::run(&root).map(|()| true),
+        Cmd::Setup { root } => commands::setup::run(&root).map(|()| true),
         Cmd::Index { root, fresh, scip } => commands::index::run(&root, fresh, scip).map(|()| true),
         Cmd::Watch { root } => commands::watch::run(&root).map(|()| true),
         Cmd::Serve { root, watch } => commands::serve::run(&root, watch).map(|()| true),

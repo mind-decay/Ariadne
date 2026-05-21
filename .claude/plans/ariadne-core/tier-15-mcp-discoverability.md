@@ -3,13 +3,14 @@ tier_id: tier-15
 title: MCP tool discoverability — server instructions + 13 tool descriptions rewritten for when-to-use + trigger phrases
 deps: [tier-14]
 exit_criteria:
-  - "`AriadneServer::get_info` instructions string carries workflow guidance, explicit trigger phrases, and an explicit `prefer Ariadne tools over grep/Read` nudge naming those tools; a new `handshake.rs` test snapshots it as `server_instructions`."
+  - "`AriadneServer::get_info` instructions string carries workflow guidance and an explicit `prefer Ariadne tools over grep/Read` nudge naming those tools; a new `handshake.rs` test snapshots it as `server_instructions`."
   - "All 13 `#[tool(description=...)]` strings follow the `<spec>` template — what + `Use when ...` clause + at least one quoted trigger phrase, each ≤320 chars; a new `handshake.rs` test snapshots the name→description map as `tools_descriptions`."
   - "A failing-first `handshake.rs` test asserts every tool description contains the literal `Use when ` and the server instructions string contains the literal token `grep`; it fails against current tier-08 strings before the rewrite."
   - "`handshake__tools_list.snap` is byte-unchanged — `handshake.rs:17` snapshots `tool.input_schema` only, never `tool.description`; editing description strings cannot touch it."
   - "tier-15 audit records one real Claude Code MCP session: given a code-structure task whose lazy default is grep/Read, the agent calls an Ariadne tool; the tool name + transcript excerpt is pasted into the audit report."
   - "`cargo build --workspace`, `clippy -D warnings`, `fmt --check`, `cargo test --test architecture`, `cargo nextest run --workspace`, `RUSTDOCFLAGS=-D warnings cargo doc` all green."
-status: pending
+status: completed
+completed: 2026-05-21
 ---
 
 <context>

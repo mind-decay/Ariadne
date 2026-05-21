@@ -1,0 +1,19 @@
+---
+source: crates/ariadne-mcp/tests/handshake.rs
+expression: golden
+---
+{
+  "blast_radius": "Compute the blast radius (must-touch + may-touch) of a symbol. Use when assessing what a change to a symbol could break; triggers: \"what breaks if I change X\", \"impact of changing\", \"is it safe to edit\".",
+  "coupling_report": "Per-file Ca/Ce/I/A/Distance Martin coupling metrics. Use when assessing module dependency or architecture health; triggers: \"how coupled is\", \"Martin coupling metrics for\".",
+  "doc_for": "Doc-like structured summary for one symbol. Use when you need a structured explanation of one symbol; triggers: \"what does X do\", \"explain the symbol X\".",
+  "doc_for_module": "Markdown documentation summary for one module (file path). Use when you need a doc-style summary of a file or module; triggers: \"document this module\", \"overview of src/X.rs\".",
+  "doc_for_project": "Markdown architecture overview for the whole project. Use when you need a whole-project architecture overview; triggers: \"explain the architecture\", \"how is this project structured\".",
+  "file_summary": "Summarize a file: symbols, fan-in/out, top dependencies. Use when orienting in an unfamiliar file before reading it; triggers: \"what is in this file\", \"summarize src/X.rs\".",
+  "find_definition": "Find the defining symbol record by canonical name. Use when you need the canonical definition site of a named symbol; triggers: \"where is X defined\", \"go to definition of\".",
+  "find_references": "List references to a symbol with source spans. Use when you need every use site of a symbol; triggers: \"who calls X\", \"where is X used\", \"find usages of\".",
+  "list_symbols": "List symbols matching an optional substring + kind filter. Use when locating a symbol by name or kind before opening files; triggers: \"where is the X function\", \"list the structs in\".",
+  "plan_assist": "Ranked plan-assist file list implicated by a symbol change. Use when scoping which files a change touches before editing; triggers: \"what files do I touch for X\", \"where do I start to change\".",
+  "project_status": "Project-wide counts, revision, and root. Use when checking index freshness or coverage before trusting results; triggers: \"is the index current\", \"how big is the project\".",
+  "refactor_suggestions": "Static refactor suggestions (god modules, cycle breaks, misplaced symbols). Use when you want concrete static refactor candidates; triggers: \"how should I refactor\", \"cleanup suggestions for\".",
+  "weak_spots": "Cycles, god modules, and dead-code candidates with reasons. Use when hunting cycles, god modules, or dead code; triggers: \"what is wrong with this codebase\", \"find tech debt\", \"any cycles\"."
+}

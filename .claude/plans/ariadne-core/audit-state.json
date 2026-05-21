@@ -1,8 +1,8 @@
 {
   "slug": "ariadne-core",
-  "audited_commit": "2b1a0d3f6b16eeecbe42318c845d49ad7c0bfa1d",
-  "tier_id": "tier-14",
+  "audited_commit": "c79f6ce17a3fa38e67b6b125a27c9b7914a2070f",
+  "tier_id": "tier-16",
   "verdict": "PASS",
-  "audited_at": "2026-05-21T11:26:29Z",
-  "report": "audit/tier-14-report.md"
+  "audited_at": "2026-05-21T12:16:41Z",
+  "report": "audit/tier-16-report.md"
 }

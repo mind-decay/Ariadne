@@ -1,4 +1,4 @@
-//! `AriadneServer` — rmcp `#[tool_router]` host wiring the 10 Ariadne
+//! `AriadneServer` — rmcp `#[tool_router]` host wiring the 13 Ariadne
 //! analytics into MCP. Each `#[tool]` method delegates to the per-tool
 //! module under [`crate::tools`].
 //!
@@ -82,7 +82,11 @@ impl AriadneServer {
         Arc::clone(&self.storage)
     }
 
-    #[tool(description = "List symbols matching an optional substring + kind filter")]
+    #[tool(
+        description = "List symbols matching an optional substring + kind filter. Use \
+when locating a symbol by name or kind before opening files; triggers: \"where is the X \
+function\", \"list the structs in\"."
+    )]
     async fn list_symbols(
         &self,
         Parameters(input): Parameters<ListSymbolsInput>,
@@ -92,7 +96,11 @@ impl AriadneServer {
         wire(&out)
     }
 
-    #[tool(description = "Find the defining symbol record by canonical name")]
+    #[tool(
+        description = "Find the defining symbol record by canonical name. Use when you \
+need the canonical definition site of a named symbol; triggers: \"where is X defined\", \
+\"go to definition of\"."
+    )]
     async fn find_definition(
         &self,
         Parameters(input): Parameters<SymbolQuery>,
@@ -102,7 +110,11 @@ impl AriadneServer {
         wire(&out)
     }
 
-    #[tool(description = "List references to a symbol with source spans")]
+    #[tool(
+        description = "List references to a symbol with source spans. Use when you need \
+every use site of a symbol; triggers: \"who calls X\", \"where is X used\", \"find usages \
+of\"."
+    )]
     async fn find_references(
         &self,
         Parameters(input): Parameters<SymbolQuery>,
@@ -113,7 +125,11 @@ impl AriadneServer {
         wire(&out)
     }
 
-    #[tool(description = "Compute the blast radius (must-touch + may-touch) of a symbol")]
+    #[tool(
+        description = "Compute the blast radius (must-touch + may-touch) of a symbol. \
+Use when assessing what a change to a symbol could break; triggers: \"what breaks if I \
+change X\", \"impact of changing\", \"is it safe to edit\"."
+    )]
     async fn blast_radius(
         &self,
         Parameters(input): Parameters<BlastRadiusInput>,
@@ -123,7 +139,11 @@ impl AriadneServer {
         wire(&out)
     }
 
-    #[tool(description = "Summarize a file: symbols, fan-in/out, top dependencies")]
+    #[tool(
+        description = "Summarize a file: symbols, fan-in/out, top dependencies. Use when \
+orienting in an unfamiliar file before reading it; triggers: \"what is in this file\", \
+\"summarize src/X.rs\"."
+    )]
     async fn file_summary(
         &self,
         Parameters(input): Parameters<FileQuery>,
@@ -134,7 +154,11 @@ impl AriadneServer {
         wire(&out)
     }
 
-    #[tool(description = "Ranked plan-assist file list implicated by a symbol change")]
+    #[tool(
+        description = "Ranked plan-assist file list implicated by a symbol change. Use \
+when scoping which files a change touches before editing; triggers: \"what files do I \
+touch for X\", \"where do I start to change\"."
+    )]
     async fn plan_assist(
         &self,
         Parameters(input): Parameters<PlanAssistInput>,
@@ -144,7 +168,11 @@ impl AriadneServer {
         wire(&out)
     }
 
-    #[tool(description = "Per-file Ca/Ce/I/A/Distance Martin coupling metrics")]
+    #[tool(
+        description = "Per-file Ca/Ce/I/A/Distance Martin coupling metrics. Use when \
+assessing module dependency or architecture health; triggers: \"how coupled is\", \
+\"Martin coupling metrics for\"."
+    )]
     async fn coupling_report(
         &self,
         Parameters(input): Parameters<ScopeInput>,
@@ -154,7 +182,11 @@ impl AriadneServer {
         wire(&out)
     }
 
-    #[tool(description = "Cycles, god modules, and dead-code candidates with reasons")]
+    #[tool(
+        description = "Cycles, god modules, and dead-code candidates with reasons. Use \
+when hunting cycles, god modules, or dead code; triggers: \"what is wrong with this \
+codebase\", \"find tech debt\", \"any cycles\"."
+    )]
     async fn weak_spots(
         &self,
         Parameters(input): Parameters<ScopeInput>,
@@ -164,7 +196,11 @@ impl AriadneServer {
         wire(&out)
     }
 
-    #[tool(description = "Doc-like structured summary for one symbol")]
+    #[tool(
+        description = "Doc-like structured summary for one symbol. Use when you need a \
+structured explanation of one symbol; triggers: \"what does X do\", \"explain the symbol \
+X\"."
+    )]
     async fn doc_for(
         &self,
         Parameters(input): Parameters<SymbolQuery>,
@@ -174,14 +210,22 @@ impl AriadneServer {
         wire(&out)
     }
 
-    #[tool(description = "Project-wide counts, revision, and root")]
+    #[tool(
+        description = "Project-wide counts, revision, and root. Use when checking index \
+freshness or coverage before trusting results; triggers: \"is the index current\", \"how \
+big is the project\"."
+    )]
     async fn project_status(&self) -> Result<CallToolResult, ErrorData> {
         let cat = &*self.catalog;
         let out = tools::project_status::handle(cat);
         wire(&out)
     }
 
-    #[tool(description = "Markdown documentation summary for one module (file path)")]
+    #[tool(
+        description = "Markdown documentation summary for one module (file path). Use \
+when you need a doc-style summary of a file or module; triggers: \"document this \
+module\", \"overview of src/X.rs\"."
+    )]
     async fn doc_for_module(
         &self,
         Parameters(input): Parameters<FileQuery>,
@@ -192,7 +236,11 @@ impl AriadneServer {
         wire(&out)
     }
 
-    #[tool(description = "Markdown architecture overview for the whole project")]
+    #[tool(
+        description = "Markdown architecture overview for the whole project. Use when \
+you need a whole-project architecture overview; triggers: \"explain the architecture\", \
+\"how is this project structured\"."
+    )]
     async fn doc_for_project(
         &self,
         Parameters(input): Parameters<ScopeInput>,
@@ -205,7 +253,8 @@ impl AriadneServer {
 
     #[tool(
         description = "Static refactor suggestions (god modules, cycle breaks, misplaced \
-symbols). Findings are hints for review, not authoritative commands."
+symbols). Use when you want concrete static refactor candidates; triggers: \"how should \
+I refactor\", \"cleanup suggestions for\"."
     )]
     async fn refactor_suggestions(
         &self,
@@ -225,10 +274,16 @@ impl ServerHandler for AriadneServer {
             .with_server_info(Implementation::from_build_env())
             .with_protocol_version(ProtocolVersion::V_2024_11_05)
             .with_instructions(
-                "Ariadne code-intelligence tools: read-only graph analytics over the local \
-project. Use list_symbols / find_definition to navigate, blast_radius and \
-plan_assist for impact analysis, coupling_report and weak_spots for \
-architecture health, and project_status for index freshness.",
+                "Ariadne is a read-only semantic graph of the local project: symbols, \
+references, and dependency edges, kept current with the code. Prefer these tools over \
+grep, Read, or file-walking for any question about symbols, references, impact, or \
+architecture — the graph answers in one call where text search needs many and misses \
+cross-file edges. Workflow: navigate with list_symbols, find_definition, and \
+find_references; assess impact with blast_radius and plan_assist; check architecture \
+health with coupling_report, weak_spots, and refactor_suggestions; read generated docs \
+with doc_for, doc_for_module, and doc_for_project; verify index freshness with \
+project_status. Call these even when the answer seems known — the graph reflects the \
+current code, and assumptions may be stale.",
             )
     }
 }

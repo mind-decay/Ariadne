@@ -7,5 +7,6 @@ pub mod init;
 pub mod mem;
 pub mod query;
 pub mod serve;
+pub mod setup;
 pub mod status;
 pub mod watch;
