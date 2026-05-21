@@ -31,7 +31,7 @@ fn chain_blast_radius_reaches_all_predecessors() {
     g.add_edge(b, c, EdgeKind::Calls);
     g.add_edge(c, d, EdgeKind::Calls);
 
-    let br = g.blast_radius(d, 10, EdgeKindSet::ALL);
+    let br = g.blast_radius(d, 10, EdgeKindSet::ALL).expect("d present");
     let reached: BTreeSet<SymbolId> = br
         .must_touch
         .iter()
@@ -78,12 +78,16 @@ fn edge_kind_filter_excludes_other_kinds() {
     g.add_symbol(b);
     g.add_edge(a, b, EdgeKind::Imports);
 
-    let br_calls = g.blast_radius(b, 10, EdgeKindSet::CALLS);
+    let br_calls = g
+        .blast_radius(b, 10, EdgeKindSet::CALLS)
+        .expect("b present");
     assert!(
         br_calls.must_touch.is_empty() && br_calls.may_touch.is_empty(),
         "Imports edge must not be reachable under a Calls-only filter"
     );
-    let br_imports = g.blast_radius(b, 10, EdgeKindSet::IMPORTS);
+    let br_imports = g
+        .blast_radius(b, 10, EdgeKindSet::IMPORTS)
+        .expect("b present");
     assert_eq!(br_imports.must_touch.len() + br_imports.may_touch.len(), 1);
 }
 
@@ -162,7 +166,9 @@ proptest! {
             prop_assert_eq!(g.fan_in(*r), usize::try_from(m).unwrap());
 
             // blast_radius(right_j) reaches the entire left side.
-            let br = g.blast_radius(*r, 10, EdgeKindSet::ALL);
+            let br = g
+                .blast_radius(*r, 10, EdgeKindSet::ALL)
+                .expect("right node present");
             let reached: BTreeSet<SymbolId> = br
                 .must_touch
                 .iter()

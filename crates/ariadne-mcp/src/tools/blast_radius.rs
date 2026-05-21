@@ -41,8 +41,12 @@ pub fn handle(cat: &Catalog, input: &BlastRadiusInput) -> Result<BlastRadiusOutp
         .ok_or_else(|| McpError::NotFound(format!("symbol {}", input.symbol)))?;
     let depth = input.depth.unwrap_or(DEFAULT_DEPTH).max(1);
     let kinds = filter_to_set(input.kinds.as_deref().unwrap_or(&[]));
-    let radius = cat.graph.blast_radius(id, depth, kinds);
+    let radius = cat
+        .graph
+        .blast_radius(id, depth, kinds)
+        .ok_or_else(|| McpError::NotFound(format!("symbol {} absent from graph", input.symbol)))?;
     Ok(BlastRadiusOutput {
+        symbol: summarize(cat, id),
         must_touch: radius
             .must_touch
             .into_iter()

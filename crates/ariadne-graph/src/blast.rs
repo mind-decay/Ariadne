@@ -51,16 +51,26 @@ impl GraphIndex {
     }
 
     /// Compute the blast radius of `symbol`. See [`BlastRadius`] for the
-    /// must/may distinction. Returns an empty radius for unknown
-    /// symbols.
+    /// must/may distinction.
+    ///
+    /// Returns `None` when `symbol` is absent from the graph node set:
+    /// the symbol was never analysed, so "no dependents" cannot be
+    /// asserted. Returns `Some(_)` for any symbol present as a node —
+    /// the radius is possibly empty (`must_touch`/`may_touch` empty,
+    /// `depth_used` 0) when the symbol has no inbound edges, a true "no
+    /// dependents" answer that callers must not confuse with the `None`
+    /// "not analysed" case.
     #[must_use]
-    pub fn blast_radius(&self, symbol: SymbolId, depth: u8, kinds: EdgeKindSet) -> BlastRadius {
-        let Some(&start) = self.index.get(&symbol) else {
-            return BlastRadius::default();
-        };
+    pub fn blast_radius(
+        &self,
+        symbol: SymbolId,
+        depth: u8,
+        kinds: EdgeKindSet,
+    ) -> Option<BlastRadius> {
+        let &start = self.index.get(&symbol)?;
         let preds = self.reverse_bfs(start, depth, kinds);
         if preds.is_empty() {
-            return BlastRadius::default();
+            return Some(BlastRadius::default());
         }
         let doms = simple_fast(Reversed(&self.graph), start);
         let mut must = SmallVec::<[SymbolId; 8]>::new();
@@ -78,11 +88,11 @@ impl GraphIndex {
         let mut must_vec: Vec<SymbolId> = must.into_vec();
         must_vec.sort();
         may.sort();
-        BlastRadius {
+        Some(BlastRadius {
             must_touch: must_vec,
             may_touch: may,
             depth_used,
-        }
+        })
     }
 
     fn reverse_bfs(&self, start: NodeIndex, depth: u8, kinds: EdgeKindSet) -> Vec<(NodeIndex, u8)> {

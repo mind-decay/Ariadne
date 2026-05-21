@@ -60,6 +60,98 @@ pub fn seed_empty_project() -> (PathBuf, TempDir) {
     (project_root, dir)
 }
 
+/// Seed a project with three high-efferent files — a library file
+/// (`src/hub.rs`), an integration-test file (`tests/big_suite.rs`), and
+/// a build script (`build.rs`) — each fanning out to eighteen leaf
+/// symbols (efferent 18, comfortably above `GOD_THRESHOLD`). Drives the
+/// `weak_spots` god-module exclusion test: only the library file is a
+/// true architecture smell; the test file and build script are excluded.
+#[must_use]
+pub fn seed_god_module_project() -> (PathBuf, TempDir) {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let project_root = dir.path().to_path_buf();
+    let storage_path = project_root.join(".ariadne").join("index.redb");
+    let storage = RedbStorage::open(&storage_path).expect("open redb");
+    let cs = god_module_changeset();
+    let txn = storage.begin_write().expect("begin");
+    txn.apply(&cs).expect("apply changeset");
+    drop(storage);
+    (project_root, dir)
+}
+
+fn god_module_changeset() -> Changeset {
+    let mut cs = Changeset::new();
+    // File 1 = library target, file 2 = integration-test target, file 4
+    // = build script; all three fan out to the eighteen leaf symbols in
+    // file 3.
+    let files = [
+        (1, "src/hub.rs"),
+        (2, "tests/big_suite.rs"),
+        (3, "src/leaves.rs"),
+        (4, "build.rs"),
+    ];
+    for (id, path) in files {
+        cs = cs.upsert_file(
+            fid(id),
+            FileRecord {
+                path: path.into(),
+                lang: Lang::Rust,
+                size: 256,
+                blake3: [u8::try_from(id).expect("file id fits u8"); 32],
+                mtime_ns: i128::from(id),
+            },
+        );
+    }
+    // Hub symbols: sid(1) in src/hub.rs, sid(2) in tests/big_suite.rs,
+    // sid(21) in build.rs.
+    let hubs = [
+        (1u64, "crate::hub_fn", 1u32),
+        (2, "crate::big_suite_fn", 2),
+        (21, "crate::build_main", 4),
+    ];
+    for (id, name, file) in hubs {
+        cs = cs.upsert_symbol(
+            sid(id),
+            SymbolRecord {
+                canonical_name: name.into(),
+                kind: "function".into(),
+                defining_file: fid(file),
+                defining_span: span(file, 0, 64),
+            },
+        );
+    }
+    // Eighteen leaf symbols (sid 3..=20) in src/leaves.rs.
+    for n in 3u64..=20 {
+        cs = cs.upsert_symbol(
+            sid(n),
+            SymbolRecord {
+                canonical_name: format!("crate::leaf_{n}"),
+                kind: "function".into(),
+                defining_file: fid(3),
+                defining_span: span(3, 0, 16),
+            },
+        );
+    }
+    // Each hub fans out to all leaves: efferent = 18 > GOD_THRESHOLD.
+    for (hub, hub_file) in [(1u64, 1u32), (2, 2), (21, 4)] {
+        for leaf in 3u64..=20 {
+            cs = cs.add_edge(
+                EdgeKey {
+                    src: sid(hub),
+                    kind: EdgeKind::References,
+                    dst: sid(leaf),
+                },
+                EdgeRecord {
+                    source_span: span(hub_file, 64, 96),
+                    evidence_lang: Lang::Rust,
+                    weight: 1,
+                },
+            );
+        }
+    }
+    cs
+}
+
 fn span(file: u32, start: u32, end: u32) -> Span {
     Span {
         file: fid(file),

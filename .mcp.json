@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "ariadne": {
+      "command": "cargo",
+      "args": ["run", "--quiet", "-p", "ariadne-cli", "--", "serve", "--watch"],
+      "env": {}
+    }
+  }
+}

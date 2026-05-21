@@ -20,6 +20,9 @@ tiers:
   - tier-11-c-cpp-indexing
   - tier-12-parallel-cold-index
   - tier-13-cold-index-slo
+  - tier-14-analytics-quality
+  - tier-15-mcp-discoverability
+  - tier-16-setup-command
 ---
 
 <context>
@@ -187,8 +190,7 @@ v1 is "done" when all of:
 - Hexagonal in Rust (How To Code It): https://www.howtocodeit.com/guides/master-hexagonal-architecture-in-rust
 - cargo-dist: https://opensource.axo.dev/cargo-dist/
 - cargo-deny: https://embarkstudios.github.io/cargo-deny/
-- rustfmt: https://rust-lang.github.io/rustfmt/
-- clippy: https://rust-lang.github.io/rust-clippy/master/
+- rustfmt: https://rust-lang.github.io/rustfmt/ ; clippy: https://rust-lang.github.io/rust-clippy/master/
 - lefthook: https://lefthook.dev/
 - Conventional Commits v1.0.0: https://www.conventionalcommits.org/en/v1.0.0/
 - cocogitto: https://github.com/cocogitto/cocogitto ; https://docs.cocogitto.io/

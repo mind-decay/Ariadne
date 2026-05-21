@@ -47,3 +47,40 @@ async fn weak_spots_lists_cycles_and_dead_code() {
 
     client.cancel().await.ok();
 }
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn weak_spots_excludes_non_library_god_modules() {
+    let (root, _guard) = support::seed_god_module_project();
+    let client = support::spawn_client(&root).await;
+
+    let resp = client
+        .call_tool(CallToolRequestParams::new("weak_spots").with_arguments(object!({})))
+        .await
+        .expect("call");
+    let v: serde_json::Value = serde_json::from_str(&support::extract_text(&resp)).expect("decode");
+    let gods: Vec<String> = v["god_modules"]
+        .as_array()
+        .expect("god_modules array")
+        .iter()
+        .map(|m| m["module"].as_str().expect("module name").to_owned())
+        .collect();
+    // A library file with high efferent coupling is a real god module.
+    assert!(
+        gods.contains(&"src/hub.rs".to_owned()),
+        "library file with high efferent coupling must be flagged, got {gods:?}"
+    );
+    // The integration-test file is excluded — high fan-out under `tests/`
+    // is the expected shape of a test, not an architecture smell.
+    assert!(
+        !gods.contains(&"tests/big_suite.rs".to_owned()),
+        "tests/ file must be excluded from god modules, got {gods:?}"
+    );
+    // The build script is excluded — `build.rs` is not a library
+    // compilation target, so high fan-out there is not a smell either.
+    assert!(
+        !gods.contains(&"build.rs".to_owned()),
+        "build.rs must be excluded from god modules, got {gods:?}"
+    );
+
+    client.cancel().await.ok();
+}

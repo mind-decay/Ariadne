@@ -113,7 +113,9 @@ fn bench_blast(c: &mut Criterion) {
     c.bench_function("blast_radius_depth_3_1m_edges", |b| {
         b.iter(|| {
             for s in &seeds {
-                let br = graph.blast_radius(*s, 3, EdgeKindSet::ALL);
+                let br = graph
+                    .blast_radius(*s, 3, EdgeKindSet::ALL)
+                    .expect("bench seed present in graph");
                 black_box(br);
             }
         });

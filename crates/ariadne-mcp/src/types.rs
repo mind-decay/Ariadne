@@ -102,6 +102,11 @@ pub struct BlastRadiusInput {
 /// Output of `blast_radius`.
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct BlastRadiusOutput {
+    /// The resolved target symbol, echoed back so callers can confirm
+    /// which symbol the radius was computed for — empty `must_touch` /
+    /// `may_touch` then reads as "resolved, no dependents" rather than
+    /// "symbol not found".
+    pub symbol: SymbolSummary,
     /// First-hop callers (immediate dominators of the queried symbol).
     pub must_touch: Vec<SymbolSummary>,
     /// Transitive callers beyond the first hop.
@@ -211,6 +216,14 @@ pub struct WeakSpotsOutput {
     /// God modules — `efferent > god_threshold`.
     pub god_modules: Vec<CouplingRow>,
     /// Dead symbols (`fan_in` = 0, no exports).
+    ///
+    /// Computed on the syntactic graph, so the list carries known false
+    /// positives: `#[test]` functions, `build.rs::main`, and
+    /// serde-derived structs all show zero inbound edges because their
+    /// callers (the test harness, Cargo, derive macros) are invisible to
+    /// tree-sitter. The semantic `--scip` index resolves those references
+    /// and drops the false positives; until then, treat this list as a
+    /// triage hint, not a definitive dead-code verdict.
     pub dead_symbols: Vec<SymbolSummary>,
 }
 

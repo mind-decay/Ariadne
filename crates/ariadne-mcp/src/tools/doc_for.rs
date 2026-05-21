@@ -23,9 +23,13 @@ pub fn handle(cat: &Catalog, input: &SymbolQuery) -> Result<DocForOutput, McpErr
     let brief = meta.name.clone();
 
     // First N callers — uses `GraphIndex::fan_in` via `blast_radius` depth 1.
+    // `id` came from the catalog and every catalog symbol is a graph node,
+    // so the `Option` is always `Some`; `unwrap_or_default` keeps the
+    // empty-radius fallback for the unreachable desync case.
     let radius = cat
         .graph
-        .blast_radius(id, 1, ariadne_graph::EdgeKindSet::ALL);
+        .blast_radius(id, 1, ariadne_graph::EdgeKindSet::ALL)
+        .unwrap_or_default();
     let mut callers: Vec<SymbolSummary> = radius
         .must_touch
         .into_iter()

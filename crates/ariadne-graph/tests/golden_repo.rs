@@ -158,8 +158,40 @@ fn fmt_plan(rep: &ariadne_graph::PlanAssist) -> String {
 #[test]
 fn golden_blast_radius_user_struct() {
     let repo = mini_repo();
-    let br = repo.graph.blast_radius(sid(5), 10, EdgeKindSet::ALL);
+    let br = repo
+        .graph
+        .blast_radius(sid(5), 10, EdgeKindSet::ALL)
+        .expect("sid(5) present");
     insta::assert_snapshot!(fmt_blast("model::User", &br));
+}
+
+#[test]
+fn blast_radius_distinguishes_absent_from_resolved_empty() {
+    // Two-symbol graph: A → B. `add_edge` auto-inserts both endpoints.
+    // A has zero inbound edges; B has one.
+    let mut g = GraphIndex::new();
+    g.add_edge(sid(1), sid(2), EdgeKind::Calls);
+
+    // A `SymbolId` never inserted into the node set is a graph-level
+    // miss — "not analysed", reported as `None`.
+    assert!(
+        g.blast_radius(sid(99), 3, EdgeKindSet::ALL).is_none(),
+        "absent symbol must return None"
+    );
+
+    // A present symbol with no inbound edges resolves to `Some` with an
+    // empty radius — a true "no dependents" answer, distinct from `None`.
+    let radius = g
+        .blast_radius(sid(1), 3, EdgeKindSet::ALL)
+        .expect("present symbol must return Some");
+    assert!(
+        radius.must_touch.is_empty(),
+        "no dependents → empty must_touch"
+    );
+    assert!(
+        radius.may_touch.is_empty(),
+        "no dependents → empty may_touch"
+    );
 }
 
 #[test]
