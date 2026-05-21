@@ -1,0 +1,103 @@
+---
+source: crates/ariadne-parser/tests/facts_tsx.rs
+expression: facts
+---
+SyntacticFacts {
+    decls: [
+        Decl {
+            kind: Component,
+            name: "Label",
+            name_byte_range: (
+                65,
+                70,
+            ),
+            def_byte_range: (
+                56,
+                149,
+            ),
+        },
+        Decl {
+            kind: Component,
+            name: "Timer",
+            name_byte_range: (
+                167,
+                172,
+            ),
+            def_byte_range: (
+                158,
+                409,
+            ),
+        },
+    ],
+    imports: [
+        Import {
+            path: "\"solid-js\"",
+            byte_range: (
+                43,
+                53,
+            ),
+        },
+    ],
+    calls: [
+        CallSite {
+            callee: "createSignal",
+            byte_range: (
+                209,
+                221,
+            ),
+        },
+        CallSite {
+            callee: "createEffect",
+            byte_range: (
+                228,
+                240,
+            ),
+        },
+        CallSite {
+            callee: "log",
+            byte_range: (
+                261,
+                264,
+            ),
+        },
+        CallSite {
+            callee: "seconds",
+            byte_range: (
+                273,
+                280,
+            ),
+        },
+        CallSite {
+            callee: "seconds",
+            byte_range: (
+                372,
+                379,
+            ),
+        },
+    ],
+    renders: [
+        RenderSite {
+            component: "Label",
+            byte_range: (
+                333,
+                338,
+            ),
+        },
+    ],
+    hooks: [
+        HookSite {
+            callee: "createSignal",
+            byte_range: (
+                209,
+                221,
+            ),
+        },
+        HookSite {
+            callee: "createEffect",
+            byte_range: (
+                228,
+                240,
+            ),
+        },
+    ],
+}

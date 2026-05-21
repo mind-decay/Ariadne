@@ -51,6 +51,13 @@ pub enum DeclKind {
     Module,
     /// `@def.variable`
     Variable,
+    /// A JSX/TSX component — a `function` or `const`/`let` declaration whose
+    /// body renders JSX (covers `function Foo()` and the idiomatic arrow form
+    /// `const Foo = () => <jsx/>`). Assigned by a post-filter in
+    /// [`FactExtractor::extract`], not a query tag, so the `"component"` arm of
+    /// [`DeclKind::from_tag`] is reserved for any future query that captures
+    /// `@def.component` directly.
+    Component,
     /// Any other `@def.<tag>` suffix.
     Other(String),
 }
@@ -70,6 +77,7 @@ impl DeclKind {
             "object" => Self::Object,
             "module" => Self::Module,
             "variable" => Self::Variable,
+            "component" => Self::Component,
             other => Self::Other(other.to_owned()),
         }
     }
@@ -106,6 +114,24 @@ pub struct CallSite {
     pub byte_range: (u32, u32),
 }
 
+/// A JSX/TSX render site — one child-component element (`<Child/>`).
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct RenderSite {
+    /// Rendered component's tag-name identifier text.
+    pub component: String,
+    /// Byte range of the tag-name identifier.
+    pub byte_range: (u32, u32),
+}
+
+/// A hook / reactive-primitive call site (`useState(…)`, `createSignal(…)`).
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct HookSite {
+    /// Hook callee identifier text.
+    pub callee: String,
+    /// Byte range of the callee identifier.
+    pub byte_range: (u32, u32),
+}
+
 /// Aggregate output of [`extract_syntactic_facts`].
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct SyntacticFacts {
@@ -115,9 +141,14 @@ pub struct SyntacticFacts {
     pub imports: Vec<Import>,
     /// Call sites in source order.
     pub calls: Vec<CallSite>,
+    /// JSX/TSX render sites in source order.
+    pub renders: Vec<RenderSite>,
+    /// Hook / reactive-primitive call sites in source order.
+    pub hooks: Vec<HookSite>,
 }
 
 const QUERY_TYPESCRIPT: &str = include_str!("queries/typescript.scm");
+const QUERY_TSX: &str = include_str!("queries/tsx.scm");
 const QUERY_JAVASCRIPT: &str = include_str!("queries/javascript.scm");
 const QUERY_PYTHON: &str = include_str!("queries/python.scm");
 const QUERY_RUST: &str = include_str!("queries/rust.scm");
@@ -131,6 +162,7 @@ const QUERY_CPP: &str = include_str!("queries/cpp.scm");
 fn query_source(lang: Lang) -> Option<&'static str> {
     Some(match lang {
         Lang::TypeScript => QUERY_TYPESCRIPT,
+        Lang::Tsx => QUERY_TSX,
         Lang::JavaScript => QUERY_JAVASCRIPT,
         Lang::Python => QUERY_PYTHON,
         Lang::Rust => QUERY_RUST,
@@ -202,12 +234,17 @@ impl FactExtractor {
         let names = self.query.capture_names();
         let mut matches = self.cursor.matches(&self.query, tree.root_node(), source);
         let mut facts = SyntacticFacts::default();
+        // Byte ranges of every JSX tag-name (host *and* component); drives the
+        // component post-filter below.
+        let mut jsx_spans: Vec<(u32, u32)> = Vec::new();
 
         while let Some(m) = matches.next() {
             let mut def_node: Option<(Node<'_>, DeclKind)> = None;
             let mut name_node: Option<Node<'_>> = None;
             let mut import_path_node: Option<Node<'_>> = None;
             let mut call_callee_node: Option<Node<'_>> = None;
+            let mut render_node: Option<Node<'_>> = None;
+            let mut hook_node: Option<Node<'_>> = None;
 
             for capture in m.captures {
                 let name = names[capture.index as usize];
@@ -219,6 +256,10 @@ impl FactExtractor {
                     import_path_node = Some(capture.node);
                 } else if name == "call.callee" {
                     call_callee_node = Some(capture.node);
+                } else if name == "render.component" {
+                    render_node = Some(capture.node);
+                } else if name == "hook.callee" {
+                    hook_node = Some(capture.node);
                 }
             }
 
@@ -239,12 +280,47 @@ impl FactExtractor {
                     callee: text_of(callee, source),
                     byte_range: byte_range(callee),
                 });
+            } else if let Some(tag) = render_node {
+                let component = text_of(tag, source);
+                let range = byte_range(tag);
+                // Every JSX tag marks JSX presence for the component filter.
+                jsx_spans.push(range);
+                // Only capitalised tag names are child components; lower-case
+                // names are host elements (`div`, `span`) — see queries/tsx.scm.
+                if component.chars().next().is_some_and(char::is_uppercase) {
+                    facts.renders.push(RenderSite {
+                        component,
+                        byte_range: range,
+                    });
+                }
+            } else if let Some(callee) = hook_node {
+                facts.hooks.push(HookSite {
+                    callee: text_of(callee, source),
+                    byte_range: byte_range(callee),
+                });
+            }
+        }
+
+        // A `function` or `const`/`let` declaration whose body encloses any
+        // JSX is a component — this covers `function Foo()` and the idiomatic
+        // arrow form `const Foo = () => <jsx/>` (captured as `@def.variable`).
+        // A tree-sitter pattern cannot express "returns JSX at any depth", so
+        // the classification is a post-filter here (see queries/tsx.scm).
+        for decl in &mut facts.decls {
+            if matches!(decl.kind, DeclKind::Function | DeclKind::Variable)
+                && jsx_spans.iter().any(|&(start, end)| {
+                    start >= decl.def_byte_range.0 && end <= decl.def_byte_range.1
+                })
+            {
+                decl.kind = DeclKind::Component;
             }
         }
 
         facts.decls.sort_by_key(|d| d.def_byte_range.0);
         facts.imports.sort_by_key(|i| i.byte_range.0);
         facts.calls.sort_by_key(|c| c.byte_range.0);
+        facts.renders.sort_by_key(|r| r.byte_range.0);
+        facts.hooks.sort_by_key(|h| h.byte_range.0);
         facts
     }
 }

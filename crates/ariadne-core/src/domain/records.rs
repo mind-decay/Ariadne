@@ -36,7 +36,8 @@ pub struct SymbolRecord {
     pub defining_span: Span,
 }
 
-/// Edge kind tag. Fixed at three variants this tier; tier-05+ extends.
+/// Edge kind tag. Definition / reference / import are the syntactic core;
+/// `Renders` and `UsesHook` carry the component graph (ADR-0012).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 #[repr(u8)]
 #[non_exhaustive]
@@ -47,6 +48,10 @@ pub enum EdgeKind {
     References = 1,
     /// Import site → imported module/symbol.
     Imports = 2,
+    /// Component → child component it renders (ADR-0012).
+    Renders = 3,
+    /// Component → hook / reactive primitive it uses (ADR-0012).
+    UsesHook = 4,
 }
 
 impl EdgeKind {
@@ -63,6 +68,8 @@ impl EdgeKind {
             0 => Some(Self::Defines),
             1 => Some(Self::References),
             2 => Some(Self::Imports),
+            3 => Some(Self::Renders),
+            4 => Some(Self::UsesHook),
             _ => None,
         }
     }

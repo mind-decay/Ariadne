@@ -150,4 +150,6 @@ SyntacticFacts {
             ),
         },
     ],
+    renders: [],
+    hooks: [],
 }

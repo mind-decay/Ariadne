@@ -729,6 +729,7 @@ fn decl_kind_tag(kind: &DeclKind) -> String {
         DeclKind::Object => "object",
         DeclKind::Module => "module",
         DeclKind::Variable => "variable",
+        DeclKind::Component => "component",
         DeclKind::Other(s) => s.as_str(),
     }
     .to_owned()

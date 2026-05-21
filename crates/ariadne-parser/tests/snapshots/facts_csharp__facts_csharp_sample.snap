@@ -133,4 +133,6 @@ SyntacticFacts {
             ),
         },
     ],
+    renders: [],
+    hooks: [],
 }

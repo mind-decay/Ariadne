@@ -8,14 +8,17 @@ exit_criteria:
   - "Any closed symbol-kind enum in ariadne-core gains a `Component` variant; if symbol kind is a free string, no change and that is recorded."
   - "`docs/adr/0012-component-graph-model.md` written, status Accepted, cited from this tier + plan.md."
   - "`cargo build --workspace`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo test --test architecture` all green."
-status: pending
+status: completed
+completed: 2026-05-21
 ---
 
 <context>
 Foundational domain tier. Every later tier depends on these `ariadne-core`
 types existing. No parsing, no IO — pure type additions plus the exhaustive-
 match arms the compiler then demands across the workspace. Full context:
-plan.md `<decisions>` D2, D8; `<architecture>`.
+plan.md `<decisions>` D2, D8; `<architecture>`. The component-graph entity
+model is recorded in `docs/adr/0012-component-graph-model.md`
+[src: docs/adr/0012-component-graph-model.md].
 </context>
 
 <files>

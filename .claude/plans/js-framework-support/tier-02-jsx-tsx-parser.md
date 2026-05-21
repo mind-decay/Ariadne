@@ -8,7 +8,8 @@ exit_criteria:
   - "`extract_syntactic_facts` over a React `.tsx` fixture and a Solid `.tsx` fixture each yields >=1 `Component` decl, >=1 `RenderSite`, >=1 `HookSite`."
   - "`.jsx` content (parsed with the JavaScript grammar) yields component/render/hook facts from the JSX patterns added to `javascript.scm`."
   - "`cargo nextest run -p ariadne-parser`, `cargo clippy ... -D warnings`, `cargo test --test architecture` all green."
-status: pending
+status: completed
+completed: 2026-05-21
 ---
 
 <context>

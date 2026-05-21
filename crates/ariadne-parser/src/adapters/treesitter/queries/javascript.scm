@@ -36,3 +36,18 @@
 (call_expression
   function: (member_expression
     property: (property_identifier) @call.callee))
+
+; --- JSX (tier-02) ----------------------------------------------------------
+; `.jsx` parses with the JavaScript grammar, which emits JSX nodes natively;
+; plain `.js` has no JSX so these patterns are inert there. Capture scheme and
+; the component post-filter are documented in tsx.scm.
+
+(jsx_opening_element
+  name: (identifier) @render.component)
+
+(jsx_self_closing_element
+  name: (identifier) @render.component)
+
+(call_expression
+  function: (identifier) @hook.callee
+  (#match? @hook.callee "^(use[A-Z]|createSignal|createEffect|createMemo|createResource)"))

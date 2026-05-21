@@ -121,4 +121,6 @@ SyntacticFacts {
             ),
         },
     ],
+    renders: [],
+    hooks: [],
 }

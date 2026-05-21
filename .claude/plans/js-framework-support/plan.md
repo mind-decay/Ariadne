@@ -98,7 +98,7 @@ functions returning JSX; its reactive primitives (`createSignal`,
 `EdgeKind::Renders` / `EdgeKind::UsesHook` (ariadne-core).** Components become
 first-class symbols; render/hook usage become first-class edges so
 `blast_radius`/`coupling` already traverse them [src: user scope decision;
-existing `EdgeKind` pattern in ariadne-core].
+existing `EdgeKind` pattern in ariadne-core; docs/adr/0012-component-graph-model.md].
 
 **D9 — React/Solid semantic = existing `scip-typescript`.** The TS compiler
 treats `.tsx`/`.jsx` as first-class; `scip-typescript` builds on

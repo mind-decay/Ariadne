@@ -40,3 +40,12 @@
 (call_expression
   function: (member_expression
     property: (property_identifier) @call.callee))
+
+; --- Hooks (tier-02) --------------------------------------------------------
+; Non-TSX TypeScript has no JSX nodes, so no `@render.component` capture here;
+; hooks / reactive primitives can still be called from plain `.ts`. Capture
+; scheme is documented in tsx.scm.
+
+(call_expression
+  function: (identifier) @hook.callee
+  (#match? @hook.callee "^(use[A-Z]|createSignal|createEffect|createMemo|createResource)"))

@@ -24,6 +24,7 @@ const V1_LANGS: &[Lang] = &[
     Lang::CSharp,
     Lang::C,
     Lang::Cpp,
+    Lang::Tsx,
 ];
 
 /// Per-`Lang` `tree_sitter::Language` table. Cloning is `O(1)`; new
@@ -76,6 +77,11 @@ impl Default for ParserRegistry {
 fn language_for(lang: Lang) -> Language {
     match lang {
         Lang::TypeScript => tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into(),
+        // `.tsx` requires the distinct TSX grammar — `LANGUAGE_TSX` is a
+        // separate `LanguageFn` from `LANGUAGE_TYPESCRIPT` because the TSX
+        // grammar resolves `<T>x` as JSX, not a type cast (src: plan.md D2;
+        // <https://docs.rs/tree-sitter-typescript/0.23.2>).
+        Lang::Tsx => tree_sitter_typescript::LANGUAGE_TSX.into(),
         Lang::JavaScript => tree_sitter_javascript::LANGUAGE.into(),
         Lang::Python => tree_sitter_python::LANGUAGE.into(),
         Lang::Rust => tree_sitter_rust::LANGUAGE.into(),

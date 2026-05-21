@@ -1,0 +1,87 @@
+---
+source: crates/ariadne-parser/tests/facts_jsx.rs
+expression: facts
+---
+SyntacticFacts {
+    decls: [
+        Decl {
+            kind: Component,
+            name: "Greeting",
+            name_byte_range: (
+                44,
+                52,
+            ),
+            def_byte_range: (
+                35,
+                120,
+            ),
+        },
+        Decl {
+            kind: Component,
+            name: "Panel",
+            name_byte_range: (
+                138,
+                143,
+            ),
+            def_byte_range: (
+                129,
+                385,
+            ),
+        },
+        Decl {
+            kind: Variable,
+            name: "toggle",
+            name_byte_range: (
+                199,
+                205,
+            ),
+            def_byte_range: (
+                193,
+                229,
+            ),
+        },
+    ],
+    imports: [
+        Import {
+            path: "\"react\"",
+            byte_range: (
+                25,
+                32,
+            ),
+        },
+    ],
+    calls: [
+        CallSite {
+            callee: "useState",
+            byte_range: (
+                174,
+                182,
+            ),
+        },
+        CallSite {
+            callee: "setOpen",
+            byte_range: (
+                214,
+                221,
+            ),
+        },
+    ],
+    renders: [
+        RenderSite {
+            component: "Greeting",
+            byte_range: (
+                262,
+                270,
+            ),
+        },
+    ],
+    hooks: [
+        HookSite {
+            callee: "useState",
+            byte_range: (
+                174,
+                182,
+            ),
+        },
+    ],
+}

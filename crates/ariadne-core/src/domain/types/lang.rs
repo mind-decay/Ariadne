@@ -35,6 +35,14 @@ pub enum Lang {
     C,
     /// C++.
     Cpp,
+    /// TypeScript with JSX (`.tsx`); parsed by the distinct TSX grammar.
+    Tsx,
+    /// Vue single-file component (`.vue`).
+    Vue,
+    /// Svelte component (`.svelte`).
+    Svelte,
+    /// Astro component (`.astro`).
+    Astro,
     /// Any other tree-sitter grammar; carries its `tree-sitter-<lang>` name.
     Other(&'static str),
 }
@@ -55,6 +63,10 @@ impl Lang {
             Self::CSharp => "csharp".to_owned(),
             Self::C => "c".to_owned(),
             Self::Cpp => "cpp".to_owned(),
+            Self::Tsx => "tsx".to_owned(),
+            Self::Vue => "vue".to_owned(),
+            Self::Svelte => "svelte".to_owned(),
+            Self::Astro => "astro".to_owned(),
             Self::Other(s) => format!("other:{s}"),
         }
     }
@@ -75,6 +87,10 @@ impl Lang {
             "csharp" => Self::CSharp,
             "c" => Self::C,
             "cpp" => Self::Cpp,
+            "tsx" => Self::Tsx,
+            "vue" => Self::Vue,
+            "svelte" => Self::Svelte,
+            "astro" => Self::Astro,
             other => {
                 let suffix = other.strip_prefix("other:")?;
                 Self::Other(Box::leak(suffix.to_owned().into_boxed_str()))
