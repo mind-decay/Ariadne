@@ -1,0 +1,12 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Card from '../components/Card.astro';
+
+const title = 'Hello Astro';
+const heading = 'Welcome';
+---
+
+<Layout title={title}>
+  <h1 class="heading">{heading}</h1>
+  <Card name={title} />
+</Layout>

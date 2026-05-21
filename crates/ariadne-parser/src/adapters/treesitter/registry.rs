@@ -25,6 +25,9 @@ const V1_LANGS: &[Lang] = &[
     Lang::C,
     Lang::Cpp,
     Lang::Tsx,
+    Lang::Vue,
+    Lang::Svelte,
+    Lang::Astro,
 ];
 
 /// Per-`Lang` `tree_sitter::Language` table. Cloning is `O(1)`; new
@@ -91,6 +94,17 @@ fn language_for(lang: Lang) -> Language {
         Lang::CSharp => tree_sitter_c_sharp::LANGUAGE.into(),
         Lang::C => tree_sitter_c::LANGUAGE.into(),
         Lang::Cpp => tree_sitter_cpp::LANGUAGE.into(),
+        // `.vue` SFCs use the HTML grammar as their whole-file host skeleton;
+        // the `<script>` block is re-parsed as an injected JS/TS layer by the
+        // injection engine (src: plan.md D1, D4;
+        // docs/adr/0011-framework-grammars-injection.md).
+        Lang::Vue => tree_sitter_html::LANGUAGE.into(),
+        // `.svelte` / `.astro` SFCs use their dedicated host grammars; the
+        // injection engine re-parses the `<script>` block (Svelte) or the
+        // `---`-fenced frontmatter (Astro) as an injected JS/TS layer
+        // (src: plan.md D5, D6; docs/adr/0011-framework-grammars-injection.md).
+        Lang::Svelte => tree_sitter_svelte_ng::LANGUAGE.into(),
+        Lang::Astro => tree_sitter_astro_next::LANGUAGE.into(),
         _ => unreachable!("V1_LANGS covers all registered Lang variants"),
     }
 }

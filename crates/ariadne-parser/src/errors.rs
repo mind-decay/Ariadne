@@ -45,6 +45,19 @@ pub enum ParserError {
         source: tree_sitter::QueryError,
     },
 
+    /// `tree_sitter::Parser::set_included_ranges` rejected an injected
+    /// layer's byte ranges. The ranges must be ordered earliest-to-latest
+    /// and must not overlap (src: <https://docs.rs/tree-sitter>,
+    /// `set_included_ranges`). Raised by the language-injection engine.
+    #[error("invalid injected-layer ranges for {lang:?}: {source}")]
+    IncludedRanges {
+        /// Affected (injected) language.
+        lang: Lang,
+        /// Underlying range-validation error.
+        #[source]
+        source: tree_sitter::IncludedRangesError,
+    },
+
     /// Parse-cache codec failure.
     #[error("parse-cache codec failure: {0}")]
     Codec(String),

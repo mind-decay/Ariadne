@@ -19,8 +19,8 @@
 use ariadne_core::Lang;
 use tree_sitter::{Language, Node, Query, QueryCursor, StreamingIterator};
 
-use super::Tree;
 use super::registry::ParserRegistry;
+use super::{ParsedFile, Tree};
 use crate::errors::ParserError;
 
 /// Declaration kind tag — kept loose this tier; tier-05 canonicalizes from
@@ -158,6 +158,9 @@ const QUERY_KOTLIN: &str = include_str!("queries/kotlin.scm");
 const QUERY_CSHARP: &str = include_str!("queries/csharp.scm");
 const QUERY_C: &str = include_str!("queries/c.scm");
 const QUERY_CPP: &str = include_str!("queries/cpp.scm");
+const QUERY_VUE: &str = include_str!("queries/vue.scm");
+const QUERY_SVELTE: &str = include_str!("queries/svelte.scm");
+const QUERY_ASTRO: &str = include_str!("queries/astro.scm");
 
 fn query_source(lang: Lang) -> Option<&'static str> {
     Some(match lang {
@@ -172,6 +175,15 @@ fn query_source(lang: Lang) -> Option<&'static str> {
         Lang::CSharp => QUERY_CSHARP,
         Lang::C => QUERY_C,
         Lang::Cpp => QUERY_CPP,
+        // Vue's host layer is the HTML grammar; `vue.scm` captures child-
+        // component render sites. The `<script>` block's decls/calls/hooks
+        // come from the injected JS/TS layer's own query.
+        Lang::Vue => QUERY_VUE,
+        // Svelte / Astro host layers capture child-component render sites the
+        // same way; their `<script>` / frontmatter decls/calls/hooks come
+        // from the injected JS/TS layer's own query (tier-04 step 6).
+        Lang::Svelte => QUERY_SVELTE,
+        Lang::Astro => QUERY_ASTRO,
         _ => return None,
     })
 }
@@ -333,24 +345,51 @@ impl std::fmt::Debug for FactExtractor {
     }
 }
 
-/// Run the per-lang fact query over `tree` and collect [`SyntacticFacts`].
+/// Extract and merge [`SyntacticFacts`] from every layer of a [`ParsedFile`].
 ///
-/// Thin wrapper that builds a one-shot [`FactExtractor`] — kept so callers
-/// with no per-worker cache (the parser test suites) stay unchanged. The
-/// cold-index pipeline caches a [`FactExtractor`] per [`Lang`] instead.
+/// Runs the per-layer fact query — the host grammar's query plus each
+/// injected layer's — and concatenates the results. Every span is already
+/// file-absolute (injected layers parse over the full file via
+/// `set_included_ranges`), so the merged facts share one coordinate space.
+/// A single-grammar file degenerates to the host layer alone.
+///
+/// Builds a one-shot [`FactExtractor`] per layer — kept so callers with no
+/// per-worker cache (the parser test suites) stay unchanged. The cold-index
+/// pipeline caches a [`FactExtractor`] per [`Lang`] and calls
+/// [`FactExtractor::extract`] directly instead.
 ///
 /// # Errors
-/// [`ParserError::UnsupportedLang`] when no query is bundled for `lang`;
-/// [`ParserError::QueryCompile`] when the query source fails to compile
-/// against the lang's grammar (indicates a node-type drift in the grammar
-/// crate).
+/// [`ParserError::UnsupportedLang`] when no query is bundled for a layer's
+/// lang; [`ParserError::QueryCompile`] when a query fails to compile against
+/// its grammar (indicates a node-type drift in the grammar crate).
 pub fn extract_syntactic_facts(
-    tree: &Tree,
-    lang: Lang,
+    parsed: &ParsedFile,
     source: &[u8],
 ) -> Result<SyntacticFacts, ParserError> {
-    let mut extractor = FactExtractor::compile(lang, &tree.language())?;
-    Ok(extractor.extract(tree, source))
+    let mut merged = SyntacticFacts::default();
+    for (lang, tree) in std::iter::once(&parsed.host).chain(parsed.injected.iter()) {
+        let mut extractor = FactExtractor::compile(*lang, &tree.language())?;
+        let layer = extractor.extract(tree, source);
+        merged.decls.extend(layer.decls);
+        merged.imports.extend(layer.imports);
+        merged.calls.extend(layer.calls);
+        merged.renders.extend(layer.renders);
+        merged.hooks.extend(layer.hooks);
+    }
+    // Spans are already file-absolute, so a plain byte-offset sort merges
+    // the layers into source order; the exact-duplicate dedup guards against
+    // a fact captured by two overlapping layer queries.
+    merged.decls.sort_by_key(|d| d.def_byte_range.0);
+    merged.imports.sort_by_key(|i| i.byte_range.0);
+    merged.calls.sort_by_key(|c| c.byte_range.0);
+    merged.renders.sort_by_key(|r| r.byte_range.0);
+    merged.hooks.sort_by_key(|h| h.byte_range.0);
+    merged.decls.dedup();
+    merged.imports.dedup();
+    merged.calls.dedup();
+    merged.renders.dedup();
+    merged.hooks.dedup();
+    Ok(merged)
 }
 
 fn byte_range(node: Node<'_>) -> (u32, u32) {

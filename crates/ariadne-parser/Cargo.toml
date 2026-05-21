@@ -45,6 +45,22 @@ tree-sitter-c-sharp = "=0.23.5"
 # grammars above [src: docs/adr/0008-c-cpp-syntactic-indexing.md].
 tree-sitter-c = "=0.24.2"
 tree-sitter-cpp = "=0.23.4"
+# js-framework tier-03: `.vue` SFC host grammar. A Vue SFC's top level is
+# valid HTML, so `tree-sitter-html` is the host skeleton grammar; the
+# `<script>` block is re-parsed as an injected JS/TS layer. Official crate,
+# `tree-sitter-language ^0.1` — same `Into<Language>` pattern as above
+# [src: docs/adr/0011-framework-grammars-injection.md; plan.md D1].
+tree-sitter-html = "=0.23.2"
+# js-framework tier-04: `.svelte` / `.astro` SFC host grammars. Both share
+# the HTML-family host shape, exporting `LANGUAGE: LanguageFn` via
+# `tree-sitter-language ^0.1` — the same `Into<Language>` pattern as above.
+# `tree-sitter-svelte-ng` also exports `INJECTIONS_QUERY` (unused — the
+# `<script>`-element walk is shared with Vue); `tree-sitter-astro-next` is a
+# pre-1.0 grammar pinned exact (plan.md R-Astro-ts; a pin bump = follow-up
+# + ADR amendment) [src: docs/adr/0011-framework-grammars-injection.md;
+# plan.md D5, D6].
+tree-sitter-svelte-ng = "=1.0.2"
+tree-sitter-astro-next = "=0.1.1"
 # Parse-cache codec [src: tier-03 step 8, plan files list]. 3.0 release was
 # yanked from active maintenance (upstream notice on docs.rs); 2.0.1 is the
 # last stable line and exposes the `serde` feature the cache module relies on.

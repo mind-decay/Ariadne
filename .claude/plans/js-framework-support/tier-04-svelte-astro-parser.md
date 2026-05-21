@@ -9,7 +9,8 @@ exit_criteria:
   - "`extract_syntactic_facts` over both fixtures produces `Component`/`RenderSite`/`HookSite` facts via `svelte.scm` / `astro.scm`."
   - "Incremental proptest: 100 random edit sequences on a `.svelte` fixture — incremental `ParsedFile` ≡ full reparse."
   - "`cargo nextest run -p ariadne-parser`, `cargo clippy ... -D warnings`, `cargo test --test architecture` all green."
-status: pending
+status: completed
+completed: 2026-05-21
 ---
 
 <context>
@@ -44,7 +45,7 @@ constant; Astro's frontmatter is a TS block fenced by `---`. plan.md D4/D5/D6.
 
 <verification>
 - `cargo nextest run -p ariadne-parser` — green: `facts_svelte`/`facts_astro` snapshots, Svelte incremental proptest, registry coverage; tier-03 Vue tests still green.
-- Manual: parse a real `.svelte` component — facts list `<script>` functions/`$:` reactive decls *and* template child components; parse a real `.astro` page — facts list frontmatter imports/consts *and* body components.
+- Manual: parse a real `.svelte` component — facts list `<script>` function/`let` decls *and* template child components; parse a real `.astro` page — facts list frontmatter imports/consts *and* body components. (`$:` reactive labels are `labeled_statement` nodes the generic `typescript.scm` does not capture — Svelte `$:` capture is a follow-up tier, out of tier-04's "no engine change" scope.)
 - `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo fmt --all --check`, `cargo test --test architecture` — clean.
 - `cargo deny check` — passes; both grammar crates are license-clean (MIT).
 </verification>

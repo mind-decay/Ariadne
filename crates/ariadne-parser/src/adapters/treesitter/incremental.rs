@@ -18,8 +18,8 @@ use std::time::{Duration, Instant};
 use ariadne_core::{Lang, Parser as ParserPort};
 use tree_sitter::{InputEdit, ParseOptions, ParseState, Parser as TsParser};
 
-use super::Tree;
 use super::registry::ParserRegistry;
+use super::{ParsedFile, Tree, injection};
 use crate::errors::ParserError;
 
 /// Hard cap per parse invocation. Tier-03 step 4 = 5 seconds.
@@ -101,7 +101,9 @@ impl TreeSitterParser {
     }
 }
 
-const DEADLINE_SAMPLE_EVERY: u32 = 256;
+/// Sample the wall-clock deadline once every Nth progress tick. Shared with
+/// the injection engine so injected-layer parses honor the same throttle.
+pub(super) const DEADLINE_SAMPLE_EVERY: u32 = 256;
 
 impl ParserPort for TreeSitterParser {}
 
@@ -111,6 +113,44 @@ impl std::fmt::Debug for TreeSitterParser {
             .field("lang", &self.lang)
             .finish_non_exhaustive()
     }
+}
+
+/// Parse `content` into a multi-layer [`ParsedFile`].
+///
+/// `host_lang` selects the whole-file skeleton grammar; `registry` supplies
+/// every grammar — the host plus any injected layer. The host tree is parsed
+/// incrementally when `prev` is `Some`: `edits` describes the byte ranges
+/// changed since the previous parse, exactly as for
+/// [`TreeSitterParser::parse_file`].
+///
+/// Injected layers (a Vue SFC's `<script>` block) are re-derived from the
+/// freshly parsed host tree and fully re-parsed on every call. Only the host
+/// skeleton reparse is incremental — injected sub-trees are small, a fresh
+/// parse keeps the engine simple, and the tier-03 proptest gate proves an
+/// incremental `ParsedFile` equals a full reparse layer-for-layer
+/// [src: tier-03 step 6].
+///
+/// A single-grammar file (`.ts`/`.tsx`/`.js`/`.rs`/…) yields a `ParsedFile`
+/// whose `injected` vector is empty — the host-only degenerate case.
+///
+/// # Errors
+/// Propagates every [`ParserError`] raised by the host parse or by the
+/// injection engine (unsupported lang, grammar assignment, invalid injected
+/// ranges, parse abort).
+pub fn parse_file(
+    host_lang: Lang,
+    registry: &ParserRegistry,
+    content: &[u8],
+    prev: Option<&ParsedFile>,
+    edits: &[InputEdit],
+) -> Result<ParsedFile, ParserError> {
+    let mut host_parser = TreeSitterParser::for_lang(host_lang, registry)?;
+    let host_tree = host_parser.parse_file(content, prev.map(|p| &p.host.1), edits)?;
+    let injected = injection::injected_layers(host_lang, &host_tree, content, registry)?;
+    Ok(ParsedFile {
+        host: (host_lang, host_tree),
+        injected,
+    })
 }
 
 #[cfg(test)]

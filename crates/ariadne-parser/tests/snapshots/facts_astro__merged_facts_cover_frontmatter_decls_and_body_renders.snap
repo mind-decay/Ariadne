@@ -1,0 +1,66 @@
+---
+source: crates/ariadne-parser/tests/facts_astro.rs
+expression: facts
+---
+SyntacticFacts {
+    decls: [
+        Decl {
+            kind: Variable,
+            name: "title",
+            name_byte_range: (
+                102,
+                107,
+            ),
+            def_byte_range: (
+                96,
+                124,
+            ),
+        },
+        Decl {
+            kind: Variable,
+            name: "heading",
+            name_byte_range: (
+                131,
+                138,
+            ),
+            def_byte_range: (
+                125,
+                151,
+            ),
+        },
+    ],
+    imports: [
+        Import {
+            path: "'../layouts/Layout.astro'",
+            byte_range: (
+                23,
+                48,
+            ),
+        },
+        Import {
+            path: "'../components/Card.astro'",
+            byte_range: (
+                67,
+                93,
+            ),
+        },
+    ],
+    calls: [],
+    renders: [
+        RenderSite {
+            component: "Layout",
+            byte_range: (
+                158,
+                164,
+            ),
+        },
+        RenderSite {
+            component: "Card",
+            byte_range: (
+                220,
+                224,
+            ),
+        },
+    ],
+    hooks: [],
+}

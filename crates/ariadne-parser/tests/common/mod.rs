@@ -6,7 +6,7 @@
 use std::path::PathBuf;
 
 use ariadne_core::Lang;
-use ariadne_parser::{ParserRegistry, SyntacticFacts, TreeSitterParser, extract_syntactic_facts};
+use ariadne_parser::{ParserRegistry, SyntacticFacts, extract_syntactic_facts, parse_file};
 
 pub fn fixture(rel: &str) -> Vec<u8> {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -18,11 +18,10 @@ pub fn fixture(rel: &str) -> Vec<u8> {
 pub fn facts_for(lang: Lang, rel: &str) -> SyntacticFacts {
     let source = fixture(rel);
     let registry = ParserRegistry::new();
-    let mut parser = TreeSitterParser::for_lang(lang, &registry).expect("parser for lang");
-    let tree = parser.parse_file(&source, None, &[]).expect("parse ok");
+    let parsed = parse_file(lang, &registry, &source, None, &[]).expect("parse ok");
     assert!(
-        !tree.root_node().has_error(),
+        !parsed.host.1.root_node().has_error(),
         "fixture {rel} produced a tree-sitter parse error",
     );
-    extract_syntactic_facts(&tree, lang, &source).expect("facts extraction")
+    extract_syntactic_facts(&parsed, &source).expect("facts extraction")
 }

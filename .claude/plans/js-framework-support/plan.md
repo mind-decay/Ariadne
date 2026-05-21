@@ -65,7 +65,9 @@ maintenance); `tree-sitter-vue` 0.0.3 (incompatible, unmaintained).
 **D2 — TSX grammar = `tree_sitter_typescript::LANGUAGE_TSX`; new `Lang::Tsx`.**
 The crate (already a workspace dep at =0.23.2) exports `LANGUAGE_TSX` distinct
 from `LANGUAGE_TYPESCRIPT` [src: docs.rs/tree-sitter-typescript/0.23.2]. `.tsx`
-re-maps off the wrong grammar onto `Lang::Tsx`.
+re-maps off the wrong grammar onto `Lang::Tsx`. A `<script lang="tsx">` block
+in a Vue SFC host injects a `Lang::Tsx` layer for the same `<T>x`-ambiguity
+reason — JSX inside it must not be parsed by the non-TSX grammar (tier-03 step 5).
 
 **D3 — `.jsx` stays `Lang::JavaScript`.** `tree-sitter-javascript` parses JSX
 natively (emits `jsx_element` nodes) [src: github.com/tree-sitter/tree-sitter-javascript].
@@ -122,17 +124,15 @@ revisit as a follow-up plan.
 </decisions>
 
 <architecture>
-Parse layering (ariadne-parser) — the tier-03 change generalises the
-one-grammar-per-file model to a multi-layer `ParsedFile`:
+Parse layering (ariadne-parser) — tier-03 generalises to `ParsedFile`:
 ```
 ParsedFile
-  host:     (Lang, Tree)                 whole-file skeleton grammar
-  injected: Vec<(Lang, Tree, offset)>    JS/TS sub-trees from <script>/frontmatter
+  host:     (Lang, Tree)          whole-file skeleton grammar
+  injected: Vec<(Lang, Tree)>     JS/TS sub-trees from <script>/frontmatter
 ```
-`extract_syntactic_facts` runs the per-layer query over each layer and adds
-`offset` back to every byte span so all facts share file coordinates.
-Single-grammar files (`.jsx`/`.tsx`/`.js`/`.ts`) are the degenerate case:
-host only, `injected` empty.
+`extract_syntactic_facts` runs each layer's query and merges; injected layers
+parse over the full file bytes under `set_included_ranges`, so spans are file-
+absolute — no remap. Single-grammar files are host-only (`injected` empty).
 
 Component graph: parser emits `RenderSite` (child-component tag) and `HookSite`
 (hook/primitive call) alongside `Decl`/`Import`/`CallSite`; the CLI edge

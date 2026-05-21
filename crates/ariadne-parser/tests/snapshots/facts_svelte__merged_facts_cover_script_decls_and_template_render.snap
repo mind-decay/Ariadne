@@ -1,0 +1,64 @@
+---
+source: crates/ariadne-parser/tests/facts_svelte.rs
+expression: facts
+---
+SyntacticFacts {
+    decls: [
+        Decl {
+            kind: Variable,
+            name: "title",
+            name_byte_range: (
+                71,
+                76,
+            ),
+            def_byte_range: (
+                67,
+                85,
+            ),
+        },
+        Decl {
+            kind: Variable,
+            name: "count",
+            name_byte_range: (
+                93,
+                98,
+            ),
+            def_byte_range: (
+                89,
+                111,
+            ),
+        },
+        Decl {
+            kind: Function,
+            name: "increment",
+            name_byte_range: (
+                151,
+                160,
+            ),
+            def_byte_range: (
+                142,
+                190,
+            ),
+        },
+    ],
+    imports: [
+        Import {
+            path: "'./Child.svelte'",
+            byte_range: (
+                39,
+                55,
+            ),
+        },
+    ],
+    calls: [],
+    renders: [
+        RenderSite {
+            component: "Child",
+            byte_range: (
+                243,
+                248,
+            ),
+        },
+    ],
+    hooks: [],
+}

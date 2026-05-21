@@ -15,14 +15,20 @@
 //! contending for a single global encoder
 //! (src: tier-03 plan files list; <https://docs.rs/bincode/2.0.1>
 //! serde-flavored `encode_to_vec` / `decode_from_slice`).
+//!
+//! The cache key stays `(host_lang, content)`. A multi-region file's
+//! injected layers are *never* serialized: [`ParseCache::rehydrate`]
+//! re-derives the whole [`ParsedFile`] — host tree plus every injected
+//! layer — from the host lang and the raw bytes (js-framework tier-03
+//! step 9).
 
 use ariadne_core::Lang;
 use bincode::config::Configuration;
 
 use crate::errors::ParserError;
 
-use super::Tree;
-use super::incremental::TreeSitterParser;
+use super::ParsedFile;
+use super::incremental::parse_file;
 use super::registry::ParserRegistry;
 
 /// Codec config: standard bincode (varint, little-endian, fixed-array).
@@ -40,13 +46,15 @@ pub struct ParseCache {
 }
 
 impl ParseCache {
-    /// Snapshot the inputs the tree-sitter parse depends on.
+    /// Snapshot the inputs the tree-sitter parse depends on. `lang` is the
+    /// file's *host* lang — the whole-file skeleton grammar; any injected
+    /// layer is re-derived on [`Self::rehydrate`], never stored.
     #[must_use]
     pub fn capture(lang: Lang, content: Vec<u8>) -> Self {
         Self { lang, content }
     }
 
-    /// Affected language.
+    /// Host language of the cached file.
     #[must_use]
     pub fn lang(&self) -> Lang {
         self.lang
@@ -85,16 +93,16 @@ impl ParseCache {
         Ok(Self { lang, content })
     }
 
-    /// Re-parse the cached source against the live registry. Used by the
-    /// tier-04 Salsa loader when the in-RAM CST has been evicted.
+    /// Re-parse the cached source against the live registry, rebuilding the
+    /// whole [`ParsedFile`] — host tree plus every injected layer. Used by
+    /// the tier-04 Salsa loader when the in-RAM CST has been evicted.
     ///
     /// # Errors
     /// Propagates [`ParserError::UnsupportedLang`] /
-    /// [`ParserError::LanguageAssign`] / [`ParserError::ParseAborted`] as
-    /// emitted by [`TreeSitterParser`].
-    pub fn rehydrate(&self, registry: &ParserRegistry) -> Result<Tree, ParserError> {
-        let mut parser = TreeSitterParser::for_lang(self.lang, registry)?;
-        parser.parse_file(&self.content, None, &[])
+    /// [`ParserError::LanguageAssign`] / [`ParserError::IncludedRanges`] /
+    /// [`ParserError::ParseAborted`] as emitted by [`parse_file`].
+    pub fn rehydrate(&self, registry: &ParserRegistry) -> Result<ParsedFile, ParserError> {
+        parse_file(self.lang, registry, &self.content, None, &[])
     }
 }
 
@@ -114,11 +122,16 @@ mod tests {
     }
 
     #[test]
-    fn rehydrate_returns_well_formed_tree() {
+    fn rehydrate_returns_well_formed_parsed_file() {
         let cache = ParseCache::capture(Lang::Rust, b"fn main() {}".to_vec());
         let registry = ParserRegistry::new();
-        let tree = cache.rehydrate(&registry).unwrap();
-        assert_eq!(tree.root_node().kind(), "source_file");
-        assert!(!tree.root_node().has_error());
+        let parsed = cache.rehydrate(&registry).unwrap();
+        assert_eq!(parsed.host.0, Lang::Rust);
+        assert_eq!(parsed.host.1.root_node().kind(), "source_file");
+        assert!(!parsed.host.1.root_node().has_error());
+        assert!(
+            parsed.injected.is_empty(),
+            "a single-grammar file has no injected layers",
+        );
     }
 }

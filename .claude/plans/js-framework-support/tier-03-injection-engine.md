@@ -9,7 +9,8 @@ exit_criteria:
   - "Proptest: 100 random `InputEdit` sequences on a `.vue` fixture — the incremental `ParsedFile` matches a full reparse (root S-expression equality on every layer)."
   - "`docs/adr/0011-framework-grammars-injection.md` written, status Accepted, cited from this tier + plan.md."
   - "`cargo nextest run -p ariadne-parser`, `cargo clippy ... -D warnings`, `cargo test --test architecture` all green."
-status: pending
+status: completed
+completed: 2026-05-21
 ---
 
 <context>
@@ -34,7 +35,9 @@ Svelte/Astro reuse this engine in tier-04. Full context: plan.md.
 - `crates/ariadne-parser/src/adapters/treesitter/cache.rs` — cache key stays `(host_lang, content)`; layers re-derive on rehydrate.
 - `crates/ariadne-parser/src/adapters/treesitter/queries/vue.scm` — NEW. Vue host (HTML) captures: component renders, directives.
 - `crates/ariadne-parser/src/lib.rs` — re-export `ParsedFile`.
+- `crates/ariadne-parser/src/errors.rs` — `IncludedRanges` error variant for the injected-layer parse (step 5).
 - `crates/ariadne-parser/fixtures/vue/*.vue`, `tests/facts_vue.rs`, `tests/incremental_vue.rs` (proptest).
+- `crates/ariadne-parser/tests/common/mod.rs`, `tests/real_world.rs` — `extract_syntactic_facts`/`parse_file` signature ripple into shared test helpers.
 </files>
 
 <steps>
@@ -42,7 +45,7 @@ Svelte/Astro reuse this engine in tier-04. Full context: plan.md.
 2. `Cargo.toml`: add `tree-sitter-html = "=0.23.2"` (`tree-sitter-language ^0.1`, `Into<Language>` — the established workspace pattern) [src: crates.io/api/v1/crates/tree-sitter-html/0.23.2/dependencies].
 3. `registry.rs`: register `Lang::Vue` → `tree_sitter_html::LANGUAGE.into()`. `Vue` joins `V1_LANGS`.
 4. `mod.rs`: define `ParsedFile { host: (Lang, Tree), injected: Vec<(Lang, Tree)> }`. A plain `.ts`/`.tsx`/`.js` file is `ParsedFile { host, injected: vec![] }`.
-5. `injection.rs`: for `Lang::Vue`, walk the host HTML tree for the `<script>` element; read its `lang`/`setup` attributes to choose `Lang::TypeScript` (`lang="ts"`/`"tsx"`) or `Lang::JavaScript` (default); collect the script's content byte range. Build the injected layer by `Parser::set_included_ranges(&[range])` then `parse` over the *full file bytes* — offsets stay file-absolute. Multiple `<script>` blocks (`<script>` + `<script setup>`) → one included-ranges set for the same JS/TS lang, or two layers; pick one and document it [src: tree-sitter `set_included_ranges` docs].
+5. `injection.rs`: for `Lang::Vue`, walk the host HTML tree for the `<script>` element; read its `lang`/`setup` attributes to choose `Lang::Tsx` (`lang="tsx"`), `Lang::TypeScript` (`lang="ts"`), or `Lang::JavaScript` (default); collect the script's content byte range. Build the injected layer by `Parser::set_included_ranges(&[range])` then `parse` over the *full file bytes* — offsets stay file-absolute. Multiple `<script>` blocks (`<script>` + `<script setup>`) → one included-ranges set for the same JS/TS lang, or two layers; pick one and document it [src: tree-sitter `set_included_ranges` docs].
 6. `incremental.rs`: `parse_file(content, prev: Option<&ParsedFile>, edits) -> Result<ParsedFile>`. Apply `edits` + incremental reparse to the host tree (existing logic). Re-derive injection ranges from the new host tree; re-parse each injected layer (fresh parse is acceptable — the proptest gate guarantees correctness; the incremental win is the host). Document this in a doc-comment.
 7. `facts.rs`: `extract_syntactic_facts` takes `&ParsedFile`; run each layer's query (`vue.scm` for the HTML host, the JS/TS query for an injected layer) via a per-layer `FactExtractor`; concatenate the `SyntacticFacts` vectors; sort by byte offset; dedup exact duplicates. Spans are already file-absolute (step 5).
 8. `vue.scm` (HTML grammar): `@render.component` on a `tag_name` that is a custom element (contains `-`, or is capitalised — filter in `facts.rs` if the query cannot express it); capture `v-`/`@`/`:` `attribute` names as directive facts only if cheaply expressible, else defer to tier-04 follow-up. `<script>`/`<style>` elements are *not* facts — they are injection hosts.
