@@ -26,9 +26,9 @@ use tracing::warn;
 
 use crate::errors::ScipError;
 use crate::indexer::{
-    IndexerWarning, IngestReport, LsifGoIndexer, RustAnalyzerIndexer, ScipClangIndexer, ScipDoc,
-    ScipDotnetIndexer, ScipIndexer, ScipJavaIndexer, ScipPythonIndexer, ScipSvelteIndexer,
-    ScipTypescriptIndexer, ScipVueIndexer,
+    IndexerWarning, IngestReport, RustAnalyzerIndexer, ScipClangIndexer, ScipDoc,
+    ScipDotnetIndexer, ScipGoIndexer, ScipIndexer, ScipJavaIndexer, ScipPythonIndexer,
+    ScipSvelteIndexer, ScipTypescriptIndexer, ScipVueIndexer,
 };
 
 /// Outcome of one driver's run, before aggregation into [`IngestReport`].
@@ -80,7 +80,7 @@ impl IngestPlan {
             Box::new(ScipJavaIndexer::new()),
             Box::new(ScipClangIndexer::new()),
             Box::new(ScipDotnetIndexer::new()),
-            Box::new(LsifGoIndexer::new()),
+            Box::new(ScipGoIndexer::new()),
         ])
     }
 

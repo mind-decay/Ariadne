@@ -13,11 +13,11 @@
 //! SCIP bytes without first instantiating a per-language driver
 //! [src: `.claude/plans/ariadne-core/tier-05-scip-ingest.md` step 16].
 
-mod lsif_go;
 mod plan;
 mod rust_analyzer;
 mod scip_clang;
 mod scip_dotnet;
+mod scip_go;
 mod scip_java;
 mod scip_python;
 mod scip_svelte;
@@ -33,11 +33,11 @@ use prost::Message as _;
 use crate::errors::ScipError;
 use crate::proto;
 
-pub use lsif_go::LsifGoIndexer;
 pub use plan::IngestPlan;
 pub use rust_analyzer::RustAnalyzerIndexer;
 pub use scip_clang::ScipClangIndexer;
 pub use scip_dotnet::ScipDotnetIndexer;
+pub use scip_go::ScipGoIndexer;
 pub use scip_java::ScipJavaIndexer;
 pub use scip_python::ScipPythonIndexer;
 pub use scip_svelte::ScipSvelteIndexer;

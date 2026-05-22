@@ -153,7 +153,7 @@ Dataflow: watcher → invalidate file input → Salsa re-derives parse/symbols/g
 |---|---|---|---|
 | R1 | Salsa memory bloat (mirrors rust-analyzer #19402) | medium | per-table memory probes (tier-04); cap derived-query memoization; flush low-durability tables on idle |
 | R2 | tree-sitter CST RAM dominance | medium | persist serialized CST to redb; LRU N most-recent in RAM |
-| R3 | Go lacks first-party SCIP indexer | high | tier-05 ships `lsif-go` + `scip lsif-to-scip` adapter; fallback: gopls LSP shim |
+| R3 | Go lacks first-party SCIP indexer | high | Resolved by post-v1-roadmap RD1 — the native `scip-go` indexer replaces the tier-05 two-step fallback |
 | R4 | redb file-format upgrade between versions | low | on-disk schema version; rebuild from source on mismatch |
 | R5 | rmcp API churn between minor versions | medium | pin `rmcp = "=1.7.0"`; integration test in tier-08 against fixed schema |
 | R6 | SCIP indexers diverge in symbol grammar | medium | tier-05 normalizes to canonical form; per-language golden fixtures |

@@ -20,11 +20,11 @@ with the install hint below; they are warnings, never failures
 | Java / Kotlin   | `ScipJavaIndexer`                               | `scip-java`      | 0.10.0      | `coursier install scip-java` (or `brew install sourcegraph/scip/scip-java`)            | `build.gradle*`, `pom.xml`, `BUILD`, `WORKSPACE`, `build.sbt` |
 | C / C++         | `ScipClangIndexer`                              | `scip-clang`     | 0.2.0       | Download from <https://github.com/sourcegraph/scip-clang/releases>                     | `compile_commands.json`                                |
 | C#              | `ScipDotnetIndexer`                             | `scip-dotnet`    | 0.4.0       | `dotnet tool install -g SourcegraphScipDotnet`                                         | any `*.sln` or `*.csproj` directly under root          |
-| Go              | `LsifGoIndexer` (two-step: `lsif-go` → `scip`)  | `lsif-go`, `scip`| 1.9.0, 0.5.2| `go install github.com/sourcegraph/lsif-go/cmd/lsif-go@latest`; `brew install sourcegraph/scip/scip` | `go.mod`                                               |
+| Go              | `ScipGoIndexer`                                 | `scip-go`        | 0.2.6       | `go install github.com/scip-code/scip-go/cmd/scip-go@latest`                           | `go.mod`                                               |
 
-The Go fallback is an `lsif-go` dump followed by `scip convert
---from=lsif`; there is no first-party `scip-go` (plan risk R3
-[src: `.claude/plans/ariadne-core/plan.md`]).
+Go is indexed by the native `scip-go`, run from the module root. It
+supersedes the v1 two-step LSIF fallback (v1 plan risk R3, resolved by
+post-v1-roadmap RD1).
 
 ## Build inputs
 

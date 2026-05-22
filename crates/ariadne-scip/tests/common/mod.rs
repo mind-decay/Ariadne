@@ -1,7 +1,7 @@
 //! Shared test helpers for the per-language ingest goldens.
 //!
-//! The six non-Rust SCIP indexers (`scip-typescript`, `scip-python`,
-//! `scip-java`, `scip-clang`, `scip-dotnet`, `lsif-go` + `scip` CLI) are
+//! The non-Rust SCIP indexers (`scip-typescript`, `scip-python`,
+//! `scip-java`, `scip-clang`, `scip-dotnet`) are
 //! not on PATH in the build environment that ships tier-05 (see
 //! `tier-05-scip-ingest.md` deviations). Per-lang goldens therefore do
 //! NOT shell out: they synthesize a minimal `proto::Index` per language,

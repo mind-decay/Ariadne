@@ -26,7 +26,7 @@ pub const INDEXER_BINARIES: &[(&str, &str)] = &[
     ("java", "scip-java"),
     ("csharp", "scip-dotnet"),
     ("c/c++", "scip-clang"),
-    ("go", "lsif-go"),
+    ("go", "scip-go"),
 ];
 
 /// Parsed `.ariadne/config.toml`.
