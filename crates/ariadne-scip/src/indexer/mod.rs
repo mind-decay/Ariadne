@@ -15,6 +15,7 @@
 
 mod plan;
 mod rust_analyzer;
+mod scip_astro;
 mod scip_clang;
 mod scip_dotnet;
 mod scip_go;
@@ -35,6 +36,7 @@ use crate::proto;
 
 pub use plan::IngestPlan;
 pub use rust_analyzer::RustAnalyzerIndexer;
+pub use scip_astro::ScipAstroIndexer;
 pub use scip_clang::ScipClangIndexer;
 pub use scip_dotnet::ScipDotnetIndexer;
 pub use scip_go::ScipGoIndexer;

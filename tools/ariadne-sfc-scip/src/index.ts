@@ -11,10 +11,16 @@
 // generated modules back a plain `ts.createProgram`, and occurrence ranges are
 // remapped to the original `.svelte` text through `svelte2tsx`'s source map.
 //
-// Both paths emit a SCIP index `ariadne-scip` ingests. See
+// `--framework astro`: the `.astro` component-script (`---` fence) is already
+// plain TypeScript, so each `.astro` file's frontmatter region is sliced
+// verbatim into a virtual `.ts` module, the modules back a plain
+// `ts.createProgram`, and occurrence ranges are shifted back onto the original
+// `.astro` source by the frontmatter's leading line offset.
+//
+// All paths emit a SCIP index `ariadne-scip` ingests. See
 // docs/adr/0013-scip-sfc-bridge.md.
 //
-// Usage: ariadne-sfc-scip --framework <vue|svelte> --cwd <root> --output <out>
+// Usage: ariadne-sfc-scip --framework <vue|svelte|astro> --cwd <root> --output <out>
 
 import * as fs from "fs";
 import * as path from "path";
@@ -27,6 +33,7 @@ import { ProtoWriter, descriptorName } from "./scip";
 
 const VUE_SCHEME = "scip-vue-bridge";
 const SVELTE_SCHEME = "scip-svelte-bridge";
+const ASTRO_SCHEME = "scip-astro-bridge";
 const TOOL_VERSION = "0.1.0";
 const ENTRY_NAME = "__ariadne_sfc_entry__.ts";
 const DEFINITION_ROLE = 0x1;
@@ -742,6 +749,247 @@ function indexSvelte(cwd: string, configPath: string, pkg: Pkg, output: string):
   fs.writeFileSync(output, encodeIndex(cwd, pkg, documents, "svelte", "Svelte"));
 }
 
+// --- Astro: --- frontmatter slice + line-offset remap ----------------------
+
+/** Per-`.astro` document: the sliced frontmatter plus what remaps onto it. */
+interface AstroDoc {
+  astroPath: string;
+  /** The TypeScript frontmatter region, sliced verbatim from the `.astro`. */
+  frontmatterCode: string;
+  /** 0-based `.astro` line on which the first frontmatter line sits. */
+  frontmatterStartLine: number;
+  sourceText: string;
+  sourceLineStarts: number[];
+}
+
+/**
+ * Extract the TypeScript frontmatter region of an `.astro` file: the text
+ * between the leading `---` fence and the matching closing `---`. Astro
+ * requires the component-script fence to be the first content in the file and
+ * the region between the fences is plain TypeScript [src: docs.astro.build —
+ * Astro components / component script].
+ *
+ * Returns `undefined` for a template-only `.astro` — a file with no opening
+ * fence, or an unterminated one — which stays syntactic-only. The frontmatter
+ * is sliced verbatim, so the only remap an occurrence needs is a line shift by
+ * `startLine`; columns are unchanged.
+ */
+function extractFrontmatter(
+  source: string,
+): { code: string; startLine: number } | undefined {
+  const lineStarts = computeLineStarts(source);
+  const lineText = (n: number): string => {
+    const start = lineStarts[n];
+    const end = n + 1 < lineStarts.length ? lineStarts[n + 1] : source.length;
+    return source.slice(start, end).replace(/\r?\n$/, "");
+  };
+  if (lineStarts.length === 0 || lineText(0).trimEnd() !== "---") {
+    return undefined;
+  }
+  for (let n = 1; n < lineStarts.length; n++) {
+    if (lineText(n).trimEnd() === "---") {
+      // Frontmatter content spans lines 1..n-1; slice up to the closing
+      // fence's line start, leaving the fence and template body out.
+      const code = source.slice(lineStarts[1], lineStarts[n]);
+      return { code, startLine: 1 };
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Walk one `.astro` file's frontmatter TypeScript, resolve each identifier
+ * through the checker, and shift its range back onto the original `.astro`
+ * text. An occurrence is kept only when the shifted source span exactly
+ * covers the identifier text — the same guard the Vue and Svelte paths apply,
+ * here also rejecting any identifier the frontmatter slice misplaced.
+ */
+function indexAstroDocument(
+  sf: ts.SourceFile,
+  doc: AstroDoc,
+  checker: ts.TypeChecker,
+  cwd: string,
+  pkg: Pkg,
+  localIds: Map<ts.Symbol, string>,
+): DocResult | undefined {
+  const frontmatterLineStarts = computeLineStarts(doc.frontmatterCode);
+  const byKey = new Map<string, Occurrence>();
+  const defined = new Set<string>();
+
+  const visit = (node: ts.Node): void => {
+    if (ts.isIdentifier(node)) {
+      let symbol = checker.getSymbolAtLocation(node);
+      if (symbol) {
+        if (symbol.flags & ts.SymbolFlags.Alias) {
+          try {
+            symbol = checker.getAliasedSymbol(symbol);
+          } catch {
+            // keep the unresolved alias symbol
+          }
+        }
+        const name = node.text;
+        const [genLine, genCol] = offsetToPosition(
+          frontmatterLineStarts,
+          node.getStart(sf),
+        );
+        const srcLine = genLine + doc.frontmatterStartLine;
+        const lineStart = doc.sourceLineStarts[srcLine];
+        if (
+          lineStart !== undefined &&
+          doc.sourceText.substring(
+            lineStart + genCol,
+            lineStart + genCol + name.length,
+          ) === name
+        ) {
+          const sym = symbolString(symbol, cwd, pkg, localIds, ASTRO_SCHEME);
+          const isDef = (symbol.declarations ?? []).some(
+            (d) => ts.getNameOfDeclaration(d) === node,
+          );
+          const roles = isDef ? DEFINITION_ROLE : 0;
+          const range = [srcLine, genCol, srcLine, genCol + name.length];
+          const key = `${range.join(",")}|${sym}|${roles}`;
+          if (!byKey.has(key)) {
+            byKey.set(key, { range, symbol: sym, roles });
+            if (isDef) {
+              defined.add(sym);
+            }
+          }
+        }
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sf);
+
+  const occurrences = [...byKey.values()].sort(compareOccurrence);
+  if (occurrences.length === 0) {
+    return undefined;
+  }
+  return {
+    relativePath: toPosix(path.relative(cwd, doc.astroPath)),
+    occurrences,
+    definedSymbols: [...defined].sort(),
+  };
+}
+
+function indexAstro(cwd: string, configPath: string, pkg: Pkg, output: string): void {
+  const extraExtensions: ts.FileExtensionInfo[] = [
+    { extension: "astro", isMixedContent: true, scriptKind: ts.ScriptKind.Deferred },
+  ];
+  const configJson = ts.readConfigFile(configPath, ts.sys.readFile).config;
+  const parsed = ts.parseJsonConfigFileContent(
+    configJson,
+    ts.sys,
+    cwd,
+    undefined,
+    configPath,
+    undefined,
+    extraExtensions,
+  );
+  const astroFiles = parsed.fileNames.filter((f) => f.endsWith(".astro")).sort();
+  if (astroFiles.length === 0) {
+    fail(`no .astro files resolved under ${cwd}`);
+  }
+
+  // Slice every .astro frontmatter up front; the sliced TypeScript backs the
+  // program's virtual source files and feeds the occurrence walk. A
+  // template-only .astro (no `---` fence) carries no frontmatter and is
+  // skipped — it stays syntactic-only.
+  const astroDocs = new Map<string, AstroDoc>();
+  for (const file of astroFiles) {
+    const sourceText = fs.readFileSync(file, "utf8");
+    const frontmatter = extractFrontmatter(sourceText);
+    if (frontmatter === undefined) {
+      continue;
+    }
+    astroDocs.set(file, {
+      astroPath: file,
+      frontmatterCode: frontmatter.code,
+      frontmatterStartLine: frontmatter.startLine,
+      sourceText,
+      sourceLineStarts: computeLineStarts(sourceText),
+    });
+  }
+  if (astroDocs.size === 0) {
+    fail(`no .astro file under ${cwd} carries a --- frontmatter fence`);
+  }
+
+  // TS createProgram rejects .astro root files; a synthetic entry that
+  // side-effect-imports every fenced .astro pulls them in, exactly as the
+  // Svelte path's entry handles .svelte.
+  const entryPath = path.join(cwd, ENTRY_NAME);
+  const entryContent =
+    [...astroDocs.keys()]
+      .map((f) => `import ${JSON.stringify("./" + toPosix(path.relative(cwd, f)))};`)
+      .join("\n") + "\n";
+
+  const host = ts.createCompilerHost(parsed.options);
+  const baseGetSourceFile = host.getSourceFile.bind(host);
+  const baseReadFile = host.readFile.bind(host);
+  const baseFileExists = host.fileExists.bind(host);
+  host.getSourceFile = (fileName, languageVersion, onError, shouldCreate) => {
+    if (fileName === entryPath) {
+      return ts.createSourceFile(fileName, entryContent, languageVersion, true, ts.ScriptKind.TS);
+    }
+    const doc = astroDocs.get(fileName);
+    if (doc) {
+      return ts.createSourceFile(
+        fileName,
+        doc.frontmatterCode,
+        languageVersion,
+        true,
+        ts.ScriptKind.TS,
+      );
+    }
+    return baseGetSourceFile(fileName, languageVersion, onError, shouldCreate);
+  };
+  host.readFile = (fileName) => {
+    if (fileName === entryPath) {
+      return entryContent;
+    }
+    const doc = astroDocs.get(fileName);
+    return doc ? doc.frontmatterCode : baseReadFile(fileName);
+  };
+  host.fileExists = (fileName) =>
+    fileName === entryPath || astroDocs.has(fileName) || baseFileExists(fileName);
+  // An `.astro` specifier is not a TS-known extension; resolve it to the
+  // sibling .astro file, served as a virtual .ts module by the host above.
+  host.resolveModuleNameLiterals = (literals, containingFile, _redirect, options) =>
+    literals.map((literal) => {
+      const name = literal.text;
+      if (name.endsWith(".astro")) {
+        const resolved = path.resolve(path.dirname(containingFile), name);
+        if (astroDocs.has(resolved)) {
+          return {
+            resolvedModule: {
+              resolvedFileName: resolved,
+              extension: ts.Extension.Ts,
+              isExternalLibraryImport: false,
+            },
+          };
+        }
+        return { resolvedModule: undefined };
+      }
+      return ts.resolveModuleName(name, containingFile, options, host);
+    });
+
+  const program = ts.createProgram({ rootNames: [entryPath], options: parsed.options, host });
+  const checker = program.getTypeChecker();
+
+  const localIds = new Map<ts.Symbol, string>();
+  const documents = [...astroDocs.values()]
+    .map((doc) => {
+      const sf = program.getSourceFile(doc.astroPath);
+      return sf ? indexAstroDocument(sf, doc, checker, cwd, pkg, localIds) : undefined;
+    })
+    .filter((doc): doc is DocResult => doc !== undefined);
+
+  if (documents.length === 0) {
+    fail("no .astro documents produced occurrences");
+  }
+  fs.writeFileSync(output, encodeIndex(cwd, pkg, documents, "astro", "Astro"));
+}
+
 function main(): void {
   const args = parseArgs(process.argv.slice(2));
   const cwd = path.resolve(args.cwd);
@@ -751,8 +999,10 @@ function main(): void {
     indexVue(cwd, configPath, pkg, args.output);
   } else if (args.framework === "svelte") {
     indexSvelte(cwd, configPath, pkg, args.output);
+  } else if (args.framework === "astro") {
+    indexAstro(cwd, configPath, pkg, args.output);
   } else {
-    fail(`unsupported framework '${args.framework}' (expected 'vue' or 'svelte')`);
+    fail(`unsupported framework '${args.framework}' (expected 'vue', 'svelte', or 'astro')`);
   }
 }
 

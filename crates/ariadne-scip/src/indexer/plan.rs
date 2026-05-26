@@ -26,7 +26,7 @@ use tracing::warn;
 
 use crate::errors::ScipError;
 use crate::indexer::{
-    IndexerWarning, IngestReport, RustAnalyzerIndexer, ScipClangIndexer, ScipDoc,
+    IndexerWarning, IngestReport, RustAnalyzerIndexer, ScipAstroIndexer, ScipClangIndexer, ScipDoc,
     ScipDotnetIndexer, ScipGoIndexer, ScipIndexer, ScipJavaIndexer, ScipPythonIndexer,
     ScipSvelteIndexer, ScipTypescriptIndexer, ScipVueIndexer,
 };
@@ -76,6 +76,7 @@ impl IngestPlan {
             Box::new(ScipTypescriptIndexer::new()),
             Box::new(ScipVueIndexer::new()),
             Box::new(ScipSvelteIndexer::new()),
+            Box::new(ScipAstroIndexer::new()),
             Box::new(ScipPythonIndexer::new()),
             Box::new(ScipJavaIndexer::new()),
             Box::new(ScipClangIndexer::new()),

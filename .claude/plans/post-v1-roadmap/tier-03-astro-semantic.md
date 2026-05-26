@@ -7,7 +7,8 @@ exit_criteria:
   - SCIP occurrences from the frontmatter remap back to original `.astro` byte offsets.
   - An `.astro` golden fixture yields ≥1 semantic edge (definition/reference) in an insta snapshot.
   - `cargo nextest run -p ariadne-scip` + architecture + clippy + fmt all green.
-status: pending
+status: completed
+completed: 2026-05-22
 ---
 
 <context>
@@ -16,7 +17,9 @@ js-framework v1 indexes `.astro` syntactically only — D11/R-Astro deferred sem
 
 <files>
 - crates/ariadne-scip/src/indexer/scip_astro.rs — new: Astro frontmatter SFC-bridge driver (mirrors `scip_svelte.rs`).
-- crates/ariadne-scip/src/indexer/mod.rs — modify: register `scip_astro`.
+- crates/ariadne-scip/src/indexer/mod.rs — modify: declare + re-export `scip_astro`.
+- crates/ariadne-scip/src/indexer/plan.rs — modify: register `ScipAstroIndexer` in the default driver set.
+- crates/ariadne-scip/src/lib.rs — modify: re-export `ScipAstroIndexer` from the crate façade.
 - the SFC region-extraction module shared by `scip_vue.rs`/`scip_svelte.rs` — modify: add a frontmatter (`---` fence) extractor for `.astro`.
 - crates/ariadne-scip/fixtures/astro/ — new: a minimal `.astro` file with a typed frontmatter import + reference.
 - crates/ariadne-scip/tests/ — new/modify: `.astro` semantic golden (insta).

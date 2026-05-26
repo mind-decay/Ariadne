@@ -3,7 +3,7 @@
 <status>
 Accepted
 Date: 2026-05-21
-Amended: 2026-05-21 (tier-08 — Svelte path; see the amendment section)
+Amended: 2026-05-21 (tier-08 — Svelte path); 2026-05-22 (post-v1 tier-03 — Astro path)
 Decider: user / claude
 </status>
 
@@ -108,10 +108,9 @@ vendored — the minimal writer is smaller and dependency-free, which the Rust
   scope here.
 - Pin bumps of `@volar/typescript` or `@vue/language-core` are a follow-up with
   a fixture re-generation, since Volar's mapping internals are version-coupled.
-- Svelte semantic indexing (tier-08) reuses the bridge's subprocess + minimal
-  SCIP-emit shape; its transform path differs from Vue's — see the tier-08
-  amendment below. `.astro` semantic indexing remains deferred (plan.md D11,
-  R-Astro).
+- Svelte semantic indexing (tier-08) and Astro semantic indexing (post-v1
+  tier-03) reuse the bridge's subprocess + minimal SCIP-emit shape; their
+  transform paths differ from Vue's — see the amendment sections below.
 </consequences>
 
 <amendment>
@@ -146,10 +145,38 @@ Consequences — the default driver set grows from eight to nine indexers; the
 in-bounds against the SFC text before the snapshot was accepted, and the bridge
 was additionally run over an independent three-component Svelte 5 project with
 three ranges spot-checked by byte offset.
+</amendment>
 
-Astro — no Volar→SCIP path for `.astro` was found this tier either; `.astro`
-semantic indexing stays deferred (R-Astro). `.astro` is syntactic-only —
-tree-sitter parsing only, tier-04.
+<amendment>
+Post-v1 tier-03 — Astro semantic indexing.
+
+The bridge gains a `--framework astro` mode and `ariadne-scip` gains a
+`ScipAstroIndexer` driver. The driver and minimal SCIP-emit shape mirror the
+Vue and Svelte paths; the transform is the simplest of the three.
+
+Transform — no transpile, no source map. An `.astro` file's component-script
+`---` fence is already plain TypeScript [src: https://docs.astro.build/en/basics/astro-components/],
+so the bridge slices the region between the leading `---` and the matching
+closing `---` verbatim into a virtual `.ts` module. Volar and `svelte2tsx` are
+both bypassed: the slice is byte-identical to the frontmatter, so each
+occurrence remaps with a pure line shift by the frontmatter's leading line
+offset — columns are unchanged. A template-only `.astro` (no `---` fence)
+carries no frontmatter and stays syntactic-only — tree-sitter parsing, the v1
+behaviour. The plain `ts.createProgram` is backed by the virtual modules
+exactly as the Svelte path's: a synthetic `.ts` entry side-effect-imports every
+fenced `.astro`, and `.astro` import specifiers resolve to the sibling virtual
+module via a `resolveModuleNameLiterals` host hook. The Astro symbol scheme is
+`scip-astro-bridge`, distinct from `scip-vue-bridge` and `scip-svelte-bridge`.
+
+This closes the js-framework R-Astro deferral: no Volar→SCIP path was needed —
+the frontmatter is TypeScript outright, so the checker walk applies directly.
+No new npm dependency is added.
+
+Consequences — the default driver set grows from nine to ten indexers; the
+`IngestPlan` registration test tracks the count. R-Map mitigation: the committed
+`astro` fixture's occurrence ranges are asserted in `ingest_astro.rs` to land
+strictly between the `---` fences, and the frontmatter is asserted to yield a
+definition→reference edge.
 </amendment>
 
 <sources>
@@ -160,7 +187,9 @@ tree-sitter parsing only, tier-04.
 - `[src: https://github.com/sourcegraph/scip-typescript]`
 - `[src: https://github.com/sveltejs/language-tools]` — svelte2tsx, no Volar plugin
 - `[src: https://tc39.es/ecma426/]` — Source Map v3 mappings / Base64-VLQ
+- `[src: https://docs.astro.build/en/basics/astro-components/]` — Astro component script
 - `[src: crates/ariadne-scip/src/indexer/scip_vue.rs]`
 - `[src: crates/ariadne-scip/src/indexer/scip_svelte.rs]`
+- `[src: crates/ariadne-scip/src/indexer/scip_astro.rs]`
 - `[src: tools/ariadne-sfc-scip/src/index.ts]`
 </sources>
