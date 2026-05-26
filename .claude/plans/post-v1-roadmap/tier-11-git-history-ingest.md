@@ -1,5 +1,5 @@
 ---
-tier_id: tier-10
+tier_id: tier-11
 title: Git history ingestion — ariadne-git adapter on gix, churn + co-change tables
 deps: [tier-02]
 exit_criteria:
@@ -25,7 +25,7 @@ v1 analytics are static-only — they ignore how code changed over time. Block C
 - crates/ariadne-storage/src/ — modify: `CHURN` + `CO_CHANGE` redb tables + a tier-02 migration step adding them.
 - crates/ariadne-cli/src/ — modify: `ariadne index` runs history ingestion (bounded depth from `config.toml`).
 - tests/architecture.rs — modify: classify `ariadne-git` as a driven adapter (depends only on `ariadne-core`).
-- docs/adr/0015-git-history-adapter.md — new.
+- docs/adr/0016-git-history-adapter.md — new.
 </files>
 
 <steps>
@@ -36,7 +36,7 @@ v1 analytics are static-only — they ignore how code changed over time. Block C
 5. Bound the walk by a configurable commit depth (`config.toml`); use the commit-graph file when present for an efficient walk (risk R-C1).
 6. Add `FileChurn`/`CoChangePair` pure record types to `ariadne-core`.
 7. `ariadne-storage`: define `CHURN` + `CO_CHANGE` tables; register a tier-02 `MigrationStep` that creates them so existing indexes upgrade in place.
-8. Wire history ingestion into `ariadne index`; classify `ariadne-git` in `tests/architecture.rs`; write ADR-0015 (decision = `gix`; rejected = shelling to `git`, `git2`/libgit2).
+8. Wire history ingestion into `ariadne index`; classify `ariadne-git` in `tests/architecture.rs`; write ADR-0016 (decision = `gix`; rejected = shelling to `git`, `git2`/libgit2).
 </steps>
 
 <verification>
@@ -46,5 +46,5 @@ v1 analytics are static-only — they ignore how code changed over time. Block C
 </verification>
 
 <rollback>
-`git checkout -- .` and `rm -rf crates/ariadne-git docs/adr/0015-git-history-adapter.md`. The migration step is additive and reversible (drop the new tables).
+`git checkout -- .` and `rm -rf crates/ariadne-git docs/adr/0016-git-history-adapter.md`. The migration step is additive and reversible (drop the new tables).
 </rollback>

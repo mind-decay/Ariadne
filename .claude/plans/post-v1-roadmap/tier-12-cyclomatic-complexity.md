@@ -1,5 +1,5 @@
 ---
-tier_id: tier-11
+tier_id: tier-12
 title: Cyclomatic complexity — McCabe metric per function from the tree-sitter CST
 deps: [tier-02]
 exit_criteria:
@@ -11,7 +11,7 @@ status: pending
 ---
 
 <context>
-v1 holds no per-function complexity signal — `weak_spots` reports god modules but not which functions are dense. This tier computes McCabe cyclomatic complexity from the tree-sitter CSTs Ariadne already builds, with no new dependency (plan RD8). It feeds the hotspot metric in tier-12. Full context: plan.md.
+v1 holds no per-function complexity signal — `weak_spots` reports god modules but not which functions are dense. This tier computes McCabe cyclomatic complexity from the tree-sitter CSTs Ariadne already builds, with no new dependency (plan RD8). It feeds the hotspot metric in tier-13. Full context: plan.md.
 </context>
 
 <files>

@@ -1,7 +1,7 @@
 ---
-tier_id: tier-13
+tier_id: tier-14
 title: Diff-aware blast radius — impact of a working-tree diff or commit range
-deps: [tier-10]
+deps: [tier-11]
 exit_criteria:
   - A use case maps a git diff (working tree, a commit, or a ref range) to its changed symbols.
   - Blast radius over the changed-symbol set equals the union of per-symbol v1 `blast_radius`.
@@ -11,7 +11,7 @@ status: pending
 ---
 
 <context>
-v1 `blast_radius` answers "what depends on symbol X". A reviewer's real question is "what does *this change* affect" — a diff, a branch, a PR. This tier composes the `gix` diff reader (tier-10) with the v1 dominator-based `blast_radius` to answer impact for a changeset (plan RD plan `<context>` Block C). Full context: plan.md.
+v1 `blast_radius` answers "what depends on symbol X". A reviewer's real question is "what does *this change* affect" — a diff, a branch, a PR. This tier composes the `gix` diff reader (tier-11) with the v1 dominator-based `blast_radius` to answer impact for a changeset (plan RD plan `<context>` Block C). Full context: plan.md.
 </context>
 
 <files>

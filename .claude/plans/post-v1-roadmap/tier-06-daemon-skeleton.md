@@ -1,18 +1,18 @@
 ---
-tier_id: tier-05
+tier_id: tier-06
 title: Daemon skeleton — ariadne-daemon crate, interprocess local socket, lifecycle
 deps: []
 exit_criteria:
   - A new `ariadne-daemon` crate hosts a long-running process bound to an `interprocess` local socket.
   - `ariadne daemon {start,stop,status}` manage the process via a pidfile + socket under `.ariadne/`.
   - A client `Ping` over the socket receives `Pong`; a stale socket/pidfile is detected and reclaimed.
-  - ADR-0014 records the D10 reversal; `tests/architecture.rs` classifies `ariadne-daemon` as a driving adapter.
+  - ADR-0015 records the D10 reversal; `tests/architecture.rs` classifies `ariadne-daemon` as a driving adapter.
   - `cargo nextest run -p ariadne-daemon` + architecture + clippy + fmt all green.
 status: pending
 ---
 
 <context>
-v1 D10 runs an MCP process per Claude session, cold-reading redb each time. Block B reverses this into a warm daemon (plan RD5/RD6). This tier ships only the skeleton: the crate, the `interprocess` listener, lifecycle management, and a trivial `Ping`/`Pong`. The warm graph (tier-06) and watcher loop (tier-07) come later. Full context: plan.md.
+v1 D10 runs an MCP process per Claude session, cold-reading redb each time. Block B reverses this into a warm daemon (plan RD5/RD6). This tier ships only the skeleton: the crate, the `interprocess` listener, lifecycle management, and a trivial `Ping`/`Pong`. The warm graph (tier-07) and watcher loop (tier-08) come later. Full context: plan.md.
 </context>
 
 <files>
@@ -24,7 +24,7 @@ v1 D10 runs an MCP process per Claude session, cold-reading redb each time. Bloc
 - crates/ariadne-core/src/domain/ — modify: add pure `DaemonRequest::Ping` / `DaemonResponse::Pong` wire types.
 - crates/ariadne-cli — modify: add a `daemon {start,stop,status}` subcommand (CLI is the composition root, ADR-0007).
 - tests/architecture.rs — modify: add `ariadne-daemon` to `DRIVING_ADAPTERS`.
-- docs/adr/0014-daemon-mode-ipc.md — new: per `docs/adr/_template.md`.
+- docs/adr/0015-daemon-mode-ipc.md — new: per `docs/adr/_template.md`.
 </files>
 
 <steps>
@@ -36,7 +36,7 @@ v1 D10 runs an MCP process per Claude session, cold-reading redb each time. Bloc
 6. Length-prefix frame `Ping`/`Pong` over the stream; one accept loop, one connection handler.
 7. Wire `ariadne daemon {start,stop,status}` in `ariadne-cli`.
 8. Amend `tests/architecture.rs`: `ariadne-daemon` is a driving adapter — nothing in the workspace may depend on it.
-9. Write ADR-0014: decision = reverse D10 to a warm daemon; transport = `interprocess` local socket; rejected = TCP loopback, D-Bus. Record the IPC-topology question deferred to tier-06.
+9. Write ADR-0015: decision = reverse D10 to a warm daemon; transport = `interprocess` local socket; rejected = TCP loopback, D-Bus. Record the IPC-topology question deferred to tier-07.
 </steps>
 
 <verification>
@@ -46,5 +46,5 @@ v1 D10 runs an MCP process per Claude session, cold-reading redb each time. Bloc
 </verification>
 
 <rollback>
-`git checkout -- .` and `rm -rf crates/ariadne-daemon docs/adr/0014-daemon-mode-ipc.md`. No prior tier depends on the daemon; v1 cold-path is untouched.
+`git checkout -- .` and `rm -rf crates/ariadne-daemon docs/adr/0015-daemon-mode-ipc.md`. No prior tier depends on the daemon; v1 cold-path is untouched.
 </rollback>

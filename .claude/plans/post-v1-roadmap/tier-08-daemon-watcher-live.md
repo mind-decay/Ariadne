@@ -1,7 +1,7 @@
 ---
-tier_id: tier-07
+tier_id: tier-08
 title: Daemon live updates — watcher loop feeds incremental warm-graph invalidation
-deps: [tier-06]
+deps: [tier-07]
 exit_criteria:
   - The daemon owns the `ariadne-watcher` event loop and reacts to filesystem changes.
   - A file edit re-derives the affected subset via Salsa and applies a delta to the warm graph.
@@ -12,7 +12,7 @@ status: pending
 ---
 
 <context>
-tier-06 made the daemon serve queries from a warm graph built once at startup. This tier keeps that graph live: the daemon hosts the watcher, and every filesystem change flows through Salsa re-derivation into an incremental `apply_delta` on the warm petgraph (plan RD6, dataflow in plan `<architecture>`). Full context: plan.md.
+tier-07 made the daemon serve queries from a warm graph built once at startup. This tier keeps that graph live: the daemon hosts the watcher, and every filesystem change flows through Salsa re-derivation into an incremental `apply_delta` on the warm petgraph (plan RD6, dataflow in plan `<architecture>`). Full context: plan.md.
 </context>
 
 <files>
@@ -38,5 +38,5 @@ tier-06 made the daemon serve queries from a warm graph built once at startup. T
 </verification>
 
 <rollback>
-`git checkout -- crates/ariadne-daemon`. The daemon falls back to the tier-06 build-once-at-startup behaviour.
+`git checkout -- crates/ariadne-daemon`. The daemon falls back to the tier-07 build-once-at-startup behaviour.
 </rollback>

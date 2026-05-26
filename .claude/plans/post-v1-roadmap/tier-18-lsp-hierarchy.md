@@ -1,7 +1,7 @@
 ---
-tier_id: tier-17
+tier_id: tier-18
 title: LSP hierarchy — call hierarchy, type hierarchy, implementations
-deps: [tier-16]
+deps: [tier-17]
 exit_criteria:
   - `ariadne-graph` gains `call_hierarchy`, `type_hierarchy`, and `implementations` graph use cases.
   - The LSP server answers `callHierarchy/{incoming,outgoing}Calls`, `typeHierarchy/{super,sub}types`, `textDocument/implementation`.
@@ -11,7 +11,7 @@ status: pending
 ---
 
 <context>
-This tier adds the three hierarchy queries. The graph algorithms live in `ariadne-graph` so tier-18 can reuse them for MCP tools — the LSP layer is just one consumer. Call hierarchy walks call edges; type hierarchy walks inheritance/implementation edges; `implementations` answers "who implements this trait/interface" (plan RD9, Block D). Full context: plan.md.
+This tier adds the three hierarchy queries. The graph algorithms live in `ariadne-graph` so tier-19 can reuse them for MCP tools — the LSP layer is just one consumer. Call hierarchy walks call edges; type hierarchy walks inheritance/implementation edges; `implementations` answers "who implements this trait/interface" (plan RD9, Block D). Full context: plan.md.
 </context>
 
 <files>
@@ -28,7 +28,7 @@ This tier adds the three hierarchy queries. The graph algorithms live in `ariadn
 3. `call_hierarchy`: directed traversal of call edges — incoming = predecessors, outgoing = successors — one level per LSP request (the client expands lazily); guard against cycles.
 4. `type_hierarchy`: traverse inheritance/implementation edges — supertypes upward, subtypes downward; guard against cycles (diamond inheritance).
 5. `implementations`: for a trait/interface symbol, collect every symbol joined by an implementation edge.
-6. LSP wiring: `callHierarchy/prepare` then `incomingCalls`/`outgoingCalls`; `typeHierarchy/prepare` then `supertypes`/`subtypes`; `textDocument/implementation` [src: https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/]. Map results via the tier-15 position layer.
+6. LSP wiring: `callHierarchy/prepare` then `incomingCalls`/`outgoingCalls`; `typeHierarchy/prepare` then `supertypes`/`subtypes`; `textDocument/implementation` [src: https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/]. Map results via the tier-16 position layer.
 7. Goldens at both layers — `ariadne-graph` use case goldens and LSP integration goldens.
 </steps>
 
@@ -39,5 +39,5 @@ This tier adds the three hierarchy queries. The graph algorithms live in `ariadn
 </verification>
 
 <rollback>
-`git checkout -- crates/ariadne-graph crates/ariadne-core crates/ariadne-lsp`. Navigation (tier-16) remains intact.
+`git checkout -- crates/ariadne-graph crates/ariadne-core crates/ariadne-lsp`. Navigation (tier-17) remains intact.
 </rollback>

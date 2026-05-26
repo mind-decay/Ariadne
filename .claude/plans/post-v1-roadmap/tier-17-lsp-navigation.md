@@ -1,17 +1,17 @@
 ---
-tier_id: tier-16
+tier_id: tier-17
 title: LSP navigation — definition, references, hover, document/workspace symbols
-deps: [tier-15]
+deps: [tier-16]
 exit_criteria:
   - `textDocument/definition`, `references`, `hover`, `documentSymbol`, and `workspace/symbol` are answered.
-  - Each request maps a daemon query result back to LSP locations via the tier-15 position layer.
+  - Each request maps a daemon query result back to LSP locations via the tier-16 position layer.
   - An LSP integration test drives all five requests against a spawned server with golden responses.
   - `cargo nextest run -p ariadne-lsp` + architecture + clippy + fmt all green.
 status: pending
 ---
 
 <context>
-tier-15 gave `ariadne-lsp` a handshake and a daemon client. This tier delivers the core navigation features — the LSP equivalents of the v1 MCP tools `find_definition`, `find_references`, `doc_for`, and `list_symbols` (plan RD9, Block D). Full context: plan.md.
+tier-16 gave `ariadne-lsp` a handshake and a daemon client. This tier delivers the core navigation features — the LSP equivalents of the v1 MCP tools `find_definition`, `find_references`, `doc_for`, and `list_symbols` (plan RD9, Block D). Full context: plan.md.
 </context>
 
 <files>
@@ -23,7 +23,7 @@ tier-15 gave `ariadne-lsp` a handshake and a daemon client. This tier delivers t
 
 <steps>
 1. Failing test first (`ariadne-lsp` tests): a spawned LSP client opens the fixture, requests `definition` at a known reference, asserts the returned `Location`; repeat for `references`, `hover`, `documentSymbol`, `workspace/symbol`. Red — handlers are unregistered.
-2. `textDocument/definition` → daemon `find_definition`; map the result symbol's file + byte span to an LSP `Location` via the tier-15 position layer.
+2. `textDocument/definition` → daemon `find_definition`; map the result symbol's file + byte span to an LSP `Location` via the tier-16 position layer.
 3. `textDocument/references` → daemon `find_references`; map each occurrence to a `Location`; honor the `includeDeclaration` flag.
 4. `textDocument/hover` → daemon `doc_for`; render the doc string as `Hover` markup.
 5. `textDocument/documentSymbol` → daemon `list_symbols` scoped to the file; `workspace/symbol` → project-wide `list_symbols` filtered by the query string [src: https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/].
@@ -38,5 +38,5 @@ tier-15 gave `ariadne-lsp` a handshake and a daemon client. This tier delivers t
 </verification>
 
 <rollback>
-`git checkout -- crates/ariadne-lsp`. The server reverts to the tier-15 initialize-only skeleton.
+`git checkout -- crates/ariadne-lsp`. The server reverts to the tier-16 initialize-only skeleton.
 </rollback>

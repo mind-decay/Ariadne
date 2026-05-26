@@ -1,7 +1,7 @@
 ---
-tier_id: tier-12
+tier_id: tier-13
 title: Hotspot + change-coupling metrics — churn x complexity, logical coupling
-deps: [tier-10, tier-11]
+deps: [tier-11, tier-12]
 exit_criteria:
   - A `hotspot_report` ranks files/symbols by normalized churn combined with cyclomatic complexity.
   - A `co_change_report` reports logical-coupling pairs above a configurable support/confidence threshold.
@@ -11,7 +11,7 @@ status: pending
 ---
 
 <context>
-tier-10 ingested churn + co-change; tier-11 added cyclomatic complexity. This tier turns that raw signal into two ranked metrics. Hotspots surface code that is both frequently changed and complex — the strongest predictor of defects and maintenance cost; change coupling surfaces files that change together despite no static edge (plan RD7/RD8, Block C). Full context: plan.md.
+tier-11 ingested churn + co-change; tier-12 added cyclomatic complexity. This tier turns that raw signal into two ranked metrics. Hotspots surface code that is both frequently changed and complex — the strongest predictor of defects and maintenance cost; change coupling surfaces files that change together despite no static edge (plan RD7/RD8, Block C). Full context: plan.md.
 </context>
 
 <files>
