@@ -17,7 +17,7 @@ async fn project_status_reports_counts() {
     let v: serde_json::Value = serde_json::from_str(&support::extract_text(&resp)).expect("decode");
     assert!(v["revision"].as_u64().unwrap() >= 1);
     assert_eq!(v["file_count"].as_u64().unwrap(), 4);
-    assert_eq!(v["symbol_count"].as_u64().unwrap(), 6);
+    assert_eq!(v["symbol_count"].as_u64().unwrap(), 7);
     assert_eq!(v["edge_count"].as_u64().unwrap(), 6);
     assert!(
         v["root"]

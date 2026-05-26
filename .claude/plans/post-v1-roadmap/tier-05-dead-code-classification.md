@@ -8,7 +8,8 @@ exit_criteria:
   - The ariadne-mcp `Catalog` exposes per-symbol `Lang`; `weak_spots` runs the classifier on the production path.
   - The language fixture set produces zero `dead_symbols` hits on `main`/exported/`#[test]` symbols.
   - "`cargo nextest run -p ariadne-graph -p ariadne-mcp` + architecture + clippy + fmt all green."
-status: pending
+status: completed
+completed: 2026-05-27
 ---
 
 <context>
@@ -18,8 +19,7 @@ v1 `dead_symbols` flags every symbol with graph fan-in=0; it false-positives on 
 <files>
 - crates/ariadne-graph/src/roots.rs — new: per-`Lang` entry-point classifier over visibility + attributes + kind + name.
 - crates/ariadne-graph/src/dead.rs — modify: consult the root set before emitting a fan-in=0 candidate.
-- crates/ariadne-graph/tests/ — modify: extend the dead-code golden with root cases per language.
-- crates/ariadne-graph/fixtures/ — modify: each language fixture carries a root symbol + a genuinely dead symbol.
+- crates/ariadne-graph/tests/ — modify: extend the dead-code golden with root cases per language via synthetic in-graph fixtures (`Sym` rows over `Visibility`/`attributes`/`Lang`), isolating the classifier from parser/SCIP indirection.
 - crates/ariadne-mcp/src/catalog.rs — modify: `SymbolMeta` carries `lang`/`visibility`/`attributes`; the builder joins `defining_file` -> `FileRecord.lang`.
 - crates/ariadne-mcp/src/tools/weak_spots.rs — modify: build the root set from catalog metadata so `weak_spots` runs the classifier.
 </files>

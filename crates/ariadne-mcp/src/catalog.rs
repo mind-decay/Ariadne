@@ -10,7 +10,7 @@
 
 use std::collections::BTreeMap;
 
-use ariadne_core::{FileId, ReadSnapshot, Storage, SymbolId, SymbolRecord};
+use ariadne_core::{FileId, Lang, ReadSnapshot, Storage, SymbolId, SymbolRecord, Visibility};
 use ariadne_graph::GraphIndex;
 
 use crate::errors::McpError;
@@ -31,16 +31,28 @@ pub struct SymbolMeta {
     pub byte_start: u32,
     /// Defining span `byte_end`.
     pub byte_end: u32,
+    /// Language of the defining file. Joined from
+    /// [`ariadne_core::FileRecord::lang`] at catalog build time so the
+    /// tier-05 dead-code classifier can run on the production path.
+    pub lang: Lang,
+    /// Visibility lattice on the defining occurrence.
+    pub visibility: Visibility,
+    /// Attribute / annotation / decorator identifiers attached to the
+    /// declaration (e.g. `"test"`, `"Override"`, `"pytest.fixture"`).
+    pub attributes: Vec<String>,
 }
 
 impl SymbolMeta {
-    fn from_record(rec: &SymbolRecord) -> Self {
+    fn from_record(rec: &SymbolRecord, lang: Lang) -> Self {
         Self {
             name: rec.canonical_name.clone(),
             kind: rec.kind.clone(),
             file: rec.defining_file,
             byte_start: rec.defining_span.byte_start,
             byte_end: rec.defining_span.byte_end,
+            lang,
+            visibility: rec.visibility,
+            attributes: rec.attributes.clone(),
         }
     }
 }
@@ -77,9 +89,11 @@ impl Catalog {
         let snap = storage.snapshot().map_err(McpError::Storage)?;
         let mut paths = BTreeMap::new();
         let mut path_to_id = BTreeMap::new();
+        let mut lang_of: BTreeMap<FileId, Lang> = BTreeMap::new();
         for chunk in snap.iter_files(SCAN_CHUNK).map_err(McpError::Storage)? {
             for (id, rec) in chunk.map_err(McpError::Storage)? {
                 path_to_id.insert(rec.path.clone(), id);
+                lang_of.insert(id, rec.lang);
                 paths.insert(id, rec.path);
             }
         }
@@ -88,7 +102,11 @@ impl Catalog {
         let mut by_name: BTreeMap<String, Vec<SymbolId>> = BTreeMap::new();
         for chunk in snap.iter_symbols(SCAN_CHUNK).map_err(McpError::Storage)? {
             for (id, rec) in chunk.map_err(McpError::Storage)? {
-                let meta = SymbolMeta::from_record(&rec);
+                let lang = lang_of
+                    .get(&rec.defining_file)
+                    .copied()
+                    .unwrap_or(Lang::Other("unknown"));
+                let meta = SymbolMeta::from_record(&rec, lang);
                 by_name.entry(meta.name.clone()).or_default().push(id);
                 symbols.insert(id, meta);
             }

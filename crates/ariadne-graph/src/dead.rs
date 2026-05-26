@@ -21,6 +21,11 @@ pub struct DeadCodeConfig {
     pub exported: BTreeSet<SymbolId>,
     /// Symbols belonging to test harnesses; skipped wholesale.
     pub tests: BTreeSet<SymbolId>,
+    /// Per-language root set computed by [`crate::roots::is_root`] over
+    /// the caller's [`ariadne_core::SymbolRecord`] metadata. Consulted
+    /// before the fan-in=0 test, so `main`/exported/`#[test]` symbols
+    /// do not surface as dead code (tier-05 RD4).
+    pub roots: BTreeSet<SymbolId>,
 }
 
 /// One row of [`DeadCodeReport`].
@@ -48,6 +53,7 @@ impl GraphIndex {
             if cfg.entry_points.contains(&id)
                 || cfg.exported.contains(&id)
                 || cfg.tests.contains(&id)
+                || cfg.roots.contains(&id)
             {
                 continue;
             }

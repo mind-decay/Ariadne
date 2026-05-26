@@ -41,9 +41,10 @@ async fn weak_spots_lists_cycles_and_dead_code() {
         .iter()
         .map(|s| s["name"].as_str().unwrap().to_owned())
         .collect();
-    // The fixture's only fan_in=0 symbol is `crate::main` (every other
-    // symbol has at least one incoming edge).
-    assert_eq!(dead, vec!["crate::main"]);
+    // tier-05 root classifier excludes `crate::main` (Rust `fn main`
+    // convention); the genuinely dead non-root `crate::unused_helper`
+    // still surfaces. The other symbols have at least one incoming edge.
+    assert_eq!(dead, vec!["crate::unused_helper"]);
 
     client.cancel().await.ok();
 }

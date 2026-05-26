@@ -268,6 +268,10 @@ fn canonical_changeset() -> Changeset {
             },
         );
     }
+    // sid(1) `crate::main` exercises the tier-05 Rust root classifier
+    // (Rust `fn main` convention). sid(7) `crate::unused_helper` is the
+    // genuinely dead non-root: fan-in=0 with no visibility / attribute
+    // signal, so it surfaces in `dead_symbols` after the root exemption.
     let symbols = [
         (1u64, "crate::main", "function", 1),
         (2, "crate::run", "function", 2),
@@ -275,6 +279,7 @@ fn canonical_changeset() -> Changeset {
         (4, "crate::util::leaf", "function", 3),
         (5, "crate::helper::extra", "function", 4),
         (6, "crate::orphan", "function", 2),
+        (7, "crate::unused_helper", "function", 3),
     ];
     for (id, name, kind, file) in symbols {
         cs = cs.upsert_symbol(

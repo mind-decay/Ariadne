@@ -1,6 +1,9 @@
 //! `weak_spots` — cycles ∪ god-modules ∪ dead-code top-N.
 
-use ariadne_graph::DeadCodeConfig;
+use std::collections::BTreeSet;
+
+use ariadne_core::SymbolId;
+use ariadne_graph::{DeadCodeConfig, roots::is_root};
 
 use crate::catalog::Catalog;
 use crate::tools::{coupling_report, summarize};
@@ -70,7 +73,23 @@ pub fn handle(cat: &Catalog, scope: &ScopeInput) -> WeakSpotsOutput {
         })
         .collect();
 
-    let dead = cat.graph.dead_code(&DeadCodeConfig::default());
+    let mut roots: BTreeSet<SymbolId> = BTreeSet::new();
+    for (id, meta) in &cat.symbols {
+        if is_root(
+            meta.lang,
+            meta.visibility,
+            &meta.attributes,
+            &meta.kind,
+            &meta.name,
+        ) {
+            roots.insert(*id);
+        }
+    }
+    let cfg = DeadCodeConfig {
+        roots,
+        ..Default::default()
+    };
+    let dead = cat.graph.dead_code(&cfg);
     let dead_symbols = dead
         .symbols
         .into_iter()
