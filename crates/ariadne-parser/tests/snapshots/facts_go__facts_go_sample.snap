@@ -1,5 +1,6 @@
 ---
 source: crates/ariadne-parser/tests/facts_go.rs
+assertion_line: 10
 expression: facts
 ---
 SyntacticFacts {
@@ -15,6 +16,8 @@ SyntacticFacts {
                 46,
                 80,
             ),
+            visibility: Public,
+            attributes: [],
         },
         Decl {
             kind: TypeAlias,
@@ -27,6 +30,8 @@ SyntacticFacts {
                 82,
                 100,
             ),
+            visibility: Public,
+            attributes: [],
         },
         Decl {
             kind: Method,
@@ -39,6 +44,8 @@ SyntacticFacts {
                 102,
                 166,
             ),
+            visibility: Public,
+            attributes: [],
         },
         Decl {
             kind: Function,
@@ -51,6 +58,8 @@ SyntacticFacts {
                 168,
                 231,
             ),
+            visibility: Public,
+            attributes: [],
         },
         Decl {
             kind: Function,
@@ -63,6 +72,8 @@ SyntacticFacts {
                 233,
                 312,
             ),
+            visibility: Private,
+            attributes: [],
         },
         Decl {
             kind: Function,
@@ -75,6 +86,8 @@ SyntacticFacts {
                 314,
                 388,
             ),
+            visibility: Private,
+            attributes: [],
         },
     ],
     imports: [

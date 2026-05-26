@@ -12,7 +12,7 @@ use std::collections::BTreeSet;
 
 use ariadne_core::{
     ChunkStream, EdgeKey, EdgeRecord, FileId, FileRecord, Lang, ReadSnapshot, Span, StorageError,
-    SymbolId, SymbolRecord,
+    SymbolId, SymbolRecord, Visibility,
 };
 use ariadne_graph::{EdgeKind, GraphIndex, ModuleSpec};
 
@@ -169,6 +169,8 @@ pub fn snapshot() -> MemSnapshot {
                         byte_start: 0,
                         byte_end: 0,
                     },
+                    visibility: Visibility::Unknown,
+                    attributes: Vec::new(),
                 },
             )
         })

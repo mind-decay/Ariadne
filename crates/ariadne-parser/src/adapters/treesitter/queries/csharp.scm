@@ -31,3 +31,13 @@
 (invocation_expression
   function: (member_access_expression
     name: (identifier) @call.callee))
+
+; tier-04 visibility / attribute captures.
+;   @visibility  the `modifier` token inside a decl
+;                (`public`/`protected`/`internal`/`private`).
+;   @attribute   `attribute_list` preceding a decl
+;                (`[Test]`, `[Authorize(…)]`).
+
+(modifier) @visibility
+
+(attribute_list) @attribute

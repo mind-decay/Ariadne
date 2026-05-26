@@ -1,5 +1,6 @@
 ---
 source: crates/ariadne-parser/tests/facts_csharp.rs
+assertion_line: 10
 expression: facts
 ---
 SyntacticFacts {
@@ -15,6 +16,8 @@ SyntacticFacts {
                 80,
                 145,
             ),
+            visibility: Public,
+            attributes: [],
         },
         Decl {
             kind: Method,
@@ -27,6 +30,8 @@ SyntacticFacts {
                 117,
                 139,
             ),
+            visibility: Unknown,
+            attributes: [],
         },
         Decl {
             kind: Enum,
@@ -39,6 +44,8 @@ SyntacticFacts {
                 151,
                 208,
             ),
+            visibility: Public,
+            attributes: [],
         },
         Decl {
             kind: Struct,
@@ -51,6 +58,8 @@ SyntacticFacts {
                 214,
                 289,
             ),
+            visibility: Public,
+            attributes: [],
         },
         Decl {
             kind: Record,
@@ -63,6 +72,8 @@ SyntacticFacts {
                 295,
                 327,
             ),
+            visibility: Public,
+            attributes: [],
         },
         Decl {
             kind: Class,
@@ -75,6 +86,8 @@ SyntacticFacts {
                 333,
                 655,
             ),
+            visibility: Public,
+            attributes: [],
         },
         Decl {
             kind: Method,
@@ -87,6 +100,8 @@ SyntacticFacts {
                 395,
                 487,
             ),
+            visibility: Public,
+            attributes: [],
         },
         Decl {
             kind: Method,
@@ -99,6 +114,38 @@ SyntacticFacts {
                 497,
                 649,
             ),
+            visibility: Public,
+            attributes: [],
+        },
+        Decl {
+            kind: Class,
+            name: "Legacy",
+            name_byte_range: (
+                689,
+                695,
+            ),
+            def_byte_range: (
+                661,
+                736,
+            ),
+            visibility: Public,
+            attributes: [
+                "Obsolete",
+            ],
+        },
+        Decl {
+            kind: Method,
+            name: "Run",
+            name_byte_range: (
+                722,
+                725,
+            ),
+            def_byte_range: (
+                710,
+                730,
+            ),
+            visibility: Public,
+            attributes: [],
         },
     ],
     imports: [

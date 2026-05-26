@@ -16,7 +16,7 @@
 //! `StreamingIterator` in scope.
 //! (src: <https://docs.rs/tree-sitter/0.26.8/tree_sitter/struct.QueryCursor.html>)
 
-use ariadne_core::Lang;
+use ariadne_core::{Lang, Visibility};
 use tree_sitter::{Language, Node, Query, QueryCursor, StreamingIterator};
 
 use super::registry::ParserRegistry;
@@ -94,6 +94,14 @@ pub struct Decl {
     pub name_byte_range: (u32, u32),
     /// Byte range of the whole declaration node.
     pub def_byte_range: (u32, u32),
+    /// Visibility extracted from a `@visibility` capture (or the Go
+    /// exported-by-leading-case rule). `Visibility::Unknown` when the
+    /// grammar exposes no visibility node for this kind of decl.
+    pub visibility: Visibility,
+    /// Attribute / annotation / decorator identifiers attached to the
+    /// declaration — e.g. `["test"]` for `#[test] fn …`. Empty when none
+    /// captured.
+    pub attributes: Vec<String>,
 }
 
 /// An import statement.
@@ -290,6 +298,12 @@ impl FactExtractor {
         // Byte ranges of every JSX tag-name (host *and* component); drives the
         // component post-filter below.
         let mut jsx_spans: Vec<(u32, u32)> = Vec::new();
+        let lang = self.lang;
+        // `@visibility` / `@attribute` captures live in their own top-level
+        // query patterns (siblings of, or wrapping parents around, a decl),
+        // so collect them globally and attach to decls in a post-pass below.
+        let mut visibility_marks: Vec<VisibilityMark> = Vec::new();
+        let mut attribute_marks: Vec<AttributeMark> = Vec::new();
 
         while let Some(m) = matches.next() {
             let mut def_node: Option<(Node<'_>, DeclKind)> = None;
@@ -305,6 +319,19 @@ impl FactExtractor {
                     def_node = Some((capture.node, DeclKind::from_tag(rest)));
                 } else if name == "name" {
                     name_node = Some(capture.node);
+                } else if name == "visibility" {
+                    visibility_marks.push(VisibilityMark {
+                        range: byte_range(capture.node),
+                        text: text_of(capture.node, source),
+                    });
+                } else if name == "attribute" {
+                    let attr = attribute_name(capture.node, source);
+                    if !attr.is_empty() {
+                        attribute_marks.push(AttributeMark {
+                            range: byte_range(capture.node),
+                            name: attr,
+                        });
+                    }
                 } else if name == "import.path" {
                     import_path_node = Some(capture.node);
                 } else if name == "call.callee" {
@@ -322,6 +349,8 @@ impl FactExtractor {
                     name: text_of(name, source),
                     name_byte_range: byte_range(name),
                     def_byte_range: byte_range(def),
+                    visibility: Visibility::Unknown,
+                    attributes: Vec::new(),
                 });
             } else if let Some(path) = import_path_node {
                 facts.imports.push(Import {
@@ -369,6 +398,9 @@ impl FactExtractor {
             }
         }
 
+        attach_visibility(lang, &mut facts.decls, &visibility_marks);
+        attach_attributes(&mut facts.decls, &attribute_marks);
+
         facts.decls.sort_by_key(|d| d.def_byte_range.0);
         facts.imports.sort_by_key(|i| i.byte_range.0);
         facts.calls.sort_by_key(|c| c.byte_range.0);
@@ -376,6 +408,23 @@ impl FactExtractor {
         facts.hooks.sort_by_key(|h| h.byte_range.0);
         facts
     }
+}
+
+/// Visibility modifier captured by an `@visibility` query rule. The text is
+/// the modifier's verbatim source — `pub`, `pub(crate)`, `public`, `export`,
+/// the Python dunder name, …
+#[derive(Debug, Clone)]
+struct VisibilityMark {
+    range: (u32, u32),
+    text: String,
+}
+
+/// Attribute / annotation / decorator captured by an `@attribute` rule.
+/// `name` is the bare identifier head extracted from the captured node.
+#[derive(Debug, Clone)]
+struct AttributeMark {
+    range: (u32, u32),
+    name: String,
 }
 
 impl std::fmt::Debug for FactExtractor {
@@ -424,4 +473,214 @@ fn byte_range(node: Node<'_>) -> (u32, u32) {
 
 fn text_of(node: Node<'_>, source: &[u8]) -> String {
     node.utf8_text(source).unwrap_or_default().to_owned()
+}
+
+/// Attach visibility marks onto decls + apply the Go fallback rule.
+///
+/// Each visibility node binds to exactly one decl:
+/// 1. If the mark is contained in any decl, the *smallest* such decl wins
+///    (innermost) — handles Rust `visibility_modifier` nested inside a
+///    `function_item` even when an outer `mod_item` also contains it.
+/// 2. Otherwise, if any decl is contained in the mark, the *largest* such
+///    decl wins — handles TS `export_statement` wrapping a top-level
+///    `function_declaration`; the export keyword's range covers the
+///    function's range.
+///
+/// Go has no visibility keyword and no annotation system; the language spec
+/// defines exported identifiers as those whose first character is an
+/// upper-case Unicode letter
+/// [src: <https://go.dev/ref/spec#Exported_identifiers>]. Decls that receive
+/// no mark fall back to the case rule for Go and to `Visibility::Unknown`
+/// otherwise.
+fn attach_visibility(lang: Lang, decls: &mut [Decl], marks: &[VisibilityMark]) {
+    let mut by_decl: Vec<Visibility> = vec![Visibility::Unknown; decls.len()];
+    let mut received: Vec<bool> = vec![false; decls.len()];
+    for mark in marks {
+        let Some(target) = best_decl_for(mark.range, decls) else {
+            continue;
+        };
+        let v = classify_visibility_text(lang, &mark.text);
+        by_decl[target] = visibility_max(by_decl[target], v);
+        received[target] = true;
+    }
+    for (i, decl) in decls.iter_mut().enumerate() {
+        decl.visibility = if received[i] {
+            by_decl[i]
+        } else if lang == Lang::Go {
+            if decl.name.chars().next().is_some_and(char::is_uppercase) {
+                Visibility::Public
+            } else {
+                Visibility::Private
+            }
+        } else {
+            Visibility::Unknown
+        };
+    }
+}
+
+/// Attach attribute marks to decls.
+///
+/// 1. If the mark is contained in a decl (Java `@Override` inside a
+///    `modifiers` block), the innermost containing decl wins.
+/// 2. Otherwise, the mark attaches to the next decl by start byte (Rust
+///    `#[test]` preceding a `fn`, TS `@decorator` preceding a class
+///    member).
+fn attach_attributes(decls: &mut [Decl], marks: &[AttributeMark]) {
+    let mut order: Vec<usize> = (0..decls.len()).collect();
+    order.sort_by_key(|&i| decls[i].def_byte_range.0);
+    for mark in marks {
+        let target = innermost_containing_decl(mark.range, decls).or_else(|| {
+            order
+                .iter()
+                .copied()
+                .find(|&i| decls[i].def_byte_range.0 >= mark.range.1)
+        });
+        if let Some(idx) = target {
+            decls[idx].attributes.push(mark.name.clone());
+        }
+    }
+}
+
+fn best_decl_for(mark_range: (u32, u32), decls: &[Decl]) -> Option<usize> {
+    innermost_containing_decl(mark_range, decls)
+        .or_else(|| largest_contained_decl(mark_range, decls))
+}
+
+fn innermost_containing_decl(mark: (u32, u32), decls: &[Decl]) -> Option<usize> {
+    let mut best: Option<usize> = None;
+    let mut best_size: u64 = u64::MAX;
+    for (i, decl) in decls.iter().enumerate() {
+        if range_contains(decl.def_byte_range, mark) {
+            let size = u64::from(decl.def_byte_range.1.saturating_sub(decl.def_byte_range.0));
+            if size < best_size {
+                best = Some(i);
+                best_size = size;
+            }
+        }
+    }
+    best
+}
+
+fn largest_contained_decl(mark: (u32, u32), decls: &[Decl]) -> Option<usize> {
+    let mut best: Option<usize> = None;
+    let mut best_size: u64 = 0;
+    for (i, decl) in decls.iter().enumerate() {
+        if range_contains(mark, decl.def_byte_range) {
+            let size = u64::from(decl.def_byte_range.1.saturating_sub(decl.def_byte_range.0));
+            if best.is_none() || size > best_size {
+                best = Some(i);
+                best_size = size;
+            }
+        }
+    }
+    best
+}
+
+fn range_contains(outer: (u32, u32), inner: (u32, u32)) -> bool {
+    outer.0 <= inner.0 && outer.1 >= inner.1
+}
+
+fn classify_visibility_text(lang: Lang, text: &str) -> Visibility {
+    match lang {
+        Lang::Rust => rust_visibility(text),
+        Lang::Java | Lang::Kotlin => jvm_visibility(text),
+        Lang::CSharp => csharp_visibility(text),
+        Lang::TypeScript | Lang::Tsx | Lang::JavaScript => ts_visibility(text),
+        Lang::C | Lang::Cpp => c_visibility(text),
+        _ => Visibility::Unknown,
+    }
+}
+
+fn visibility_max(a: Visibility, b: Visibility) -> Visibility {
+    // Ordering on the lattice: Public > Restricted > Private > Unknown.
+    if a.rank() >= b.rank() { a } else { b }
+}
+
+fn rust_visibility(text: &str) -> Visibility {
+    // `visibility_modifier` text is the verbatim token, e.g. `pub` or
+    // `pub(crate)` [src: https://github.com/tree-sitter/tree-sitter-rust].
+    let trimmed = text.trim();
+    if trimmed == "pub" {
+        Visibility::Public
+    } else if trimmed.starts_with("pub(") {
+        Visibility::Restricted
+    } else {
+        Visibility::Private
+    }
+}
+
+fn jvm_visibility(text: &str) -> Visibility {
+    // Java/Kotlin `modifiers` blocks list keywords + annotations on one
+    // node; pick the strongest visibility keyword anywhere in the text.
+    if word_present(text, "public") {
+        Visibility::Public
+    } else if word_present(text, "protected") || word_present(text, "internal") {
+        Visibility::Restricted
+    } else if word_present(text, "private") {
+        Visibility::Private
+    } else {
+        Visibility::Unknown
+    }
+}
+
+fn csharp_visibility(text: &str) -> Visibility {
+    if word_present(text, "public") {
+        Visibility::Public
+    } else if word_present(text, "protected") || word_present(text, "internal") {
+        Visibility::Restricted
+    } else if word_present(text, "private") {
+        Visibility::Private
+    } else {
+        Visibility::Unknown
+    }
+}
+
+fn word_present(haystack: &str, needle: &str) -> bool {
+    haystack
+        .split(|c: char| !c.is_alphanumeric() && c != '_')
+        .any(|w| w == needle)
+}
+
+fn ts_visibility(text: &str) -> Visibility {
+    let trimmed = text.trim_start();
+    if trimmed == "public" || trimmed.starts_with("export") {
+        Visibility::Public
+    } else if trimmed == "protected" {
+        Visibility::Restricted
+    } else if trimmed == "private" {
+        Visibility::Private
+    } else {
+        Visibility::Unknown
+    }
+}
+
+fn c_visibility(text: &str) -> Visibility {
+    match text.trim() {
+        "public:" | "public" => Visibility::Public,
+        "protected:" | "protected" => Visibility::Restricted,
+        "static" | "private:" | "private" => Visibility::Private,
+        _ => Visibility::Unknown,
+    }
+}
+
+/// Read the identifier portion of an attribute / annotation / decorator
+/// node. Tree-sitter attribute nodes preserve the surrounding syntax
+/// (`#[…]`, `@…`, `[Attr]`); the bare identifier the lattice cares about
+/// is recovered by stripping the surrounding punctuation, then taking the
+/// leading dotted-name path. Empty when no readable identifier remains.
+fn attribute_name(node: Node<'_>, source: &[u8]) -> String {
+    let raw = node.utf8_text(source).unwrap_or_default();
+    let trimmed = raw.trim();
+    let stripped = trimmed
+        .trim_start_matches('#')
+        .trim_start_matches('!')
+        .trim_start_matches('[')
+        .trim_end_matches(']')
+        .trim_start_matches('@')
+        .trim();
+    let head: String = stripped
+        .chars()
+        .take_while(|c| c.is_alphanumeric() || *c == '_' || *c == '.' || *c == ':')
+        .collect();
+    head
 }

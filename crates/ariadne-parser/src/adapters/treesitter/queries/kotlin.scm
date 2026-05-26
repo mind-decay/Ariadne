@@ -19,3 +19,13 @@
 (import (identifier) @import.path) @import
 
 (call_expression (expression (identifier) @call.callee))
+
+; tier-04 visibility / attribute captures.
+;   @visibility  the `modifiers` node — text-scan picks the strongest
+;                visibility keyword (`public`/`protected`/`internal`/
+;                `private`).
+;   @attribute   Kotlin `annotation` nodes preceding a decl.
+
+(modifiers) @visibility
+
+(annotation) @attribute

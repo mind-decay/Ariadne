@@ -35,3 +35,13 @@ mod inner {
         42
     }
 }
+
+#[derive(Debug)]
+pub struct Tagged {
+    pub label: &'static str,
+}
+
+#[test]
+fn tagged_round_trips() {
+    let _ = Tagged { label: "ok" };
+}

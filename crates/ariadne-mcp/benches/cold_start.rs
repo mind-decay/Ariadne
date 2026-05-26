@@ -18,7 +18,7 @@ use std::time::{Duration, Instant};
 
 use ariadne_core::{
     Changeset, EdgeKey, EdgeKind, EdgeRecord, FileId, FileRecord, Lang, Span, Storage, SymbolId,
-    SymbolRecord, WriteTxn,
+    SymbolRecord, Visibility, WriteTxn,
 };
 use ariadne_storage::RedbStorage;
 
@@ -174,6 +174,8 @@ fn seed_files(storage: &RedbStorage) {
                         byte_start: 0,
                         byte_end: 16,
                     },
+                    visibility: Visibility::Unknown,
+                    attributes: Vec::new(),
                 },
             );
             if f < FILE_COUNT && f % 2 == 0 {

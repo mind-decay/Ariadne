@@ -12,7 +12,7 @@ use std::time::Duration;
 
 use ariadne_core::{
     Changeset, EdgeKey, EdgeKind, EdgeRecord, FileId, FileRecord, Lang, Span, Storage, SymbolId,
-    SymbolRecord, WriteTxn,
+    SymbolRecord, Visibility, WriteTxn,
 };
 use ariadne_storage::RedbStorage;
 use rmcp::ServiceExt;
@@ -130,6 +130,8 @@ fn component_changeset() -> Changeset {
                 kind: kind.into(),
                 defining_file: fid(file),
                 defining_span: span(file, 0, 64),
+                visibility: Visibility::Unknown,
+                attributes: Vec::new(),
             },
         );
     }
@@ -199,6 +201,8 @@ fn god_module_changeset() -> Changeset {
                 kind: "function".into(),
                 defining_file: fid(file),
                 defining_span: span(file, 0, 64),
+                visibility: Visibility::Unknown,
+                attributes: Vec::new(),
             },
         );
     }
@@ -211,6 +215,8 @@ fn god_module_changeset() -> Changeset {
                 kind: "function".into(),
                 defining_file: fid(3),
                 defining_span: span(3, 0, 16),
+                visibility: Visibility::Unknown,
+                attributes: Vec::new(),
             },
         );
     }
@@ -278,6 +284,8 @@ fn canonical_changeset() -> Changeset {
                 kind: kind.into(),
                 defining_file: fid(file),
                 defining_span: span(file, 0, 32),
+                visibility: Visibility::Unknown,
+                attributes: Vec::new(),
             },
         );
     }

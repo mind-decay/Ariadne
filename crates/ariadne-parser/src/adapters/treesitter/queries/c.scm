@@ -22,3 +22,13 @@
 (call_expression
   function: (field_expression
     field: (field_identifier) @call.callee))
+
+; tier-04 visibility / attribute captures.
+;   @visibility  `storage_class_specifier` — `static` collapses to
+;                `Private` (translation-unit-local); other classes leave
+;                the lattice at `Unknown`.
+;   @attribute   the C23 / GCC `attribute_declaration` form.
+
+(storage_class_specifier) @visibility
+
+(attribute_declaration) @attribute

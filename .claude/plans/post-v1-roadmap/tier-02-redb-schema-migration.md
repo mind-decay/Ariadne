@@ -7,7 +7,8 @@ exit_criteria:
   - Opening a redb file written at `current-1` migrates it in place; all records survive.
   - On a version gap with no registered path, the adapter still returns the existing `SchemaMismatch` error (no silent data loss).
   - `cargo nextest run -p ariadne-storage` + architecture + clippy + fmt all green.
-status: pending
+status: completed
+completed: 2026-05-22
 ---
 
 <context>

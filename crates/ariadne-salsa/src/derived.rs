@@ -43,6 +43,15 @@ pub struct DeclRaw {
     pub name_byte_range: (u32, u32),
     /// `(byte_start, byte_end)` of the declaration node.
     pub def_byte_range: (u32, u32),
+    /// Mirror of `ariadne_core::Visibility` as a single byte
+    /// (`Visibility::to_byte`). The driver layer encodes at the boundary —
+    /// `salsa::Update` has no auto-impl for non-`std` `Copy` types in
+    /// salsa 0.26, so the mirror keeps the salsa node `Update`-safe
+    /// [src: <https://docs.rs/salsa/0.26.2/salsa/trait.Update.html>].
+    pub visibility_byte: u8,
+    /// Attribute / annotation / decorator identifiers attached to the
+    /// decl (e.g. `"test"` for Rust `#[test]`).
+    pub attributes: Vec<String>,
 }
 
 /// Import record.
@@ -76,6 +85,13 @@ pub struct SymbolFactsRaw {
     pub defining_file_raw: u32,
     /// `(byte_start, byte_end)` of the defining occurrence.
     pub defining_byte_range: (u32, u32),
+    /// Mirror of `ariadne_core::Visibility` as a single byte
+    /// (`Visibility::to_byte`); see `DeclRaw::visibility_byte` for why the
+    /// salsa boundary uses a byte mirror.
+    pub visibility_byte: u8,
+    /// Attribute / annotation / decorator identifiers on the defining
+    /// occurrence.
+    pub attributes: Vec<String>,
 }
 
 /// Edge record (salsa-internal mirror).
@@ -136,6 +152,8 @@ pub fn symbols_for_file(
             kind: d.kind.clone(),
             defining_file_raw: 0,
             defining_byte_range: d.def_byte_range,
+            visibility_byte: d.visibility_byte,
+            attributes: d.attributes.clone(),
         })
         .collect();
     // SCIP precedence per canonical_name.

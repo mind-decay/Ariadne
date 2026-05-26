@@ -49,3 +49,17 @@
 (call_expression
   function: (identifier) @hook.callee
   (#match? @hook.callee "^(use[A-Z]|createSignal|createEffect|createMemo|createResource)"))
+
+; tier-04 visibility / attribute captures.
+;   @visibility  `export_statement` wrapping a top-level decl; class
+;                members' TS `accessibility_modifier` (`public` /
+;                `protected` / `private`). `facts.rs` folds the wrapping
+;                range / containment onto the inner decl.
+;   @attribute   `decorator` nodes precede a class member; bind to next
+;                decl in `attach_attributes`.
+
+(export_statement) @visibility
+
+(accessibility_modifier) @visibility
+
+(decorator) @attribute

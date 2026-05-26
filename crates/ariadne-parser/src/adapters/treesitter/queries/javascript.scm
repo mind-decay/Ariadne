@@ -51,3 +51,13 @@
 (call_expression
   function: (identifier) @hook.callee
   (#match? @hook.callee "^(use[A-Z]|createSignal|createEffect|createMemo|createResource)"))
+
+; tier-04 visibility / attribute captures.
+;   @visibility  `export_statement` wraps the decl; the wrapping byte
+;                range folds onto the inner decl in `attach_visibility`.
+;   @attribute   `decorator` (legacy / proposal stage-3) precedes a class
+;                member; bound to next decl in `attach_attributes`.
+
+(export_statement) @visibility
+
+(decorator) @attribute

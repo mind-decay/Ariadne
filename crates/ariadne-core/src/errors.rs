@@ -33,6 +33,19 @@ pub enum StorageError {
     /// On-disk format is unreadable or violates an invariant.
     #[error("storage corrupted: {0}")]
     Corrupted(String),
+    /// A registered schema-migration step failed. The write transaction was
+    /// rolled back, so the on-disk database is intact at its pre-migration
+    /// version — distinct from [`StorageError::Corrupted`], which signals
+    /// actual on-disk damage.
+    #[error("storage migration {from}->{to} failed: {reason}")]
+    Migration {
+        /// Schema version the failed step migrated from.
+        from: u64,
+        /// Schema version the failed step targeted.
+        to: u64,
+        /// Backend failure detail reported by the step.
+        reason: String,
+    },
     /// Backend IO failure (filesystem, lock, page fault, …).
     #[error("storage io: {0}")]
     Io(String),

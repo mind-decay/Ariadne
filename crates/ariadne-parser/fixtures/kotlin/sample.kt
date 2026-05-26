@@ -20,3 +20,8 @@ fun distance(a: Pair<Double, Double>, b: Pair<Double, Double>): Double {
     val dy = a.second - b.second
     return sqrt(dx * dx + dy * dy)
 }
+
+annotation class Marker
+
+@Marker
+fun annotated(): Int = 7

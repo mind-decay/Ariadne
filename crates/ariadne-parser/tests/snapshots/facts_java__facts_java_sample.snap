@@ -1,5 +1,6 @@
 ---
 source: crates/ariadne-parser/tests/facts_java.rs
+assertion_line: 10
 expression: facts
 ---
 SyntacticFacts {
@@ -15,6 +16,8 @@ SyntacticFacts {
                 81,
                 425,
             ),
+            visibility: Public,
+            attributes: [],
         },
         Decl {
             kind: Interface,
@@ -27,6 +30,8 @@ SyntacticFacts {
                 107,
                 167,
             ),
+            visibility: Public,
+            attributes: [],
         },
         Decl {
             kind: Method,
@@ -39,6 +44,8 @@ SyntacticFacts {
                 139,
                 161,
             ),
+            visibility: Unknown,
+            attributes: [],
         },
         Decl {
             kind: Enum,
@@ -51,6 +58,8 @@ SyntacticFacts {
                 173,
                 226,
             ),
+            visibility: Public,
+            attributes: [],
         },
         Decl {
             kind: Record,
@@ -63,6 +72,8 @@ SyntacticFacts {
                 232,
                 268,
             ),
+            visibility: Public,
+            attributes: [],
         },
         Decl {
             kind: Method,
@@ -75,6 +86,54 @@ SyntacticFacts {
                 274,
                 423,
             ),
+            visibility: Public,
+            attributes: [],
+        },
+        Decl {
+            kind: Class,
+            name: "Helper",
+            name_byte_range: (
+                433,
+                439,
+            ),
+            def_byte_range: (
+                427,
+                564,
+            ),
+            visibility: Unknown,
+            attributes: [],
+        },
+        Decl {
+            kind: Method,
+            name: "legacy",
+            name_byte_range: (
+                474,
+                480,
+            ),
+            def_byte_range: (
+                446,
+                485,
+            ),
+            visibility: Public,
+            attributes: [
+                "Deprecated",
+            ],
+        },
+        Decl {
+            kind: Method,
+            name: "toString",
+            name_byte_range: (
+                519,
+                527,
+            ),
+            def_byte_range: (
+                491,
+                562,
+            ),
+            visibility: Public,
+            attributes: [
+                "Override",
+            ],
         },
     ],
     imports: [

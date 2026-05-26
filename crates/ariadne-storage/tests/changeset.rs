@@ -8,7 +8,7 @@ use std::fmt::Write as _;
 
 use ariadne_core::{
     Changeset, EdgeKey, EdgeKind, EdgeRecord, FileId, FileRecord, Lang, ReadSnapshot, Span,
-    Storage, SymbolId, SymbolRecord, WriteTxn,
+    Storage, SymbolId, SymbolRecord, Visibility, WriteTxn,
 };
 
 fn fid(n: u32) -> FileId {
@@ -49,6 +49,8 @@ fn deterministic_changeset() -> Changeset {
                 kind: "function".to_owned(),
                 defining_file: fid(owner),
                 defining_span: span,
+                visibility: Visibility::Unknown,
+                attributes: Vec::new(),
             },
         );
     }
@@ -139,12 +141,13 @@ fn reopen_with_mismatched_schema_version_returns_schema_mismatch() {
     // Bootstrap META with the current SCHEMA_VERSION via the production path.
     drop(ariadne_storage::RedbStorage::open(&path).expect("bootstrap"));
 
-    // Force the on-disk schema_version to a non-current value.
+    // Force the on-disk schema_version above current — no registered
+    // migration path covers it, so rebuild-on-mismatch must still apply.
     let db = Database::open(&path).expect("raw open");
     let txn = db.begin_write().expect("begin_write");
     {
         let mut meta = txn.open_table(META).expect("open meta");
-        meta.insert("schema_version", &2u64).expect("insert");
+        meta.insert("schema_version", &99u64).expect("insert");
     }
     txn.commit().expect("commit");
     drop(db);
@@ -153,8 +156,8 @@ fn reopen_with_mismatched_schema_version_returns_schema_mismatch() {
     let err = ariadne_storage::RedbStorage::open(&path).expect_err("expected mismatch");
     match err {
         StorageError::SchemaMismatch { found, expected } => {
-            assert_eq!(found, 2);
-            assert_eq!(expected, 1);
+            assert_eq!(found, 99);
+            assert_eq!(expected, 3);
         }
         other => panic!("expected SchemaMismatch, got {other:?}"),
     }

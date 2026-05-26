@@ -30,6 +30,7 @@ use ariadne_core::{
 };
 use redb::{Database, ReadTransaction, ReadableDatabase, ReadableTable, WriteTransaction};
 
+use crate::domain::migration::MigrationRegistry;
 use crate::errors::RedbStorageError;
 use tables::{EDGES, EDGES_BY_FILE, FILES, KEY_REVISION, KEY_SCHEMA_VERSION, META, SYMBOLS};
 
@@ -71,15 +72,17 @@ fn bootstrap(db: &Database) -> Result<u64, RedbStorageError> {
     let txn = db.begin_write()?;
     let rev = {
         let mut meta = txn.open_table(META)?;
-        let existing = meta.get(KEY_SCHEMA_VERSION)?.map(|g| g.value());
-        match existing {
-            Some(v) if v != SCHEMA_VERSION => {
-                return Err(RedbStorageError::SchemaMismatch {
-                    found: v,
-                    expected: SCHEMA_VERSION,
-                });
+        let on_disk = meta.get(KEY_SCHEMA_VERSION)?.map(|g| g.value());
+        match on_disk {
+            Some(v) if v == SCHEMA_VERSION => {}
+            Some(v) => {
+                // Older on-disk version: migrate the data tables in place,
+                // then record the new version. `run_migration` keeps the
+                // unchanged `SchemaMismatch` for a version above current or
+                // an unregistered gap.
+                run_migration(&txn, v)?;
+                meta.insert(KEY_SCHEMA_VERSION, &SCHEMA_VERSION)?;
             }
-            Some(_) => {}
             None => {
                 meta.insert(KEY_SCHEMA_VERSION, &SCHEMA_VERSION)?;
             }
@@ -93,6 +96,33 @@ fn bootstrap(db: &Database) -> Result<u64, RedbStorageError> {
     let _ = txn.open_multimap_table(EDGES_BY_FILE)?;
     txn.commit()?;
     Ok(rev)
+}
+
+/// Run the registered `from -> SCHEMA_VERSION` migration chain against the
+/// open write transaction.
+///
+/// Every step runs inside the caller's single transaction, so a crash before
+/// `commit` leaves the file at its original version (ACID). Returns
+/// [`RedbStorageError::SchemaMismatch`] when no contiguous path spans the gap
+/// — a version above current, or an unregistered version — preserving v1
+/// rebuild-on-mismatch behaviour. A failing step is wrapped in
+/// [`RedbStorageError::Migration`].
+fn run_migration(txn: &WriteTransaction, from: u64) -> Result<(), RedbStorageError> {
+    let registry = MigrationRegistry::builtin();
+    let Some(chain) = registry.plan(from, SCHEMA_VERSION) else {
+        return Err(RedbStorageError::SchemaMismatch {
+            found: from,
+            expected: SCHEMA_VERSION,
+        });
+    };
+    for step in chain {
+        (step.apply)(txn).map_err(|err| RedbStorageError::Migration {
+            from: step.from,
+            to: step.to,
+            reason: err.to_string(),
+        })?;
+    }
+    Ok(())
 }
 
 impl Storage for RedbStorage {

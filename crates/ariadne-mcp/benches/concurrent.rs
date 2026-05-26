@@ -20,7 +20,7 @@ use std::time::{Duration, Instant};
 
 use ariadne_core::{
     Changeset, EdgeKey, EdgeKind, EdgeRecord, FileId, FileRecord, Lang, Span, Storage, SymbolId,
-    SymbolRecord, WriteTxn,
+    SymbolRecord, Visibility, WriteTxn,
 };
 use ariadne_mcp::tools::{blast_radius as br, list_symbols as ls};
 use ariadne_mcp::types::{BlastRadiusInput, ListSymbolsInput};
@@ -160,6 +160,8 @@ fn seed_large(storage: &RedbStorage) {
                         byte_start: s32.wrapping_mul(8) % 32_000,
                         byte_end: s32.wrapping_mul(8).wrapping_add(4) % 32_000,
                     },
+                    visibility: Visibility::Unknown,
+                    attributes: Vec::new(),
                 },
             );
             // Sparse edge graph: every symbol points to the next.

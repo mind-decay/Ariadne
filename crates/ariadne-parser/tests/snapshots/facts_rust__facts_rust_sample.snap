@@ -1,5 +1,6 @@
 ---
 source: crates/ariadne-parser/tests/facts_rust.rs
+assertion_line: 10
 expression: facts
 ---
 SyntacticFacts {
@@ -15,6 +16,8 @@ SyntacticFacts {
                 32,
                 74,
             ),
+            visibility: Public,
+            attributes: [],
         },
         Decl {
             kind: Enum,
@@ -27,6 +30,8 @@ SyntacticFacts {
                 76,
                 111,
             ),
+            visibility: Public,
+            attributes: [],
         },
         Decl {
             kind: Trait,
@@ -39,6 +44,8 @@ SyntacticFacts {
                 113,
                 164,
             ),
+            visibility: Public,
+            attributes: [],
         },
         Decl {
             kind: TypeAlias,
@@ -51,6 +58,8 @@ SyntacticFacts {
                 166,
                 202,
             ),
+            visibility: Public,
+            attributes: [],
         },
         Decl {
             kind: Function,
@@ -63,6 +72,8 @@ SyntacticFacts {
                 223,
                 291,
             ),
+            visibility: Public,
+            attributes: [],
         },
         Decl {
             kind: Function,
@@ -75,6 +86,8 @@ SyntacticFacts {
                 297,
                 383,
             ),
+            visibility: Public,
+            attributes: [],
         },
         Decl {
             kind: Function,
@@ -87,6 +100,8 @@ SyntacticFacts {
                 387,
                 436,
             ),
+            visibility: Public,
+            attributes: [],
         },
         Decl {
             kind: Module,
@@ -99,6 +114,8 @@ SyntacticFacts {
                 438,
                 495,
             ),
+            visibility: Unknown,
+            attributes: [],
         },
         Decl {
             kind: Function,
@@ -111,6 +128,40 @@ SyntacticFacts {
                 454,
                 493,
             ),
+            visibility: Public,
+            attributes: [],
+        },
+        Decl {
+            kind: Struct,
+            name: "Tagged",
+            name_byte_range: (
+                525,
+                531,
+            ),
+            def_byte_range: (
+                514,
+                564,
+            ),
+            visibility: Public,
+            attributes: [
+                "derive",
+            ],
+        },
+        Decl {
+            kind: Function,
+            name: "tagged_round_trips",
+            name_byte_range: (
+                577,
+                595,
+            ),
+            def_byte_range: (
+                574,
+                637,
+            ),
+            visibility: Unknown,
+            attributes: [
+                "test",
+            ],
         },
     ],
     imports: [

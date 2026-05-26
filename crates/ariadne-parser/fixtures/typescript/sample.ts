@@ -29,3 +29,12 @@ export function distance(a: Point, b: Point): number {
 function _hidden(): string {
   return join("a", "b");
 }
+
+function log(_t: unknown, _k: string, _d: PropertyDescriptor): void {}
+
+export class Service {
+  @log
+  ping(): number {
+    return 1;
+  }
+}

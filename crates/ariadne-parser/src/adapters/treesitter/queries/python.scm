@@ -19,3 +19,10 @@
 (call
   function: (attribute
     attribute: (identifier) @call.callee))
+
+; tier-04 attribute captures (Python has no visibility keyword;
+; underscore/dunder conventions are captured via the decl `@name` and
+; classified downstream).
+;   @attribute   `decorator` nodes preceding a function / class.
+
+(decorator) @attribute

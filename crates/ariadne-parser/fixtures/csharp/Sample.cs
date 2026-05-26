@@ -39,4 +39,10 @@ namespace Ariadne.Sample
             return Console.In.Read();
         }
     }
+
+    [Obsolete]
+    public class Legacy
+    {
+        public void Run() {}
+    }
 }

@@ -28,6 +28,17 @@ pub enum RedbStorageError {
     /// On-disk record bytes failed an invariant outside postcard's reach.
     #[error("storage corrupted: {0}")]
     Corrupted(String),
+    /// A registered schema-migration step failed. The write transaction is
+    /// rolled back, so the database stays intact at its pre-migration version.
+    #[error("storage migration {from}->{to} failed: {reason}")]
+    Migration {
+        /// Schema version the failed step migrated from.
+        from: u64,
+        /// Schema version the failed step targeted.
+        to: u64,
+        /// Backend failure detail reported by the step.
+        reason: String,
+    },
 }
 
 // Every redb sub-error converts into the umbrella `redb::Error` already, so
@@ -61,6 +72,9 @@ impl From<RedbStorageError> for ariadne_core::StorageError {
             }
             RedbStorageError::Postcard(e) => Self::Corrupted(format!("postcard: {e}")),
             RedbStorageError::Corrupted(s) => Self::Corrupted(s),
+            RedbStorageError::Migration { from, to, reason } => {
+                Self::Migration { from, to, reason }
+            }
             RedbStorageError::Io(e) => Self::Io(e.to_string()),
             RedbStorageError::Redb(e) => match e {
                 redb::Error::Io(io) => Self::Io(io.to_string()),
@@ -71,6 +85,31 @@ impl From<RedbStorageError> for ariadne_core::StorageError {
                 },
                 other => Self::Io(other.to_string()),
             },
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::RedbStorageError;
+    use ariadne_core::StorageError;
+
+    /// A rolled-back migration step leaves the DB intact at its original
+    /// version, so it must not surface as `Corrupted` (on-disk damage). The
+    /// `From` conversion maps it to the dedicated `StorageError::Migration`.
+    #[test]
+    fn migration_failure_maps_to_dedicated_core_variant() {
+        let err = RedbStorageError::Migration {
+            from: 1,
+            to: 2,
+            reason: "step backend failure".to_owned(),
+        };
+        match StorageError::from(err) {
+            StorageError::Migration { from, to, reason } => {
+                assert_eq!((from, to), (1, 2));
+                assert_eq!(reason, "step backend failure");
+            }
+            other => panic!("expected StorageError::Migration, got {other:?}"),
         }
     }
 }

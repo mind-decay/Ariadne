@@ -4,7 +4,9 @@
 pub mod ids;
 pub mod lang;
 pub mod span;
+pub mod visibility;
 
 pub use ids::{EdgeId, FileId, IdEncode, SymbolId};
 pub use lang::Lang;
 pub use span::Span;
+pub use visibility::Visibility;

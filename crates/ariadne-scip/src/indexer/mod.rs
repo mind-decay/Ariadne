@@ -28,7 +28,7 @@ mod subprocess;
 
 use std::path::Path;
 
-use ariadne_core::Lang;
+use ariadne_core::{Lang, Visibility};
 use prost::Message as _;
 
 use crate::errors::ScipError;
@@ -45,6 +45,30 @@ pub use scip_python::ScipPythonIndexer;
 pub use scip_svelte::ScipSvelteIndexer;
 pub use scip_typescript::ScipTypescriptIndexer;
 pub use scip_vue::ScipVueIndexer;
+
+/// Best-effort visibility lattice for a SCIP symbol string. SCIP's
+/// `SymbolInformation` carries no `visibility` or attribute field
+/// [src: <https://github.com/sourcegraph/scip/blob/main/scip.proto> — see
+/// the `SymbolInformation` and `Symbol` message definitions in
+/// `crates/ariadne-scip/proto/scip.proto`]. The grammar still distinguishes
+/// document-local symbols (`local <id>`) from package-visible descriptor
+/// symbols [src: post-v1-roadmap plan.md RD10 — tier-04 step 8]; this
+/// helper folds that split onto the coarse [`Visibility`] lattice so the
+/// dead-code classifier (tier-05) has a uniform signal across syntactic
+/// and semantic ingest paths.
+///
+/// `attributes` is left empty — SCIP does not carry attribute / annotation
+/// metadata.
+#[must_use]
+pub fn symbol_visibility(symbol: &str) -> Visibility {
+    if symbol.starts_with("local ") {
+        Visibility::Private
+    } else if symbol.is_empty() {
+        Visibility::Unknown
+    } else {
+        Visibility::Public
+    }
+}
 
 /// Decode raw SCIP protobuf bytes (e.g. the `raw_proto` payload pulled
 /// from `ariadne_salsa::ScipDocInput`) into a typed [`ScipDoc`]. Free

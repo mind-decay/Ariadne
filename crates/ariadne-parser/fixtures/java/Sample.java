@@ -21,3 +21,13 @@ public class Sample {
         return values.get(0);
     }
 }
+
+class Helper {
+    @Deprecated
+    public void legacy() {}
+
+    @Override
+    public String toString() {
+        return "helper";
+    }
+}

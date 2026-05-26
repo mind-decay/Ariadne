@@ -1,5 +1,6 @@
 ---
 source: crates/ariadne-parser/tests/facts_typescript.rs
+assertion_line: 10
 expression: facts
 ---
 SyntacticFacts {
@@ -15,6 +16,8 @@ SyntacticFacts {
                 42,
                 87,
             ),
+            visibility: Public,
+            attributes: [],
         },
         Decl {
             kind: TypeAlias,
@@ -27,6 +30,8 @@ SyntacticFacts {
                 96,
                 124,
             ),
+            visibility: Public,
+            attributes: [],
         },
         Decl {
             kind: Enum,
@@ -39,6 +44,8 @@ SyntacticFacts {
                 133,
                 163,
             ),
+            visibility: Public,
+            attributes: [],
         },
         Decl {
             kind: Class,
@@ -51,6 +58,8 @@ SyntacticFacts {
                 172,
                 325,
             ),
+            visibility: Public,
+            attributes: [],
         },
         Decl {
             kind: Method,
@@ -63,6 +72,8 @@ SyntacticFacts {
                 189,
                 222,
             ),
+            visibility: Unknown,
+            attributes: [],
         },
         Decl {
             kind: Method,
@@ -75,6 +86,8 @@ SyntacticFacts {
                 226,
                 323,
             ),
+            visibility: Unknown,
+            attributes: [],
         },
         Decl {
             kind: Function,
@@ -87,6 +100,8 @@ SyntacticFacts {
                 334,
                 470,
             ),
+            visibility: Public,
+            attributes: [],
         },
         Decl {
             kind: Variable,
@@ -99,6 +114,8 @@ SyntacticFacts {
                 384,
                 405,
             ),
+            visibility: Unknown,
+            attributes: [],
         },
         Decl {
             kind: Variable,
@@ -111,6 +128,8 @@ SyntacticFacts {
                 408,
                 429,
             ),
+            visibility: Unknown,
+            attributes: [],
         },
         Decl {
             kind: Function,
@@ -123,6 +142,52 @@ SyntacticFacts {
                 472,
                 527,
             ),
+            visibility: Unknown,
+            attributes: [],
+        },
+        Decl {
+            kind: Function,
+            name: "log",
+            name_byte_range: (
+                538,
+                541,
+            ),
+            def_byte_range: (
+                529,
+                599,
+            ),
+            visibility: Unknown,
+            attributes: [],
+        },
+        Decl {
+            kind: Class,
+            name: "Service",
+            name_byte_range: (
+                614,
+                621,
+            ),
+            def_byte_range: (
+                608,
+                669,
+            ),
+            visibility: Public,
+            attributes: [
+                "log",
+            ],
+        },
+        Decl {
+            kind: Method,
+            name: "ping",
+            name_byte_range: (
+                633,
+                637,
+            ),
+            def_byte_range: (
+                633,
+                667,
+            ),
+            visibility: Unknown,
+            attributes: [],
         },
     ],
     imports: [

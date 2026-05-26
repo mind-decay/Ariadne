@@ -75,3 +75,10 @@
 (call_expression
   function: (identifier) @hook.callee
   (#match? @hook.callee "^(use[A-Z]|createSignal|createEffect|createMemo|createResource)"))
+
+; tier-04 visibility / attribute captures (same scheme as typescript.scm).
+(export_statement) @visibility
+
+(accessibility_modifier) @visibility
+
+(decorator) @attribute

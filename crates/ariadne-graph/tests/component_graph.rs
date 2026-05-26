@@ -22,7 +22,7 @@ use std::collections::BTreeSet;
 
 use ariadne_core::{
     ChunkStream, EdgeKey, EdgeKind as CoreEdgeKind, EdgeRecord, FileId, FileRecord, Lang,
-    ReadSnapshot, Span, StorageError, SymbolId, SymbolRecord,
+    ReadSnapshot, Span, StorageError, SymbolId, SymbolRecord, Visibility,
 };
 use ariadne_graph::{EdgeKindSet, GraphIndex, ModuleSpec};
 
@@ -112,6 +112,8 @@ fn fixture() -> ComponentSnapshot {
                     byte_start: 0,
                     byte_end: 0,
                 },
+                visibility: Visibility::Unknown,
+                attributes: Vec::new(),
             },
         )
     };

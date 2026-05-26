@@ -4,7 +4,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use super::types::{FileId, IdEncode, Lang, Span, SymbolId};
+use super::types::{FileId, IdEncode, Lang, Span, SymbolId, Visibility};
 
 /// File-level record. `blake3` is the content hash; `mtime_ns` is nanoseconds
 /// since the UNIX epoch (signed to admit pre-1970 fixtures).
@@ -24,6 +24,11 @@ pub struct FileRecord {
 
 /// Symbol record. `kind` is a free-form string until tier-05 (SCIP ingest)
 /// canonicalizes the taxonomy.
+///
+/// `visibility` and `attributes` are appended after the v1/v2 fields so the
+/// v3 postcard layout extends the v2 byte prefix unchanged; the redb v2->v3
+/// migration step decodes the historical 4-field record and re-encodes it
+/// with the new fields defaulted [src: post-v1-roadmap plan.md RD10].
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct SymbolRecord {
     /// Canonical symbol name as emitted by the ingest pipeline.
@@ -34,6 +39,13 @@ pub struct SymbolRecord {
     pub defining_file: FileId,
     /// Span of the defining occurrence.
     pub defining_span: Span,
+    /// Coarse visibility lattice; `Unknown` when the producing pipeline
+    /// observed no modifier or the format predates the field.
+    pub visibility: Visibility,
+    /// Attribute / annotation / decorator identifiers attached to the
+    /// declaration (e.g. Rust `#[test]`, Java `@Override`, TS decorators).
+    /// Empty when none observed.
+    pub attributes: Vec<String>,
 }
 
 /// Edge kind tag. Definition / reference / import are the syntactic core;

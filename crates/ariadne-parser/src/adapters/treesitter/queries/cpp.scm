@@ -42,3 +42,15 @@
 (call_expression
   function: (qualified_identifier
     name: (identifier) @call.callee))
+
+; tier-04 visibility / attribute captures.
+;   @visibility  `storage_class_specifier` (`static`) and C++
+;                `access_specifier` (`public:` / `protected:` /
+;                `private:`); both attach by byte-range containment.
+;   @attribute   C++11 `attribute_declaration` (`[[…]]`).
+
+(storage_class_specifier) @visibility
+
+(access_specifier) @visibility
+
+(attribute_declaration) @attribute

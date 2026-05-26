@@ -18,3 +18,12 @@ def make_counter(start: int) -> Counter:
 def load_config(path: str) -> dict:
     text = Path(path).read_text()
     return json.loads(text)
+
+
+def deco(fn):
+    return fn
+
+
+@deco
+def hooked() -> int:
+    return 1

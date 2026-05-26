@@ -1,5 +1,6 @@
 ---
 source: crates/ariadne-parser/tests/facts_jsx.rs
+assertion_line: 18
 expression: facts
 ---
 SyntacticFacts {
@@ -15,6 +16,8 @@ SyntacticFacts {
                 35,
                 120,
             ),
+            visibility: Unknown,
+            attributes: [],
         },
         Decl {
             kind: Component,
@@ -27,6 +30,8 @@ SyntacticFacts {
                 129,
                 385,
             ),
+            visibility: Public,
+            attributes: [],
         },
         Decl {
             kind: Variable,
@@ -39,6 +44,8 @@ SyntacticFacts {
                 193,
                 229,
             ),
+            visibility: Unknown,
+            attributes: [],
         },
     ],
     imports: [

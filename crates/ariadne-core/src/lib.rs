@@ -14,6 +14,6 @@ pub use domain::ports::{
     ChunkStream, Indexer, Parser, ReadSnapshot, Storage, WatcherSink, WriteTxn,
 };
 pub use domain::records::{EdgeKey, EdgeKind, EdgeRecord, FileRecord, SymbolRecord};
-pub use domain::types::{EdgeId, FileId, IdEncode, Lang, Span, SymbolId};
+pub use domain::types::{EdgeId, FileId, IdEncode, Lang, Span, SymbolId, Visibility};
 pub use domain::watcher::{ContentHash, Invalidation, ReconciliationReport};
 pub use errors::{CoreError, StorageError};

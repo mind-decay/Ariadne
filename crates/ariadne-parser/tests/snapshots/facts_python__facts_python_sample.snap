@@ -1,5 +1,6 @@
 ---
 source: crates/ariadne-parser/tests/facts_python.rs
+assertion_line: 10
 expression: facts
 ---
 SyntacticFacts {
@@ -15,6 +16,8 @@ SyntacticFacts {
                 39,
                 211,
             ),
+            visibility: Unknown,
+            attributes: [],
         },
         Decl {
             kind: Function,
@@ -27,6 +30,8 @@ SyntacticFacts {
                 58,
                 128,
             ),
+            visibility: Unknown,
+            attributes: [],
         },
         Decl {
             kind: Function,
@@ -39,6 +44,8 @@ SyntacticFacts {
                 134,
                 211,
             ),
+            visibility: Unknown,
+            attributes: [],
         },
         Decl {
             kind: Function,
@@ -51,6 +58,8 @@ SyntacticFacts {
                 214,
                 280,
             ),
+            visibility: Unknown,
+            attributes: [],
         },
         Decl {
             kind: Function,
@@ -63,6 +72,38 @@ SyntacticFacts {
                 283,
                 380,
             ),
+            visibility: Unknown,
+            attributes: [],
+        },
+        Decl {
+            kind: Function,
+            name: "deco",
+            name_byte_range: (
+                387,
+                391,
+            ),
+            def_byte_range: (
+                383,
+                410,
+            ),
+            visibility: Unknown,
+            attributes: [],
+        },
+        Decl {
+            kind: Function,
+            name: "hooked",
+            name_byte_range: (
+                423,
+                429,
+            ),
+            def_byte_range: (
+                419,
+                452,
+            ),
+            visibility: Unknown,
+            attributes: [
+                "deco",
+            ],
         },
     ],
     imports: [

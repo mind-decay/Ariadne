@@ -1,5 +1,6 @@
 ---
 source: crates/ariadne-parser/tests/facts_kotlin.rs
+assertion_line: 10
 expression: facts
 ---
 SyntacticFacts {
@@ -15,6 +16,8 @@ SyntacticFacts {
                 53,
                 163,
             ),
+            visibility: Unknown,
+            attributes: [],
         },
         Decl {
             kind: Function,
@@ -27,6 +30,8 @@ SyntacticFacts {
                 93,
                 161,
             ),
+            visibility: Unknown,
+            attributes: [],
         },
         Decl {
             kind: Object,
@@ -39,6 +44,8 @@ SyntacticFacts {
                 165,
                 255,
             ),
+            visibility: Unknown,
+            attributes: [],
         },
         Decl {
             kind: Function,
@@ -51,6 +58,8 @@ SyntacticFacts {
                 188,
                 253,
             ),
+            visibility: Unknown,
+            attributes: [],
         },
         Decl {
             kind: Function,
@@ -63,6 +72,38 @@ SyntacticFacts {
                 257,
                 430,
             ),
+            visibility: Unknown,
+            attributes: [],
+        },
+        Decl {
+            kind: Class,
+            name: "Marker",
+            name_byte_range: (
+                449,
+                455,
+            ),
+            def_byte_range: (
+                432,
+                455,
+            ),
+            visibility: Unknown,
+            attributes: [],
+        },
+        Decl {
+            kind: Function,
+            name: "annotated",
+            name_byte_range: (
+                469,
+                478,
+            ),
+            def_byte_range: (
+                457,
+                489,
+            ),
+            visibility: Unknown,
+            attributes: [
+                "Marker",
+            ],
         },
     ],
     imports: [

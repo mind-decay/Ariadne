@@ -6,6 +6,7 @@
 
 use ariadne_core::{
     EdgeKey, EdgeKind, EdgeRecord, FileId, FileRecord, Lang, Span, SymbolId, SymbolRecord,
+    Visibility,
 };
 use ariadne_storage::RedbStorage;
 use proptest::prelude::*;
@@ -71,6 +72,23 @@ pub fn arb_file_record() -> impl Strategy<Value = FileRecord> {
         })
 }
 
+/// Arbitrary `Visibility` — closed-set over the four lattice variants so
+/// proptest cases hit each public<->private cell.
+pub fn arb_visibility() -> impl Strategy<Value = Visibility> {
+    prop_oneof![
+        Just(Visibility::Public),
+        Just(Visibility::Restricted),
+        Just(Visibility::Private),
+        Just(Visibility::Unknown),
+    ]
+}
+
+/// Arbitrary attribute / annotation tag list. Empty often, short ASCII
+/// otherwise — mirrors the per-language captures the parser produces.
+pub fn arb_attributes() -> impl Strategy<Value = Vec<String>> {
+    prop::collection::vec("[a-zA-Z][a-zA-Z0-9_]{0,15}", 0..4)
+}
+
 /// Arbitrary `SymbolRecord`.
 pub fn arb_symbol_record() -> impl Strategy<Value = SymbolRecord> {
     (
@@ -78,13 +96,19 @@ pub fn arb_symbol_record() -> impl Strategy<Value = SymbolRecord> {
         "[a-zA-Z]{3,16}",
         arb_file_id(),
         arb_span(),
+        arb_visibility(),
+        arb_attributes(),
     )
         .prop_map(
-            |(canonical_name, kind, defining_file, defining_span)| SymbolRecord {
-                canonical_name,
-                kind,
-                defining_file,
-                defining_span,
+            |(canonical_name, kind, defining_file, defining_span, visibility, attributes)| {
+                SymbolRecord {
+                    canonical_name,
+                    kind,
+                    defining_file,
+                    defining_span,
+                    visibility,
+                    attributes,
+                }
             },
         )
 }

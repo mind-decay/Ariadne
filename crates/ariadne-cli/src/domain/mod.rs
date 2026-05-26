@@ -22,7 +22,7 @@ use std::time::{Duration, Instant};
 use anyhow::{Context, Result, bail};
 use ariadne_core::{
     Changeset, EdgeKey, EdgeKind, EdgeRecord, FileId, FileRecord, Lang, Span, Storage, SymbolId,
-    SymbolRecord, WriteTxn,
+    SymbolRecord, Visibility, WriteTxn,
 };
 use ariadne_parser::{DeclKind, FactExtractor, ParserRegistry, SyntacticFacts};
 use ariadne_scip::IngestPlan;
@@ -535,6 +535,8 @@ impl CommitState {
                     kind: "component".to_owned(),
                     defining_file: id,
                     defining_span: span(id, def_range),
+                    visibility: Visibility::Public,
+                    attributes: Vec::new(),
                 },
             ));
             self.name_to_symbols
@@ -557,6 +559,8 @@ impl CommitState {
                     kind: decl_kind_tag(&decl.kind),
                     defining_file: id,
                     defining_span: span(id, decl.def_byte_range),
+                    visibility: decl.visibility,
+                    attributes: decl.attributes.clone(),
                 },
             ));
             self.name_to_symbols
