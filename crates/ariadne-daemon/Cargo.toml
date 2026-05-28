@@ -1,0 +1,40 @@
+[package]
+name = "ariadne-daemon"
+description = "Driving adapter: long-running daemon host with interprocess local-socket IPC."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+# Warm-mode composition root (ADR-0007/0015): the daemon opens storage and
+# builds the in-RAM analytics graph, so it wires the read-side use-case +
+# driven adapters. It is itself a driving adapter, so nothing in the
+# workspace depends on it (tests/architecture.rs).
+# `ariadne-salsa` is deferred to tier-08: the tier-07 read/refresh path
+# rebuilds the warm graph straight from a storage snapshot and never touches
+# the incremental query DB; the watcher-fed invalidation that needs salsa
+# lands in tier-08 [src: post-v1-roadmap plan.md tier-08].
+ariadne-core = { workspace = true }
+ariadne-graph = { workspace = true }
+ariadne-storage = { workspace = true }
+thiserror = { workspace = true }
+# Cross-platform local-socket IPC (Unix domain socket / Windows named pipe
+# behind one API). Pinned exact per the post-v1 tech inventory + RD5
+# [src: .claude/plans/post-v1-roadmap/plan.md RD5;
+#  https://docs.rs/interprocess/2.4.2/interprocess/local_socket/index.html].
+interprocess = "=2.4.2"
+# Non-self-describing wire codec for the framed IPC payloads. Same exact pin
+# as `ariadne-storage`; postcard is the approved codec in the plan tech
+# inventory [src: post-v1-roadmap plan.md `<tech_inventory>`;
+#  https://postcard.jamesmunns.com/wire-format].
+postcard = { version = "=1.1.3", features = ["use-std"] }
+
+[dev-dependencies]
+tempfile = { workspace = true }

@@ -6,9 +6,10 @@
 //! 1. `ariadne-core` has zero in-workspace dependencies.
 //! 2. `ariadne-graph` and `ariadne-salsa` depend only on `ariadne-core` and
 //!    `ariadne-storage` (read-only port).
-//! 3. Driving adapters (`ariadne-mcp`, `ariadne-watcher`) are not depended on
-//!    by any crate except the composition root `ariadne-cli`; the composition
-//!    root itself is depended on by nothing (ADR-0007).
+//! 3. Driving adapters (`ariadne-mcp`, `ariadne-watcher`, `ariadne-daemon`)
+//!    are not depended on by any crate except the composition root
+//!    `ariadne-cli`; the composition root itself is depended on by nothing
+//!    (ADR-0007).
 //! 4. Driven adapters (`ariadne-storage`, `ariadne-parser`, `ariadne-scip`)
 //!    depend only on `ariadne-core`; never on each other.
 //!
@@ -41,8 +42,11 @@ const DRIVEN_ADAPTERS: &[&str] = &["ariadne-storage", "ariadne-parser", "ariadne
 const COMPOSITION_ROOT: &str = "ariadne-cli";
 
 /// Pure driving adapters: nothing may depend on them except the composition
-/// root [src: docs/adr/0007-cli-composition-root.md].
-const DRIVING_ADAPTERS: &[&str] = &["ariadne-mcp", "ariadne-watcher"];
+/// root [src: docs/adr/0007-cli-composition-root.md]. `ariadne-daemon` is the
+/// long-running daemon host introduced by post-v1 tier-06 (RD5); it is also a
+/// driving adapter and is wired only by the composition root
+/// [src: docs/adr/0015-daemon-mode-ipc.md].
+const DRIVING_ADAPTERS: &[&str] = &["ariadne-mcp", "ariadne-watcher", "ariadne-daemon"];
 
 #[test]
 fn architecture_invariants_hold() {

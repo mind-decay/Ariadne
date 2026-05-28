@@ -25,8 +25,8 @@ struct Cli {
     command: Cmd,
 }
 
-/// The eight `ariadne` subcommands [src: tier-10 `exit_criteria` #1;
-/// tier-16 adds `setup`].
+/// The `ariadne` subcommands [src: tier-10 `exit_criteria` #1; tier-16 adds
+/// `setup`; post-v1 tier-06 adds `daemon`].
 #[derive(Debug, Subcommand)]
 enum Cmd {
     /// Scaffold `.ariadne/` and write a default `config.toml`.
@@ -95,6 +95,35 @@ enum Cmd {
         #[arg(default_value = ".")]
         root: PathBuf,
     },
+    /// Manage the background daemon (RD5): start, stop, or query it.
+    Daemon {
+        #[command(subcommand)]
+        action: DaemonAction,
+    },
+}
+
+/// `ariadne daemon` lifecycle actions [src:
+/// .claude/plans/post-v1-roadmap/tier-06-daemon-skeleton.md step 7].
+#[derive(Debug, Subcommand)]
+enum DaemonAction {
+    /// Start the background daemon and wait until it is ready.
+    Start {
+        /// Project root.
+        #[arg(default_value = ".")]
+        root: PathBuf,
+    },
+    /// Stop the running daemon.
+    Stop {
+        /// Project root.
+        #[arg(default_value = ".")]
+        root: PathBuf,
+    },
+    /// Report whether the daemon is running.
+    Status {
+        /// Project root.
+        #[arg(default_value = ".")]
+        root: PathBuf,
+    },
 }
 
 fn main() -> ExitCode {
@@ -125,6 +154,11 @@ fn run(cmd: Cmd) -> anyhow::Result<bool> {
         } => commands::query::run(&root, &tool, &args_json).map(|()| true),
         Cmd::Status { root } => commands::status::run(&root).map(|()| true),
         Cmd::Mem { root } => Ok(commands::mem::run(&root)),
+        Cmd::Daemon { action } => match action {
+            DaemonAction::Start { root } => commands::daemon::start(&root).map(|()| true),
+            DaemonAction::Stop { root } => commands::daemon::stop(&root).map(|()| true),
+            DaemonAction::Status { root } => commands::daemon::status(&root).map(|()| true),
+        },
     }
 }
 

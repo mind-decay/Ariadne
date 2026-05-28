@@ -35,6 +35,7 @@ ariadne-parser = { path = "../ariadne-parser" }
 ariadne-scip = { path = "../ariadne-scip" }
 ariadne-mcp = { path = "../ariadne-mcp" }
 ariadne-watcher = { path = "../ariadne-watcher" }
+ariadne-daemon = { path = "../ariadne-daemon" }
 
 anyhow = { workspace = true }
 thiserror = { workspace = true }

@@ -10,6 +10,13 @@ pub mod domain;
 pub mod errors;
 
 pub use domain::changeset::{Changeset, RevisionId};
+pub use domain::daemon::{
+    BlastRadiusReport, ComponentRow, CouplingReport, CouplingRow, CycleBreakRow, CycleRow,
+    DaemonQuery, DaemonRequest, DaemonResponse, DependencyRow, DocForReport, DocReport,
+    EdgeKindFilter, FileSummaryReport, GodModuleRow, MisplacedRow, OutboundRow, PlanAssistReport,
+    PlanFileRow, ProjectStatusReport, RefactorReport, ReferenceSite, SymbolSummary,
+    WeakSpotsReport,
+};
 pub use domain::ports::{
     ChunkStream, Indexer, Parser, ReadSnapshot, Storage, WatcherSink, WriteTxn,
 };
