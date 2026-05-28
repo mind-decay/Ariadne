@@ -21,6 +21,7 @@ scopes = [
     "watcher",
     "mcp",
     "cli",
+    "daemon",
     "e2e",
     "docs",
     "ci",
@@ -72,6 +73,9 @@ path = "crates/ariadne-mcp"
 
 [monorepo.packages.cli]
 path = "crates/ariadne-cli"
+
+[monorepo.packages.daemon]
+path = "crates/ariadne-daemon"
 
 [monorepo.packages.e2e]
 path = "crates/ariadne-e2e"

@@ -178,6 +178,7 @@ jobs:
             watcher
             mcp
             cli
+            daemon
             e2e
             docs
             ci
