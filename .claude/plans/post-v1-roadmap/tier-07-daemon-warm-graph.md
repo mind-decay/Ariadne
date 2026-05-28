@@ -8,7 +8,8 @@ exit_criteria:
   - A client connecting with a stale redb revision triggers a daemon graph refresh before the reply.
   - Daemon-served query results are byte-identical to the v1 cold-path goldens.
   - `cargo nextest run -p ariadne-daemon` + architecture + clippy + fmt all green.
-status: pending
+status: completed
+completed: 2026-05-29
 ---
 
 <context>
@@ -16,7 +17,7 @@ tier-06 gave the daemon a socket and a `Ping`. This tier makes it useful: on sta
 </context>
 
 <files>
-- crates/ariadne-core/src/domain/ — modify: extend `DaemonRequest`/`DaemonResponse` with one variant per v1 read query (`list_symbols`, `find_definition`, `find_references`, `blast_radius`, `file_summary`, `plan_assist`, `coupling_report`, `weak_spots`, `doc_for*`) + a `revision` handshake field.
+- crates/ariadne-core/src/domain/ — modify: extend `DaemonRequest`/`DaemonResponse` with one variant per v1 read query (`list_symbols`, `find_definition`, `find_references`, `blast_radius`, `file_summary`, `plan_assist`, `coupling_report`, `weak_spots`, `doc_for*`, `project_status`, `refactor_suggestions`) + a `revision` handshake field.
 - crates/ariadne-daemon/src/domain/ — modify: query dispatch mapping requests to `ariadne-graph` use cases.
 - crates/ariadne-daemon/Cargo.toml — modify: add `ariadne-graph`, `ariadne-salsa`, `ariadne-storage` (daemon is the warm-mode composition root, ADR-0007).
 - crates/ariadne-daemon/src/adapters/ipc.rs — modify: route framed requests to the dispatcher.
@@ -43,3 +44,15 @@ tier-06 gave the daemon a socket and a `Ping`. This tier makes it useful: on sta
 <rollback>
 `git checkout -- crates docs/adr/0015-daemon-mode-ipc.md`. tier-06 (`Ping` skeleton) remains usable.
 </rollback>
+
+<amendment date="2026-05-29">
+Post-audit (F2 resolution, user decision): added the two remaining v1 read tools —
+`project_status` (`DaemonQuery::ProjectStatus` → `ProjectStatusReport`) and
+`refactor_suggestions` (`DaemonQuery::RefactorSuggestions { prefix }` → `RefactorReport`).
+The original step-2 enumeration omitted them; the exit criterion ("carries every v1
+read query") is now literally satisfied. `WarmCatalog` gained a `root` field (threaded
+from `serve`'s `project_root`) to back `project_status`. `refactor_suggestions` mirrors
+`ariadne-mcp/src/tools/refactor.rs` against the warm graph + `WarmSnapshot` (god threshold
+8.0). Parity tests `project_status_matches_cold` + `refactor_suggestions_matches_cold` added.
+This closes audit F2; F1 (salsa) + F3 (typed refresh error) handled separately.
+</amendment>

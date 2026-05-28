@@ -8,7 +8,8 @@ exit_criteria:
   - A client `Ping` over the socket receives `Pong`; a stale socket/pidfile is detected and reclaimed.
   - ADR-0015 records the D10 reversal; `tests/architecture.rs` classifies `ariadne-daemon` as a driving adapter.
   - `cargo nextest run -p ariadne-daemon` + architecture + clippy + fmt all green.
-status: pending
+status: completed
+completed: 2026-05-28
 ---
 
 <context>
