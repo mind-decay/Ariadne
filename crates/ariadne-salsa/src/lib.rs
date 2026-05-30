@@ -7,6 +7,10 @@
 #![deny(missing_docs)]
 
 pub mod db;
+// The pure per-file derivation (tier-07a, RD11). Crate-private: its functions
+// are an internal contract between `derived` (memoized per-file step) and `db`
+// (the driver pass), not a public API surface.
+mod derive;
 // `salsa::input` and `salsa::tracked` macros generate public methods without
 // `///` doc comments; `missing_docs` would block compilation. Limit the
 // allow to the modules where salsa codegen lives; hand-authored items in
@@ -20,14 +24,16 @@ pub mod memory;
 
 mod domain;
 
-pub use db::{AriadneDb, EventLog};
+pub use db::{AriadneDb, EventLog, FileDerivation};
 pub use derived::{
-    CallRaw, DeclRaw, EdgeFactsRaw, ImportRaw, SymbolFactsRaw, SyntacticFactsRaw, blast_radius,
-    edges_for_file, scip_symbols, symbols_for_file, syntactic_facts,
+    CallRaw, DeclRaw, EdgeFactsRaw, HookRaw, ImportRaw, RenderRaw, SymbolFactsRaw,
+    SyntacticFactsRaw, blast_radius, edges_for_file, scip_symbols, symbols_for_file,
+    syntactic_facts,
 };
 pub use errors::SalsaError;
 pub use inputs::{
-    FileContentInput, FileMetadataInput, ProjectConfigInput, ScipDocInput, durability_for,
+    FileContentInput, FileMetadataInput, ProjectConfigInput, ScipDocInput, SyntacticFactsInput,
+    durability_for,
 };
 pub use memory::{MemoryReport, TABLE_BUDGET_BYTES};
 

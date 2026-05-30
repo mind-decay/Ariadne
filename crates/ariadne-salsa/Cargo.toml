@@ -24,6 +24,9 @@ pedantic = { level = "warn", priority = -1 }
 [dependencies]
 ariadne-core = { workspace = true }
 ariadne-storage = { workspace = true }
+# blake3 = the stable `SymbolId` hash, moved here with the per-file derivation
+# (tier-07a, RD11). Pure-Rust on the default features [src: D5; lib.rs symbol_id].
+blake3 = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 # salsa = the salsa-rs/salsa incremental query DB (not the legacy

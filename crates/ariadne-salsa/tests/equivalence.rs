@@ -11,7 +11,7 @@ use std::sync::Mutex;
 
 use ariadne_salsa::{
     AriadneDb, FileContentInput, FileMetadataInput, ProjectConfigInput, ScipDocInput,
-    symbols_for_file,
+    SyntacticFactsInput, SyntacticFactsRaw, symbols_for_file,
 };
 use pretty_assertions::assert_eq;
 use proptest::collection::vec as prop_vec;
@@ -21,6 +21,7 @@ use salsa::{Durability, Setter};
 struct FileInputs {
     content: FileContentInput,
     scip: ScipDocInput,
+    facts: SyntacticFactsInput,
 }
 
 fn seed_file(db: &AriadneDb, i: usize, payload: &[u8]) -> FileInputs {
@@ -34,7 +35,14 @@ fn seed_file(db: &AriadneDb, i: usize, payload: &[u8]) -> FileInputs {
     let scip = ScipDocInput::builder(path, None)
         .durability(Durability::LOW)
         .new(db);
-    FileInputs { content, scip }
+    let facts = SyntacticFactsInput::builder(SyntacticFactsRaw::default())
+        .durability(Durability::LOW)
+        .new(db);
+    FileInputs {
+        content,
+        scip,
+        facts,
+    }
 }
 
 #[test]
@@ -52,8 +60,8 @@ fn cache_hit_on_unrelated_edit() {
     let file_b = seed_file(&db, 1, b"");
 
     // Warm both files.
-    let baseline_a = symbols_for_file(&db, file_a.content, file_a.scip);
-    let _ = symbols_for_file(&db, file_b.content, file_b.scip);
+    let baseline_a = symbols_for_file(&db, file_a.content, file_a.scip, file_a.facts);
+    let _ = symbols_for_file(&db, file_b.content, file_b.scip, file_b.facts);
     recompute_log.lock().unwrap().clear();
 
     // Mutate file_b only.
@@ -67,7 +75,7 @@ fn cache_hit_on_unrelated_edit() {
     // re-queried, file_b's downstream never executes either. The only
     // permissible recompute events post-edit are zero — any event
     // mentioning `symbols_for_file` is a cache miss.
-    let after_a = symbols_for_file(&db, file_a.content, file_a.scip);
+    let after_a = symbols_for_file(&db, file_a.content, file_a.scip, file_a.facts);
     assert_eq!(baseline_a, after_a);
 
     let events = recompute_log.lock().unwrap().clone();
@@ -122,7 +130,7 @@ fn fresh_vs_incremental_equivalence() {
             }
             let incremental: Vec<_> = files
                 .iter()
-                .map(|f| symbols_for_file(&inc, f.content, f.scip))
+                .map(|f| symbols_for_file(&inc, f.content, f.scip, f.facts))
                 .collect();
 
             let fresh = AriadneDb::new();
@@ -143,7 +151,7 @@ fn fresh_vs_incremental_equivalence() {
                 .collect();
             let fresh_results: Vec<_> = fresh_files
                 .iter()
-                .map(|f| symbols_for_file(&fresh, f.content, f.scip))
+                .map(|f| symbols_for_file(&fresh, f.content, f.scip, f.facts))
                 .collect();
 
             prop_assert_eq!(incremental, fresh_results);

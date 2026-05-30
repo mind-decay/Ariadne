@@ -19,6 +19,8 @@ use std::path::PathBuf;
 
 use salsa::Durability;
 
+use crate::derived::SyntacticFactsRaw;
+
 /// Per-file byte content. Tier-04 step 3 input #1.
 #[salsa::input]
 pub struct FileContentInput {
@@ -53,6 +55,19 @@ pub struct ScipDocInput {
     pub path: String,
     /// Raw SCIP protobuf blob, if the language has a SCIP indexer wired.
     pub raw_proto: Option<Vec<u8>>,
+}
+
+/// Parsed syntactic facts for a file (tier-07a, RD11). The composition root
+/// parses with `ariadne-parser` and feeds the facts in through this input;
+/// `ariadne-salsa` may not depend on `ariadne-parser`, so parsing cannot live
+/// inside salsa [src: tests/architecture.rs lines 30-33;
+/// crates/ariadne-salsa/src/inputs.rs module header]. [`crate::syntactic_facts`]
+/// reads this input.
+#[salsa::input]
+pub struct SyntacticFactsInput {
+    /// The file's parsed facts — the `Update`-safe mirror of
+    /// `ariadne_parser::SyntacticFacts`.
+    pub facts: SyntacticFactsRaw,
 }
 
 /// Workspace-level configuration. Tier-04 step 3 input #4.

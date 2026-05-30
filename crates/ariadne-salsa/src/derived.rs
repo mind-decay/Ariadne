@@ -17,11 +17,14 @@
 
 use std::sync::Arc;
 
-use crate::inputs::{FileContentInput, ScipDocInput};
+use crate::inputs::{FileContentInput, ScipDocInput, SyntacticFactsInput};
 
 /// Syntactic facts pulled from a parsed file. Mirrors
 /// `ariadne_parser::SyntacticFacts` but uses only `Update`-friendly types
-/// — the driver layer (tier-06+) converts at the boundary.
+/// — the driver layer converts at the boundary. `renders` + `hooks` carry the
+/// component-graph sites (tier-07a) so the moved edge resolution emits the
+/// same `Renders` / `UsesHook` edges as the CLI committer did
+/// [src: crates/ariadne-parser/src/adapters/treesitter/facts.rs:144-156].
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash, salsa::Update)]
 pub struct SyntacticFactsRaw {
     /// Declarations in source order.
@@ -30,6 +33,10 @@ pub struct SyntacticFactsRaw {
     pub imports: Vec<ImportRaw>,
     /// Call sites in source order.
     pub calls: Vec<CallRaw>,
+    /// JSX/TSX render sites in source order.
+    pub renders: Vec<RenderRaw>,
+    /// Hook / reactive-primitive call sites in source order.
+    pub hooks: Vec<HookRaw>,
 }
 
 /// Declaration record (driver-faced, `Update`-safe).
@@ -67,6 +74,24 @@ pub struct ImportRaw {
 #[derive(Debug, Clone, PartialEq, Eq, Hash, salsa::Update)]
 pub struct CallRaw {
     /// Callee identifier text.
+    pub callee: String,
+    /// `(byte_start, byte_end)` of the callee identifier.
+    pub byte_range: (u32, u32),
+}
+
+/// JSX/TSX render-site record — one child-component element (`<Child/>`).
+#[derive(Debug, Clone, PartialEq, Eq, Hash, salsa::Update)]
+pub struct RenderRaw {
+    /// Rendered component's tag-name identifier text.
+    pub component: String,
+    /// `(byte_start, byte_end)` of the tag-name identifier.
+    pub byte_range: (u32, u32),
+}
+
+/// Hook / reactive-primitive call-site record (`useState`, `createSignal`).
+#[derive(Debug, Clone, PartialEq, Eq, Hash, salsa::Update)]
+pub struct HookRaw {
+    /// Hook callee identifier text.
     pub callee: String,
     /// `(byte_start, byte_end)` of the callee identifier.
     pub byte_range: (u32, u32),
@@ -110,16 +135,22 @@ pub struct EdgeFactsRaw {
     pub weight: u32,
 }
 
-/// Syntactic facts for a file. Tier-04 stub: returns empty facts. The
-/// driver layer (later tier) overrides this query path by populating
-/// `FileContentInput`s and a separate facts-input source.
+/// Syntactic facts for a file (tier-07a). The parsed facts enter salsa via
+/// [`SyntacticFactsInput`] because `ariadne-salsa` may not depend on
+/// `ariadne-parser` [src: tests/architecture.rs lines 30-33]; a composition
+/// root (the CLI cold index, the daemon warm derive) parses and sets the
+/// input. The query also touches [`FileContentInput::content`] so a watcher
+/// content edit still invalidates it — the daemon re-parses and resets the
+/// facts input on that same edit [src: post-v1-roadmap plan.md RD11].
 #[salsa::tracked]
-pub fn syntactic_facts(db: &dyn salsa::Database, file: FileContentInput) -> Arc<SyntacticFactsRaw> {
-    // Bind the input to the query so cache invalidation tracks content
-    // changes. We touch length only — actual parsing is a driver concern.
+pub fn syntactic_facts(
+    db: &dyn salsa::Database,
+    file: FileContentInput,
+    facts: SyntacticFactsInput,
+) -> Arc<SyntacticFactsRaw> {
     let _ = file.content(db).len();
     let _ = file.path(db);
-    Arc::new(SyntacticFactsRaw::default())
+    Arc::new(facts.facts(db))
 }
 
 /// SCIP-derived symbols for a file. Tier-04 stub returns empty until tier-05
@@ -131,31 +162,25 @@ pub fn scip_symbols(db: &dyn salsa::Database, scip: ScipDocInput) -> Arc<Vec<Sym
     Arc::new(Vec::new())
 }
 
-/// Merged symbols for a file: syntactic facts decls become symbols, then
-/// SCIP records take precedence per `canonical_name`. Tier-04 stubs both
-/// upstreams so this returns an empty vector, but the dependency edges
-/// are recorded by salsa so cache-hit / cache-miss behaviour can be
-/// exercised by tests + benches.
+/// Merged symbols for a file: the parsed facts' decls become symbols (plus a
+/// synthesized SFC `Component` symbol) via `crate::derive::build_symbols`,
+/// then SCIP records take precedence per `canonical_name`. This is the
+/// memoized per-file step the driver collects in
+/// [`crate::AriadneDb::commit_revision`]; SCIP ingest is still stubbed
+/// (empty) so the cold-path output is byte-identical to the pre-refactor CLI
+/// committer [src: post-v1-roadmap plan.md RD11].
 #[salsa::tracked]
 pub fn symbols_for_file(
     db: &dyn salsa::Database,
     file: FileContentInput,
     scip: ScipDocInput,
+    facts: SyntacticFactsInput,
 ) -> Arc<Vec<SymbolFactsRaw>> {
-    let facts = syntactic_facts(db, file);
+    let raw = syntactic_facts(db, file, facts);
+    let rel_path = file.path(db);
+    let file_len = u32::try_from(file.content(db).len()).unwrap_or(u32::MAX);
+    let mut out = crate::derive::build_symbols(&rel_path, file_len, &raw);
     let scip_syms = scip_symbols(db, scip);
-    let mut out: Vec<SymbolFactsRaw> = facts
-        .decls
-        .iter()
-        .map(|d| SymbolFactsRaw {
-            canonical_name: d.name.clone(),
-            kind: d.kind.clone(),
-            defining_file_raw: 0,
-            defining_byte_range: d.def_byte_range,
-            visibility_byte: d.visibility_byte,
-            attributes: d.attributes.clone(),
-        })
-        .collect();
     // SCIP precedence per canonical_name.
     for s in scip_syms.iter() {
         if let Some(slot) = out
