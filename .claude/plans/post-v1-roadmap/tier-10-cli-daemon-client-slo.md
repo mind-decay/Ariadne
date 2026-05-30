@@ -7,7 +7,8 @@ exit_criteria:
   - A criterion bench shows warm query p95 < 10ms (vs the 100ms v1 cold SLO).
   - A memory probe shows daemon RSS < 4GB on the 100K-file workload (v1 risk R1).
   - `cargo nextest run --workspace` + `cargo bench --workspace --no-run` + architecture + clippy + fmt all green.
-status: pending
+status: completed
+completed: 2026-05-30
 ---
 
 <context>

@@ -7,7 +7,8 @@ exit_criteria:
   - If no daemon is reachable, the MCP server auto-spawns one, or falls back to the v1 cold path.
   - All v1 MCP tool insta goldens pass unchanged in daemon-client mode.
   - `cargo nextest run -p ariadne-mcp` + architecture + clippy + fmt all green.
-status: pending
+status: completed
+completed: 2026-05-30
 ---
 
 <context>

@@ -13,6 +13,8 @@ tiers:
   - tier-05-dead-code-classification
   - tier-06-daemon-skeleton
   - tier-07-daemon-warm-graph
+  - tier-07a-shared-per-file-derivation
+  - tier-07b-incremental-id-stability
   - tier-08-daemon-watcher-live
   - tier-09-mcp-daemon-client
   - tier-10-cli-daemon-client-slo
@@ -62,6 +64,10 @@ Out of scope: LLM/embedding/semantic-search inside Ariadne — the MCP consumer 
 
 **RD9 — LSP: new driving adapter `ariadne-lsp` on `async-lsp` 0.2.4.** `async-lsp` is tower-`Layer`-based, supports request snapshotting during preparation (Ariadne snapshots the graph then serves) and builds both servers and clients [src: https://lib.rs/crates/async-lsp]. The LSP adapter is a thin daemon client (RD6). *Rejected:* `tower-lsp` (original crate unmaintained); `lsp-server` (low-level sync, no middleware); `tower-lsp-server` (viable, but no snapshot-friendly `&mut self`/immutable-request split).
 
+**RD11 — Shared per-file derivation: extract it from `ariadne-cli` into `ariadne-salsa`; cold + warm share one path.** The only real derivation (stable `SymbolId`, SFC synthesis, global edge resolution) lives in the `ariadne-cli` driving adapter [src: crates/ariadne-cli/src/domain/mod.rs:495-768], unreachable by the `ariadne-daemon` adapter (adapters never depend on each other [src: tests/architecture.rs:49]); the salsa queries + `commit_revision` are stubs [src: crates/ariadne-salsa/src/derived.rs:116-182; crates/ariadne-salsa/src/db.rs:106-110]. RD11 moves the pure derivation into `ariadne-salsa` (a use-case crate, deps limited to core + storage [src: tests/architecture.rs:32,35]). Parsing stays at each composition root (CLI cold, daemon warm) and feeds facts in via a new `SyntacticFactsInput` salsa input — salsa cannot depend on `ariadne-parser` [src: tests/architecture.rs:32; crates/ariadne-salsa/src/inputs.rs:6-7]. Per-file *symbol* derivation is the memoized tracked query; global edge resolution is a pure driver pass (it needs every symbol, so it does not fit per-file memoization — mirrors the CLI's existing two-phase structure [src: crates/ariadne-cli/src/domain/mod.rs:624-672]). The CLI cold-index is refactored onto this path so there is one derivation, guarded by a cold byte-parity test. Recorded in ADR-0016; tier-07a precedes tier-07b. *Rejected:* a parallel daemon-only derivation (two paths to keep in sync — the exact drift that blocked tier-08); a new `ariadne-derive` crate (extra surface; salsa already scaffolds the fact mirrors [src: crates/ariadne-salsa/src/derived.rs:25-111]).
+
+**RD12 — Edit-stable `SymbolId` + stale-record removal for incremental re-derivation.** The cold scheme `blake3("{path}#{name}@{offset}")` [src: crates/ariadne-cli/src/domain/mod.rs:788-792] re-keys a symbol whenever an edit shifts its byte offset, so a benign edit churns the symbol and severs every edge to it — a maximal warm-graph delta. RD12 makes the id offset-independent (`{path}#{kind}#{name}#{nth}`, `nth` = occurrence index among same-`(name,kind)` decls in source order) and makes incremental `commit_revision` emit stale deletes via the existing `Changeset` delete vectors [src: crates/ariadne-core/src/domain/changeset.rs:20,24,28], so an incremental update equals a full rebuild (divergence 0). Recorded in ADR-0017; cold goldens are re-baselined. *Rejected:* keeping the offset id (warm deltas churn every edge on any edit; node identity unstable); content-hash ids (collide across renamed-but-identical bodies, and still churn on body edits).
+
 **RD10 — SymbolRecord metadata enrichment: `visibility` + `attributes`, prerequisite to RD4.** v1 `SymbolRecord` carries `canonical_name`/`kind` only [src: crates/ariadne-core/src/domain/records.rs:28-37], so the RD4 classifier cannot see Rust `pub`/`#[test]`, JS/TS exports, or Java/C# annotations. RD10 adds a public `Visibility` enum (`Public`/`Restricted`/`Private`/`Unknown` — a coarse lattice spanning ~10 language visibility models) and `attributes: Vec<String>` to `SymbolRecord`, threaded core→storage→parser→scip→cli→salsa. postcard is non-self-describing — struct field count and names are not on the wire [src: https://postcard.jamesmunns.com/wire-format] — so the change ships behind one redb `MigrationRegistry` step (RD2) that re-encodes the `SYMBOLS` table in place, no rebuild. Recorded in ADR-0014; tier-04 precedes tier-05. *Rejected:* raw per-language modifier strings (every consumer re-parses, no typed guarantee); rebuild-on-open (discards SCIP ingest cost — the failure RD2 fixed).
 </decisions>
 
@@ -78,6 +84,8 @@ Warm dataflow (daemon mode): watcher → daemon invalidates Salsa input → re-d
 Analytics: `ariadne-git` feeds churn + co-change into new redb tables (schema bump via RD2); `ariadne-parser` computes complexity per symbol; `ariadne-graph` adds hotspot/co-change/diff-blast use cases consumed by both MCP tools and the LSP adapter.
 
 Symbol metadata: tier-04 widens `SymbolRecord` with `visibility` + `attributes` (RD10), threaded core→storage→parser→scip→cli→salsa behind a redb v2→v3 migration step; the tier-05 RD4 dead-code classifier consumes it. No new crate.
+
+Shared derivation (RD11/RD12): tier-07a moves the per-file derivation out of `ariadne-cli` into `ariadne-salsa` — a pure `derive` module (symbols, SFC synthesis, global edge resolution) plus a driver (`seed_from_disk`/`commit_revision`) that sets salsa inputs and writes a `Changeset`. Composition roots parse (`ariadne-parser`) and feed a new `SyntacticFactsInput`; the CLI cold-index is refactored onto the driver (cold byte-parity gate). tier-07b makes the `SymbolId` edit-stable and `commit_revision` diff-aware (stale deletes), then adds `rederive_file`/`forget_file` so the tier-08 watcher re-derives a single file with an incremental==full-rebuild guarantee. No new crate. ADR-0016 (derivation home + facts-as-input + pure-pass edge resolution), ADR-0017 (stable id + stale removal).
 </architecture>
 
 <tech_inventory>
@@ -87,6 +95,7 @@ Symbol metadata: tier-04 widens `SymbolRecord` with `visibility` + `attributes` 
 | redb | 4.1.0 (v1 pin) | schema-migration framework | 02, 04 | https://docs.rs/redb/4.1.0/redb/struct.WriteTransaction.html |
 | postcard | 1.x (v1 pin) | non-self-describing codec — drives the v2→v3 schema migration | 04 | https://postcard.jamesmunns.com/wire-format |
 | tree-sitter | 0.26.x (v1 pin) | visibility/attribute query captures; cyclomatic complexity from CST | 04, 12 | https://tree-sitter.github.io/tree-sitter/using-parsers/queries/1-syntax.html |
+| salsa | =0.26.2 (v1 pin) | incremental query DB — input setters + durability drive the per-file re-derivation | 07a, 07b | https://docs.rs/salsa/0.26.2/salsa/ (Setter + Durability confirmed; Context7 quota-exhausted this session — setter chain grounded in-repo at crates/ariadne-salsa/tests/durability.rs:67) |
 | interprocess | 2.4.2 | daemon IPC (local socket) | 06 | https://docs.rs/interprocess/2.4.2/interprocess/ |
 | gix | 0.83.0 | git history + diff (pure-Rust) | 11 | https://lib.rs/crates/gix |
 | async-lsp | 0.2.4 | LSP server adapter | 16 | https://lib.rs/crates/async-lsp |
@@ -100,6 +109,8 @@ Symbol metadata: tier-04 widens `SymbolRecord` with `visibility` + `attributes` 
 | R-B1 | IPC crate topology collides with the adapter-isolation invariant | medium | ADR-0015 fixes topology; ADR-0007 precedent permits a justified `tests/architecture.rs` exception |
 | R-B2 | warm graph drifts from on-disk state (staleness) | medium | watcher-fed invalidation; redb revision compared on every client connect; stale → daemon self-refreshes |
 | R-B3 | daemon lifecycle: stale socket/pidfile, orphan process | medium | pidfile + liveness handshake; auto-spawn on miss; auto-reap on idle timeout |
+| R-B4 | global edge resolution (pure driver pass, RD11) recomputes for the whole corpus on each incremental commit — O(total symbols) per edit | medium | per-file symbol derivation stays salsa-memoized so only the parse→symbol cost is incremental; if the resolution pass misses the p95 <500ms SLO on 100K files, partition it by changed names (future tier) — noted, not built |
+| R-B5 | stable-id `nth` disambiguator (RD12) still churns when a same-`(name,kind)` sibling is inserted before a symbol in the same file | low | residual churn is bounded to same-named siblings in one file and is corrected by the divergence-0 proptest; ADR-0017 records the accepted limitation |
 | R-C1 | `gix` history walk slow on large repos | medium | configurable bounded commit depth; use the commit-graph file; walk once at index time, persist to redb |
 | R-D1 | LSP UTF-16 positions vs Ariadne byte offsets | medium | explicit encoding-conversion layer in `ariadne-lsp`; property test round-trips offsets |
 </risks>
@@ -107,6 +118,7 @@ Symbol metadata: tier-04 widens `SymbolRecord` with `visibility` + `attributes` 
 <verification>
 v1 SLOs and all v1 audits must stay green throughout; the ariadne_v2 self-index dogfood run must stay green.
 - Block A: `scip-go` indexes `golang/example` with symbol + relationship counts ≥ the lsif-go baseline; a redb file at schema `vN-1` opens and migrates with data intact (no rebuild); a v2 redb file migrates to v3 with `SymbolRecord` records intact and `visibility`+`attributes` populated across the language fixtures; `.astro` frontmatter yields semantic edges in a golden; `dead_symbols` no longer flags `main`/exported/`#[test]` symbols across the 7-language fixtures.
+- Block B prereq (tier-07a/07b): the shared derivation produces cold redb byte-identical to the pre-refactor CLI output; an incremental edit/create/delete sequence yields storage identical to a fresh full rebuild (divergence 0); an unchanged symbol keeps its `SymbolId` across an offset-shifting edit.
 - Block B: `ariadne daemon` starts; mcp/cli/lsp connect and query; warm query p95 <10ms; edit→watcher→warm-graph update p95 <500ms; daemon RSS <4GB on the 100K-file workload (R1 memory probe).
 - Block C: `hotspots`/`complexity`/`co_change`/`diff_blast_radius` MCP tools pass insta goldens; diff-aware blast radius on a real branch equals the union of per-changed-file blast radius.
 - Block D: `ariadne-lsp` passes an integration test (initialize → definition/references/hover/documentSymbol/callHierarchy) driven by a spawned LSP client; a manual VS Code session resolves a definition; `call_hierarchy`/`type_hierarchy`/`implementations` MCP tools pass goldens.
@@ -116,6 +128,7 @@ v1 SLOs and all v1 audits must stay green throughout; the ariadne_v2 self-index 
 <sources>
 - scip-go (native Go SCIP indexer): https://github.com/scip-code/scip-go
 - redb WriteTransaction: https://docs.rs/redb/4.1.0/redb/struct.WriteTransaction.html
+- salsa (incremental query DB — Setter / Durability / input macro): https://docs.rs/salsa/0.26.2/salsa/
 - interprocess (local socket IPC): https://docs.rs/interprocess/2.4.2/interprocess/
 - gix / gitoxide: https://lib.rs/crates/gix ; https://github.com/GitoxideLabs/gitoxide
 - async-lsp: https://lib.rs/crates/async-lsp

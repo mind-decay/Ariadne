@@ -1,8 +1,11 @@
 {
   "mcpServers": {
     "ariadne": {
-      "command": "cargo",
-      "args": ["run", "--quiet", "-p", "ariadne-cli", "--", "serve", "--watch"],
+      "args": [
+        "serve",
+        "--watch"
+      ],
+      "command": "/Users/minddecay/.local/bin/ariadne",
       "env": {}
     }
   }

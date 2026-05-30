@@ -103,3 +103,26 @@ Planned per .claude/plans/ariadne-core/tier-00-foundations.md; verified at first
 - [Conventional Commits v1.0.0](https://www.conventionalcommits.org/en/v1.0.0/)
 - [cocogitto](https://github.com/cocogitto/cocogitto)
 </sources>
+
+<!-- BEGIN ARIADNE -->
+## Ariadne code intelligence
+
+The Ariadne MCP server is configured for this project (`.mcp.json`). It exposes
+a read-only semantic graph — symbols, references, and dependency edges — kept
+current with the code.
+
+Prefer the Ariadne MCP tools over `grep` / `Read` for any question about
+symbols, references, impact, or architecture: the graph answers in one call
+where text search needs many and misses cross-file edges.
+
+- Navigate — `list_symbols`, `find_definition`, `find_references`. Use when
+  locating a symbol or its call sites ("where is `X` defined?").
+- Impact — `blast_radius`, `plan_assist`. Use when scoping a change ("what
+  breaks if I change `X`?").
+- Architecture — `coupling_report`, `weak_spots`, `refactor_suggestions`. Use
+  when assessing structural health ("what are the worst modules?").
+- Docs — `doc_for`, `doc_for_module`, `doc_for_project`. Use when summarizing a
+  symbol, file, or the whole project ("document the `X` module").
+- Freshness — `project_status`. Use to confirm the index is current ("is the
+  index up to date?").
+<!-- END ARIADNE -->
