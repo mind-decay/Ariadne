@@ -69,10 +69,17 @@ pub async fn serve_stdio(opts: ServeOpts) -> Result<(), McpError> {
 /// Propagates the underlying storage/catalog failures.
 pub async fn build_server(opts: &ServeOpts) -> Result<AriadneServer, McpError> {
     let storage_path = opts.storage_path();
-    let storage = open_storage(&storage_path)?;
     let root_str = opts.root.to_string_lossy().into_owned();
-    let catalog = Catalog::build(&*storage, root_str)?;
-    Ok(AriadneServer::new(storage, catalog))
+    // Build the catalog from a transient storage handle, then drop it before
+    // returning so the server holds no open redb lock: the daemon it
+    // auto-spawns must be able to open the same index (tier-10 fixes the
+    // mcp_session autospawn deadlock) [src: crates/ariadne-mcp/src/server.rs
+    // `AriadneServer::db_path`].
+    let catalog = {
+        let storage = open_storage(&storage_path)?;
+        Catalog::build(&*storage, root_str)?
+    };
+    Ok(AriadneServer::new(storage_path, catalog))
 }
 
 fn open_storage(path: &Path) -> Result<Arc<RedbStorage>, McpError> {

@@ -7,14 +7,17 @@
 
 #![allow(dead_code, clippy::missing_panics_doc)]
 
-use std::path::PathBuf;
+use std::io::{Read, Write};
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use ariadne_core::{
-    Changeset, EdgeKey, EdgeKind, EdgeRecord, FileId, FileRecord, Lang, Span, Storage, SymbolId,
-    SymbolRecord, Visibility, WriteTxn,
+    Changeset, DaemonQuery, DaemonRequest, DaemonResponse, EdgeKey, EdgeKind, EdgeRecord, FileId,
+    FileRecord, Lang, Span, Storage, SymbolId, SymbolRecord, Visibility, WriteTxn,
 };
 use ariadne_storage::RedbStorage;
+use interprocess::local_socket::prelude::*;
+use interprocess::local_socket::{GenericFilePath, ListenerOptions};
 use rmcp::ServiceExt;
 use rmcp::model::{CallToolResult, RawContent};
 use rmcp::service::RunningService;
@@ -331,6 +334,10 @@ pub async fn spawn_client(root: &std::path::Path) -> RunningService<rmcp::RoleCl
             .arg("--root")
             .arg(&root)
             .env("RUST_LOG", "warn")
+            // Disable daemon auto-spawn so the routing path is deterministic:
+            // a present stub daemon is used, an absent one falls straight back
+            // to the cold path (no throwaway `daemon start` child per call).
+            .env("ARIADNE_MCP_AUTOSPAWN", "0")
             .kill_on_drop(true);
     }))
     .expect("spawn ariadne-mcp child");
@@ -350,4 +357,73 @@ pub fn extract_text(result: &CallToolResult) -> String {
         RawContent::Text(t) => t.text.clone(),
         other => panic!("expected text content, got {other:?}"),
     }
+}
+
+/// A stub daemon listening on `<root>/.ariadne/daemon.sock`. Drop removes the
+/// socket file; the accept thread is reaped when the (nextest-isolated) test
+/// process exits.
+#[derive(Debug)]
+pub struct StubDaemon {
+    socket: PathBuf,
+}
+
+impl Drop for StubDaemon {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_file(&self.socket);
+    }
+}
+
+/// Bind a stub daemon at `<root>/.ariadne/daemon.sock` that frames responses
+/// in the same length-prefixed postcard format as the real daemon
+/// (`ariadne-daemon` codec): each accepted connection carries one
+/// [`DaemonRequest`] in and one [`DaemonResponse`] out. `Ping` is answered
+/// `Pong`; every other query is delegated to `responder`. This is the test's
+/// independent protocol oracle — it does not reuse the client's framing.
+pub fn spawn_stub_daemon<F>(root: &Path, responder: F) -> StubDaemon
+where
+    F: Fn(&DaemonQuery) -> DaemonResponse + Send + 'static,
+{
+    let socket = root.join(".ariadne").join("daemon.sock");
+    let name = socket
+        .clone()
+        .to_fs_name::<GenericFilePath>()
+        .expect("socket fs name");
+    let listener = ListenerOptions::new()
+        .name(name)
+        .create_sync()
+        .expect("bind stub daemon socket");
+    std::thread::spawn(move || {
+        for conn in listener.incoming() {
+            let Ok(mut stream) = conn else { continue };
+            let Ok(payload) = read_frame(&mut stream) else {
+                continue;
+            };
+            let Ok(req) = postcard::from_bytes::<DaemonRequest>(&payload) else {
+                continue;
+            };
+            let resp = match &req.query {
+                DaemonQuery::Ping => DaemonResponse::Pong,
+                other => responder(other),
+            };
+            let bytes = postcard::to_stdvec(&resp).expect("encode response");
+            let _ = write_frame(&mut stream, &bytes);
+        }
+    });
+    StubDaemon { socket }
+}
+
+fn write_frame<W: Write>(w: &mut W, payload: &[u8]) -> std::io::Result<()> {
+    let len = u32::try_from(payload.len()).expect("frame fits u32");
+    w.write_all(&len.to_be_bytes())?;
+    w.write_all(payload)?;
+    w.flush()
+}
+
+fn read_frame<R: Read>(r: &mut R) -> std::io::Result<Vec<u8>> {
+    let mut len_buf = [0u8; 4];
+    r.read_exact(&mut len_buf)?;
+    let len = u32::from_be_bytes(len_buf) as usize;
+    let mut payload = vec![0u8; len];
+    r.read_exact(&mut payload)?;
+    Ok(payload)
 }

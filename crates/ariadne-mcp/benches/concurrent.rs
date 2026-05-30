@@ -15,7 +15,6 @@
 //! without spawning a child process per iteration.
 
 use std::process::ExitCode;
-use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use ariadne_core::{
@@ -49,7 +48,8 @@ async fn run() -> ExitCode {
     seed_large(&storage);
     let catalog =
         Catalog::build(&storage, dir.path().to_string_lossy().into_owned()).expect("catalog");
-    let server = AriadneServer::new(Arc::new(storage), catalog);
+    drop(storage);
+    let server = AriadneServer::new(storage_path, catalog);
 
     let mut handles = Vec::with_capacity(TASKS);
     for task_id in 0..TASKS {

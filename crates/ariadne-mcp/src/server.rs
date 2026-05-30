@@ -1,25 +1,33 @@
 //! `AriadneServer` — rmcp `#[tool_router]` host wiring the 13 Ariadne
-//! analytics into MCP. Each `#[tool]` method delegates to the per-tool
-//! module under [`crate::tools`].
+//! analytics into MCP. Each `#[tool]` method routes its query to the warm
+//! daemon over IPC (RD6) and projects the [`DaemonResponse`] into the v1 tool
+//! output shape; when no daemon is reachable it falls back to the per-tool
+//! module under [`crate::tools`] reading the cold [`Catalog`]. The output
+//! shape is identical on both paths, so the v1 goldens hold unchanged
+//! [src: .claude/plans/post-v1-roadmap/tier-09-mcp-daemon-client.md].
 //!
 //! Concurrency model — tier-08 step 7: the [`Catalog`] is built once,
 //! held behind an [`Arc`], and read-only for the server lifetime; many
-//! `#[tool]` futures run in parallel without contention
-//! (`8 simultaneous tool calls in <100ms p95` per the tier's
-//! `<exit_criteria>`). Tier-10 orchestration will swap the catalog
-//! `Arc` atomically when the watcher pipeline commits a revision; this
-//! crate ships only the read path.
+//! `#[tool]` futures run in parallel without contention. The
+//! [`DaemonClient`] is a stateless connector (one short-lived socket per
+//! query), but its socket IO and auto-spawn wait are synchronous, so each
+//! handler routes through [`DaemonClient::try_query_async`], which offloads
+//! the round-trip to `tokio::task::spawn_blocking`. A slow or missing daemon
+//! therefore parks a blocking-pool thread, never a runtime worker, and the
+//! executor stays free to drive other tool futures — so the same parallelism
+//! holds for the daemon path.
 //!
 //! `AriadneDb` is deliberately omitted from the server state. The plan
 //! letter sketches `db: Arc<RwLock<AriadneDb>>`, but salsa's database
 //! handle is `!Sync` (its ingredient store wraps `UnsafeCell`), and
 //! tier-04 explicitly stubs the derived queries the MCP surface would
-//! call — the field would carry no functional payload in tier-08 and
-//! would prevent every `#[tool]` future from being `Send`. Tier-10
-//! revisits the integration alongside the watcher pipeline.
+//! call — the field would carry no functional payload here and would
+//! prevent every `#[tool]` future from being `Send`.
 
+use std::path::PathBuf;
 use std::sync::Arc;
 
+use ariadne_core::{DaemonQuery, DaemonResponse, EdgeKindFilter as CoreEdgeKind};
 use ariadne_storage::RedbStorage;
 use rmcp::handler::server::router::tool::ToolRouter;
 use rmcp::handler::server::wrapper::Parameters;
@@ -28,19 +36,30 @@ use rmcp::model::{
 };
 use rmcp::{ErrorData, ServerHandler, tool, tool_handler, tool_router};
 
+use crate::DaemonClient;
 use crate::catalog::Catalog;
 use crate::errors::McpError;
 use crate::tools;
 use crate::types::{
-    BlastRadiusInput, FileQuery, ListSymbolsInput, PlanAssistInput, ScopeInput, SymbolQuery,
+    BlastRadiusInput, EdgeKindFilter, FileQuery, ListSymbolsInput, PlanAssistInput, ScopeInput,
+    SymbolQuery,
 };
 
 /// MCP server backing the Ariadne analytics tools. Clone-friendly so the
 /// rmcp service layer can hand it across tasks.
 #[derive(Clone)]
 pub struct AriadneServer {
-    storage: Arc<RedbStorage>,
+    /// Path to `<root>/.ariadne/index.redb`. The server deliberately does
+    /// **not** hold an open redb handle: a held handle takes redb's
+    /// single-open lock for the server's lifetime, which would stop the daemon
+    /// it auto-spawns — and any running daemon's staleness refresh — from
+    /// opening the same index, deadlocking the warm path. Cold-fallback arms
+    /// open redb transiently via [`Self::open_storage`] only when the daemon is
+    /// unreachable [src: tier-10 build — fixes the `mcp_session` autospawn
+    /// deadlock surfaced by the workspace SLO gate].
+    db_path: PathBuf,
     catalog: Arc<Catalog>,
+    daemon: DaemonClient,
     // Populated by the `#[tool_router]` macro and consumed by the
     // `#[tool_handler]` macro expansion; the rustc reachability pass
     // can't see through the macro path so it warns. The field is load-
@@ -52,20 +71,25 @@ pub struct AriadneServer {
 impl std::fmt::Debug for AriadneServer {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("AriadneServer")
-            .field("storage", &"<RedbStorage>")
+            .field("db_path", &self.db_path)
             .finish_non_exhaustive()
     }
 }
 
 #[tool_router]
 impl AriadneServer {
-    /// Build a fresh server around an opened storage + an already-built
-    /// in-RAM [`Catalog`].
+    /// Build a fresh server around the on-disk index path + an already-built
+    /// in-RAM [`Catalog`]. The catalog is built from a transient storage handle
+    /// by the caller, so this server holds no open redb lock; cold-fallback
+    /// arms re-open `db_path` on demand. The daemon client targets the same
+    /// project root the catalog was built from.
     #[must_use]
-    pub fn new(storage: Arc<RedbStorage>, catalog: Catalog) -> Self {
+    pub fn new(db_path: PathBuf, catalog: Catalog) -> Self {
+        let daemon = DaemonClient::new(PathBuf::from(&catalog.root));
         Self {
-            storage,
+            db_path,
             catalog: Arc::new(catalog),
+            daemon,
             tool_router: Self::tool_router(),
         }
     }
@@ -76,10 +100,17 @@ impl AriadneServer {
         Arc::clone(&self.catalog)
     }
 
-    /// Surface the storage handle for in-process tests and benches.
-    #[must_use]
-    pub fn storage(&self) -> Arc<RedbStorage> {
-        Arc::clone(&self.storage)
+    /// Open the on-disk index transiently for a cold-fallback read, then let
+    /// the caller drop it. Never held past the call, so the redb single-open
+    /// lock stays free for the daemon (see [`Self::db_path`]).
+    fn open_storage(&self) -> Result<RedbStorage, ErrorData> {
+        RedbStorage::open(&self.db_path).map_err(|e| McpError::Storage(e).into_rmcp())
+    }
+
+    /// The client's last-observed redb revision, sent in every daemon
+    /// handshake so a daemon behind the client refreshes before answering.
+    fn revision(&self) -> u64 {
+        self.catalog.revision
     }
 
     #[tool(
@@ -91,8 +122,15 @@ function\", \"list the structs in\"."
         &self,
         Parameters(input): Parameters<ListSymbolsInput>,
     ) -> Result<CallToolResult, ErrorData> {
-        let cat = &*self.catalog;
-        let out = tools::list_symbols::handle(cat, &input);
+        let query = DaemonQuery::ListSymbols {
+            query: input.query.clone(),
+            kind: input.kind.clone(),
+            limit: input.limit,
+        };
+        if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
+            return project_daemon(resp);
+        }
+        let out = tools::list_symbols::handle(&self.catalog, &input);
         wire(&out)
     }
 
@@ -105,8 +143,14 @@ need the canonical definition site of a named symbol; triggers: \"where is X def
         &self,
         Parameters(input): Parameters<SymbolQuery>,
     ) -> Result<CallToolResult, ErrorData> {
-        let cat = &*self.catalog;
-        let out = tools::find_definition::handle(cat, &input).map_err(McpError::into_rmcp)?;
+        let query = DaemonQuery::FindDefinition {
+            symbol: input.symbol.clone(),
+        };
+        if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
+            return project_daemon(resp);
+        }
+        let out =
+            tools::find_definition::handle(&self.catalog, &input).map_err(McpError::into_rmcp)?;
         wire(&out)
     }
 
@@ -119,8 +163,14 @@ of\"."
         &self,
         Parameters(input): Parameters<SymbolQuery>,
     ) -> Result<CallToolResult, ErrorData> {
-        let cat = &*self.catalog;
-        let out = tools::find_references::handle(cat, &*self.storage, &input)
+        let query = DaemonQuery::FindReferences {
+            symbol: input.symbol.clone(),
+        };
+        if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
+            return project_daemon(resp);
+        }
+        let storage = self.open_storage()?;
+        let out = tools::find_references::handle(&self.catalog, &storage, &input)
             .map_err(McpError::into_rmcp)?;
         wire(&out)
     }
@@ -134,8 +184,16 @@ change X\", \"impact of changing\", \"is it safe to edit\"."
         &self,
         Parameters(input): Parameters<BlastRadiusInput>,
     ) -> Result<CallToolResult, ErrorData> {
-        let cat = &*self.catalog;
-        let out = tools::blast_radius::handle(cat, &input).map_err(McpError::into_rmcp)?;
+        let query = DaemonQuery::BlastRadius {
+            symbol: input.symbol.clone(),
+            depth: input.depth,
+            kinds: to_core_kinds(input.kinds.as_deref()),
+        };
+        if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
+            return project_daemon(resp);
+        }
+        let out =
+            tools::blast_radius::handle(&self.catalog, &input).map_err(McpError::into_rmcp)?;
         wire(&out)
     }
 
@@ -148,8 +206,14 @@ orienting in an unfamiliar file before reading it; triggers: \"what is in this f
         &self,
         Parameters(input): Parameters<FileQuery>,
     ) -> Result<CallToolResult, ErrorData> {
-        let cat = &*self.catalog;
-        let out = tools::file_summary::handle(cat, &*self.storage, &input)
+        let query = DaemonQuery::FileSummary {
+            path: input.path.clone(),
+        };
+        if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
+            return project_daemon(resp);
+        }
+        let storage = self.open_storage()?;
+        let out = tools::file_summary::handle(&self.catalog, &storage, &input)
             .map_err(McpError::into_rmcp)?;
         wire(&out)
     }
@@ -163,8 +227,14 @@ touch for X\", \"where do I start to change\"."
         &self,
         Parameters(input): Parameters<PlanAssistInput>,
     ) -> Result<CallToolResult, ErrorData> {
-        let cat = &*self.catalog;
-        let out = tools::plan_assist::handle(cat, &input).map_err(McpError::into_rmcp)?;
+        let query = DaemonQuery::PlanAssist {
+            symbol: input.symbol.clone(),
+            max_files: input.max_files,
+        };
+        if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
+            return project_daemon(resp);
+        }
+        let out = tools::plan_assist::handle(&self.catalog, &input).map_err(McpError::into_rmcp)?;
         wire(&out)
     }
 
@@ -177,8 +247,13 @@ assessing module dependency or architecture health; triggers: \"how coupled is\"
         &self,
         Parameters(input): Parameters<ScopeInput>,
     ) -> Result<CallToolResult, ErrorData> {
-        let cat = &*self.catalog;
-        let out = tools::coupling_report::handle(cat, &input);
+        let query = DaemonQuery::CouplingReport {
+            prefix: input.prefix.clone(),
+        };
+        if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
+            return project_daemon(resp);
+        }
+        let out = tools::coupling_report::handle(&self.catalog, &input);
         wire(&out)
     }
 
@@ -191,8 +266,13 @@ codebase\", \"find tech debt\", \"any cycles\"."
         &self,
         Parameters(input): Parameters<ScopeInput>,
     ) -> Result<CallToolResult, ErrorData> {
-        let cat = &*self.catalog;
-        let out = tools::weak_spots::handle(cat, &input);
+        let query = DaemonQuery::WeakSpots {
+            prefix: input.prefix.clone(),
+        };
+        if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
+            return project_daemon(resp);
+        }
+        let out = tools::weak_spots::handle(&self.catalog, &input);
         wire(&out)
     }
 
@@ -205,8 +285,13 @@ X\"."
         &self,
         Parameters(input): Parameters<SymbolQuery>,
     ) -> Result<CallToolResult, ErrorData> {
-        let cat = &*self.catalog;
-        let out = tools::doc_for::handle(cat, &input).map_err(McpError::into_rmcp)?;
+        let query = DaemonQuery::DocFor {
+            symbol: input.symbol.clone(),
+        };
+        if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
+            return project_daemon(resp);
+        }
+        let out = tools::doc_for::handle(&self.catalog, &input).map_err(McpError::into_rmcp)?;
         wire(&out)
     }
 
@@ -216,8 +301,14 @@ freshness or coverage before trusting results; triggers: \"is the index current\
 big is the project\"."
     )]
     async fn project_status(&self) -> Result<CallToolResult, ErrorData> {
-        let cat = &*self.catalog;
-        let out = tools::project_status::handle(cat);
+        if let Some(resp) = self
+            .daemon
+            .try_query_async(self.revision(), DaemonQuery::ProjectStatus)
+            .await
+        {
+            return project_daemon(resp);
+        }
+        let out = tools::project_status::handle(&self.catalog);
         wire(&out)
     }
 
@@ -230,9 +321,15 @@ module\", \"overview of src/X.rs\"."
         &self,
         Parameters(input): Parameters<FileQuery>,
     ) -> Result<CallToolResult, ErrorData> {
-        let cat = &*self.catalog;
-        let out =
-            tools::doc_module::handle(cat, &*self.storage, &input).map_err(McpError::into_rmcp)?;
+        let query = DaemonQuery::DocForModule {
+            path: input.path.clone(),
+        };
+        if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
+            return project_daemon(resp);
+        }
+        let storage = self.open_storage()?;
+        let out = tools::doc_module::handle(&self.catalog, &storage, &input)
+            .map_err(McpError::into_rmcp)?;
         wire(&out)
     }
 
@@ -245,9 +342,15 @@ you need a whole-project architecture overview; triggers: \"explain the architec
         &self,
         Parameters(input): Parameters<ScopeInput>,
     ) -> Result<CallToolResult, ErrorData> {
-        let cat = &*self.catalog;
-        let out =
-            tools::doc_project::handle(cat, &*self.storage, &input).map_err(McpError::into_rmcp)?;
+        let query = DaemonQuery::DocForProject {
+            prefix: input.prefix.clone(),
+        };
+        if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
+            return project_daemon(resp);
+        }
+        let storage = self.open_storage()?;
+        let out = tools::doc_project::handle(&self.catalog, &storage, &input)
+            .map_err(McpError::into_rmcp)?;
         wire(&out)
     }
 
@@ -260,9 +363,15 @@ I refactor\", \"cleanup suggestions for\"."
         &self,
         Parameters(input): Parameters<ScopeInput>,
     ) -> Result<CallToolResult, ErrorData> {
-        let cat = &*self.catalog;
-        let out =
-            tools::refactor::handle(cat, &*self.storage, &input).map_err(McpError::into_rmcp)?;
+        let query = DaemonQuery::RefactorSuggestions {
+            prefix: input.prefix.clone(),
+        };
+        if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
+            return project_daemon(resp);
+        }
+        let storage = self.open_storage()?;
+        let out = tools::refactor::handle(&self.catalog, &storage, &input)
+            .map_err(McpError::into_rmcp)?;
         wire(&out)
     }
 }
@@ -288,8 +397,419 @@ current code, and assumptions may be stale.",
     }
 }
 
+/// Project a daemon [`DaemonResponse`] into the v1 tool output wire shape.
+/// Each report payload mirrors the matching MCP output type field-for-field
+/// (tier-07), so serializing it yields the byte-identical JSON the cold path
+/// produces. A query-level [`DaemonResponse::Error`] becomes the same wire
+/// error the cold path raises for a missing symbol / path.
+fn project_daemon(resp: DaemonResponse) -> Result<CallToolResult, ErrorData> {
+    match resp {
+        DaemonResponse::Symbols(rows) => wire(&rows),
+        DaemonResponse::Definition(sym) => wire(&sym),
+        DaemonResponse::References(rows) => wire(&rows),
+        DaemonResponse::BlastRadius(report) => wire(&report),
+        DaemonResponse::FileSummary(report) => wire(&report),
+        DaemonResponse::PlanAssist(report) => wire(&report),
+        DaemonResponse::Coupling(report) => wire(&report),
+        DaemonResponse::WeakSpots(report) => wire(&report),
+        DaemonResponse::DocFor(report) => wire(&report),
+        DaemonResponse::Doc(report) => wire(&report),
+        DaemonResponse::ProjectStatus(report) => wire(&report),
+        DaemonResponse::Refactor(report) => wire(&report),
+        DaemonResponse::Error(msg) => Err(ErrorData::internal_error(msg, None)),
+        DaemonResponse::Pong => Err(ErrorData::internal_error(
+            "daemon answered Pong to a tool query",
+            None,
+        )),
+    }
+}
+
+/// Map the MCP-facing edge-kind filter onto the daemon protocol's filter.
+fn to_core_kinds(kinds: Option<&[EdgeKindFilter]>) -> Option<Vec<CoreEdgeKind>> {
+    kinds.map(|ks| {
+        ks.iter()
+            .map(|k| match k {
+                EdgeKindFilter::Calls => CoreEdgeKind::Calls,
+                EdgeKindFilter::Imports => CoreEdgeKind::Imports,
+                EdgeKindFilter::TypeOf => CoreEdgeKind::TypeOf,
+                EdgeKindFilter::Defines => CoreEdgeKind::Defines,
+                EdgeKindFilter::Overrides => CoreEdgeKind::Overrides,
+                EdgeKindFilter::Reads => CoreEdgeKind::Reads,
+                EdgeKindFilter::Writes => CoreEdgeKind::Writes,
+                EdgeKindFilter::Inherits => CoreEdgeKind::Inherits,
+            })
+            .collect()
+    })
+}
+
 fn wire<T: serde::Serialize>(value: &T) -> Result<CallToolResult, ErrorData> {
     let json =
         serde_json::to_string(value).map_err(|e| ErrorData::internal_error(e.to_string(), None))?;
     Ok(CallToolResult::success(vec![Content::text(json)]))
+}
+
+#[cfg(test)]
+mod tests {
+    //! Daemon/cold projection parity (audit INFO-2, INFO-3).
+    //!
+    //! `project_daemon` claims the daemon report types (`ariadne_core::*Report`)
+    //! serialize byte-identically to the cold MCP output types
+    //! (`crate::types::*Output`) — "correct by construction" because the row
+    //! types are mirrored field-for-field. These tests drive `project_daemon`
+    //! for every `DaemonResponse` arm and assert the projected JSON equals the
+    //! cold output's JSON for equivalent data, so any field rename, reorder, or
+    //! serde-attr drift between the two type families fails loudly.
+
+    use super::*;
+
+    /// Daemon-side symbol row.
+    fn c_sym(id: u64, name: &str) -> ariadne_core::SymbolSummary {
+        ariadne_core::SymbolSummary {
+            id,
+            name: name.into(),
+            kind: "function".into(),
+            file: "src/x.rs".into(),
+            byte_start: 1,
+            byte_end: 9,
+        }
+    }
+
+    /// Cold-side symbol row carrying field-identical data.
+    fn t_sym(id: u64, name: &str) -> crate::types::SymbolSummary {
+        crate::types::SymbolSummary {
+            id,
+            name: name.into(),
+            kind: "function".into(),
+            file: "src/x.rs".into(),
+            byte_start: 1,
+            byte_end: 9,
+        }
+    }
+
+    /// Extract the single JSON text block `project_daemon` wraps a report in.
+    fn projected_text(resp: DaemonResponse) -> String {
+        let result = project_daemon(resp).expect("variant must project to Ok");
+        match &result.content.first().expect("one content block").raw {
+            rmcp::model::RawContent::Text(t) => t.text.clone(),
+            other => panic!("expected text content, got {other:?}"),
+        }
+    }
+
+    /// Assert the daemon-path projection of `resp` equals the cold-path JSON
+    /// of `cold` byte-for-byte.
+    fn assert_parity<T: serde::Serialize>(label: &str, resp: DaemonResponse, cold: &T) {
+        let got = projected_text(resp);
+        let want = serde_json::to_string(cold).expect("serialize cold output");
+        assert_eq!(got, want, "daemon/cold JSON parity for {label}");
+    }
+
+    #[test]
+    fn symbols_arm_matches_cold_list_symbols() {
+        let cold: Vec<crate::types::SymbolSummary> = vec![t_sym(1, "a"), t_sym(2, "b")];
+        assert_parity(
+            "list_symbols",
+            DaemonResponse::Symbols(vec![c_sym(1, "a"), c_sym(2, "b")]),
+            &cold,
+        );
+    }
+
+    #[test]
+    fn definition_arm_matches_cold_find_definition() {
+        assert_parity(
+            "find_definition",
+            DaemonResponse::Definition(c_sym(7, "crate::f")),
+            &t_sym(7, "crate::f"),
+        );
+    }
+
+    #[test]
+    fn references_arm_matches_cold_find_references() {
+        let c = ariadne_core::ReferenceSite {
+            caller: 3,
+            caller_name: "crate::caller".into(),
+            file: "src/y.rs".into(),
+            byte_start: 4,
+            byte_end: 12,
+        };
+        let t = crate::types::ReferenceSite {
+            caller: 3,
+            caller_name: "crate::caller".into(),
+            file: "src/y.rs".into(),
+            byte_start: 4,
+            byte_end: 12,
+        };
+        let cold: Vec<crate::types::ReferenceSite> = vec![t];
+        assert_parity(
+            "find_references",
+            DaemonResponse::References(vec![c]),
+            &cold,
+        );
+    }
+
+    #[test]
+    fn blast_radius_arm_matches_cold_output() {
+        let c = ariadne_core::BlastRadiusReport {
+            symbol: c_sym(1, "t"),
+            must_touch: vec![c_sym(2, "m")],
+            may_touch: vec![c_sym(3, "y")],
+            depth_used: 2,
+        };
+        let t = crate::types::BlastRadiusOutput {
+            symbol: t_sym(1, "t"),
+            must_touch: vec![t_sym(2, "m")],
+            may_touch: vec![t_sym(3, "y")],
+            depth_used: 2,
+        };
+        assert_parity("blast_radius", DaemonResponse::BlastRadius(c), &t);
+    }
+
+    #[test]
+    fn file_summary_arm_matches_cold_output() {
+        let c = ariadne_core::FileSummaryReport {
+            path: "src/f.rs".into(),
+            symbols: vec![c_sym(1, "a")],
+            fan_in: 3,
+            fan_out: 4,
+            top_dependencies: vec![ariadne_core::DependencyRow {
+                file: "src/dep.rs".into(),
+                edges: 5,
+            }],
+            components: vec![ariadne_core::ComponentRow {
+                component: "App".into(),
+                renders: vec!["Card".into()],
+                hooks: vec!["useX".into()],
+            }],
+        };
+        let t = crate::types::FileSummaryOutput {
+            path: "src/f.rs".into(),
+            symbols: vec![t_sym(1, "a")],
+            fan_in: 3,
+            fan_out: 4,
+            top_dependencies: vec![crate::types::DependencyRow {
+                file: "src/dep.rs".into(),
+                edges: 5,
+            }],
+            components: vec![crate::types::ComponentRow {
+                component: "App".into(),
+                renders: vec!["Card".into()],
+                hooks: vec!["useX".into()],
+            }],
+        };
+        assert_parity("file_summary", DaemonResponse::FileSummary(c), &t);
+    }
+
+    #[test]
+    fn plan_assist_arm_matches_cold_output() {
+        let c = ariadne_core::PlanAssistReport {
+            files: vec![ariadne_core::PlanFileRow {
+                file: "src/f.rs".into(),
+                why: vec!["reason".into()],
+                certainty: 0.5,
+            }],
+        };
+        let t = crate::types::PlanAssistOutput {
+            files: vec![crate::types::PlanFileRow {
+                file: "src/f.rs".into(),
+                why: vec!["reason".into()],
+                certainty: 0.5,
+            }],
+        };
+        assert_parity("plan_assist", DaemonResponse::PlanAssist(c), &t);
+    }
+
+    #[test]
+    fn coupling_arm_matches_cold_output() {
+        let c = ariadne_core::CouplingReport {
+            rows: vec![ariadne_core::CouplingRow {
+                module: "src/m.rs".into(),
+                afferent: 2,
+                efferent: 3,
+                instability: 0.5,
+                abstractness: 0.0,
+                distance: 0.25,
+            }],
+        };
+        let t = crate::types::CouplingOutput {
+            rows: vec![crate::types::CouplingRow {
+                module: "src/m.rs".into(),
+                afferent: 2,
+                efferent: 3,
+                instability: 0.5,
+                abstractness: 0.0,
+                distance: 0.25,
+            }],
+        };
+        assert_parity("coupling_report", DaemonResponse::Coupling(c), &t);
+    }
+
+    #[test]
+    fn weak_spots_arm_matches_cold_output() {
+        let c = ariadne_core::WeakSpotsReport {
+            cycles: vec![ariadne_core::CycleRow {
+                members: vec!["a".into(), "b".into()],
+            }],
+            god_modules: vec![ariadne_core::CouplingRow {
+                module: "src/g.rs".into(),
+                afferent: 0,
+                efferent: 9,
+                instability: 1.0,
+                abstractness: 0.0,
+                distance: 0.0,
+            }],
+            dead_symbols: vec![c_sym(9, "dead")],
+        };
+        let t = crate::types::WeakSpotsOutput {
+            cycles: vec![crate::types::CycleRow {
+                members: vec!["a".into(), "b".into()],
+            }],
+            god_modules: vec![crate::types::CouplingRow {
+                module: "src/g.rs".into(),
+                afferent: 0,
+                efferent: 9,
+                instability: 1.0,
+                abstractness: 0.0,
+                distance: 0.0,
+            }],
+            dead_symbols: vec![t_sym(9, "dead")],
+        };
+        assert_parity("weak_spots", DaemonResponse::WeakSpots(c), &t);
+    }
+
+    #[test]
+    fn doc_for_arm_matches_cold_output() {
+        let c = ariadne_core::DocForReport {
+            signature: "fn f()".into(),
+            kind: "function".into(),
+            file: "src/f.rs".into(),
+            brief: "brief".into(),
+            public_refs: vec![c_sym(1, "r")],
+        };
+        let t = crate::types::DocForOutput {
+            signature: "fn f()".into(),
+            kind: "function".into(),
+            file: "src/f.rs".into(),
+            brief: "brief".into(),
+            public_refs: vec![t_sym(1, "r")],
+        };
+        assert_parity("doc_for", DaemonResponse::DocFor(c), &t);
+    }
+
+    #[test]
+    fn doc_arm_matches_cold_output() {
+        assert_parity(
+            "doc_for_module/doc_for_project",
+            DaemonResponse::Doc(ariadne_core::DocReport {
+                markdown: "# Doc".into(),
+            }),
+            &crate::types::DocOutput {
+                markdown: "# Doc".into(),
+            },
+        );
+    }
+
+    #[test]
+    fn project_status_arm_matches_cold_output() {
+        let c = ariadne_core::ProjectStatusReport {
+            revision: 11,
+            file_count: 4,
+            symbol_count: 7,
+            edge_count: 6,
+            root: "/p".into(),
+        };
+        let t = crate::types::ProjectStatusOutput {
+            revision: 11,
+            file_count: 4,
+            symbol_count: 7,
+            edge_count: 6,
+            root: "/p".into(),
+        };
+        assert_parity("project_status", DaemonResponse::ProjectStatus(c), &t);
+    }
+
+    #[test]
+    fn refactor_arm_matches_cold_output() {
+        let c = ariadne_core::RefactorReport {
+            god_modules: vec![ariadne_core::GodModuleRow {
+                module: "src/m.rs".into(),
+                efferent: 9,
+                cohesion: 0.25,
+                top_outbound: vec![ariadne_core::OutboundRow {
+                    symbol: "s".into(),
+                    edges: 3,
+                }],
+                suggestion: "split".into(),
+            }],
+            cycle_breaks: vec![ariadne_core::CycleBreakRow {
+                from: "a".into(),
+                to: "b".into(),
+                score: 0.5,
+                rationale: "rationale".into(),
+            }],
+            misplaced_symbols: vec![ariadne_core::MisplacedRow {
+                symbol: "s".into(),
+                current_module: "src/a.rs".into(),
+                target_module: "src/b.rs".into(),
+                ratio: 0.75,
+            }],
+        };
+        let t = crate::types::RefactorOutput {
+            god_modules: vec![crate::types::GodModuleRow {
+                module: "src/m.rs".into(),
+                efferent: 9,
+                cohesion: 0.25,
+                top_outbound: vec![crate::types::OutboundRow {
+                    symbol: "s".into(),
+                    edges: 3,
+                }],
+                suggestion: "split".into(),
+            }],
+            cycle_breaks: vec![crate::types::CycleBreakRow {
+                from: "a".into(),
+                to: "b".into(),
+                score: 0.5,
+                rationale: "rationale".into(),
+            }],
+            misplaced_symbols: vec![crate::types::MisplacedRow {
+                symbol: "s".into(),
+                current_module: "src/a.rs".into(),
+                target_module: "src/b.rs".into(),
+                ratio: 0.75,
+            }],
+        };
+        assert_parity("refactor_suggestions", DaemonResponse::Refactor(c), &t);
+    }
+
+    #[test]
+    fn error_arm_shares_the_cold_not_found_contract() {
+        // The daemon phrases not-found as "symbol X not found"; the cold path's
+        // `McpError::NotFound` renders "not found: symbol X". The wording
+        // differs, but both map to the same JSON-RPC code and both carry the
+        // "not found" substring the `find_definition` error test asserts — so
+        // the daemon Error arm satisfies the cold path's error contract
+        // (audit INFO-3).
+        let daemon =
+            project_daemon(DaemonResponse::Error("symbol crate::x not found".into())).unwrap_err();
+        let cold = crate::errors::McpError::NotFound("symbol crate::x".into()).into_rmcp();
+        assert_eq!(daemon.code, cold.code, "same JSON-RPC error code");
+        assert_eq!(daemon.code, rmcp::model::ErrorCode::INTERNAL_ERROR);
+        assert!(
+            daemon.message.contains("not found"),
+            "daemon message: {}",
+            daemon.message
+        );
+        assert!(
+            cold.message.contains("not found"),
+            "cold message: {}",
+            cold.message
+        );
+    }
+
+    #[test]
+    fn pong_arm_is_a_protocol_error_not_a_tool_result() {
+        // `Pong` answers a liveness probe; receiving it for a tool query is a
+        // protocol fault, surfaced as an internal error rather than a result.
+        let err = project_daemon(DaemonResponse::Pong).unwrap_err();
+        assert_eq!(err.code, rmcp::model::ErrorCode::INTERNAL_ERROR);
+        assert!(err.message.contains("Pong"), "got {}", err.message);
+    }
 }

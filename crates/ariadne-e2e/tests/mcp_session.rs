@@ -12,9 +12,10 @@
 
 use std::fs;
 use std::path::Path;
+use std::process::Command;
 use std::time::{Duration, Instant};
 
-use ariadne_e2e::domain::{McpClient, percentile, run_index, run_init, tool_text};
+use ariadne_e2e::domain::{McpClient, ariadne_binary, percentile, run_index, run_init, tool_text};
 use serde_json::{Value, json};
 use tempfile::tempdir;
 
@@ -48,6 +49,13 @@ fn mcp_session_replays_a_realistic_transcript() {
     let project = tempdir().expect("create fixture tempdir");
     let root = project.path();
     write_fixture(root);
+
+    // The MCP server auto-spawns a warm daemon (tier-09) on the first tool call
+    // and that detached daemon outlives the `ariadne serve` child. Reap it on
+    // scope exit *and* on a panic unwind (e.g. a p95-budget miss) so the test
+    // never orphans a background `ariadne daemon` process. Idempotent: a no-op
+    // when no daemon was spawned.
+    let _daemon = ReapDaemon { root };
 
     run_init(root).expect("ariadne init on fixture");
     let report = run_index(root).expect("ariadne index on fixture");
@@ -114,6 +122,22 @@ fn mcp_session_replays_a_realistic_transcript() {
 fn write_fixture(root: &Path) {
     fs::write(root.join("util.rs"), UTIL_RS).expect("write util.rs");
     fs::write(root.join("main.rs"), MAIN_RS).expect("write main.rs");
+}
+
+/// Stops the project's daemon on drop, so the daemon the MCP server auto-spawns
+/// is reaped on a clean exit and on a panic unwind alike. `ariadne daemon stop`
+/// is idempotent — a no-op when no daemon is running.
+struct ReapDaemon<'a> {
+    root: &'a Path,
+}
+
+impl Drop for ReapDaemon<'_> {
+    fn drop(&mut self) {
+        let _ = Command::new(ariadne_binary())
+            .args(["daemon", "stop"])
+            .arg(self.root)
+            .output();
+    }
 }
 
 /// Read a required string field off a `list_symbols` row.
