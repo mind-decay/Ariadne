@@ -135,9 +135,14 @@ version = "1.0.0"
 dependencies = [
  "ariadne-core",
  "ariadne-graph",
+ "ariadne-parser",
+ "ariadne-salsa",
  "ariadne-storage",
+ "blake3",
+ "criterion",
  "interprocess",
  "postcard",
+ "proptest",
  "tempfile",
  "thiserror 2.0.18",
 ]
@@ -182,6 +187,8 @@ dependencies = [
  "ariadne-salsa",
  "ariadne-storage",
  "insta",
+ "interprocess",
+ "postcard",
  "pretty_assertions",
  "rmcp",
  "schemars",
@@ -229,6 +236,7 @@ version = "1.0.0"
 dependencies = [
  "ariadne-core",
  "ariadne-storage",
+ "blake3",
  "criterion",
  "pretty_assertions",
  "proptest",
