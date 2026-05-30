@@ -12,5 +12,8 @@ pub mod lifecycle;
 
 pub(crate) mod catalog;
 pub(crate) mod dispatch;
+pub(crate) mod dump;
+pub(crate) mod facts;
+pub(crate) mod live;
 pub(crate) mod queries;
 pub(crate) mod snapshot;

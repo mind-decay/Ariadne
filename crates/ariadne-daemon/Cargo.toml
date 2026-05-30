@@ -17,13 +17,20 @@ workspace = true
 # builds the in-RAM analytics graph, so it wires the read-side use-case +
 # driven adapters. It is itself a driving adapter, so nothing in the
 # workspace depends on it (tests/architecture.rs).
-# `ariadne-salsa` is deferred to tier-08: the tier-07 read/refresh path
-# rebuilds the warm graph straight from a storage snapshot and never touches
-# the incremental query DB; the watcher-fed invalidation that needs salsa
-# lands in tier-08 [src: post-v1-roadmap plan.md tier-08].
+# tier-08 wires the live update pipeline here: the daemon owns the salsa
+# re-derivation driver (`ariadne-salsa`), parses changed files at this
+# composition root (`ariadne-parser`, a driven adapter — allowed), and hashes
+# their bytes (`blake3`) to build the `FileRecord` exactly as the cold index
+# does. It deliberately does NOT depend on `ariadne-watcher`: that is a sibling
+# driving adapter, barred by the hexagonal invariant (tests/architecture.rs);
+# the CLI composition root wires the watcher to `serve_live` over the
+# `ariadne_core::Invalidation` channel instead [src: build_notes; ADR-0007].
 ariadne-core = { workspace = true }
 ariadne-graph = { workspace = true }
 ariadne-storage = { workspace = true }
+ariadne-salsa = { workspace = true }
+ariadne-parser = { path = "../ariadne-parser" }
+blake3 = { workspace = true }
 thiserror = { workspace = true }
 # Cross-platform local-socket IPC (Unix domain socket / Windows named pipe
 # behind one API). Pinned exact per the post-v1 tech inventory + RD5
@@ -38,3 +45,15 @@ postcard = { version = "=1.1.3", features = ["use-std"] }
 
 [dev-dependencies]
 tempfile = { workspace = true }
+# Random edit-sequence generator for the warm-graph divergence-0 proptest
+# (tier-08 step 6) [src: post-v1-roadmap plan.md `<verification>`].
+proptest = { workspace = true }
+# Warm-query criterion bench harness (tier-10 step 4) [src: workspace pin].
+# The bench seeds redb directly via the already-normal `ariadne-storage` dep.
+criterion = { workspace = true }
+
+# Criterion warm-query SLO bench: p95 < 10 ms over direct daemon IPC against a
+# warm graph (tier-10 step 4, exit criterion #2).
+[[bench]]
+name = "warm_query"
+harness = false

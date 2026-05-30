@@ -10,14 +10,25 @@
 //!  crates/ariadne-mcp/src/catalog.rs].
 
 use std::collections::BTreeMap;
+use std::path::{Path, PathBuf};
 
-use ariadne_core::{FileId, Lang, ReadSnapshot, Storage, SymbolId, SymbolRecord, Visibility};
-use ariadne_graph::GraphIndex;
+use ariadne_core::{
+    Changeset, FileId, Lang, ReadSnapshot, Storage, SymbolId, SymbolRecord, Visibility,
+};
+use ariadne_graph::{EdgeDelta, EdgeKind, GraphIndex};
 
 use crate::domain::snapshot::WarmSnapshot;
 use crate::errors::DaemonError;
 
 const SCAN_CHUNK: usize = 4096;
+
+/// Project-root-relative location of the redb index. Shared by the transport
+/// adapter, the live-update engine, and the dump comparator so they all open
+/// the same file [src: crates/ariadne-cli/src/domain/mod.rs:42-44].
+#[must_use]
+pub(crate) fn index_path(project_root: &Path) -> PathBuf {
+    project_root.join(".ariadne").join("index.redb")
+}
 
 /// Per-symbol cached metadata — the fields the queries need, owned so the
 /// catalog outlives the storage handle it was built from.
@@ -125,6 +136,82 @@ impl WarmCatalog {
             revision,
             root,
         })
+    }
+
+    /// Fold a committed [`Changeset`] into the warm catalog (tier-08). The
+    /// snapshot mirror, the path/name/metadata indices, and the petgraph are
+    /// all advanced in place — the graph via the incremental
+    /// [`GraphIndex::apply_delta`] rather than a rebuild (RD6) — and the
+    /// catalog revision is bumped to the just-committed `revision`. The
+    /// committed changeset carries the full derived upsert set plus exhaustive
+    /// stale deletes, so re-adding existing symbols/edges is idempotent and the
+    /// result is byte-equal to a fresh build from the committed storage (the
+    /// tier-08 divergence-0 proptest is the guard) [src: tier-08 step 4;
+    ///  crates/ariadne-salsa/src/db.rs:236-335].
+    pub(crate) fn apply_changeset(&mut self, cs: &Changeset, revision: u64) {
+        // Mirror the snapshot first so the symbol-lang join below sees the new
+        // file records.
+        self.snap.apply(cs);
+
+        for fid in &cs.file_deletes {
+            if let Some(path) = self.paths.remove(fid) {
+                self.path_to_id.remove(&path);
+            }
+        }
+        for (fid, rec) in &cs.file_upserts {
+            self.paths.insert(*fid, rec.path.clone());
+            self.path_to_id.insert(rec.path.clone(), *fid);
+        }
+
+        for sid in &cs.symbol_deletes {
+            if let Some(meta) = self.symbols.remove(sid) {
+                if let Some(ids) = self.by_name.get_mut(&meta.name) {
+                    if let Ok(pos) = ids.binary_search(sid) {
+                        ids.remove(pos);
+                    }
+                    if ids.is_empty() {
+                        self.by_name.remove(&meta.name);
+                    }
+                }
+            }
+        }
+        for (sid, rec) in &cs.symbol_upserts {
+            let lang = self
+                .snap
+                .file(rec.defining_file)
+                .ok()
+                .flatten()
+                .map_or(Lang::Other("unknown"), |f| f.lang);
+            // A symbol id encodes its (path, kind, name) (RD12), so an existing
+            // id keeps its name — only new ids extend `by_name`, inserted in
+            // ascending-id order to match the fresh build's scan order.
+            if !self.symbols.contains_key(sid) {
+                let ids = self.by_name.entry(rec.canonical_name.clone()).or_default();
+                if let Err(pos) = ids.binary_search(sid) {
+                    ids.insert(pos, *sid);
+                }
+            }
+            self.symbols
+                .insert(*sid, SymbolMeta::from_record(rec, lang));
+        }
+
+        let added: Vec<SymbolId> = cs.symbol_upserts.iter().map(|(id, _)| *id).collect();
+        let removed: Vec<SymbolId> = cs.symbol_deletes.clone();
+        let edge_diff = EdgeDelta {
+            added: cs
+                .edges_added
+                .iter()
+                .map(|(k, r)| (k.src, k.dst, EdgeKind::from_core(k.kind), r.weight))
+                .collect(),
+            removed: cs
+                .edges_removed
+                .iter()
+                .map(|k| (k.src, k.dst, EdgeKind::from_core(k.kind)))
+                .collect(),
+        };
+        self.graph.apply_delta(added, removed, edge_diff);
+
+        self.revision = revision;
     }
 
     /// First symbol carrying `name`, if any.

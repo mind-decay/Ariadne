@@ -8,11 +8,11 @@
 //! The pidfile read/write, residue removal, and detached-process spawn are
 //! plain `std` glue around that transport; the pure decisions they act on
 //! live in [`crate::domain::lifecycle`] and the framing in
-//! [`crate::adapters::codec`].
+//! `crate::adapters::codec`.
 //!
 //! ## Warm graph
 //! On startup the daemon opens `<root>/.ariadne/index.redb`, builds the
-//! in-RAM [`WarmCatalog`] (petgraph + name/path/metadata indices), and drops
+//! in-RAM `WarmCatalog` (petgraph + name/path/metadata indices), and drops
 //! the storage handle — the warm state lives in RAM behind an [`RwLock`]
 //! (concurrent reads, exclusive refresh). Queries dispatch against it; a
 //! request carrying a newer redb revision than the catalog was built from
@@ -25,19 +25,22 @@
 //! gone and exits, removing the socket [src: tier-06 step 5].
 
 use std::path::Path;
-use std::sync::RwLock;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::mpsc::Receiver;
+use std::sync::{Arc, RwLock};
 use std::time::{Duration, Instant};
 
 use interprocess::local_socket::prelude::*;
 use interprocess::local_socket::{GenericFilePath, ListenerOptions, Name, Stream};
 
-use ariadne_core::{DaemonRequest, DaemonResponse};
+use ariadne_core::{DaemonRequest, DaemonResponse, Invalidation};
 use ariadne_storage::RedbStorage;
 
 use crate::adapters::codec;
-use crate::domain::catalog::WarmCatalog;
+use crate::domain::catalog::{WarmCatalog, index_path};
 use crate::domain::dispatch;
 use crate::domain::lifecycle::{DaemonPaths, DaemonStatus, Pid, ReclaimDecision, reclaim_decision};
+use crate::domain::live::LiveEngine;
 use crate::errors::DaemonError;
 
 /// Poll cadence while waiting for the daemon to come up or go down.
@@ -91,11 +94,6 @@ fn is_alive(paths: &DaemonPaths) -> bool {
 
 // ---- warm graph -----------------------------------------------------------
 
-/// The on-disk index path for a project root.
-fn index_path(project_root: &Path) -> std::path::PathBuf {
-    project_root.join(".ariadne").join("index.redb")
-}
-
 /// Open the project's redb index, build the warm catalog, and drop the
 /// storage handle so the single-open redb lock is released. A missing index
 /// is created empty by `RedbStorage::open`, yielding an empty catalog.
@@ -123,15 +121,26 @@ fn serve_connection(
         .expect("warm-catalog read lock")
         .is_stale(req.revision);
     if stale {
-        match load_catalog(project_root) {
-            Ok(fresh) => *catalog.write().expect("warm-catalog write lock") = fresh,
-            Err(e) => {
-                // A transient refresh failure becomes a typed query-level
-                // error so a client distinguishes a stale-rebuild miss from
-                // daemon death (a dropped connection). The daemon keeps its
-                // last-good warm graph and stays alive [src: tier-07 audit F3].
-                let resp = DaemonResponse::Error(format!("warm-graph refresh failed: {e}"));
-                return codec::write_frame(stream, &codec::encode_response(&resp)?);
+        // Rebuild under the write lock so the redb open here is serialized
+        // against the live-update pump, which also opens redb only under this
+        // same lock — single-open-per-process means the two opens must not
+        // overlap or one races to `DatabaseAlreadyOpen` [src: tier-08 audit I1].
+        // Re-check staleness under the lock: the pump (or another connection)
+        // may have already refreshed the catalog between the read above and the
+        // write acquisition.
+        let mut guard = catalog.write().expect("warm-catalog write lock");
+        if guard.is_stale(req.revision) {
+            match load_catalog(project_root) {
+                Ok(fresh) => *guard = fresh,
+                Err(e) => {
+                    // A transient refresh failure becomes a typed query-level
+                    // error so a client distinguishes a stale-rebuild miss from
+                    // daemon death (a dropped connection). The daemon keeps its
+                    // last-good warm graph and stays alive [src: tier-07 audit F3].
+                    drop(guard);
+                    let resp = DaemonResponse::Error(format!("warm-graph refresh failed: {e}"));
+                    return codec::write_frame(stream, &codec::encode_response(&resp)?);
+                }
             }
         }
     }
@@ -213,24 +222,11 @@ fn wait_until_down(paths: &DaemonPaths, timeout: Duration) -> Result<(), DaemonE
 /// [`DaemonError::Protocol`] error if binding or framing fails.
 pub fn serve(project_root: &Path) -> Result<(), DaemonError> {
     let paths = DaemonPaths::new(project_root);
-    ensure_dir(&paths)?;
-
-    match reclaim_decision(
-        paths.pidfile.exists(),
-        paths.socket.exists(),
-        is_alive(&paths),
-    ) {
-        ReclaimDecision::AlreadyRunning => {
-            return Err(DaemonError::AlreadyRunning {
-                pid: read_pid(&paths).map_or(0, |p| p.0),
-            });
-        }
-        ReclaimDecision::Reclaim => remove_residue(&paths),
-        ReclaimDecision::Fresh => {}
-    }
-
-    let own = Pid::current();
-    std::fs::write(&paths.pidfile, own.to_text())?;
+    let Some(own) = claim_lifecycle(&paths)? else {
+        return Err(DaemonError::AlreadyRunning {
+            pid: read_pid(&paths).map_or(0, |p| p.0),
+        });
+    };
 
     // Build the warm graph before binding so the daemon answers queries the
     // instant it accepts a connection.
@@ -242,16 +238,95 @@ pub fn serve(project_root: &Path) -> Result<(), DaemonError> {
         }
     };
 
+    serve_loop(&catalog, &paths, project_root, own)
+}
+
+/// Run the daemon with a live update loop: the warm graph is kept current by
+/// draining `events` (filesystem invalidations the composition root feeds from
+/// the watcher) through the incremental re-derivation pipeline, while the
+/// accept loop serves queries against the same warm catalog. Blocks for the
+/// daemon's lifetime, identically to [`serve`]; the CLI wires the
+/// `ariadne-watcher` to this entry point (the daemon never depends on the
+/// watcher directly — strict hexagonal invariant) [src: tier-08 build notes;
+/// ADR-0007].
+///
+/// # Errors
+/// Same failure modes as [`serve`], plus warm-engine seeding failures.
+pub fn serve_live(project_root: &Path, events: Receiver<Invalidation>) -> Result<(), DaemonError> {
+    let paths = DaemonPaths::new(project_root);
+    let Some(own) = claim_lifecycle(&paths)? else {
+        return Err(DaemonError::AlreadyRunning {
+            pid: read_pid(&paths).map_or(0, |p| p.0),
+        });
+    };
+
+    // Build the warm engine (catalog + seeded salsa db) before binding.
+    let engine = match LiveEngine::start(project_root) {
+        Ok(engine) => engine,
+        Err(e) => {
+            let _ = std::fs::remove_file(&paths.pidfile);
+            return Err(e);
+        }
+    };
+    let catalog = engine.catalog_arc();
+    let stop = Arc::new(AtomicBool::new(false));
+    let pump = engine.spawn_pump(events, Arc::clone(&stop));
+
+    let result = serve_loop(&catalog, &paths, project_root, own);
+
+    // Tear the update thread down cleanly regardless of how the loop ended.
+    stop.store(true, Ordering::Relaxed);
+    let _ = pump.join();
+    result
+}
+
+/// Whether this process is the re-executed detached daemon child (the
+/// `RUN_ENV` marker is set). The CLI composition root uses this to decide
+/// whether to wire the watcher and block in [`serve_live`], or to spawn a
+/// detached child [src: tier-08 build notes].
+#[must_use]
+pub fn running_as_daemon_child() -> bool {
+    std::env::var_os(RUN_ENV).is_some()
+}
+
+/// Reclaim stale residue and claim the pidfile for this process. Returns the
+/// claimed [`Pid`], or `None` when a live daemon already holds the socket.
+fn claim_lifecycle(paths: &DaemonPaths) -> Result<Option<Pid>, DaemonError> {
+    ensure_dir(paths)?;
+    match reclaim_decision(
+        paths.pidfile.exists(),
+        paths.socket.exists(),
+        is_alive(paths),
+    ) {
+        ReclaimDecision::AlreadyRunning => return Ok(None),
+        ReclaimDecision::Reclaim => remove_residue(paths),
+        ReclaimDecision::Fresh => {}
+    }
+    let own = Pid::current();
+    std::fs::write(&paths.pidfile, own.to_text())?;
+    Ok(Some(own))
+}
+
+/// Bind the socket and serve queries against `catalog` until the pidfile is
+/// removed (the shutdown signal), then remove residue. Shared by [`serve`] and
+/// [`serve_live`]; the catalog they pass differs (cold-rebuild-on-staleness vs
+/// live-updated) but the accept loop is identical.
+fn serve_loop(
+    catalog: &RwLock<WarmCatalog>,
+    paths: &DaemonPaths,
+    project_root: &Path,
+    own: Pid,
+) -> Result<(), DaemonError> {
     // Bind the socket; retry once after clearing a leftover socket file.
     let listener = match ListenerOptions::new()
-        .name(socket_name(&paths)?)
+        .name(socket_name(paths)?)
         .create_sync()
     {
         Ok(listener) => listener,
         Err(e) if e.kind() == std::io::ErrorKind::AddrInUse => {
             let _ = std::fs::remove_file(&paths.socket);
             match ListenerOptions::new()
-                .name(socket_name(&paths)?)
+                .name(socket_name(paths)?)
                 .create_sync()
             {
                 Ok(listener) => listener,
@@ -272,15 +347,15 @@ pub fn serve(project_root: &Path) -> Result<(), DaemonError> {
             // A malformed client must not kill the daemon; a transient refresh
             // failure is answered as a typed error frame, not a dropped
             // connection (see `serve_connection`).
-            let _ = serve_connection(&mut stream, &catalog, project_root);
+            let _ = serve_connection(&mut stream, catalog, project_root);
         }
         // The pidfile vanishing (or being reassigned) is the shutdown signal.
-        if !pidfile_is_ours(&paths, own) {
+        if !pidfile_is_ours(paths, own) {
             break;
         }
     }
 
-    remove_residue(&paths);
+    remove_residue(paths);
     Ok(())
 }
 
@@ -346,7 +421,7 @@ pub fn stop(project_root: &Path) -> Result<(), DaemonError> {
 }
 
 /// Start a daemon for `project_root`, detached into the background, and wait
-/// until it answers. When invoked as the re-executed child (the [`RUN_ENV`]
+/// until it answers. When invoked as the re-executed child (the `RUN_ENV`
 /// marker is set) this call *becomes* the daemon and blocks in [`serve`].
 ///
 /// # Errors
