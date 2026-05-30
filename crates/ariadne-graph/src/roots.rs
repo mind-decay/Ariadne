@@ -11,7 +11,7 @@
 //! The pure-domain placement is intentional: `ariadne-graph` already
 //! depends on `ariadne-core` and on no driven adapter, so the classifier
 //! has the metadata it needs without violating the hexagonal boundary
-//! [src: CLAUDE.md `<rules>`].
+//! \[src: CLAUDE.md `<rules>`\].
 
 use ariadne_core::{Lang, Visibility};
 

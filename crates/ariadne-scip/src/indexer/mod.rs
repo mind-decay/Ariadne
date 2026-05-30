@@ -48,9 +48,9 @@ pub use scip_vue::ScipVueIndexer;
 
 /// Best-effort visibility lattice for a SCIP symbol string. SCIP's
 /// `SymbolInformation` carries no `visibility` or attribute field
-/// [src: <https://github.com/sourcegraph/scip/blob/main/scip.proto> — see
+/// \[src: <https://github.com/sourcegraph/scip/blob/main/scip.proto> — see
 /// the `SymbolInformation` and `Symbol` message definitions in
-/// `crates/ariadne-scip/proto/scip.proto`]. The grammar still distinguishes
+/// `crates/ariadne-scip/proto/scip.proto`\]. The grammar still distinguishes
 /// document-local symbols (`local <id>`) from package-visible descriptor
 /// symbols [src: post-v1-roadmap plan.md RD10 — tier-04 step 8]; this
 /// helper folds that split onto the coarse [`Visibility`] lattice so the
