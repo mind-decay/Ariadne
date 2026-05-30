@@ -10,21 +10,19 @@
 //! file; the host and injected tree-sitter parsers are built per file by
 //! `ariadne_parser::parse_file` [src: docs/adr/0010-streaming-cold-index.md].
 
+use std::collections::HashMap;
 use std::collections::hash_map::Entry;
-use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::mpsc::{Receiver, SyncSender, sync_channel};
-use std::thread;
 use std::time::{Duration, Instant};
 
-use anyhow::{Context, Result, bail};
-use ariadne_core::{
-    Changeset, EdgeKey, EdgeKind, EdgeRecord, FileId, FileRecord, Lang, Span, Storage, SymbolId,
-    SymbolRecord, Visibility, WriteTxn,
-};
+use anyhow::{Context, Result};
+use ariadne_core::{FileId, FileRecord, Lang, ReadSnapshot, Storage};
 use ariadne_parser::{DeclKind, FactExtractor, ParserRegistry, SyntacticFacts};
+use ariadne_salsa::{
+    AriadneDb, CallRaw, DeclRaw, HookRaw, ImportRaw, RenderRaw, SyntacticFactsRaw,
+};
 use ariadne_scip::IngestPlan;
 use ariadne_storage::RedbStorage;
 use ignore::{DirEntry, WalkBuilder, WalkState};
@@ -34,24 +32,10 @@ use serde::Serialize;
 
 use crate::config::Config;
 
-/// Files per redb write transaction. Bounds the committer's in-RAM
-/// `Changeset` *while the parse still runs*, so the parse-time working set
-/// stays small and dirty pages flush per batch instead of holding the whole
-/// corpus in one transaction [src: tier-13 step 5].
-const COMMIT_BATCH: usize = 4096;
-
-/// Edges per redb write transaction. Edge resolution runs after the channel
-/// closes, so — unlike [`COMMIT_BATCH`] — the edge batch bounds no
-/// parse-time working set; the whole resolved edge list is already in RAM.
-/// A large bound keeps redb dirty pages per transaction bounded while
-/// collapsing the post-parse commit from hundreds of `fsync`s to a handful
-/// [src: tier-13 step 7 — N tuned from the measured commit breakdown:
-/// 858 4096-edge transactions were ~42s of the 67s cold index].
-const EDGE_COMMIT_BATCH: usize = 262_144;
-
-/// Bound on the parse → commit channel. Large enough that parse is throttled
-/// only when the committer genuinely lags [src: tier-13 step 4].
-const CHANNEL_CAPACITY: usize = 4096;
+/// Chunk size for the post-commit count scans. The summary's symbol/edge
+/// counts are read from the committed snapshot (the authoritative persisted
+/// record set), streamed a chunk at a time to bound the count's working set.
+const COUNT_CHUNK: usize = 65_536;
 
 /// Project-root-relative location of the redb index.
 #[must_use]
@@ -154,42 +138,14 @@ fn add_ns(counter: &AtomicU64, elapsed: Duration) {
     );
 }
 
-/// A declaration promoted to a symbol, kept for edge resolution.
-struct LocalSymbol {
-    id: SymbolId,
-    def_range: (u32, u32),
-}
-
-/// A symbol-name candidate kept for deterministic edge-`dst` selection. The
-/// candidate lists are sorted by `(file, def_start)` once the channel
-/// closes, reproducing tier-12's `FileId`-ordered `candidates.first()`
-/// selection regardless of parse-completion order [src: tier-13 step 6].
-struct SymbolCandidate {
-    id: SymbolId,
-    file: FileId,
-    def_start: u32,
-}
-
-/// Per-file facts retained between the symbol pass and the edge pass. Each
-/// `(name, range)` pair is an unresolved site — a callee, a rendered child
-/// component, or a hook — the edge pass resolves against the global symbol
-/// table [src: tier-05 step 4].
-struct FileFacts {
-    file_id: FileId,
-    lang: Lang,
-    symbols: Vec<LocalSymbol>,
-    calls: Vec<(String, (u32, u32))>,
-    renders: Vec<(String, (u32, u32))>,
-    hooks: Vec<(String, (u32, u32))>,
-}
-
-/// One file's parse output, streamed to the committer. Holds no raw bytes —
-/// only the [`FileRecord`] metadata and the extracted facts.
+/// One file's parse output, collected for the shared derivation. Retains the
+/// raw bytes so the salsa `FileContentInput` carries the content hash and so
+/// an SFC's synthesized `def_range` end matches `record.size`.
 struct ParsedFile {
     id: FileId,
     record: FileRecord,
     lang: Lang,
-    rel_path: String,
+    content: Vec<u8>,
     /// `None` when the parse aborted (timeout or extraction failure).
     facts: Option<SyntacticFacts>,
 }
@@ -222,39 +178,78 @@ pub fn run_index(
     let paths = walk_repo(root, config);
     let walk_ms = walk_started.elapsed().as_millis();
 
-    // Phase 2 — streaming parse → committer pipeline.
+    // Phase 2 — parallel parse, collected for the shared derivation. The
+    // streaming committer is gone: the per-file derivation now lives in
+    // `ariadne-salsa` so the cold index and the daemon warm graph share one
+    // path [src: post-v1-roadmap plan.md RD11].
     let registry = ParserRegistry::new();
     let probe = ParseProbe::default();
     let bar = progress_bar(paths.len());
-    let (tx, rx) = sync_channel::<ParsedFile>(CHANNEL_CAPACITY);
-    let committer_db = db_path.clone();
-    let committer = thread::spawn(move || run_committer(&rx, &committer_db));
 
     let parse_started = Instant::now();
+    let sink: Mutex<Vec<ParsedFile>> = Mutex::new(Vec::with_capacity(paths.len()));
     paths.par_iter().enumerate().for_each_init(
         || ThreadState {
             registry: registry.clone(),
             extractors: HashMap::new(),
-            sender: tx.clone(),
         },
         |state, (idx, path)| {
             bar.inc(1);
             if let Some(parsed) = parse_one(root, idx, path, state, &probe) {
-                // A failed send means the committer already exited; its
-                // join below surfaces the real error.
-                let _ = state.sender.send(parsed);
+                sink.lock().expect("parse sink mutex poisoned").push(parsed);
             }
         },
     );
     let parse_ms = parse_started.elapsed().as_millis();
-    drop(tx);
     bar.finish_and_clear();
-    let outcome = match committer.join() {
-        Ok(result) => result.context("committer thread failed")?,
-        Err(_) => bail!("committer thread panicked"),
-    };
+    let mut parsed = sink.into_inner().expect("parse sink mutex poisoned");
+    // Seed + derive in `FileId` order so the per-file derivation runs in the
+    // same order the streaming committer once drained the channel.
+    parsed.sort_by_key(|p| p.id);
 
-    // Phase 3 — opt-in SCIP ingest, off the measured fast path by default.
+    // Phase 3 — seed the salsa inputs from the parsed facts, then run the
+    // shared derivation and commit one changeset.
+    let storage = RedbStorage::open(&db_path).context("open redb index")?;
+    let mut db = AriadneDb::new();
+    let mut lang_first_seen: HashMap<String, FileId> = HashMap::new();
+    let mut parse_failures = 0usize;
+    let files = parsed.len();
+
+    let seed_started = Instant::now();
+    for pf in parsed {
+        lang_first_seen
+            .entry(pf.lang.tag())
+            .and_modify(|seen| *seen = (*seen).min(pf.id))
+            .or_insert(pf.id);
+        let facts = if let Some(f) = pf.facts {
+            convert_facts(&f)
+        } else {
+            parse_failures += 1;
+            SyntacticFactsRaw::default()
+        };
+        db.seed_file(pf.id, pf.record, pf.content, facts);
+    }
+    let resolve_ms = seed_started.elapsed().as_millis();
+
+    let commit_started = Instant::now();
+    let revision = db
+        .commit_revision(&storage)
+        .context("commit derived changeset")?;
+    let commit_ms = commit_started.elapsed().as_millis();
+
+    // Counts come from the committed snapshot — the authoritative persisted
+    // record set the cold byte-parity gate compares against.
+    let snapshot = storage.snapshot().context("snapshot committed index")?;
+    let mut symbols = 0usize;
+    for chunk in snapshot.iter_symbols(COUNT_CHUNK)? {
+        symbols += chunk.context("count symbol chunk")?.len();
+    }
+    let mut edges = 0usize;
+    for chunk in snapshot.iter_edges(COUNT_CHUNK)? {
+        edges += chunk.context("count edge chunk")?.len();
+    }
+
+    // Phase 4 — opt-in SCIP ingest, off the measured fast path by default.
     let scip_started = Instant::now();
     let scip_report = if scip {
         Some(IngestPlan::with_default_drivers().ingest(root))
@@ -264,10 +259,10 @@ pub fn run_index(
     let scip_ms = scip_started.elapsed().as_millis();
 
     let summary = IndexSummary {
-        files: outcome.files,
-        symbols: outcome.symbols,
-        edges: outcome.edges,
-        langs: outcome.langs,
+        files,
+        symbols,
+        edges,
+        langs: ordered_langs(&lang_first_seen),
         scip_successes: scip_report
             .as_ref()
             .map(|s| s.successes.iter().map(Lang::tag).collect())
@@ -276,15 +271,15 @@ pub fn run_index(
             .as_ref()
             .map(|s| s.warnings.iter().map(|w| w.binary.clone()).collect())
             .unwrap_or_default(),
-        parse_failures: outcome.parse_failures,
-        revision: outcome.revision,
+        parse_failures,
+        revision: revision.0,
         elapsed_ms: started.elapsed().as_millis(),
     };
     let timings = PhaseTimings {
         walk: walk_ms,
         parse: parse_ms,
-        resolve: outcome.resolve_ms,
-        commit: outcome.commit_ms,
+        resolve: resolve_ms,
+        commit: commit_ms,
         scip: scip_ms,
     };
     Ok((summary, timings, probe.snapshot()))
@@ -360,8 +355,7 @@ fn is_config_ignored(root: &Path, path: &Path, patterns: &[String]) -> bool {
 
 /// Per-worker parse state. `for_each_init` builds one per `rayon` worker, so
 /// no `FactExtractor` is ever shared — it is `!Send`, built lazily on the
-/// worker thread. The `SyncSender` clone is the worker's handle onto the
-/// bounded parse → commit channel [src: tier-13 step 3].
+/// worker thread.
 ///
 /// `extractors` is keyed by *every* [`Lang`] a worker meets across all
 /// parse layers — a Vue SFC contributes both the `Vue` host-layer extractor
@@ -370,15 +364,13 @@ fn is_config_ignored(root: &Path, path: &Path, patterns: &[String]) -> bool {
 struct ThreadState {
     registry: ParserRegistry,
     extractors: HashMap<Lang, FactExtractor>,
-    sender: SyncSender<ParsedFile>,
 }
 
 /// Read, parse, and extract syntactic facts for one walked path. Returns
 /// `None` only when the file is unreadable (it then contributes to no
 /// count); a parse abort yields a [`ParsedFile`] with `facts: None` so the
-/// file is still recorded. The byte buffer and parse tree drop before
-/// return, so the raw-byte peak scales with the worker count, not the file
-/// count [src: tier-12 step 4].
+/// file is still recorded. The raw bytes are retained on the [`ParsedFile`]
+/// so the salsa input layer can hold the content + hash [src: tier-07a].
 fn parse_one(
     root: &Path,
     idx: usize,
@@ -410,19 +402,18 @@ fn parse_one(
     let id = FileId::new(u32::try_from(idx + 1).expect("file count fits u32"))
         .expect("file id starts at 1 and increments");
     let record = FileRecord {
-        path: rel_path.clone(),
+        path: rel_path,
         lang,
         size,
         blake3: hash,
         mtime_ns,
     };
     let facts = parse_facts(lang, &content, state, probe);
-    // `content` drops here — raw bytes never outlive this single parse.
     Some(ParsedFile {
         id,
         record,
         lang,
-        rel_path,
+        content,
         facts,
     })
 }
@@ -466,238 +457,6 @@ fn parse_facts(
     Some(merged)
 }
 
-/// Counts + timings the committer hands back on join.
-struct CommitOutcome {
-    files: usize,
-    symbols: usize,
-    edges: usize,
-    parse_failures: usize,
-    langs: Vec<String>,
-    revision: u64,
-    /// Cumulative time inside redb `apply` calls.
-    commit_ms: u128,
-    /// Post-drain edge-resolution time (sort + `resolve_edges`).
-    resolve_ms: u128,
-}
-
-/// Mutable accumulators the committer threads through the drain loop.
-#[derive(Default)]
-struct CommitState {
-    batch: Changeset,
-    name_to_symbols: HashMap<String, Vec<SymbolCandidate>>,
-    facts_by_file: Vec<FileFacts>,
-    lang_first_seen: HashMap<String, FileId>,
-    files: usize,
-    symbols: usize,
-    parse_failures: usize,
-}
-
-impl CommitState {
-    /// Fold one parsed file into the accumulators and the pending batch.
-    fn absorb(&mut self, file: ParsedFile) {
-        let ParsedFile {
-            id,
-            record,
-            lang,
-            rel_path,
-            facts,
-        } = file;
-        self.files += 1;
-        self.lang_first_seen
-            .entry(lang.tag())
-            .and_modify(|seen| *seen = (*seen).min(id))
-            .or_insert(id);
-        // Captured before `record` moves into the batch — bounds the
-        // synthesized SFC component's whole-file definition span below.
-        let file_len = u32::try_from(record.size).unwrap_or(u32::MAX);
-        self.batch.file_upserts.push((id, record));
-
-        let Some(facts) = facts else {
-            self.parse_failures += 1;
-            return;
-        };
-        let mut locals = Vec::with_capacity(facts.decls.len() + 1);
-        // An SFC (`.vue`/`.svelte`/`.astro`) carries exactly one component —
-        // the file itself — but emits no enclosing `Component` decl: its
-        // template render sites sit in the host layer, its decls in the
-        // injected `<script>` layer. Synthesize a file-spanning `Component`
-        // symbol named for the file stem so those renders have a graph
-        // source, and so a cross-file `<Child/>` resolves to `Child`'s
-        // SFC [src: tier-05 step 4; user scope decision].
-        if is_sfc_lang(lang) {
-            let name = sfc_component_name(&rel_path);
-            let sid = symbol_id(&rel_path, &name, 0);
-            let def_range = (0, file_len);
-            self.batch.symbol_upserts.push((
-                sid,
-                SymbolRecord {
-                    canonical_name: name.clone(),
-                    kind: "component".to_owned(),
-                    defining_file: id,
-                    defining_span: span(id, def_range),
-                    visibility: Visibility::Public,
-                    attributes: Vec::new(),
-                },
-            ));
-            self.name_to_symbols
-                .entry(name)
-                .or_default()
-                .push(SymbolCandidate {
-                    id: sid,
-                    file: id,
-                    def_start: 0,
-                });
-            locals.push(LocalSymbol { id: sid, def_range });
-            self.symbols += 1;
-        }
-        for decl in &facts.decls {
-            let sid = symbol_id(&rel_path, &decl.name, decl.def_byte_range.0);
-            self.batch.symbol_upserts.push((
-                sid,
-                SymbolRecord {
-                    canonical_name: decl.name.clone(),
-                    kind: decl_kind_tag(&decl.kind),
-                    defining_file: id,
-                    defining_span: span(id, decl.def_byte_range),
-                    visibility: decl.visibility,
-                    attributes: decl.attributes.clone(),
-                },
-            ));
-            self.name_to_symbols
-                .entry(decl.name.clone())
-                .or_default()
-                .push(SymbolCandidate {
-                    id: sid,
-                    file: id,
-                    def_start: decl.def_byte_range.0,
-                });
-            locals.push(LocalSymbol {
-                id: sid,
-                def_range: decl.def_byte_range,
-            });
-            self.symbols += 1;
-        }
-        self.facts_by_file.push(FileFacts {
-            file_id: id,
-            lang,
-            symbols: locals,
-            calls: facts
-                .calls
-                .iter()
-                .map(|c| (c.callee.clone(), c.byte_range))
-                .collect(),
-            renders: facts
-                .renders
-                .iter()
-                .map(|r| (r.component.clone(), r.byte_range))
-                .collect(),
-            hooks: facts
-                .hooks
-                .iter()
-                .map(|h| (h.callee.clone(), h.byte_range))
-                .collect(),
-        });
-    }
-}
-
-/// True for the framework single-file-component langs. An SFC's template
-/// render sites have no enclosing function declaration, so the committer
-/// synthesizes a per-file `Component` symbol for them [src: tier-05 step 4].
-fn is_sfc_lang(lang: Lang) -> bool {
-    matches!(lang, Lang::Vue | Lang::Svelte | Lang::Astro)
-}
-
-/// Component name for a synthesized SFC symbol: the file stem (`Card` for
-/// `ui/Card.vue`). Falls back to the whole relative path if it has no stem.
-fn sfc_component_name(rel_path: &str) -> String {
-    Path::new(rel_path)
-        .file_stem()
-        .map_or_else(|| rel_path.to_owned(), |s| s.to_string_lossy().into_owned())
-}
-
-/// Drain the parse → commit channel, writing redb in bounded batches.
-///
-/// File and symbol upserts are committed every [`COMMIT_BATCH`] files while
-/// the parse still runs; edges are resolved once the channel closes (global
-/// name resolution needs every symbol) and committed in the same batch size
-/// [src: tier-13 steps 5-6].
-fn run_committer(rx: &Receiver<ParsedFile>, db_path: &Path) -> Result<CommitOutcome> {
-    let storage = RedbStorage::open(db_path).context("open redb index")?;
-    let mut state = CommitState::default();
-    let mut files_in_batch = 0usize;
-    let mut revision = 0u64;
-    let mut commit_ms = 0u128;
-
-    while let Ok(file) = rx.recv() {
-        state.absorb(file);
-        files_in_batch += 1;
-        if files_in_batch >= COMMIT_BATCH {
-            revision = commit_batch(&storage, &mut state.batch, &mut commit_ms)?;
-            files_in_batch = 0;
-        }
-    }
-    if files_in_batch > 0 {
-        revision = commit_batch(&storage, &mut state.batch, &mut commit_ms)?;
-    }
-
-    let resolve_started = Instant::now();
-    state.facts_by_file.sort_by_key(|f| f.file_id);
-    let resolved = sort_candidates(state.name_to_symbols);
-    let edge_list = resolve_edges(&state.facts_by_file, &resolved);
-    let resolve_ms = resolve_started.elapsed().as_millis();
-
-    let mut edges = 0usize;
-    let mut edge_batch = Changeset::new();
-    for (key, rec) in edge_list {
-        edge_batch.edges_added.push((key, rec));
-        edges += 1;
-        if edges % EDGE_COMMIT_BATCH == 0 {
-            revision = commit_batch(&storage, &mut edge_batch, &mut commit_ms)?;
-        }
-    }
-    if !edge_batch.edges_added.is_empty() {
-        revision = commit_batch(&storage, &mut edge_batch, &mut commit_ms)?;
-    }
-
-    Ok(CommitOutcome {
-        files: state.files,
-        symbols: state.symbols,
-        edges,
-        parse_failures: state.parse_failures,
-        langs: ordered_langs(&state.lang_first_seen),
-        revision,
-        commit_ms,
-        resolve_ms,
-    })
-}
-
-/// Apply one batch as a single redb transaction, accumulating the `apply`
-/// wall time. Each call is its own transaction, so dirty pages flush per
-/// batch and never hold the whole corpus [src: tier-13 step 5].
-fn commit_batch(storage: &RedbStorage, batch: &mut Changeset, commit_ms: &mut u128) -> Result<u64> {
-    let changeset = std::mem::take(batch);
-    let started = Instant::now();
-    let txn = storage.begin_write().context("begin redb write txn")?;
-    let revision = txn.apply(&changeset).context("commit changeset batch")?;
-    *commit_ms += started.elapsed().as_millis();
-    Ok(revision.0)
-}
-
-/// Reduce each name's candidate list to `SymbolId`s, sorted by
-/// `(defining FileId, def byte start)` so edge-`dst` selection is
-/// independent of parse-completion order [src: tier-13 step 6].
-fn sort_candidates(
-    name_to_symbols: HashMap<String, Vec<SymbolCandidate>>,
-) -> HashMap<String, Vec<SymbolId>> {
-    name_to_symbols
-        .into_iter()
-        .map(|(name, mut cands)| {
-            cands.sort_by_key(|c| (c.file, c.def_start));
-            (name, cands.into_iter().map(|c| c.id).collect())
-        })
-        .collect()
-}
-
 /// Language tags ordered by the lowest `FileId` they were observed at —
 /// reproduces tier-12's first-seen-in-path-order regardless of parse order.
 fn ordered_langs(first_seen: &HashMap<String, FileId>) -> Vec<String> {
@@ -706,90 +465,59 @@ fn ordered_langs(first_seen: &HashMap<String, FileId>) -> Vec<String> {
     langs
 }
 
-/// Resolve every call / render / hook site to a typed `src -> dst` edge.
-///
-/// A call site becomes a [`EdgeKind::References`] edge, a render site a
-/// [`EdgeKind::Renders`] edge, a hook site a [`EdgeKind::UsesHook`] edge.
-/// For each, `src` is the innermost declaration whose span contains the site
-/// (the enclosing component, for a render or hook) and `dst` is the named
-/// symbol — same-file match preferred, else the first global match. An
-/// unresolved `src` or `dst`, or a self-loop, drops the edge: the same
-/// best-effort policy for all three kinds [src: tier-05 step 4].
-fn resolve_edges(
-    facts_by_file: &[FileFacts],
-    name_to_symbols: &HashMap<String, Vec<SymbolId>>,
-) -> Vec<(EdgeKey, EdgeRecord)> {
-    let mut seen: HashSet<EdgeKey> = HashSet::new();
-    let mut out = Vec::new();
-    for facts in facts_by_file {
-        let local_ids: HashSet<SymbolId> = facts.symbols.iter().map(|l| l.id).collect();
-        let mut resolve = |kind: EdgeKind, name: &str, range: (u32, u32)| {
-            let Some(src) = enclosing_symbol(&facts.symbols, range) else {
-                return;
-            };
-            let Some(candidates) = name_to_symbols.get(name) else {
-                return;
-            };
-            let Some(dst) = candidates
-                .iter()
-                .find(|c| local_ids.contains(c))
-                .or_else(|| candidates.first())
-                .copied()
-            else {
-                return;
-            };
-            if dst == src {
-                return;
-            }
-            let key = EdgeKey { src, kind, dst };
-            if !seen.insert(key) {
-                return;
-            }
-            out.push((
-                key,
-                EdgeRecord {
-                    source_span: span(facts.file_id, range),
-                    evidence_lang: facts.lang,
-                    weight: 1,
-                },
-            ));
-        };
-        for (callee, range) in &facts.calls {
-            resolve(EdgeKind::References, callee, *range);
-        }
-        for (component, range) in &facts.renders {
-            resolve(EdgeKind::Renders, component, *range);
-        }
-        for (callee, range) in &facts.hooks {
-            resolve(EdgeKind::UsesHook, callee, *range);
-        }
+/// Convert one file's parser [`SyntacticFacts`] into the `Update`-safe
+/// [`SyntacticFactsRaw`] the salsa input carries. This is the
+/// composition-root boundary: `decl_kind_tag` and `Visibility::to_byte` map
+/// the parser's enums to the byte/string mirrors here because `ariadne-salsa`
+/// may not depend on `ariadne-parser` [src: tests/architecture.rs lines
+/// 30-33; post-v1-roadmap plan.md RD11].
+fn convert_facts(facts: &SyntacticFacts) -> SyntacticFactsRaw {
+    SyntacticFactsRaw {
+        decls: facts
+            .decls
+            .iter()
+            .map(|d| DeclRaw {
+                kind: decl_kind_tag(&d.kind),
+                name: d.name.clone(),
+                name_byte_range: d.name_byte_range,
+                def_byte_range: d.def_byte_range,
+                visibility_byte: d.visibility.to_byte(),
+                attributes: d.attributes.clone(),
+            })
+            .collect(),
+        imports: facts
+            .imports
+            .iter()
+            .map(|i| ImportRaw {
+                path: i.path.clone(),
+                byte_range: i.byte_range,
+            })
+            .collect(),
+        calls: facts
+            .calls
+            .iter()
+            .map(|c| CallRaw {
+                callee: c.callee.clone(),
+                byte_range: c.byte_range,
+            })
+            .collect(),
+        renders: facts
+            .renders
+            .iter()
+            .map(|r| RenderRaw {
+                component: r.component.clone(),
+                byte_range: r.byte_range,
+            })
+            .collect(),
+        hooks: facts
+            .hooks
+            .iter()
+            .map(|h| HookRaw {
+                callee: h.callee.clone(),
+                byte_range: h.byte_range,
+            })
+            .collect(),
     }
-    out
-}
-
-/// Innermost declaration whose definition span contains `range`.
-fn enclosing_symbol(locals: &[LocalSymbol], range: (u32, u32)) -> Option<SymbolId> {
-    locals
-        .iter()
-        .filter(|l| l.def_range.0 <= range.0 && range.1 <= l.def_range.1)
-        .min_by_key(|l| l.def_range.1 - l.def_range.0)
-        .map(|l| l.id)
-}
-
-fn span(file: FileId, range: (u32, u32)) -> Span {
-    Span {
-        file,
-        byte_start: range.0,
-        byte_end: range.1,
-    }
-}
-
-/// Stable 64-bit symbol id: blake3 of `path#name@offset`, forced non-zero.
-fn symbol_id(path: &str, name: &str, offset: u32) -> SymbolId {
-    let key = format!("{path}#{name}@{offset}");
-    let digest = blake3::hash(key.as_bytes());
-    let raw = u64::from_le_bytes(digest.as_bytes()[..8].try_into().expect("8 bytes"));
-    SymbolId::new(raw).unwrap_or_else(|| SymbolId::new(1).expect("1 is non-zero"))
 }
 
 /// Short stable tag for an `ariadne_parser` declaration kind.

@@ -47,6 +47,12 @@ const CORPUS: &[(&str, &str)] = &[
 /// [src: .claude/plans/ariadne-core/plan.md `<constraints>`, `<risks>` R1].
 const PEAK_RSS_BUDGET: u64 = 4 * 1024 * 1024 * 1024;
 
+/// Warm-query SLO — RD6 tightens the query budget to p95 < 10 ms once the
+/// query is served by the always-warm daemon, versus the 100 ms v1 cold path
+/// [src: .claude/plans/post-v1-roadmap/plan.md `<constraints>`, RD6;
+///  .claude/plans/post-v1-roadmap/tier-10-cli-daemon-client-slo.md exit #2].
+const WARM_QUERY_BUDGET: Duration = Duration::from_millis(10);
+
 #[test]
 #[ignore = "clones a multi-GB OSS corpus; the v1 release gate — run via --run-ignored"]
 fn slo_release_gate() {
@@ -128,6 +134,112 @@ fn slo_release_gate() {
         "query p95 {query_p95:?}, over the {:?} SLO",
         PerfBudget::V1.query_p95,
     );
+
+    // --- warm-query SLO (RD6) ----------------------------------------------
+    // Bring the warm daemon up explicitly, then re-measure the query path:
+    // with a daemon serving, every `blast_radius` round-trip is answered from
+    // the in-RAM warm graph over IPC instead of a per-session cold rebuild,
+    // and must clear the tightened 10 ms budget. This stage runs *after* the
+    // v1 cold/incremental/query stages, so the existing gate is extended, not
+    // weakened (tier-10 step 6).
+    ensure_daemon(root);
+    let mut warm = measure_query(root);
+    let warm_p95 = percentile(&mut warm, 95.0);
+    eprintln!(
+        "[slo] warm query p95: {warm_p95:?} over {} samples",
+        warm.len(),
+    );
+
+    // daemon RSS probe (R1): the warm graph must fit under the 4 GiB ceiling.
+    let rss = daemon_rss_bytes(root);
+    eprintln!("[slo] daemon RSS: {} MiB", rss / (1024 * 1024));
+    stop_daemon(root);
+
+    assert!(
+        warm_p95 < WARM_QUERY_BUDGET,
+        "warm query p95 {warm_p95:?}, over the {WARM_QUERY_BUDGET:?} warm SLO (RD6)",
+    );
+    assert!(
+        rss > 0,
+        "daemon RSS probe returned 0 bytes — the daemon PID was not resolvable",
+    );
+    assert!(
+        rss < PEAK_RSS_BUDGET,
+        "daemon RSS {} MiB, over the 4 GiB ceiling (R1)",
+        rss / (1024 * 1024),
+    );
+}
+
+/// Bring the warm daemon up for `root`, tolerating an already-running daemon
+/// (the tier-09 MCP auto-spawn may have started one during the v1 query
+/// stage). Polls `ariadne daemon status` until it reports running.
+fn ensure_daemon(root: &Path) {
+    // A non-zero exit here means "already running"; the status poll is the
+    // real readiness gate, so the start result is intentionally ignored.
+    let _ = Command::new(ariadne_binary())
+        .args(["daemon", "start"])
+        .arg(root)
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status();
+    let deadline = Instant::now() + Duration::from_secs(30);
+    loop {
+        if daemon_pid(root).is_some() {
+            return;
+        }
+        assert!(
+            Instant::now() < deadline,
+            "daemon did not report running within 30s",
+        );
+        thread::sleep(Duration::from_millis(50));
+    }
+}
+
+/// Stop the warm daemon for `root` (idempotent).
+fn stop_daemon(root: &Path) {
+    let _ = Command::new(ariadne_binary())
+        .args(["daemon", "stop"])
+        .arg(root)
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status();
+}
+
+/// Resolve the running daemon's PID from `ariadne daemon status` stdout
+/// (`daemon running (pid N)`), or `None` when no daemon is up.
+fn daemon_pid(root: &Path) -> Option<u32> {
+    let output = Command::new(ariadne_binary())
+        .args(["daemon", "status"])
+        .arg(root)
+        .output()
+        .ok()?;
+    let text = String::from_utf8_lossy(&output.stdout);
+    let marker = text.find("pid ")?;
+    text[marker + 4..]
+        .trim_start()
+        .split(|c: char| !c.is_ascii_digit())
+        .next()?
+        .parse()
+        .ok()
+}
+
+/// Peak RSS of the running daemon process, in bytes, via `ps -o rss=` (the
+/// figure is in KiB on both macOS and Linux). `0` when the PID is
+/// unresolvable, which the warm stage treats as a probe failure.
+fn daemon_rss_bytes(root: &Path) -> u64 {
+    let Some(pid) = daemon_pid(root) else {
+        return 0;
+    };
+    let Ok(output) = Command::new("ps")
+        .args(["-o", "rss=", "-p", &pid.to_string()])
+        .output()
+    else {
+        return 0;
+    };
+    String::from_utf8_lossy(&output.stdout)
+        .trim()
+        .parse::<u64>()
+        .map_or(0, |kib| kib.saturating_mul(1024))
 }
 
 /// Spawn `ariadne watch`, mutate distinct source files, and collect the

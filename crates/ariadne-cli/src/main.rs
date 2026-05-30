@@ -7,6 +7,7 @@
 //! `anyhow` is permitted here per the folder-layout rule (binary entrypoint);
 //! each subcommand returns `anyhow::Result` and `main` renders the error.
 
+mod adapters;
 mod commands;
 mod config;
 mod domain;
@@ -72,7 +73,8 @@ enum Cmd {
         #[arg(long)]
         watch: bool,
     },
-    /// Call one MCP tool in-process and print its JSON result.
+    /// Route one tool query to the warm daemon (cold in-process fallback) and
+    /// print its JSON result.
     Query {
         /// Tool name, e.g. `blast_radius`.
         tool: String,

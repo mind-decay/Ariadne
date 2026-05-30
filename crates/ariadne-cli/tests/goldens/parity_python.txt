@@ -1,0 +1,8 @@
+== FILES ==
+1	callee.py	python	28	e3eeca9e0fe2f06b90feeff22debc5e4ce35caf5017d7950026503bea7645976
+2	caller.py	python	31	7fdbd5b212bc94e6ca8174209f18a4d2215bc478e00632f592fcb387e4948b4f
+== SYMBOLS ==
+8868354535779418465	run	function	file=2	span=2:0-30	vis=3	attrs=[]
+14330204079259063727	helper	function	file=1	span=1:0-27	vis=3	attrs=[]
+== EDGES ==
+8868354535779418465	1	14330204079259063727	span=2:22-28	lang=python	w=1

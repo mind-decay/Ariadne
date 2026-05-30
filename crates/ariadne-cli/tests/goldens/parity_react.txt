@@ -1,0 +1,7 @@
+== FILES ==
+1	App.tsx	tsx	364	416837503c8f9737003d0a558c6357d6b189dffabf5f7683cb24ec7d6dd7bc98
+== SYMBOLS ==
+16553001008863637127	Label	component	file=1	span=1:35-129	vis=3	attrs=[]
+16763977285418482904	App	component	file=1	span=1:138-363	vis=0	attrs=[]
+== EDGES ==
+16763977285418482904	3	16553001008863637127	span=1:225-230	lang=tsx	w=1

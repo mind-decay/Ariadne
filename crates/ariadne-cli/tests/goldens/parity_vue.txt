@@ -1,0 +1,10 @@
+== FILES ==
+1	App.vue	vue	204	e089789cbe65e27ca5ce4bd057498eea99fd38faec19952e1c324bc3cbaafc74
+2	Child.vue	vue	147	5f1e7e9d40adcf4fe973b0f6d6e4406da77cc9326171467cac78ca71b046b78b
+== SYMBOLS ==
+384138910782596283	title	variable	file=1	span=1:166-193	vis=3	attrs=[]
+8844265119076985791	Child	component	file=2	span=2:0-147	vis=0	attrs=[]
+12650720891352412675	App	component	file=1	span=1:0-204	vis=0	attrs=[]
+18040357665982685922	props	variable	file=2	span=2:90-136	vis=3	attrs=[]
+== EDGES ==
+12650720891352412675	3	8844265119076985791	span=1:36-41	lang=vue	w=1

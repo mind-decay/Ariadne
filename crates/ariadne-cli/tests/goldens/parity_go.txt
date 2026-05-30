@@ -1,0 +1,8 @@
+== FILES ==
+1	callee.go	go	49	bf51d11cae7561c851173fd9325fbbd256f2fc890471721eb2e57720686526ba
+2	caller.go	go	52	a5c41db50926a8aeff5fdbeff866f24d7dcef50374dbc3ca6d8c0d54cb682095
+== SYMBOLS ==
+6040576949305741082	Helper	function	file=1	span=1:16-48	vis=0	attrs=[]
+7013238639520965708	Run	function	file=2	span=2:16-51	vis=0	attrs=[]
+== EDGES ==
+7013238639520965708	1	6040576949305741082	span=2:41-47	lang=go	w=1

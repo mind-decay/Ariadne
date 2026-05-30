@@ -1,0 +1,8 @@
+== FILES ==
+1	callee.ts	typescript	50	0a8746d6175e09ee4e7a69ee9805b0b38dec325b9356f48f20985ae9133afd0c
+2	caller.ts	typescript	53	88d407f1ed91ccdfdb88500bee78ab59223bc77717692d200504213920bd9e5f
+== SYMBOLS ==
+11646656583344816771	run	function	file=2	span=2:7-52	vis=0	attrs=[]
+18347825145170329168	helper	function	file=1	span=1:7-49	vis=0	attrs=[]
+== EDGES ==
+11646656583344816771	1	18347825145170329168	span=2:41-47	lang=typescript	w=1

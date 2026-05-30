@@ -1,0 +1,9 @@
+== FILES ==
+1	App.astro	astro	120	5d337cd02b5d972a4124782aa7de56f74d1803d82cf048c38a89e26c339b2d9d
+2	Child.astro	astro	75	6c06b7a9b6db803ac29ce7be67d35f7b608f7b91b0b3d92b2e4510f0859ae317
+== SYMBOLS ==
+13863668290104257706	App	component	file=1	span=1:0-120	vis=0	attrs=[]
+15224034067239776540	Child	component	file=2	span=2:0-75	vis=0	attrs=[]
+16943585925736459805	title	variable	file=1	span=1:40-63	vis=3	attrs=[]
+== EDGES ==
+13863668290104257706	3	15224034067239776540	span=1:90-95	lang=astro	w=1

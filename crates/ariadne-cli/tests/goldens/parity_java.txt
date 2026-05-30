@@ -1,0 +1,10 @@
+== FILES ==
+1	Callee.java	java	68	cc91c8a32112ca777a441233548185b9bc93707bb86953309ff81605e6e69fa2
+2	Caller.java	java	78	c7f6a506e9637cbc7ccdb24dd6062fee3c1dd54e33da352ca5bd8695555eec08
+== SYMBOLS ==
+1028157574408376321	Callee	class	file=1	span=1:0-67	vis=3	attrs=[]
+11625081423723191188	run	method	file=2	span=2:19-75	vis=3	attrs=[]
+12263132146912468543	helper	method	file=1	span=1:19-65	vis=3	attrs=[]
+13529033395406088971	Caller	class	file=2	span=2:0-77	vis=3	attrs=[]
+== EDGES ==
+11625081423723191188	1	12263132146912468543	span=2:60-66	lang=java	w=1

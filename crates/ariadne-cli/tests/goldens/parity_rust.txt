@@ -1,0 +1,8 @@
+== FILES ==
+1	callee.rs	rust	34	b9bad73fca904bfbfd042a0d5e49762985d61efb8337a4e09907942486f8d939
+2	caller.rs	rust	37	f537afbc73c983832ada20e9fb0741312c76a8a3f91f916cbe37aa45bb3ac190
+== SYMBOLS ==
+7779011543046708500	run	function	file=2	span=2:0-36	vis=0	attrs=[]
+9461103860053908763	helper	function	file=1	span=1:0-33	vis=0	attrs=[]
+== EDGES ==
+7779011543046708500	1	9461103860053908763	span=2:26-32	lang=rust	w=1

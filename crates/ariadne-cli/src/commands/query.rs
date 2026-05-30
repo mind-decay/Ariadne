@@ -1,30 +1,45 @@
-//! `ariadne query` — in-process call to one MCP tool, JSON in, JSON out.
+//! `ariadne query` — run one MCP tool, JSON in, JSON out.
 //!
-//! Builds the same [`Catalog`] the MCP server uses, then dispatches to the
-//! per-tool `handle` function directly — no JSON-RPC handshake. Useful for
-//! shell / CI debugging [src: tier-10 step 7].
+//! Routes each query to the warm daemon over IPC (RD6) with the same
+//! cold-path fallback the MCP server uses (tier-09): if no daemon is
+//! reachable, build the same [`Catalog`] the MCP server uses and dispatch to
+//! the per-tool `handle` function in-process. The daemon's report payloads
+//! mirror the MCP output types field-for-field (tier-07), so the pretty JSON
+//! is identical on both paths [src: tier-10 step 3].
 
 use std::path::Path;
 
 use anyhow::{Context, Result, bail};
+use ariadne_core::{DaemonQuery, DaemonResponse, EdgeKindFilter as CoreEdgeKind};
 use ariadne_mcp::Catalog;
 use ariadne_mcp::tools;
 use ariadne_mcp::types::{
-    BlastRadiusInput, FileQuery, ListSymbolsInput, PlanAssistInput, ScopeInput, SymbolQuery,
+    BlastRadiusInput, EdgeKindFilter, FileQuery, ListSymbolsInput, PlanAssistInput, ScopeInput,
+    SymbolQuery,
 };
 use ariadne_storage::RedbStorage;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 
+use crate::adapters::daemon_client::DaemonClient;
 use crate::domain::index_path;
 
-/// Open the index, build the catalog, run `tool` against `args_json`, and
-/// print the pretty JSON result.
+/// Route `tool` against `args_json` to the warm daemon, falling back to the
+/// cold in-process path, and print the pretty JSON result.
 ///
 /// # Errors
-/// Fails when the index is missing, the tool name is unknown, the arguments
-/// do not parse, or the tool itself returns an error.
+/// Fails when the arguments do not parse, the daemon (or cold path) reports a
+/// query-level error, or — on the cold path — the index is missing or the tool
+/// name is unknown.
 pub fn run(root: &Path, tool: &str, args_json: &str) -> Result<()> {
+    if let Some(output) = try_daemon(root, tool, args_json)? {
+        println!("{output}");
+        return Ok(());
+    }
+
+    // Cold fallback: no daemon reachable (or an unknown tool the daemon
+    // protocol has no variant for — the cold dispatcher raises the canonical
+    // "unknown tool" error).
     let db_path = index_path(root);
     if !db_path.exists() {
         bail!(
@@ -38,7 +53,134 @@ pub fn run(root: &Path, tool: &str, args_json: &str) -> Result<()> {
     Ok(())
 }
 
-/// Route `tool` to its `ariadne_mcp::tools` handler.
+/// Try the warm daemon. Returns the projected JSON on a daemon answer, `None`
+/// when no daemon is reachable or the tool has no daemon-protocol variant
+/// (so the caller falls back to the cold path).
+///
+/// # Errors
+/// Propagates an argument-parse failure, or a query-level daemon error
+/// (not-found), so the daemon and cold paths surface the same failure.
+fn try_daemon(root: &Path, tool: &str, args_json: &str) -> Result<Option<String>> {
+    let Some(query) = build_query(tool, args_json)? else {
+        return Ok(None);
+    };
+    let Some(resp) = DaemonClient::new(root).try_query(query) else {
+        return Ok(None);
+    };
+    project(resp).map(Some)
+}
+
+/// Map `tool` + JSON arguments to a [`DaemonQuery`]. Returns `None` for a tool
+/// the daemon protocol has no variant for, so the caller cold-dispatches it.
+///
+/// # Errors
+/// Propagates a JSON argument-parse failure.
+fn build_query(tool: &str, args: &str) -> Result<Option<DaemonQuery>> {
+    let query = match tool {
+        "list_symbols" => {
+            let i = parse::<ListSymbolsInput>(args)?;
+            DaemonQuery::ListSymbols {
+                query: i.query,
+                kind: i.kind,
+                limit: i.limit,
+            }
+        }
+        "find_definition" => DaemonQuery::FindDefinition {
+            symbol: parse::<SymbolQuery>(args)?.symbol,
+        },
+        "find_references" => DaemonQuery::FindReferences {
+            symbol: parse::<SymbolQuery>(args)?.symbol,
+        },
+        "blast_radius" => {
+            let i = parse::<BlastRadiusInput>(args)?;
+            DaemonQuery::BlastRadius {
+                symbol: i.symbol,
+                depth: i.depth,
+                kinds: to_core_kinds(i.kinds.as_deref()),
+            }
+        }
+        "file_summary" => DaemonQuery::FileSummary {
+            path: parse::<FileQuery>(args)?.path,
+        },
+        "plan_assist" => {
+            let i = parse::<PlanAssistInput>(args)?;
+            DaemonQuery::PlanAssist {
+                symbol: i.symbol,
+                max_files: i.max_files,
+            }
+        }
+        "coupling_report" => DaemonQuery::CouplingReport {
+            prefix: parse::<ScopeInput>(args)?.prefix,
+        },
+        "weak_spots" => DaemonQuery::WeakSpots {
+            prefix: parse::<ScopeInput>(args)?.prefix,
+        },
+        "doc_for" => DaemonQuery::DocFor {
+            symbol: parse::<SymbolQuery>(args)?.symbol,
+        },
+        "project_status" => DaemonQuery::ProjectStatus,
+        "doc_for_module" => DaemonQuery::DocForModule {
+            path: parse::<FileQuery>(args)?.path,
+        },
+        "doc_for_project" => DaemonQuery::DocForProject {
+            prefix: parse::<ScopeInput>(args)?.prefix,
+        },
+        "refactor_suggestions" => DaemonQuery::RefactorSuggestions {
+            prefix: parse::<ScopeInput>(args)?.prefix,
+        },
+        _ => return Ok(None),
+    };
+    Ok(Some(query))
+}
+
+/// Project a daemon [`DaemonResponse`] into the same pretty JSON the cold path
+/// prints. Each report payload mirrors the matching MCP output type
+/// field-for-field (tier-07), so serializing it yields the byte-identical JSON
+/// the cold path produces. A query-level [`DaemonResponse::Error`] becomes the
+/// same not-found failure the cold path raises.
+///
+/// # Errors
+/// Returns the daemon's query-level error, a serialization failure, or a
+/// protocol fault (a `Pong` answer to a tool query).
+fn project(resp: DaemonResponse) -> Result<String> {
+    match resp {
+        DaemonResponse::Symbols(rows) => json(&rows),
+        DaemonResponse::Definition(sym) => json(&sym),
+        DaemonResponse::References(rows) => json(&rows),
+        DaemonResponse::BlastRadius(report) => json(&report),
+        DaemonResponse::FileSummary(report) => json(&report),
+        DaemonResponse::PlanAssist(report) => json(&report),
+        DaemonResponse::Coupling(report) => json(&report),
+        DaemonResponse::WeakSpots(report) => json(&report),
+        DaemonResponse::DocFor(report) => json(&report),
+        DaemonResponse::Doc(report) => json(&report),
+        DaemonResponse::ProjectStatus(report) => json(&report),
+        DaemonResponse::Refactor(report) => json(&report),
+        DaemonResponse::Error(msg) => bail!("{msg}"),
+        DaemonResponse::Pong => bail!("daemon answered Pong to a tool query"),
+    }
+}
+
+/// Map the MCP-facing edge-kind filter onto the daemon protocol's filter
+/// (mirrors `crate::server::to_core_kinds` in `ariadne-mcp`).
+fn to_core_kinds(kinds: Option<&[EdgeKindFilter]>) -> Option<Vec<CoreEdgeKind>> {
+    kinds.map(|ks| {
+        ks.iter()
+            .map(|k| match k {
+                EdgeKindFilter::Calls => CoreEdgeKind::Calls,
+                EdgeKindFilter::Imports => CoreEdgeKind::Imports,
+                EdgeKindFilter::TypeOf => CoreEdgeKind::TypeOf,
+                EdgeKindFilter::Defines => CoreEdgeKind::Defines,
+                EdgeKindFilter::Overrides => CoreEdgeKind::Overrides,
+                EdgeKindFilter::Reads => CoreEdgeKind::Reads,
+                EdgeKindFilter::Writes => CoreEdgeKind::Writes,
+                EdgeKindFilter::Inherits => CoreEdgeKind::Inherits,
+            })
+            .collect()
+    })
+}
+
+/// Route `tool` to its `ariadne_mcp::tools` handler (the cold in-process path).
 fn dispatch(cat: &Catalog, storage: &RedbStorage, tool: &str, args: &str) -> Result<String> {
     match tool {
         "list_symbols" => json(&tools::list_symbols::handle(
