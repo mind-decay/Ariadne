@@ -1,6 +1,6 @@
 //! notify-rs + notify-debouncer-full driving adapter (tier-06 steps 2,4,5).
 //!
-//! Wraps `notify_debouncer_full::new_debouncer` with a 100ms quiet period
+//! Wraps `notify_debouncer_full::new_debouncer_opt` with a 100ms quiet period
 //! (the canonical setting used by rust-analyzer / zed / watchexec and
 //! matched to typical editor save bursts: a save often fires
 //! `Modify+Create+Modify+Modify` within ~10ms which the debouncer
@@ -27,9 +27,10 @@ use notify::{
     RecursiveMode,
     event::{CreateKind, EventKind, ModifyKind, RemoveKind, RenameMode},
 };
-use notify_debouncer_full::{DebounceEventResult, DebouncedEvent, new_debouncer};
+use notify_debouncer_full::{DebounceEventResult, DebouncedEvent, new_debouncer_opt};
 use tracing::{debug, warn};
 
+use crate::adapters::file_id_cache::GitignoreFileIdCache;
 use crate::adapters::ignore::Ignore;
 use crate::adapters::reconcile::Reconciler;
 use crate::errors::WatcherError;
@@ -77,7 +78,18 @@ impl NotifyWatcher {
 
         // --- notify thread ------------------------------------------------
         let (tx, rx) = mpsc::channel::<DebounceEventResult>();
-        let mut debouncer = new_debouncer(DEBOUNCE_PERIOD, None, tx)
+        // Gitignore-aware file-id cache: the initial recursive scan visits
+        // only the indexed file set instead of `walkdir`-ing every entry
+        // under ignored dirs (tier-01). Arg order verified against the
+        // pinned source [src: notify-debouncer-full-0.7.0/src/lib.rs:639].
+        let mut debouncer =
+            new_debouncer_opt::<_, notify::RecommendedWatcher, GitignoreFileIdCache>(
+                DEBOUNCE_PERIOD,
+                None,
+                tx,
+                GitignoreFileIdCache::new(Arc::clone(&ignore)),
+                notify::Config::default(),
+            )
             .map_err(|e| WatcherError::Notify(e.to_string()))?;
         debouncer
             .watch(root, RecursiveMode::Recursive)

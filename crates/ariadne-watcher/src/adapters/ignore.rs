@@ -11,7 +11,10 @@ use crate::errors::WatcherError;
 
 /// Hard-coded ignore patterns common to every Ariadne workspace. Mirrors
 /// the tier-06 plan step 3 list — adapter-internal, not part of any port.
-const DEFAULT_IGNORES: &[&str] = &["target/", "node_modules/", ".ariadne/"];
+/// `.git/` is included so the watcher never tracks the VCS metadata dir
+/// (never indexed; not listed in a repo's own `.gitignore`) — without it
+/// the startup file-id scan stat-s every object under `.git/` (tier-01).
+const DEFAULT_IGNORES: &[&str] = &["target/", "node_modules/", ".ariadne/", ".git/"];
 
 /// File name of the per-project Ariadne ignore file. Higher precedence
 /// than `.gitignore` per the plan letter so contributors can opt files
@@ -162,6 +165,14 @@ mod tests {
         let ig = Ignore::defaults_only(tmp.path()).unwrap();
         assert!(ig.is_ignored(&tmp.path().join("target/debug/foo"), false));
         assert!(!ig.is_ignored(&tmp.path().join("src/lib.rs"), false));
+    }
+
+    #[test]
+    fn defaults_ignore_git_dir() {
+        let tmp = tempdir().unwrap();
+        let ig = Ignore::defaults_only(tmp.path()).unwrap();
+        assert!(ig.is_ignored(&tmp.path().join(".git/HEAD"), false));
+        assert!(ig.is_ignored(&tmp.path().join(".git"), true));
     }
 
     #[test]
