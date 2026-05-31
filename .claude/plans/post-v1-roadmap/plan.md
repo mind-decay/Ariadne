@@ -19,6 +19,8 @@ tiers:
   - tier-09-mcp-daemon-client
   - tier-10-cli-daemon-client-slo
   - tier-11-git-history-ingest
+  - tier-11a-incremental-history
+  - tier-11b-symbol-churn-attribution
   - tier-12-cyclomatic-complexity
   - tier-13-hotspot-cochange-metrics
   - tier-14-diff-aware-blast-radius
@@ -58,7 +60,7 @@ Out of scope: LLM/embedding/semantic-search inside Ariadne — the MCP consumer 
 
 **RD6 — Warm graph: the daemon owns the in-RAM petgraph; mcp/cli/lsp are thin clients.** Eliminates the per-session redb cold read + graph rebuild. Cold-read mode is retained as an auto-fallback when no daemon is reachable, so v1 behaviour is never lost. Warm-query target p95 <10ms.
 
-**RD7 — Git history: new driven adapter `ariadne-git` on `gix` 0.83.0.** Pure-Rust Git; commit walk via `head.ancestors().all()`, per-commit changed files via `gix-diff` tree-to-tree; Cargo itself depends on `gix` [src: https://lib.rs/crates/gix]. Built with read-only, no-network feature set (no curl/transport) to keep the critical path pure-Rust. *Rejected:* shelling out to `git` (breaks "no external runtime", parsing fragility); `git2` (libgit2 = C, violates D5).
+**RD7 — Git history: new driven adapter `ariadne-git` on `gix` 0.84.0 (current), ingested in three tiers.** Pure-Rust Git: `repo.head_commit()` → `rev_walk([head]).all()` (commit-graph file used when present), per-commit changed paths via `repo.diff_tree_to_tree`, identity/time via `commit.author()`; `gix = { version = "=0.84.0", default-features = false, features = ["blob-diff"] }` — no network/transport feature (no curl/C), so the critical path stays pure-Rust; Cargo itself depends on `gix` [src: https://lib.rs/crates/gix ; https://docs.rs/gix/0.84.0/gix/struct.Repository.html]. **tier-11** ingests file-level churn + co-change (cold); large commits are excluded from co-change since the pair set is O(n²) and big commits are coupling noise [src: Tornhill, "Your Code as a Crime Scene", 2015]. **tier-11a** keeps it current via a HEAD-oid watermark (re-walk only new commits, incremental==full), wired at the CLI composition root so the daemon never depends on `ariadne-git` (tier-08 adapter-isolation precedent). **tier-11b** attributes `blob-diff` line-hunks to symbol spans in an `ariadne-graph` use-case — the git adapter stays symbol-agnostic (ADR-0019). ADR-0018 records the adapter (ADR-0016/0017 are already taken by RD11/RD12). *Rejected:* shelling out to `git` (breaks "no external runtime", parsing fragility); `git2` (libgit2 = C, violates D5).
 
 **RD8 — Cyclomatic complexity: McCabe `M = decision-points + 1` from the tree-sitter CST.** Counted by walking branch nodes (`if`/`for`/`while`/`case`/`&&`/`||`/`?`) on CSTs Ariadne already holds [src: McCabe, "A Complexity Measure", IEEE TSE 1976; https://en.wikipedia.org/wiki/Cyclomatic_complexity]. No external dependency. *Rejected:* `rust-code-analysis` (heavy multi-grammar dep duplicating our parser).
 
@@ -81,7 +83,7 @@ IPC topology: request/response wire types live in `ariadne-core/domain` (pure, n
 
 Warm dataflow (daemon mode): watcher → daemon invalidates Salsa input → re-derive parse/symbols/graph subset → update warm petgraph + write deltas to redb → IPC clients (mcp/cli/lsp) query the warm graph over the local socket. Cold dataflow (no daemon) = unchanged v1 path.
 
-Analytics: `ariadne-git` feeds churn + co-change into new redb tables (schema bump via RD2); `ariadne-parser` computes complexity per symbol; `ariadne-graph` adds hotspot/co-change/diff-blast use cases consumed by both MCP tools and the LSP adapter.
+Analytics: `ariadne-git` feeds file-level churn + co-change into new redb tables (schema bump via RD2), kept current by a HEAD-oid watermark (tier-11a); an `ariadne-graph` use-case attributes `blob-diff` line-hunks to symbol spans for per-symbol churn (tier-11b, ADR-0019); `ariadne-parser` computes complexity per symbol; `ariadne-graph` adds hotspot/co-change/diff-blast use cases consumed by both MCP tools and the LSP adapter.
 
 Symbol metadata: tier-04 widens `SymbolRecord` with `visibility` + `attributes` (RD10), threaded core→storage→parser→scip→cli→salsa behind a redb v2→v3 migration step; the tier-05 RD4 dead-code classifier consumes it. No new crate.
 
@@ -97,7 +99,7 @@ Shared derivation (RD11/RD12): tier-07a moves the per-file derivation out of `ar
 | tree-sitter | 0.26.x (v1 pin) | visibility/attribute query captures; cyclomatic complexity from CST | 04, 12 | https://tree-sitter.github.io/tree-sitter/using-parsers/queries/1-syntax.html |
 | salsa | =0.26.2 (v1 pin) | incremental query DB — input setters + durability drive the per-file re-derivation | 07a, 07b | https://docs.rs/salsa/0.26.2/salsa/ (Setter + Durability confirmed; Context7 quota-exhausted this session — setter chain grounded in-repo at crates/ariadne-salsa/tests/durability.rs:67) |
 | interprocess | 2.4.2 | daemon IPC (local socket) | 06 | https://docs.rs/interprocess/2.4.2/interprocess/ |
-| gix | 0.83.0 | git history + diff (pure-Rust) | 11 | https://lib.rs/crates/gix |
+| gix | =0.84.0 (`default-features=false`, `blob-diff`; no network) | git history + tree/line diff (pure-Rust) | 11, 11a, 11b | https://lib.rs/crates/gix ; https://docs.rs/gix/0.84.0/gix/struct.Repository.html |
 | async-lsp | 0.2.4 | LSP server adapter | 16 | https://lib.rs/crates/async-lsp |
 </tech_inventory>
 
@@ -111,7 +113,10 @@ Shared derivation (RD11/RD12): tier-07a moves the per-file derivation out of `ar
 | R-B3 | daemon lifecycle: stale socket/pidfile, orphan process | medium | pidfile + liveness handshake; auto-spawn on miss; auto-reap on idle timeout |
 | R-B4 | global edge resolution (pure driver pass, RD11) recomputes for the whole corpus on each incremental commit — O(total symbols) per edit | medium | per-file symbol derivation stays salsa-memoized so only the parse→symbol cost is incremental; if the resolution pass misses the p95 <500ms SLO on 100K files, partition it by changed names (future tier) — noted, not built |
 | R-B5 | stable-id `nth` disambiguator (RD12) still churns when a same-`(name,kind)` sibling is inserted before a symbol in the same file | low | residual churn is bounded to same-named siblings in one file and is corrected by the divergence-0 proptest; ADR-0017 records the accepted limitation |
-| R-C1 | `gix` history walk slow on large repos | medium | configurable bounded commit depth; use the commit-graph file; walk once at index time, persist to redb |
+| R-C1 | `gix` history walk slow on large repos | medium | configurable bounded commit depth; use the commit-graph file; walk once at index time, persist to redb; tier-11a re-walks only new commits via a HEAD-oid watermark |
+| R-C2 | co-change pair set is O(n²) per commit; a huge refactor commit explodes `CO_CHANGE` | medium | exclude commits over `max_files_per_commit` from co-change (tier-11) — large commits are coupling noise [src: Tornhill, "Your Code as a Crime Scene", 2015] |
+| R-C3 | symbol-churn maps historical line-hunks onto the HEAD layout — drifts for commits predating later line shifts | medium | bound attribution to a recent window (`symbol_churn_depth`); ADR-0019 records the limit; file-level churn (tier-11) is exact and unaffected |
+| R-C4 | tier-11/11a/11b and tier-12 each register the "next" redb migration step; two builds could claim the same `from->to` | low | each step takes `from = current SCHEMA_VERSION` at build time (not hardcoded); the registry is contiguity-checked, so a duplicate fails loudly [src: crates/ariadne-storage/src/domain/migration.rs:67-87] |
 | R-D1 | LSP UTF-16 positions vs Ariadne byte offsets | medium | explicit encoding-conversion layer in `ariadne-lsp`; property test round-trips offsets |
 </risks>
 

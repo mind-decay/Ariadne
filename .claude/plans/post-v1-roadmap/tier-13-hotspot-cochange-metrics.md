@@ -1,7 +1,7 @@
 ---
 tier_id: tier-13
 title: Hotspot + change-coupling metrics — churn x complexity, logical coupling
-deps: [tier-11, tier-12]
+deps: [tier-11, tier-11b, tier-12]
 exit_criteria:
   - A `hotspot_report` ranks files/symbols by normalized churn combined with cyclomatic complexity.
   - A `co_change_report` reports logical-coupling pairs above a configurable support/confidence threshold.
@@ -11,7 +11,7 @@ status: pending
 ---
 
 <context>
-tier-11 ingested churn + co-change; tier-12 added cyclomatic complexity. This tier turns that raw signal into two ranked metrics. Hotspots surface code that is both frequently changed and complex — the strongest predictor of defects and maintenance cost; change coupling surfaces files that change together despite no static edge (plan RD7/RD8, Block C). Full context: plan.md.
+tier-11 ingested file-level churn + co-change; tier-11b attributed churn to symbols; tier-12 added cyclomatic complexity. This tier turns that raw signal into two ranked metrics. Hotspots surface code that is both frequently changed and complex — the strongest predictor of defects and maintenance cost — at both file (tier-11 `CHURN`) and symbol (tier-11b `SYMBOL_CHURN`) grain; change coupling surfaces files that change together despite no static edge (plan RD7/RD8, Block C). Full context: plan.md.
 </context>
 
 <files>
@@ -24,7 +24,7 @@ tier-11 ingested churn + co-change; tier-12 added cyclomatic complexity. This ti
 
 <steps>
 1. Failing test first (`ariadne-graph` tests): over a fixture with one known hot file (high commit count + high complexity) and one known co-change pair, assert `hotspot_report` ranks the hot file first and `co_change_report` returns the pair. Red — neither use case exists.
-2. Implement `hotspot.rs`: rank each file/symbol by combining commit frequency (the primary hotspot criterion) with cyclomatic complexity — code that changes often *and* is complex scores highest [src: https://docs.enterprise.codescene.io/versions/4.0.16/guides/technical/hotspots.html ; Tornhill, "Your Code as a Crime Scene", 2015]. Normalize each input to [0,1] over the project, then rank by their product so a unit with zero churn or zero complexity is not a hotspot.
+2. Implement `hotspot.rs`: rank each unit by combining commit frequency (the primary hotspot criterion) with cyclomatic complexity — code that changes often *and* is complex scores highest [src: https://docs.enterprise.codescene.io/versions/4.0.16/guides/technical/hotspots.html ; Tornhill, "Your Code as a Crime Scene", 2015]. File grain joins `CHURN` (tier-11) with each file's complexity (aggregate of its symbols, tier-12); symbol grain joins `SYMBOL_CHURN` (tier-11b) with per-symbol complexity (tier-12). Normalize each input to [0,1] over the project, then rank by their product so a unit with zero churn or zero complexity is not a hotspot.
 3. Implement `co_change.rs`: from the `CO_CHANGE` table, emit a coupling edge for each pair whose co-change count meets a minimum support and whose confidence (co-changes / changes-of-either) meets a threshold; both thresholds are config-driven [src: https://understandlegacycode.com/blog/key-points-of-software-design-x-rays/].
 4. Keep both pure and deterministic — no time-of-day, no RNG; the same index yields the same ranking (audit reproducibility).
 5. Define `HotspotEntry`/`CoChangeEdge` in `ariadne-core`; goldens with `insta`.
