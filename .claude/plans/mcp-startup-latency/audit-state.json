@@ -1,0 +1,8 @@
+{
+  "slug": "mcp-startup-latency",
+  "audited_commit": "5f94a9f16aacee7735def1368fdcb7426f4643a7",
+  "tier_id": "tier-02",
+  "verdict": "PASS",
+  "audited_at": "2026-05-31T23:25:00+0300",
+  "report": "audit/tier-02-report.md"
+}
