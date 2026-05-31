@@ -245,7 +245,7 @@ fn v1_fixture_migrates_in_place_with_all_records_intact() {
     drop(storage);
     assert_eq!(
         on_disk_schema_version(&work),
-        Some(3),
+        Some(4),
         "schema version advanced to current on disk",
     );
 }
@@ -268,7 +268,7 @@ fn older_version_with_no_migration_path_returns_schema_mismatch() {
 
     match RedbStorage::open(&path) {
         Err(StorageError::SchemaMismatch { found, expected }) => {
-            assert_eq!((found, expected), (0, 3), "no path -> rebuild signal");
+            assert_eq!((found, expected), (0, 4), "no path -> rebuild signal");
         }
         other => panic!("expected SchemaMismatch, got {other:?}"),
     }
@@ -386,7 +386,76 @@ fn v2_fixture_migrates_in_place_with_symbol_fields_preserved() {
     drop(storage);
     assert_eq!(
         on_disk_schema_version(&work),
-        Some(3),
-        "schema version advanced to v3 on disk",
+        Some(4),
+        "schema version advanced to current on disk",
+    );
+}
+
+/// `CHURN` / `CO_CHANGE` table mirrors — local so the v3-simulating step can
+/// drop them, proving the v3 -> v4 step recreates them in place.
+const CHURN: TableDefinition<'_, &[u8], &[u8]> = TableDefinition::new("churn");
+const CO_CHANGE: TableDefinition<'_, &[u8], &[u8]> = TableDefinition::new("co_change");
+
+#[test]
+fn v3_database_gains_history_tables_with_records_intact() {
+    // A real v3 database has files/symbols/edges but no churn/co-change
+    // tables. Synthesize one by bootstrapping at the current version, writing
+    // the known record set, dropping the two history tables, and forcing the
+    // on-disk version back to 3.
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let work = tmp.path().join("index.redb");
+    {
+        let storage = RedbStorage::open(&work).expect("bootstrap");
+        storage
+            .begin_write()
+            .expect("begin write")
+            .apply(&known_changeset())
+            .expect("apply");
+    }
+    let db = Database::open(&work).expect("raw open");
+    let txn = db.begin_write().expect("begin_write");
+    {
+        assert!(txn.delete_table(CHURN).expect("delete churn"));
+        assert!(txn.delete_table(CO_CHANGE).expect("delete co_change"));
+        let mut meta = txn.open_table(META).expect("open meta");
+        meta.insert("schema_version", &3u64).expect("downgrade");
+    }
+    txn.commit().expect("commit");
+    drop(db);
+    assert_eq!(on_disk_schema_version(&work), Some(3), "fixture is v3");
+
+    // Open through the adapter: the v3 -> v4 step recreates both tables.
+    let storage = RedbStorage::open(&work).expect("v3 must migrate, not error");
+    let snap = storage.snapshot().expect("snapshot");
+
+    let (files, symbols, edges) = known_records();
+    for (id, rec) in &files {
+        assert_eq!(snap.file(*id).expect("file"), Some(rec.clone()));
+    }
+    for (_id, rec) in &symbols {
+        assert!(
+            snap.symbols_in_file(rec.defining_file)
+                .expect("symbols_in_file")
+                .contains(rec),
+        );
+    }
+    for (key, rec) in &edges {
+        assert!(
+            snap.outgoing_edges(key.src)
+                .expect("outgoing")
+                .contains(&(*key, rec.clone())),
+        );
+    }
+
+    // The recreated tables read back empty (no churn ingested yet) rather
+    // than erroring on a missing table.
+    assert!(storage.all_churn().expect("all_churn").is_empty());
+    assert!(storage.all_co_change().expect("all_co_change").is_empty());
+
+    drop(storage);
+    assert_eq!(
+        on_disk_schema_version(&work),
+        Some(4),
+        "schema version advanced to current on disk",
     );
 }

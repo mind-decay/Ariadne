@@ -57,6 +57,11 @@ impl MigrationRegistry {
                     to: 3,
                     apply: migrate_v2_to_v3,
                 },
+                MigrationStep {
+                    from: 3,
+                    to: 4,
+                    apply: migrate_v3_to_v4,
+                },
             ],
         }
     }
@@ -158,6 +163,24 @@ fn migrate_v2_to_v3(txn: &WriteTransaction) -> Result<(), RedbStorageError> {
     Ok(())
 }
 
+/// `CHURN` / `CO_CHANGE` table definitions — local mirrors so the migration
+/// step owns the table names without leaking the adapter's table module (same
+/// pattern as the [`SYMBOLS`] mirror above). Names match
+/// [`crate::adapters::redb::tables`].
+const CHURN: TableDefinition<'_, &[u8], &[u8]> = TableDefinition::new("churn");
+const CO_CHANGE: TableDefinition<'_, &[u8], &[u8]> = TableDefinition::new("co_change");
+
+/// v3 → v4: create the per-file churn + file-pair co-change tables in place so
+/// a pre-existing v3 database gains the tier-11 Git-history tables without a
+/// rebuild. Purely additive — no existing record is read or rewritten; opening
+/// a table inside the write transaction creates it when absent
+/// [src: post-v1-roadmap plan.md RD7 + tier-11 step 8].
+fn migrate_v3_to_v4(txn: &WriteTransaction) -> Result<(), RedbStorageError> {
+    txn.open_table(CHURN)?;
+    txn.open_table(CO_CHANGE)?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::{MigrationRegistry, MigrationStep, WriteTransaction};
@@ -248,5 +271,25 @@ mod tests {
             (chain[0].from, chain[0].to, chain[1].from, chain[1].to),
             (1, 2, 2, 3),
         );
+    }
+
+    #[test]
+    fn builtin_registry_covers_v3_to_v4() {
+        let chain = MigrationRegistry::builtin()
+            .plan(3, 4)
+            .expect("v3 -> v4 path")
+            .to_vec();
+        assert_eq!(chain.len(), 1);
+        assert_eq!((chain[0].from, chain[0].to), (3, 4));
+    }
+
+    #[test]
+    fn builtin_registry_covers_v1_to_v4() {
+        let chain = MigrationRegistry::builtin()
+            .plan(1, 4)
+            .expect("v1 -> v4 path")
+            .to_vec();
+        assert_eq!(chain.len(), 3);
+        assert_eq!((chain[0].from, chain[2].to), (1, 4));
     }
 }

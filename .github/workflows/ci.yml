@@ -180,6 +180,7 @@ jobs:
             cli
             daemon
             e2e
+            git
             docs
             ci
             deps

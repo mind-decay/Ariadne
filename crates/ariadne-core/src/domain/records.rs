@@ -48,6 +48,47 @@ pub struct SymbolRecord {
     pub attributes: Vec<String>,
 }
 
+/// Per-file Git-history churn record. Persisted in the `CHURN` table by the
+/// `ariadne-git` driven adapter (tier-11); consumed by the tier-13 hotspot
+/// metrics. `author_keys` stores the distinct-author *set* (not a bare count)
+/// so tier-11a can merge incremental walks by set union without a second
+/// record migration [src: post-v1-roadmap plan.md RD7 + tier-11 step 7].
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct FileChurn {
+    /// Repository-root-relative path the churn was observed for.
+    pub path: String,
+    /// Number of commits in the walked window that touched `path`.
+    pub commits: u32,
+    /// Distinct author identity keys (8-byte digests of author identity)
+    /// observed touching `path`. Set semantics: deduplicated, order-stable.
+    pub author_keys: Vec<[u8; 8]>,
+    /// Latest committer time touching `path`, nanoseconds since the UNIX
+    /// epoch (signed to match [`FileRecord::mtime_ns`]).
+    pub last_changed_ns: i128,
+}
+
+impl FileChurn {
+    /// Distinct-author count, i.e. the cardinality of [`FileChurn::author_keys`].
+    #[must_use]
+    pub fn authors(&self) -> usize {
+        self.author_keys.len()
+    }
+}
+
+/// Unordered file-pair co-change record: how many commits in the walked
+/// window changed both `a` and `b` together. `a < b` lexicographically so the
+/// pair is canonical. Persisted in the `CO_CHANGE` table by `ariadne-git`
+/// (tier-11) [src: post-v1-roadmap plan.md RD7 + tier-11 step 7].
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct CoChangePair {
+    /// Lexicographically-smaller path of the pair.
+    pub a: String,
+    /// Lexicographically-larger path of the pair.
+    pub b: String,
+    /// Number of commits that changed both `a` and `b`.
+    pub count: u32,
+}
+
 /// Edge kind tag. Definition / reference / import are the syntactic core;
 /// `Renders` and `UsesHook` carry the component graph (ADR-0012).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]

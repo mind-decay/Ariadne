@@ -20,7 +20,9 @@ pub use domain::daemon::{
 pub use domain::ports::{
     ChunkStream, Indexer, Parser, ReadSnapshot, Storage, WatcherSink, WriteTxn,
 };
-pub use domain::records::{EdgeKey, EdgeKind, EdgeRecord, FileRecord, SymbolRecord};
+pub use domain::records::{
+    CoChangePair, EdgeKey, EdgeKind, EdgeRecord, FileChurn, FileRecord, SymbolRecord,
+};
 pub use domain::types::{EdgeId, FileId, IdEncode, Lang, Span, SymbolId, Visibility};
 pub use domain::watcher::{ContentHash, Invalidation, ReconciliationReport};
 pub use errors::{CoreError, StorageError};

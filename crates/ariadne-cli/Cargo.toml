@@ -36,6 +36,9 @@ ariadne-scip = { path = "../ariadne-scip" }
 ariadne-mcp = { path = "../ariadne-mcp" }
 ariadne-watcher = { path = "../ariadne-watcher" }
 ariadne-daemon = { path = "../ariadne-daemon" }
+# Tier-11: the composition root wires the Git-history driven adapter into
+# `ariadne index`, so the daemon never depends on `ariadne-git` (RD7).
+ariadne-git = { path = "../ariadne-git" }
 
 anyhow = { workspace = true }
 thiserror = { workspace = true }

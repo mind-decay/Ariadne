@@ -25,14 +25,17 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use ariadne_core::{
-    Changeset, ChunkStream, EdgeKey, EdgeRecord, FileId, FileRecord, ReadSnapshot, RevisionId,
-    Storage, StorageError, SymbolId, SymbolRecord, WriteTxn,
+    Changeset, ChunkStream, CoChangePair, EdgeKey, EdgeRecord, FileChurn, FileId, FileRecord,
+    ReadSnapshot, RevisionId, Storage, StorageError, SymbolId, SymbolRecord, WriteTxn,
 };
 use redb::{Database, ReadTransaction, ReadableDatabase, ReadableTable, WriteTransaction};
 
+use crate::adapters::codec::{decode_value, encode_value};
 use crate::domain::migration::MigrationRegistry;
 use crate::errors::RedbStorageError;
-use tables::{EDGES, EDGES_BY_FILE, FILES, KEY_REVISION, KEY_SCHEMA_VERSION, META, SYMBOLS};
+use tables::{
+    CHURN, CO_CHANGE, EDGES, EDGES_BY_FILE, FILES, KEY_REVISION, KEY_SCHEMA_VERSION, META, SYMBOLS,
+};
 
 /// redb-backed [`Storage`] implementation. Owns the `Database` handle and a
 /// cached revision counter shared with the latest committed write txn.
@@ -66,6 +69,67 @@ impl RedbStorage {
             revision: Arc::new(AtomicU64::new(revision)),
         })
     }
+
+    /// Clear and rewrite the `CHURN` + `CO_CHANGE` tables in one transaction.
+    /// Deleting then reopening each table recreates it empty before the new
+    /// rows are inserted, giving wholesale-replace semantics. The symbol
+    /// revision counter is untouched — history is auxiliary derived signal.
+    fn replace_history_inner(
+        &self,
+        churn: &[FileChurn],
+        pairs: &[CoChangePair],
+    ) -> Result<(), RedbStorageError> {
+        let txn = self.db.begin_write()?;
+        txn.delete_table(CHURN)?;
+        txn.delete_table(CO_CHANGE)?;
+        {
+            let mut churn_table = txn.open_table(CHURN)?;
+            for rec in churn {
+                let value = encode_value(rec)?;
+                churn_table.insert(rec.path.as_bytes(), value.as_slice())?;
+            }
+            let mut pair_table = txn.open_table(CO_CHANGE)?;
+            for pair in pairs {
+                let value = encode_value(pair)?;
+                pair_table.insert(co_change_key(&pair.a, &pair.b).as_slice(), value.as_slice())?;
+            }
+        }
+        txn.commit()?;
+        Ok(())
+    }
+
+    fn all_churn_inner(&self) -> Result<Vec<FileChurn>, RedbStorageError> {
+        let txn = self.db.begin_read()?;
+        let table = txn.open_table(CHURN)?;
+        let mut out = Vec::new();
+        for entry in table.iter()? {
+            let (_key, value) = entry?;
+            out.push(decode_value::<FileChurn>(value.value())?);
+        }
+        Ok(out)
+    }
+
+    fn all_co_change_inner(&self) -> Result<Vec<CoChangePair>, RedbStorageError> {
+        let txn = self.db.begin_read()?;
+        let table = txn.open_table(CO_CHANGE)?;
+        let mut out = Vec::new();
+        for entry in table.iter()? {
+            let (_key, value) = entry?;
+            out.push(decode_value::<CoChangePair>(value.value())?);
+        }
+        Ok(out)
+    }
+}
+
+/// Canonical `CO_CHANGE` key for an `a < b` pair: `a` bytes, a `0x00`
+/// separator (paths never contain NUL), then `b` bytes. Lex order over the
+/// key matches `(a, b)` order, so reads come back deterministically sorted.
+fn co_change_key(a: &str, b: &str) -> Vec<u8> {
+    let mut key = Vec::with_capacity(a.len() + 1 + b.len());
+    key.extend_from_slice(a.as_bytes());
+    key.push(0u8);
+    key.extend_from_slice(b.as_bytes());
+    key
 }
 
 fn bootstrap(db: &Database) -> Result<u64, RedbStorageError> {
@@ -94,6 +158,11 @@ fn bootstrap(db: &Database) -> Result<u64, RedbStorageError> {
     let _ = txn.open_table(SYMBOLS)?;
     let _ = txn.open_table(EDGES)?;
     let _ = txn.open_multimap_table(EDGES_BY_FILE)?;
+    // The tier-11 Git-history tables exist on a fresh DB too, so a read
+    // before the first `replace_history` returns empty rather than erroring
+    // on a missing table.
+    let _ = txn.open_table(CHURN)?;
+    let _ = txn.open_table(CO_CHANGE)?;
     txn.commit()?;
     Ok(rev)
 }
@@ -150,6 +219,22 @@ impl Storage for RedbStorage {
 
     fn revision(&self) -> RevisionId {
         RevisionId(self.revision.load(Ordering::Acquire))
+    }
+
+    fn replace_history(
+        &self,
+        churn: &[FileChurn],
+        pairs: &[CoChangePair],
+    ) -> Result<(), StorageError> {
+        self.replace_history_inner(churn, pairs).map_err(Into::into)
+    }
+
+    fn all_churn(&self) -> Result<Vec<FileChurn>, StorageError> {
+        self.all_churn_inner().map_err(Into::into)
+    }
+
+    fn all_co_change(&self) -> Result<Vec<CoChangePair>, StorageError> {
+        self.all_co_change_inner().map_err(Into::into)
     }
 }
 

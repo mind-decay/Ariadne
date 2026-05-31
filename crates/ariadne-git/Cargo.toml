@@ -1,0 +1,31 @@
+[package]
+name = "ariadne-git"
+description = "Driven adapter: gix-backed Git history reader (file churn + co-change)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+ariadne-core = { workspace = true }
+thiserror = { workspace = true }
+# Tier-11: pure-Rust Git. `default-features = false` drops the network/transport
+# defaults (no curl/C). `blob-diff` enables `diff_tree_to_tree` (tree diffing);
+# `revision` enables `rev_walk` ancestor traversal; `sha1` selects the pure-Rust
+# RustCrypto SHA-1 object-id backend (no asm/C). All three are local, non-network
+# features, so the critical path stays pure-Rust [src: docs.rs/crate/gix/0.84.0/features ;
+# plan.md D5, RD7 ; docs/adr/0018-git-history-adapter.md].
+gix = { version = "=0.84.0", default-features = false, features = [
+    "blob-diff",
+    "revision",
+    "sha1",
+] }
+
+[dev-dependencies]
+tempfile = { workspace = true }

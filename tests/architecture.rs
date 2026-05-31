@@ -34,8 +34,15 @@ const USE_CASE_CRATES: &[&str] = &["ariadne-graph", "ariadne-salsa"];
 /// Allowed in-workspace deps for use-case crates.
 const USE_CASE_ALLOWED_DEPS: &[&str] = &["ariadne-core", "ariadne-storage"];
 
-/// Driven adapters: may depend only on `ariadne-core`.
-const DRIVEN_ADAPTERS: &[&str] = &["ariadne-storage", "ariadne-parser", "ariadne-scip"];
+/// Driven adapters: may depend only on `ariadne-core`. `ariadne-git` is the
+/// post-v1 tier-11 Git-history reader (RD7); like the other driven adapters it
+/// depends only on `ariadne-core` and is wired solely by the composition root.
+const DRIVEN_ADAPTERS: &[&str] = &[
+    "ariadne-storage",
+    "ariadne-parser",
+    "ariadne-scip",
+    "ariadne-git",
+];
 
 /// Composition root: wires every adapter together; nothing may depend on it,
 /// and it alone may depend on a driving adapter [src: docs/adr/0007-cli-composition-root.md].

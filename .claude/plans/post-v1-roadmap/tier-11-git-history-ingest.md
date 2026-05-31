@@ -8,7 +8,8 @@ exit_criteria:
   - The new tables ship behind one registered migration step (`SCHEMA_VERSION` → +1); a pre-existing db opens and upgrades in place — no rebuild.
   - `ariadne index` ingests history within a configurable bounded commit depth read from `config.toml`; commits touching more than a configurable file count are excluded from co-change.
   - `cargo nextest run -p ariadne-git -p ariadne-storage -p ariadne-cli` + architecture + clippy + fmt all green.
-status: pending
+status: completed
+completed: 2026-06-01
 ---
 
 <context>
@@ -16,7 +17,7 @@ v1 analytics are static-only — they ignore how code changed over time. Block C
 </context>
 
 <files>
-- crates/ariadne-git/Cargo.toml — new: deps `ariadne-core` (path), `gix = { version = "=0.84.0", default-features = false, features = ["blob-diff"] }`, `thiserror` (workspace). No network/transport features [src: https://lib.rs/crates/gix].
+- crates/ariadne-git/Cargo.toml — new: deps `ariadne-core` (path), `gix = { version = "=0.84.0", default-features = false, features = ["blob-diff", "revision", "sha1"] }`, `thiserror` (workspace). All three are local/non-network features (`revision` for `rev_walk`, `sha1` for pure-Rust object decoding); no network/transport features [src: https://lib.rs/crates/gix ; docs/adr/0018-git-history-adapter.md].
 - crates/ariadne-git/src/lib.rs — new: façade; re-exports the port impl + `GitError` only (no `gix` types leak).
 - crates/ariadne-git/src/adapters/gix.rs — new: commit walk + per-commit tree diff (one file, one tech).
 - crates/ariadne-git/src/errors.rs — new: `thiserror` `GitError`.

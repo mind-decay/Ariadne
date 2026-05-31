@@ -4,7 +4,9 @@
 //! tiers land. See `docs/folder-layout.md` `<adding-a-port>`.
 
 use crate::domain::changeset::{Changeset, RevisionId};
-use crate::domain::records::{EdgeKey, EdgeRecord, FileRecord, SymbolRecord};
+use crate::domain::records::{
+    CoChangePair, EdgeKey, EdgeRecord, FileChurn, FileRecord, SymbolRecord,
+};
 use crate::domain::types::{FileId, SymbolId};
 use crate::domain::watcher::Invalidation;
 use crate::errors::StorageError;
@@ -44,6 +46,33 @@ pub trait Storage: Send + Sync {
 
     /// Cached revision of the latest committed write.
     fn revision(&self) -> RevisionId;
+
+    /// Wholesale-replace the persisted Git-history derivation: clear the
+    /// churn + co-change tables and write `churn` / `pairs` in one backend
+    /// transaction. The cold history walk (`ariadne-git`, tier-11) recomputes
+    /// the full set on each index, so replacement — not merge — is the
+    /// contract; tier-11a layers incremental merge on top.
+    ///
+    /// # Errors
+    /// Returns [`StorageError`] variants for IO or corruption; the write is
+    /// rolled back on any error.
+    fn replace_history(
+        &self,
+        churn: &[FileChurn],
+        pairs: &[CoChangePair],
+    ) -> Result<(), StorageError>;
+
+    /// Read every persisted [`FileChurn`] record.
+    ///
+    /// # Errors
+    /// Backend-level IO or corruption.
+    fn all_churn(&self) -> Result<Vec<FileChurn>, StorageError>;
+
+    /// Read every persisted [`CoChangePair`] record.
+    ///
+    /// # Errors
+    /// Backend-level IO or corruption.
+    fn all_co_change(&self) -> Result<Vec<CoChangePair>, StorageError>;
 }
 
 /// Atomic write half of the [`Storage`] port.

@@ -23,6 +23,7 @@ scopes = [
     "cli",
     "daemon",
     "e2e",
+    "git",
     "docs",
     "ci",
     "deps",
@@ -79,3 +80,6 @@ path = "crates/ariadne-daemon"
 
 [monorepo.packages.e2e]
 path = "crates/ariadne-e2e"
+
+[monorepo.packages.git]
+path = "crates/ariadne-git"

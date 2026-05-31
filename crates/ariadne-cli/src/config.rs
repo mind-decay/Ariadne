@@ -43,6 +43,39 @@ pub struct Config {
     /// Optional explicit indexer-binary paths discovered by `init`.
     #[serde(default)]
     pub indexers: BTreeMap<String, String>,
+    /// Git-history ingestion bounds (tier-11). Defaulted so configs written
+    /// before this block parse unchanged.
+    #[serde(default)]
+    pub history: HistoryConfig,
+}
+
+/// `[history]` — bounds on the tier-11 Git-history walk.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HistoryConfig {
+    /// Bounded commit depth: walk at most this many most-recent commits.
+    /// `None` (the default) walks the full history [src: plan.md R-C1].
+    #[serde(default)]
+    pub depth: Option<u32>,
+    /// Commits touching more than this many files are excluded from
+    /// co-change — their O(n²) pair set is coupling noise, not signal
+    /// [src: Tornhill, "Your Code as a Crime Scene", 2015; plan.md R-C2].
+    #[serde(default = "default_max_files_per_commit")]
+    pub max_files_per_commit: u32,
+}
+
+/// Default co-change exclusion threshold. Commits above this file count are
+/// treated as sweeping refactors rather than coupling evidence.
+fn default_max_files_per_commit() -> u32 {
+    50
+}
+
+impl Default for HistoryConfig {
+    fn default() -> Self {
+        Self {
+            depth: None,
+            max_files_per_commit: default_max_files_per_commit(),
+        }
+    }
 }
 
 /// Hard-coded ignore segments seeded into every generated config.
@@ -114,6 +147,7 @@ impl Config {
             respect_gitignore: true,
             ignore: default_ignores(),
             indexers: BTreeMap::new(),
+            history: HistoryConfig::default(),
         }
     }
 
