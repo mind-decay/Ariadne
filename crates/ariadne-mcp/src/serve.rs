@@ -2,9 +2,11 @@
 //!
 //! Tier-08 step 6: build a tokio rt (current-thread is enough — every
 //! tool call returns within microseconds; the multi-thread workers come
-//! from rmcp's task dispatch), open redb storage, build the in-RAM
-//! [`Catalog`] + petgraph index, hand them to an [`AriadneServer`], and
-//! call `server.serve(stdio()).await`.
+//! from rmcp's task dispatch), open redb storage to read its revision, hand
+//! the index path + revision to an [`AriadneServer`], and call
+//! `server.serve(stdio()).await`. The in-RAM [`crate::Catalog`] + petgraph index is
+//! built lazily on the first cold-fallback miss (tier-02), not at startup, so
+//! session-open does not scale with index size when the daemon is warm.
 //!
 //! Watcher integration is deferred to tier-10: the workspace hexagonal
 //! invariant forbids cross-driving-adapter deps (mcp → watcher), so the
@@ -15,11 +17,11 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use ariadne_core::Storage;
 use ariadne_storage::RedbStorage;
 use rmcp::ServiceExt;
 use rmcp::transport::stdio;
 
-use crate::catalog::Catalog;
 use crate::errors::McpError;
 use crate::server::AriadneServer;
 
@@ -46,7 +48,7 @@ impl ServeOpts {
 /// SIGINT is observed.
 ///
 /// # Errors
-/// Propagates storage open / catalog build / rmcp service errors.
+/// Propagates storage open / revision read / rmcp service errors.
 pub async fn serve_stdio(opts: ServeOpts) -> Result<(), McpError> {
     let server = build_server(&opts).await?;
     let transport = stdio();
@@ -63,23 +65,29 @@ pub async fn serve_stdio(opts: ServeOpts) -> Result<(), McpError> {
     Ok(())
 }
 
-/// Open storage + build the server. Exposed for in-process tests / benches.
+/// Read the index revision + build the server. Exposed for in-process tests /
+/// benches.
 ///
 /// # Errors
-/// Propagates the underlying storage/catalog failures.
+/// Propagates the underlying storage-open / revision-read failure.
 pub async fn build_server(opts: &ServeOpts) -> Result<AriadneServer, McpError> {
     let storage_path = opts.storage_path();
-    let root_str = opts.root.to_string_lossy().into_owned();
-    // Build the catalog from a transient storage handle, then drop it before
-    // returning so the server holds no open redb lock: the daemon it
-    // auto-spawns must be able to open the same index (tier-10 fixes the
-    // mcp_session autospawn deadlock) [src: crates/ariadne-mcp/src/server.rs
-    // `AriadneServer::db_path`].
-    let catalog = {
+    // Read the persisted revision from a transient storage handle, then drop it
+    // before returning — a single `KEY_REVISION` lookup (cheap atomic load), no
+    // graph build. Session-open stays O(1): the cold-fallback catalog is built
+    // lazily on the first daemon miss, not here, so a warm session that routes
+    // every tool to the daemon never reads the full index. The dropped handle
+    // also leaves the redb single-open lock free for the auto-spawned daemon
+    // [src: crates/ariadne-mcp/src/server.rs `AriadneServer::catalog`].
+    let revision = {
         let storage = open_storage(&storage_path)?;
-        Catalog::build(&*storage, root_str)?
+        storage.revision().0
     };
-    Ok(AriadneServer::new(storage_path, catalog))
+    Ok(AriadneServer::new(
+        storage_path,
+        opts.root.clone(),
+        revision,
+    ))
 }
 
 fn open_storage(path: &Path) -> Result<Arc<RedbStorage>, McpError> {

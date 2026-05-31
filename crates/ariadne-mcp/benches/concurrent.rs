@@ -21,9 +21,9 @@ use ariadne_core::{
     Changeset, EdgeKey, EdgeKind, EdgeRecord, FileId, FileRecord, Lang, Span, Storage, SymbolId,
     SymbolRecord, Visibility, WriteTxn,
 };
+use ariadne_mcp::AriadneServer;
 use ariadne_mcp::tools::{blast_radius as br, list_symbols as ls};
 use ariadne_mcp::types::{BlastRadiusInput, ListSymbolsInput};
-use ariadne_mcp::{AriadneServer, Catalog};
 use ariadne_storage::RedbStorage;
 
 const SYMBOL_COUNT: u64 = 10_000;
@@ -46,17 +46,20 @@ async fn run() -> ExitCode {
     let storage_path = dir.path().join("index.redb");
     let storage = RedbStorage::open(&storage_path).expect("open storage");
     seed_large(&storage);
-    let catalog =
-        Catalog::build(&storage, dir.path().to_string_lossy().into_owned()).expect("catalog");
+    let revision = storage.revision().0;
     drop(storage);
-    let server = AriadneServer::new(storage_path, catalog);
+    let server = AriadneServer::new(storage_path, dir.path().to_path_buf(), revision);
+    // Force the lazy catalog build once up front so the timed per-task loops
+    // measure query latency, not a one-off cold build, and the 8 tasks below
+    // share the single built catalog instead of racing to build it.
+    let _ = server.catalog_arc().await;
 
     let mut handles = Vec::with_capacity(TASKS);
     for task_id in 0..TASKS {
         let server = server.clone();
         handles.push(tokio::spawn(async move {
             let mut samples = Vec::with_capacity(PER_TASK_ITERS * 2);
-            let cat = server.catalog_arc();
+            let cat = server.catalog_arc().await;
             let ls_input = ListSymbolsInput {
                 query: "sym_0".into(),
                 kind: None,

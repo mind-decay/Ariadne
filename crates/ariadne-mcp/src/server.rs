@@ -6,9 +6,11 @@
 //! shape is identical on both paths, so the v1 goldens hold unchanged
 //! [src: .claude/plans/post-v1-roadmap/tier-09-mcp-daemon-client.md].
 //!
-//! Concurrency model — tier-08 step 7: the [`Catalog`] is built once,
-//! held behind an [`Arc`], and read-only for the server lifetime; many
-//! `#[tool]` futures run in parallel without contention. The
+//! Concurrency model — tier-08 step 7: the [`Catalog`] is built at most
+//! once, held behind an [`Arc`], and read-only for the server lifetime; many
+//! `#[tool]` futures run in parallel without contention. The build itself is
+//! deferred to the first cold-fallback miss (see `AriadneServer::catalog`),
+//! so a session whose tools all route to the warm daemon never pays it. The
 //! [`DaemonClient`] is a stateless connector (one short-lived socket per
 //! query), but its socket IO and auto-spawn wait are synchronous, so each
 //! handler routes through [`DaemonClient::try_query_async`], which offloads
@@ -35,6 +37,7 @@ use rmcp::model::{
     CallToolResult, Content, Implementation, ProtocolVersion, ServerCapabilities, ServerInfo,
 };
 use rmcp::{ErrorData, ServerHandler, tool, tool_handler, tool_router};
+use tokio::sync::OnceCell;
 
 use crate::DaemonClient;
 use crate::catalog::Catalog;
@@ -58,7 +61,20 @@ pub struct AriadneServer {
     /// unreachable [src: tier-10 build — fixes the `mcp_session` autospawn
     /// deadlock surfaced by the workspace SLO gate].
     db_path: PathBuf,
-    catalog: Arc<Catalog>,
+    /// Project root the daemon client targets and the catalog is built from.
+    /// Held directly (not read off `catalog.root`) because the catalog may be
+    /// unbuilt for the whole session.
+    root: PathBuf,
+    /// Last-observed redb revision, read cheaply at startup (single
+    /// `KEY_REVISION` lookup, no graph build) and sent in every daemon
+    /// handshake so a daemon behind the client refreshes before answering.
+    revision: u64,
+    /// In-RAM cold-fallback [`Catalog`], built lazily on the first cold miss
+    /// via [`Self::catalog`]. Empty while the daemon answers, so a warm
+    /// session never reads the full index or allocates the petgraph. The
+    /// `Arc<OnceCell<…>>` is shared across server clones, so concurrent first
+    /// misses build it once and the rest await that build.
+    catalog: Arc<OnceCell<Arc<Catalog>>>,
     daemon: DaemonClient,
     // Populated by the `#[tool_router]` macro and consumed by the
     // `#[tool_handler]` macro expansion; the rustc reachability pass
@@ -78,26 +94,78 @@ impl std::fmt::Debug for AriadneServer {
 
 #[tool_router]
 impl AriadneServer {
-    /// Build a fresh server around the on-disk index path + an already-built
-    /// in-RAM [`Catalog`]. The catalog is built from a transient storage handle
-    /// by the caller, so this server holds no open redb lock; cold-fallback
-    /// arms re-open `db_path` on demand. The daemon client targets the same
-    /// project root the catalog was built from.
+    /// Build a fresh server around the on-disk index path, project `root`, and
+    /// the startup-read redb `revision`. The cold-fallback [`Catalog`] is
+    /// **not** built here — it is constructed lazily on the first cold miss via
+    /// `Self::catalog` — so session-open holds no open redb lock and does no
+    /// graph work. The daemon client targets `root`.
     #[must_use]
-    pub fn new(db_path: PathBuf, catalog: Catalog) -> Self {
-        let daemon = DaemonClient::new(PathBuf::from(&catalog.root));
+    pub fn new(db_path: PathBuf, root: PathBuf, revision: u64) -> Self {
+        let daemon = DaemonClient::new(root.clone());
         Self {
             db_path,
-            catalog: Arc::new(catalog),
+            root,
+            revision,
+            catalog: Arc::new(OnceCell::new()),
             daemon,
             tool_router: Self::tool_router(),
         }
     }
 
-    /// Surface the catalog for in-process tests and benches.
+    /// Surface the catalog for in-process tests and benches, forcing the lazy
+    /// build if it has not happened yet by routing through the race-free
+    /// async `catalog` accessor. Async (every caller already runs inside a
+    /// tokio runtime) so concurrent first callers share the single
+    /// `OnceCell::get_or_try_init` build instead of each running
+    /// `Catalog::build` — the sync variant this replaced let the losers'
+    /// build be wasted CPU.
+    ///
+    /// # Panics
+    /// Panics if the on-disk index cannot be opened or the catalog cannot be
+    /// built — acceptable in the test/bench callers, which seed a valid index.
     #[must_use]
-    pub fn catalog_arc(&self) -> Arc<Catalog> {
-        Arc::clone(&self.catalog)
+    pub async fn catalog_arc(&self) -> Arc<Catalog> {
+        self.catalog()
+            .await
+            .expect("build cold catalog for test/bench")
+    }
+
+    /// Whether the cold-fallback catalog has been built. Lets tests assert the
+    /// lazy contract — unbuilt after `build_server`, built only after a cold
+    /// miss — without forcing a build.
+    #[must_use]
+    pub fn catalog_built(&self) -> bool {
+        self.catalog.get().is_some()
+    }
+
+    /// Lazily build (once) and return the cold-fallback [`Catalog`]. Called by
+    /// every cold-fallback tool arm when the daemon is unreachable.
+    ///
+    /// [`Catalog::build`] is a synchronous, CPU-bound full-index read, so it
+    /// runs inside [`tokio::task::spawn_blocking`] to keep runtime workers
+    /// free. [`OnceCell::get_or_try_init`] guarantees concurrent first misses
+    /// build it once; the rest await that build.
+    ///
+    /// # Errors
+    /// Surfaces storage-open / catalog-build failures as the same rmcp wire
+    /// error the cold path already raises.
+    async fn catalog(&self) -> Result<Arc<Catalog>, ErrorData> {
+        let db_path = self.db_path.clone();
+        let root = self.root.to_string_lossy().into_owned();
+        let catalog = self
+            .catalog
+            .get_or_try_init(|| async move {
+                let built = tokio::task::spawn_blocking(move || {
+                    let storage = RedbStorage::open(&db_path).map_err(McpError::Storage)?;
+                    Catalog::build(&storage, root)
+                })
+                .await
+                .map_err(|e| McpError::Other(format!("catalog build task join: {e}")))??;
+                Ok::<Arc<Catalog>, McpError>(Arc::new(built))
+            })
+            .await
+            .map_err(McpError::into_rmcp)?;
+        Ok(Arc::clone(catalog))
     }
 
     /// Open the on-disk index transiently for a cold-fallback read, then let
@@ -110,7 +178,7 @@ impl AriadneServer {
     /// The client's last-observed redb revision, sent in every daemon
     /// handshake so a daemon behind the client refreshes before answering.
     fn revision(&self) -> u64 {
-        self.catalog.revision
+        self.revision
     }
 
     #[tool(
@@ -130,7 +198,8 @@ function\", \"list the structs in\"."
         if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
             return project_daemon(resp);
         }
-        let out = tools::list_symbols::handle(&self.catalog, &input);
+        let catalog = self.catalog().await?;
+        let out = tools::list_symbols::handle(&catalog, &input);
         wire(&out)
     }
 
@@ -149,8 +218,8 @@ need the canonical definition site of a named symbol; triggers: \"where is X def
         if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
             return project_daemon(resp);
         }
-        let out =
-            tools::find_definition::handle(&self.catalog, &input).map_err(McpError::into_rmcp)?;
+        let catalog = self.catalog().await?;
+        let out = tools::find_definition::handle(&catalog, &input).map_err(McpError::into_rmcp)?;
         wire(&out)
     }
 
@@ -169,8 +238,9 @@ of\"."
         if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
             return project_daemon(resp);
         }
+        let catalog = self.catalog().await?;
         let storage = self.open_storage()?;
-        let out = tools::find_references::handle(&self.catalog, &storage, &input)
+        let out = tools::find_references::handle(&catalog, &storage, &input)
             .map_err(McpError::into_rmcp)?;
         wire(&out)
     }
@@ -192,8 +262,8 @@ change X\", \"impact of changing\", \"is it safe to edit\"."
         if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
             return project_daemon(resp);
         }
-        let out =
-            tools::blast_radius::handle(&self.catalog, &input).map_err(McpError::into_rmcp)?;
+        let catalog = self.catalog().await?;
+        let out = tools::blast_radius::handle(&catalog, &input).map_err(McpError::into_rmcp)?;
         wire(&out)
     }
 
@@ -212,9 +282,10 @@ orienting in an unfamiliar file before reading it; triggers: \"what is in this f
         if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
             return project_daemon(resp);
         }
+        let catalog = self.catalog().await?;
         let storage = self.open_storage()?;
-        let out = tools::file_summary::handle(&self.catalog, &storage, &input)
-            .map_err(McpError::into_rmcp)?;
+        let out =
+            tools::file_summary::handle(&catalog, &storage, &input).map_err(McpError::into_rmcp)?;
         wire(&out)
     }
 
@@ -234,7 +305,8 @@ touch for X\", \"where do I start to change\"."
         if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
             return project_daemon(resp);
         }
-        let out = tools::plan_assist::handle(&self.catalog, &input).map_err(McpError::into_rmcp)?;
+        let catalog = self.catalog().await?;
+        let out = tools::plan_assist::handle(&catalog, &input).map_err(McpError::into_rmcp)?;
         wire(&out)
     }
 
@@ -253,7 +325,8 @@ assessing module dependency or architecture health; triggers: \"how coupled is\"
         if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
             return project_daemon(resp);
         }
-        let out = tools::coupling_report::handle(&self.catalog, &input);
+        let catalog = self.catalog().await?;
+        let out = tools::coupling_report::handle(&catalog, &input);
         wire(&out)
     }
 
@@ -272,7 +345,8 @@ codebase\", \"find tech debt\", \"any cycles\"."
         if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
             return project_daemon(resp);
         }
-        let out = tools::weak_spots::handle(&self.catalog, &input);
+        let catalog = self.catalog().await?;
+        let out = tools::weak_spots::handle(&catalog, &input);
         wire(&out)
     }
 
@@ -291,7 +365,8 @@ X\"."
         if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
             return project_daemon(resp);
         }
-        let out = tools::doc_for::handle(&self.catalog, &input).map_err(McpError::into_rmcp)?;
+        let catalog = self.catalog().await?;
+        let out = tools::doc_for::handle(&catalog, &input).map_err(McpError::into_rmcp)?;
         wire(&out)
     }
 
@@ -308,7 +383,8 @@ big is the project\"."
         {
             return project_daemon(resp);
         }
-        let out = tools::project_status::handle(&self.catalog);
+        let catalog = self.catalog().await?;
+        let out = tools::project_status::handle(&catalog);
         wire(&out)
     }
 
@@ -327,9 +403,10 @@ module\", \"overview of src/X.rs\"."
         if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
             return project_daemon(resp);
         }
+        let catalog = self.catalog().await?;
         let storage = self.open_storage()?;
-        let out = tools::doc_module::handle(&self.catalog, &storage, &input)
-            .map_err(McpError::into_rmcp)?;
+        let out =
+            tools::doc_module::handle(&catalog, &storage, &input).map_err(McpError::into_rmcp)?;
         wire(&out)
     }
 
@@ -348,9 +425,10 @@ you need a whole-project architecture overview; triggers: \"explain the architec
         if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
             return project_daemon(resp);
         }
+        let catalog = self.catalog().await?;
         let storage = self.open_storage()?;
-        let out = tools::doc_project::handle(&self.catalog, &storage, &input)
-            .map_err(McpError::into_rmcp)?;
+        let out =
+            tools::doc_project::handle(&catalog, &storage, &input).map_err(McpError::into_rmcp)?;
         wire(&out)
     }
 
@@ -369,9 +447,10 @@ I refactor\", \"cleanup suggestions for\"."
         if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
             return project_daemon(resp);
         }
+        let catalog = self.catalog().await?;
         let storage = self.open_storage()?;
-        let out = tools::refactor::handle(&self.catalog, &storage, &input)
-            .map_err(McpError::into_rmcp)?;
+        let out =
+            tools::refactor::handle(&catalog, &storage, &input).map_err(McpError::into_rmcp)?;
         wire(&out)
     }
 }

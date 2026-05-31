@@ -50,7 +50,7 @@ pub struct DaemonClient {
 }
 
 impl DaemonClient {
-    /// Build a client for `root`. Reads [`AUTOSPAWN_ENV`] once to decide
+    /// Build a client for `root`. Reads `AUTOSPAWN_ENV` once to decide
     /// whether a missed socket may auto-spawn a daemon.
     #[must_use]
     pub fn new(root: PathBuf) -> Self {
@@ -88,7 +88,7 @@ impl DaemonClient {
     ///
     /// [`Self::try_query`] is synchronous: it blocks on socket IO and, on a
     /// missing daemon, runs an auto-spawn poll loop that sleeps up to
-    /// [`SPAWN_TIMEOUT`]. Calling it directly inside an async handler would
+    /// `SPAWN_TIMEOUT`. Calling it directly inside an async handler would
     /// pin a tokio worker thread for that whole duration, so a slow or absent
     /// daemon could stall the executor. Offloading the round-trip to
     /// [`tokio::task::spawn_blocking`] keeps the blocking work on the blocking
