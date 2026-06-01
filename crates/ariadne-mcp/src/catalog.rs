@@ -10,7 +10,10 @@
 
 use std::collections::BTreeMap;
 
-use ariadne_core::{FileId, Lang, ReadSnapshot, Storage, SymbolId, SymbolRecord, Visibility};
+use ariadne_core::{
+    CoChangePair, FileChurn, FileId, Lang, ReadSnapshot, Storage, SymbolChurn, SymbolId,
+    SymbolRecord, Visibility,
+};
 use ariadne_graph::GraphIndex;
 
 use crate::errors::McpError;
@@ -40,6 +43,11 @@ pub struct SymbolMeta {
     /// Attribute / annotation / decorator identifiers attached to the
     /// declaration (e.g. `"test"`, `"Override"`, `"pytest.fixture"`).
     pub attributes: Vec<String>,
+    /// `McCabe` cyclomatic complexity of the defining occurrence
+    /// (`decisions + 1`, `>= 1` for function-like symbols; `0` otherwise),
+    /// carried so the Block-C analytics tools read it straight from RAM
+    /// [src: post-v1-roadmap plan.md RD8].
+    pub complexity: u32,
 }
 
 impl SymbolMeta {
@@ -53,6 +61,7 @@ impl SymbolMeta {
             lang,
             visibility: rec.visibility,
             attributes: rec.attributes.clone(),
+            complexity: rec.complexity,
         }
     }
 }
@@ -72,6 +81,15 @@ pub struct Catalog {
     pub by_name: BTreeMap<String, Vec<SymbolId>>,
     /// In-RAM graph: `(src, kind, dst)` adjacency for analytics.
     pub graph: GraphIndex,
+    /// Per-file Git-history churn, sorted by `path`. Loaded wholesale from the
+    /// `Storage` port (tier-15a D1/D3) so the Block-C hotspot tools read it
+    /// from RAM.
+    pub churn: Vec<FileChurn>,
+    /// File-pair co-change records, sorted by `(a, b)`.
+    pub co_change: Vec<CoChangePair>,
+    /// Per-symbol Git-history churn, sorted by `symbol`. Symbols absent from
+    /// the table have zero attributed churn.
+    pub symbol_churn: Vec<SymbolChurn>,
     /// Latest persisted revision the catalog snapshotted from.
     pub revision: u64,
     /// Project root the server was launched against.
@@ -113,6 +131,17 @@ impl Catalog {
         }
 
         let graph = GraphIndex::build_from_snapshot(&snap).map_err(McpError::Graph)?;
+
+        // Load the Git-history analytics wholesale via the `Storage` port
+        // (tier-15a D1) and sort each by key on load (D3) so 15b/15c output is
+        // deterministic with no re-sort.
+        let mut churn = storage.all_churn().map_err(McpError::Storage)?;
+        churn.sort_by(|a, b| a.path.cmp(&b.path));
+        let mut co_change = storage.all_co_change().map_err(McpError::Storage)?;
+        co_change.sort_by(|a, b| a.a.cmp(&b.a).then_with(|| a.b.cmp(&b.b)));
+        let mut symbol_churn = storage.all_symbol_churn().map_err(McpError::Storage)?;
+        symbol_churn.sort_by_key(|c| c.symbol);
+
         let revision = storage.revision().0;
 
         Ok(Self {
@@ -121,6 +150,9 @@ impl Catalog {
             symbols,
             by_name,
             graph,
+            churn,
+            co_change,
+            symbol_churn,
             revision,
             root,
         })

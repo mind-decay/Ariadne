@@ -24,7 +24,9 @@ tiers:
   - tier-12-cyclomatic-complexity
   - tier-13-hotspot-cochange-metrics
   - tier-14-diff-aware-blast-radius
-  - tier-15-analytics-mcp-tools
+  - tier-15a-analytics-catalog-projection
+  - tier-15b-analytics-mcp-tools
+  - tier-15c-diff-blast-radius-tool
   - tier-16-lsp-skeleton
   - tier-17-lsp-navigation
   - tier-18-lsp-hierarchy

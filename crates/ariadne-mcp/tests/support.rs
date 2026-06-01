@@ -12,8 +12,9 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use ariadne_core::{
-    Changeset, DaemonQuery, DaemonRequest, DaemonResponse, EdgeKey, EdgeKind, EdgeRecord, FileId,
-    FileRecord, Lang, Span, Storage, SymbolId, SymbolRecord, Visibility, WriteTxn,
+    Changeset, CoChangePair, DaemonQuery, DaemonRequest, DaemonResponse, EdgeKey, EdgeKind,
+    EdgeRecord, FileChurn, FileId, FileRecord, Lang, Span, Storage, SymbolChurn, SymbolId,
+    SymbolRecord, Visibility, WriteTxn,
 };
 use ariadne_storage::RedbStorage;
 use interprocess::local_socket::prelude::*;
@@ -97,6 +98,104 @@ pub fn seed_component_project() -> (PathBuf, TempDir) {
     txn.apply(&cs).expect("apply changeset");
     drop(storage);
     (project_root, dir)
+}
+
+/// Seed a project carrying the Block-C analytics substrate: two Rust files
+/// whose symbols have non-zero cyclomatic `complexity`, plus persisted
+/// per-file churn, one co-change pair, and one per-symbol churn record. The
+/// churn / symbol-churn vectors are written deliberately out of key order so
+/// the catalog's load-time sort (tier-15a D3) is exercised. Drives the
+/// tier-15a catalog-projection test and the 15b/15c analytics goldens
+/// [src: .claude/plans/post-v1-roadmap/tier-15a-analytics-catalog-projection.md].
+#[must_use]
+pub fn seed_analytics_project() -> (PathBuf, TempDir) {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let project_root = dir.path().to_path_buf();
+    let storage_path = project_root.join(".ariadne").join("index.redb");
+    let storage = RedbStorage::open(&storage_path).expect("open redb");
+    let txn = storage.begin_write().expect("begin");
+    txn.apply(&analytics_changeset()).expect("apply changeset");
+    storage
+        .replace_history(&analytics_churn(), &analytics_pairs())
+        .expect("replace history");
+    storage
+        .replace_symbol_churn(&analytics_symbol_churn())
+        .expect("replace symbol churn");
+    drop(storage);
+    (project_root, dir)
+}
+
+fn analytics_changeset() -> Changeset {
+    let mut cs = Changeset::new();
+    for (id, path) in [(1u32, "src/alpha.rs"), (2, "src/beta.rs")] {
+        cs = cs.upsert_file(
+            fid(id),
+            FileRecord {
+                path: path.into(),
+                lang: Lang::Rust,
+                size: 128,
+                blake3: [u8::try_from(id).expect("file id fits u8"); 32],
+                mtime_ns: i128::from(id),
+            },
+        );
+    }
+    for (id, name, file, complexity) in
+        [(1u64, "crate::alpha", 1u32, 7u32), (2, "crate::beta", 2, 3)]
+    {
+        cs = cs.upsert_symbol(
+            sid(id),
+            SymbolRecord {
+                canonical_name: name.into(),
+                kind: "function".into(),
+                defining_file: fid(file),
+                defining_span: span(file, 0, 64),
+                visibility: Visibility::Unknown,
+                attributes: Vec::new(),
+                complexity,
+            },
+        );
+    }
+    cs
+}
+
+/// File churn written beta-before-alpha to prove the load sorts by path.
+fn analytics_churn() -> Vec<FileChurn> {
+    vec![
+        FileChurn {
+            path: "src/beta.rs".into(),
+            commits: 4,
+            author_keys: vec![[1u8; 8], [2u8; 8]],
+            last_changed_ns: 200,
+        },
+        FileChurn {
+            path: "src/alpha.rs".into(),
+            commits: 9,
+            author_keys: vec![[1u8; 8]],
+            last_changed_ns: 100,
+        },
+    ]
+}
+
+fn analytics_pairs() -> Vec<CoChangePair> {
+    vec![CoChangePair {
+        a: "src/alpha.rs".into(),
+        b: "src/beta.rs".into(),
+        count: 3,
+    }]
+}
+
+/// Symbol churn written sid(2)-before-sid(1) to prove the load sorts by id.
+fn analytics_symbol_churn() -> Vec<SymbolChurn> {
+    vec![
+        SymbolChurn {
+            symbol: sid(2),
+            commits: 2,
+        },
+        SymbolChurn {
+            symbol: sid(1),
+            commits: 5,
+        },
+    ]
 }
 
 fn component_changeset() -> Changeset {

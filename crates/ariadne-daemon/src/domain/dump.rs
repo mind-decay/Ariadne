@@ -13,7 +13,8 @@ use std::collections::BTreeMap;
 use std::path::Path;
 
 use ariadne_core::{
-    EdgeKey, EdgeRecord, FileId, FileRecord, Lang, ReadSnapshot, SymbolId, SymbolRecord, Visibility,
+    CoChangePair, EdgeKey, EdgeRecord, FileChurn, FileId, FileRecord, Lang, ReadSnapshot,
+    SymbolChurn, SymbolId, SymbolRecord, Visibility,
 };
 use ariadne_storage::RedbStorage;
 
@@ -34,6 +35,7 @@ struct MetaRow {
     lang: Lang,
     visibility: Visibility,
     attributes: Vec<String>,
+    complexity: u32,
 }
 
 impl MetaRow {
@@ -47,6 +49,7 @@ impl MetaRow {
             lang: m.lang,
             visibility: m.visibility,
             attributes: m.attributes.clone(),
+            complexity: m.complexity,
         }
     }
 }
@@ -62,6 +65,9 @@ pub struct CatalogDump {
     path_to_id: BTreeMap<String, FileId>,
     metas: BTreeMap<SymbolId, MetaRow>,
     by_name: BTreeMap<String, Vec<SymbolId>>,
+    churn: Vec<FileChurn>,
+    co_change: Vec<CoChangePair>,
+    symbol_churn: Vec<SymbolChurn>,
     graph_symbols: usize,
     graph_edges: usize,
 }
@@ -81,6 +87,9 @@ impl CatalogDump {
                 .map(|(id, m)| (*id, MetaRow::of(m)))
                 .collect(),
             by_name: cat.by_name.clone(),
+            churn: cat.churn.clone(),
+            co_change: cat.co_change.clone(),
+            symbol_churn: cat.symbol_churn.clone(),
             graph_symbols: cat.graph.symbol_count(),
             graph_edges: cat.graph.edge_count(),
         }
