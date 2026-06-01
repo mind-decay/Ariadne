@@ -1,0 +1,8 @@
+---
+source: crates/ariadne-graph/tests/hotspot.rs
+expression: fmt_report(&report)
+---
+file src/hot.rs churn=10 cx=20 score=0.8000
+file src/complex_stable.rs churn=1 cx=25 score=0.1000
+file src/cold.rs churn=2 cx=5 score=0.0400
+file src/churned_simple.rs churn=8 cx=0 score=0.0000

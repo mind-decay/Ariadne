@@ -1,0 +1,7 @@
+---
+source: crates/ariadne-graph/tests/co_change.rs
+expression: fmt_report(&report)
+---
+src/a.rs <-> src/b.rs shared=6 degree=0.6667
+src/b.rs <-> src/d.rs shared=7 degree=0.5000
+src/c.rs <-> src/d.rs shared=5 degree=0.3125

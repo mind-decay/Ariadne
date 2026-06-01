@@ -1,0 +1,7 @@
+---
+source: crates/ariadne-graph/tests/hotspot.rs
+expression: fmt_report(&report)
+---
+symbol 1 churn=10 cx=12 score=1.0000
+symbol 2 churn=3 cx=4 score=0.1000
+symbol 3 churn=6 cx=0 score=0.0000

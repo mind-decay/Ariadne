@@ -1,8 +1,8 @@
 {
   "slug": "post-v1-roadmap",
-  "audited_commit": "5ba1fbcea0693a165bf6578d6c65259e55361fd1",
-  "tier_id": "tier-12",
+  "audited_commit": "0052cefd91ae2c82790a3fbbb151bccf067b2bfe",
+  "tier_id": "tier-13",
   "verdict": "PASS",
-  "audited_at": "2026-06-01T21:54:15Z",
-  "report": "audit/tier-12-report.md"
+  "audited_at": "2026-06-02T00:00:00Z",
+  "report": "audit/tier-13-report.md"
 }
