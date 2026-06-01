@@ -62,6 +62,11 @@ impl MigrationRegistry {
                     to: 4,
                     apply: migrate_v3_to_v4,
                 },
+                MigrationStep {
+                    from: 4,
+                    to: 5,
+                    apply: migrate_v4_to_v5,
+                },
             ],
         }
     }
@@ -181,6 +186,22 @@ fn migrate_v3_to_v4(txn: &WriteTransaction) -> Result<(), RedbStorageError> {
     Ok(())
 }
 
+/// `HISTORY_META` table definition — local mirror so the migration step owns
+/// the table name without leaking the adapter's table module (same pattern as
+/// the [`SYMBOLS`] / [`CHURN`] mirrors above). Name matches
+/// [`crate::adapters::redb::tables`].
+const HISTORY_META: TableDefinition<'_, &str, &[u8]> = TableDefinition::new("history_meta");
+
+/// v4 → v5: create the byte-valued `HISTORY_META` table in place so a
+/// pre-existing v4 database gains the tier-11a incremental-history watermark
+/// store without a rebuild. Purely additive — no existing record is read or
+/// rewritten; opening a table inside the write transaction creates it when
+/// absent [src: post-v1-roadmap tier-11a-incremental-history.md step 2].
+fn migrate_v4_to_v5(txn: &WriteTransaction) -> Result<(), RedbStorageError> {
+    txn.open_table(HISTORY_META)?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::{MigrationRegistry, MigrationStep, WriteTransaction};
@@ -291,5 +312,25 @@ mod tests {
             .to_vec();
         assert_eq!(chain.len(), 3);
         assert_eq!((chain[0].from, chain[2].to), (1, 4));
+    }
+
+    #[test]
+    fn builtin_registry_covers_v4_to_v5() {
+        let chain = MigrationRegistry::builtin()
+            .plan(4, 5)
+            .expect("v4 -> v5 path")
+            .to_vec();
+        assert_eq!(chain.len(), 1);
+        assert_eq!((chain[0].from, chain[0].to), (4, 5));
+    }
+
+    #[test]
+    fn builtin_registry_covers_v1_to_v5() {
+        let chain = MigrationRegistry::builtin()
+            .plan(1, 5)
+            .expect("v1 -> v5 path")
+            .to_vec();
+        assert_eq!(chain.len(), 4);
+        assert_eq!((chain[0].from, chain[3].to), (1, 5));
     }
 }

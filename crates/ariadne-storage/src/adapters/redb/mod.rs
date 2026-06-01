@@ -14,6 +14,7 @@
 //! per `adapters/<tech>` location).
 
 mod apply;
+mod history;
 mod scan;
 mod snapshot;
 mod tables;
@@ -34,7 +35,8 @@ use crate::adapters::codec::{decode_value, encode_value};
 use crate::domain::migration::MigrationRegistry;
 use crate::errors::RedbStorageError;
 use tables::{
-    CHURN, CO_CHANGE, EDGES, EDGES_BY_FILE, FILES, KEY_REVISION, KEY_SCHEMA_VERSION, META, SYMBOLS,
+    CHURN, CO_CHANGE, EDGES, EDGES_BY_FILE, FILES, HISTORY_META, KEY_REVISION, KEY_SCHEMA_VERSION,
+    META, SYMBOLS,
 };
 
 /// redb-backed [`Storage`] implementation. Owns the `Database` handle and a
@@ -163,6 +165,9 @@ fn bootstrap(db: &Database) -> Result<u64, RedbStorageError> {
     // on a missing table.
     let _ = txn.open_table(CHURN)?;
     let _ = txn.open_table(CO_CHANGE)?;
+    // tier-11a watermark store: exists on a fresh DB so a read before the first
+    // ingest returns `None` rather than erroring on a missing table.
+    let _ = txn.open_table(HISTORY_META)?;
     txn.commit()?;
     Ok(rev)
 }
@@ -235,6 +240,23 @@ impl Storage for RedbStorage {
 
     fn all_co_change(&self) -> Result<Vec<CoChangePair>, StorageError> {
         self.all_co_change_inner().map_err(Into::into)
+    }
+
+    fn last_ingested_commit(&self) -> Result<Option<Vec<u8>>, StorageError> {
+        history::last_ingested_commit(&self.db).map_err(Into::into)
+    }
+
+    fn set_last_ingested_commit(&self, oid: &[u8]) -> Result<(), StorageError> {
+        history::set_last_ingested_commit(&self.db, oid).map_err(Into::into)
+    }
+
+    fn merge_history(
+        &self,
+        churn_delta: &[FileChurn],
+        pair_delta: &[CoChangePair],
+        head_oid: &[u8],
+    ) -> Result<(), StorageError> {
+        history::merge_history(&self.db, churn_delta, pair_delta, head_oid).map_err(Into::into)
     }
 }
 

@@ -245,7 +245,7 @@ fn v1_fixture_migrates_in_place_with_all_records_intact() {
     drop(storage);
     assert_eq!(
         on_disk_schema_version(&work),
-        Some(4),
+        Some(5),
         "schema version advanced to current on disk",
     );
 }
@@ -268,7 +268,7 @@ fn older_version_with_no_migration_path_returns_schema_mismatch() {
 
     match RedbStorage::open(&path) {
         Err(StorageError::SchemaMismatch { found, expected }) => {
-            assert_eq!((found, expected), (0, 4), "no path -> rebuild signal");
+            assert_eq!((found, expected), (0, 5), "no path -> rebuild signal");
         }
         other => panic!("expected SchemaMismatch, got {other:?}"),
     }
@@ -386,7 +386,7 @@ fn v2_fixture_migrates_in_place_with_symbol_fields_preserved() {
     drop(storage);
     assert_eq!(
         on_disk_schema_version(&work),
-        Some(4),
+        Some(5),
         "schema version advanced to current on disk",
     );
 }
@@ -455,7 +455,7 @@ fn v3_database_gains_history_tables_with_records_intact() {
     drop(storage);
     assert_eq!(
         on_disk_schema_version(&work),
-        Some(4),
+        Some(5),
         "schema version advanced to current on disk",
     );
 }

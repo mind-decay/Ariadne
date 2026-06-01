@@ -18,6 +18,10 @@ use gix::traverse::commit::simple::CommitTimeOrder;
 
 use crate::errors::GitError;
 
+mod incremental;
+
+pub use incremental::{IncrementalWalk, walk_since};
+
 /// Bounds on the history walk, read from `config.toml` `[history]`.
 #[derive(Debug, Clone)]
 pub struct HistoryOptions {
@@ -56,16 +60,39 @@ const NANOS_PER_SEC: i128 = 1_000_000_000;
 /// [`GitError`] on repository open, traversal, object lookup, or tree diff.
 pub fn walk_history(repo_root: &Path, opts: &HistoryOptions) -> Result<HistoryReport, GitError> {
     let repo = gix::open(repo_root).map_err(|e| GitError::Open(e.to_string()))?;
-
-    let head = repo.head().map_err(|e| GitError::Walk(e.to_string()))?;
-    let Some(head_id) = head.id() else {
+    let Some(head) = head_oid(&repo)? else {
         // Unborn HEAD: a repository with no commits has no history to ingest.
         return Ok(HistoryReport::default());
     };
+    accumulate(&repo, head, None, opts)
+}
 
+/// Resolve HEAD to its commit oid, or `None` for an unborn HEAD (no commits).
+/// Shared by [`walk_history`] and the incremental [`walk_since`].
+pub(super) fn head_oid(repo: &gix::Repository) -> Result<Option<gix::ObjectId>, GitError> {
+    let head = repo.head().map_err(|e| GitError::Walk(e.to_string()))?;
+    Ok(head.id().map(gix::Id::detach))
+}
+
+/// Accumulate file churn + co-change over the ancestors of `head`. When `hide`
+/// is `Some(oid)`, that commit and all its ancestors are excluded from the walk
+/// (`with_hidden`), so only commits newer than the watermark are visited — the
+/// tier-11a incremental walk; `None` walks the full reachable history. The
+/// commit-graph file is used when present (R-C1)
+/// [src: docs.rs/gix/0.84.0/gix/revision/walk/struct.Platform.html `with_hidden`].
+///
+/// # Errors
+/// [`GitError`] on traversal, object lookup, or tree diff.
+pub(super) fn accumulate(
+    repo: &gix::Repository,
+    head: gix::ObjectId,
+    hide: Option<gix::ObjectId>,
+    opts: &HistoryOptions,
+) -> Result<HistoryReport, GitError> {
     let walk = repo
-        .rev_walk(Some(head_id.detach()))
+        .rev_walk(Some(head))
         .sorting(Sorting::ByCommitTime(CommitTimeOrder::NewestFirst))
+        .with_hidden(hide)
         .all()
         .map_err(|e| GitError::Walk(e.to_string()))?;
 

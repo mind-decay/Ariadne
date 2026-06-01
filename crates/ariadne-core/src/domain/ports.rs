@@ -73,6 +73,41 @@ pub trait Storage: Send + Sync {
     /// # Errors
     /// Backend-level IO or corruption.
     fn all_co_change(&self) -> Result<Vec<CoChangePair>, StorageError>;
+
+    /// Read the HEAD-commit watermark recorded by the last history ingest
+    /// (raw commit-oid bytes), or `None` when no walk has run yet. tier-11a's
+    /// incremental re-ingest walks only commits added since this oid.
+    ///
+    /// # Errors
+    /// Backend-level IO or corruption.
+    fn last_ingested_commit(&self) -> Result<Option<Vec<u8>>, StorageError>;
+
+    /// Persist `oid` (raw HEAD-commit bytes) as the history watermark in its
+    /// own backend transaction. The full-replace path uses this after
+    /// [`Storage::replace_history`]; the incremental path advances the
+    /// watermark atomically inside [`Storage::merge_history`].
+    ///
+    /// # Errors
+    /// Backend-level IO or corruption; the write is rolled back on any error.
+    fn set_last_ingested_commit(&self, oid: &[u8]) -> Result<(), StorageError>;
+
+    /// Merge an incremental Git-history delta into the churn + co-change tables
+    /// and advance the watermark to `head_oid` in one backend transaction.
+    /// Churn merges additively (commit counts sum, author keys union, the
+    /// last-changed time takes the max); co-change counts sum. Advancing the
+    /// watermark in the same transaction is what keeps re-ingestion ACID — a
+    /// crash never half-applies a delta without recording it, so no commit is
+    /// ever double-counted on the next run (tier-11a).
+    ///
+    /// # Errors
+    /// Returns [`StorageError`] variants for IO or corruption; the write is
+    /// rolled back on any error.
+    fn merge_history(
+        &self,
+        churn_delta: &[FileChurn],
+        pair_delta: &[CoChangePair],
+        head_oid: &[u8],
+    ) -> Result<(), StorageError>;
 }
 
 /// Atomic write half of the [`Storage`] port.

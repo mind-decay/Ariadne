@@ -107,7 +107,8 @@ fn live_edit_is_reflected_over_ipc() {
 
     let (tx, rx) = mpsc::channel::<Invalidation>();
     let serve_root = root.clone();
-    let handle = std::thread::spawn(move || ariadne_daemon::serve_live(&serve_root, rx));
+    // No background re-walk in this tier-08 test: ignore the IndexLock handle.
+    let handle = std::thread::spawn(move || ariadne_daemon::serve_live(&serve_root, rx, |_| {}));
     wait_until_running(&root, Duration::from_secs(5));
 
     // Index the initial file.

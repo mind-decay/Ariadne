@@ -39,6 +39,7 @@ use ariadne_storage::RedbStorage;
 use crate::adapters::codec;
 use crate::domain::catalog::{WarmCatalog, index_path};
 use crate::domain::dispatch;
+use crate::domain::index_lock::IndexLock;
 use crate::domain::lifecycle::{DaemonPaths, DaemonStatus, Pid, ReclaimDecision, reclaim_decision};
 use crate::domain::live::LiveEngine;
 use crate::errors::DaemonError;
@@ -250,9 +251,19 @@ pub fn serve(project_root: &Path) -> Result<(), DaemonError> {
 /// watcher directly — strict hexagonal invariant) [src: tier-08 build notes;
 /// ADR-0007].
 ///
+/// `on_ready` is invoked once, after the warm engine is built and before the
+/// accept loop blocks, with an [`IndexLock`] over the daemon's redb-open
+/// serialization point. The composition root uses it to schedule background
+/// work (the tier-11a Git-history re-walk) whose transient redb opens must not
+/// race the pump or accept-loop opens [src: tier-11a audit I1].
+///
 /// # Errors
 /// Same failure modes as [`serve`], plus warm-engine seeding failures.
-pub fn serve_live(project_root: &Path, events: Receiver<Invalidation>) -> Result<(), DaemonError> {
+pub fn serve_live(
+    project_root: &Path,
+    events: Receiver<Invalidation>,
+    on_ready: impl FnOnce(IndexLock),
+) -> Result<(), DaemonError> {
     let paths = DaemonPaths::new(project_root);
     let Some(own) = claim_lifecycle(&paths)? else {
         return Err(DaemonError::AlreadyRunning {
@@ -271,6 +282,11 @@ pub fn serve_live(project_root: &Path, events: Receiver<Invalidation>) -> Result
     let catalog = engine.catalog_arc();
     let stop = Arc::new(AtomicBool::new(false));
     let pump = engine.spawn_pump(events, Arc::clone(&stop));
+
+    // Hand the composition root the redb-open serialization lock so its
+    // background re-walk opens redb under the same lock as the pump and accept
+    // loop (single-open per process, tier-11a I1).
+    on_ready(IndexLock::new(Arc::clone(&catalog)));
 
     let result = serve_loop(&catalog, &paths, project_root, own);
 

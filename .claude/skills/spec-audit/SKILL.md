@@ -2,7 +2,7 @@
 name: spec-audit
 description: Pedantic, hostile-mode review of work done by `spec-build` against a `spec-plan` artifact. Writes a verdict report to `.claude/plans/<slug>/audit/<tier-or-plan>-report.md` and updates `.claude/plans/<slug>/audit-state.json` used by commit/push hooks. Use when the user invokes `/spec-audit <path-to-tier-or-plan>` or asks to "audit the build", "review the spec output", "check the implementation". Treats the code as if written by someone else; never as its own work.
 when_to_use: After `spec-build` finishes a tier (or the whole single-tier plan) and before commit/push. Not for ad-hoc code review unrelated to a plan.
-allowed-tools: Read Bash Glob Grep WebFetch WebSearch mcp__claude_ai_Context7__resolve-library-id mcp__claude_ai_Context7__query-docs AskUserQuestion TaskCreate TaskUpdate TaskGet TaskList Agent
+allowed-tools: Read Bash Glob Grep WebFetch WebSearch mcp__claude_ai_Context7__resolve-library-id mcp__claude_ai_Context7__query-docs AskUserQuestion TaskCreate TaskUpdate TaskGet TaskList Agent mcp__ariadne__project_status mcp__ariadne__list_symbols mcp__ariadne__find_references mcp__ariadne__blast_radius mcp__ariadne__coupling_report mcp__ariadne__weak_spots
 disable-model-invocation: true
 ---
 
@@ -24,6 +24,14 @@ Treat the diff as written by Codex or the user — never as own work. No defensi
 - Update `audit-state.json` truthfully. The commit/push hook depends on it; lying breaks the gate.
 - Subagent spawning is permitted only when the user asks for it or when the audit scope explicitly requires isolated, parallel verification (e.g., long-running security scan). Single-threaded review is the default — orchestration overhead degrades quality at the margin.
 </non_negotiables>
+
+<code_intelligence>
+Ariadne MCP is a read-only semantic graph of the current code (symbols, references, dependency edges). Prefer it over `grep`/`Read` for any symbol, reference, impact, or architecture question — one call where text search needs many and misses cross-file edges [src: CLAUDE.md "Ariadne code intelligence"; .mcp.json].
+- Load: Ariadne tools may be schema-deferred when many MCP servers are connected (deferral triggers above ~10% of context). If a tool is not immediately callable, load it via `ToolSearch` `select:mcp__ariadne__<tool>` then retry [src: https://platform.claude.com/docs/en/agents-and-tools/tool-use/tool-search-tool].
+- Freshness: call `mcp__ariadne__project_status` once before trusting the graph; if it reports stale or the server is down, fall back to `grep`/`Read` and state it [src: CLAUDE.md].
+- Scope: the graph reflects the built code under review; after `spec-build` the `--watch` daemon should have re-indexed — `project_status` confirms before relying on edges.
+- Use here: `coupling_report`/`weak_spots` to verify architecture matches `<decisions>`; `blast_radius`/`find_references` to confirm nothing outside `<files>` is affected and no dangling refs (steps 2, 3). Augments the evidence pass — never replaces reading the diff [src: CLAUDE.md].
+</code_intelligence>
 
 <inputs>
 - `$ARGUMENTS`: path to tier or single-tier plan file.

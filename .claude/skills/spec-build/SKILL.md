@@ -2,7 +2,7 @@
 name: spec-build
 description: Executes one tier of a plan produced by `spec-plan`. Reads the named plan/tier file under `.claude/plans/<slug>/`, follows its steps, and updates tier status. Use when the user invokes `/spec-build <path-to-tier-or-plan>` or asks to "build tier N", "execute the plan", "run the spec". Refuses to act outside the plan; refuses to start when tier dependencies are unmet.
 when_to_use: A `spec-plan` artifact exists and the user wants exactly one tier (or a single-tier plan) executed in this session. Not for ad-hoc coding (just code), not for reviewing built work (use spec-audit).
-allowed-tools: Read Write Edit Bash Glob Grep WebFetch WebSearch mcp__claude_ai_Context7__resolve-library-id mcp__claude_ai_Context7__query-docs AskUserQuestion TaskCreate TaskUpdate TaskGet TaskList
+allowed-tools: Read Write Edit Bash Glob Grep WebFetch WebSearch mcp__claude_ai_Context7__resolve-library-id mcp__claude_ai_Context7__query-docs AskUserQuestion TaskCreate TaskUpdate TaskGet TaskList mcp__ariadne__project_status mcp__ariadne__list_symbols mcp__ariadne__find_definition mcp__ariadne__find_references mcp__ariadne__blast_radius
 disable-model-invocation: true
 ---
 
@@ -22,6 +22,14 @@ Turn one tier (or a single-tier plan) into working, plan-conformant code. The pl
 - Failures are root-caused, not silenced. No `--no-verify`, no weakened asserts, no `try/except: pass`, no deleted tests, no commented-out checks.
 - Update the tier file's `status` only after `<verification>` passes for real.
 </non_negotiables>
+
+<code_intelligence>
+Ariadne MCP is a read-only semantic graph of the current code (symbols, references, dependency edges). Prefer it over `grep`/`Read` for any symbol, reference, impact, or architecture question — one call where text search needs many and misses cross-file edges [src: CLAUDE.md "Ariadne code intelligence"; .mcp.json].
+- Load: Ariadne tools may be schema-deferred when many MCP servers are connected (deferral triggers above ~10% of context). If a tool is not immediately callable, load it via `ToolSearch` `select:mcp__ariadne__<tool>` then retry [src: https://platform.claude.com/docs/en/agents-and-tools/tool-use/tool-search-tool].
+- Freshness: call `mcp__ariadne__project_status` once before trusting the graph; if it reports stale or the server is down, fall back to `grep`/`Read` and state it [src: CLAUDE.md].
+- Scope: the graph covers code that exists now. For symbols a tier will create (greenfield), Ariadne has nothing — use it for what exists, not what the plan adds.
+- Use here: `find_references` + `blast_radius` before editing a symbol to find call sites and impact (steps 3, 5); `find_definition`/`list_symbols` to navigate instead of `grep` [src: CLAUDE.md].
+</code_intelligence>
 
 <inputs>
 - `$ARGUMENTS`: path to a tier file or single-tier `plan.md`. If missing, ask the user for it.

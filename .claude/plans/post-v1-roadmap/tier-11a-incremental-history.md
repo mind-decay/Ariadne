@@ -8,7 +8,8 @@ exit_criteria:
   - A rewritten/force-pushed history (watermark not an ancestor of HEAD) falls back to a full `replace_history` walk — no corruption, no panic.
   - The daemon never depends on `ariadne-git`; the CLI composition root drives re-walks and the daemon reads churn from redb per analytics op (tier-08 adapter-isolation precedent).
   - `cargo nextest run -p ariadne-git -p ariadne-storage -p ariadne-cli` + architecture + clippy + fmt all green.
-status: pending
+status: completed
+completed: 2026-06-01
 ---
 
 <context>
