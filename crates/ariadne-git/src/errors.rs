@@ -20,4 +20,9 @@ pub enum GitError {
     /// A per-commit tree diff failed.
     #[error("diff git trees: {0}")]
     Diff(String),
+
+    /// A revision spec could not be resolved to an object (unknown ref or oid,
+    /// or a missing/unborn HEAD).
+    #[error("resolve git revision: {0}")]
+    Revspec(String),
 }

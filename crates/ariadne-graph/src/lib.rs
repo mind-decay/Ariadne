@@ -14,6 +14,7 @@ mod co_change;
 mod coupling;
 mod cycles;
 mod dead;
+mod diff_blast;
 pub mod docgen;
 pub mod errors;
 mod heuristics;
@@ -21,6 +22,7 @@ mod hotspot;
 mod plan_assist;
 pub mod refactor;
 pub mod roots;
+mod span_lines;
 mod symbol_churn;
 
 pub use blast::BlastRadius;
@@ -29,8 +31,10 @@ pub use co_change::{CoChangeConfig, CoChangeEdge, CoChangeReport, co_change_repo
 pub use coupling::{CouplingMetrics, CouplingReport, ModuleSpec};
 pub use cycles::{Cycle, CycleReport};
 pub use dead::{DeadCodeConfig, DeadCodeReport, DeadSymbol};
+pub use diff_blast::{DiffBlastReport, DiffSeed};
 pub use errors::GraphError;
 pub use hotspot::{HotspotEntry, HotspotGrain, HotspotReport, file_hotspots, symbol_hotspots};
 pub use plan_assist::{PlanAssist, PlanFile};
 pub use refactor::{CycleBreakProposal, GodModuleFinding, MisplacedSymbol};
-pub use symbol_churn::{FileSymbolSpans, attribute_symbol_churn};
+pub use span_lines::FileSymbolSpans;
+pub use symbol_churn::attribute_symbol_churn;

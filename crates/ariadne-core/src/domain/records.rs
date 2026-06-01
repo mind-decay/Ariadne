@@ -116,6 +116,29 @@ pub struct LineHunk {
     pub end_line: u32,
 }
 
+/// Selects the changeset whose impact a diff-aware blast radius scopes
+/// (tier-14). All three kinds reduce to (old, new) blob pairs the `ariadne-git`
+/// adapter diffs into [`LineHunk`]s + a changed-path list; the adapter resolves
+/// the revspec strings, keeping `ariadne-core` free of any `gix` type. Never
+/// persisted — it is a query input [src: post-v1-roadmap plan.md RD7 + tier-14
+/// D2/D4].
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum DiffSpec {
+    /// Uncommitted changes: the index + worktree against `HEAD`.
+    WorkingTree,
+    /// A single commit against its first parent. The string is a revspec
+    /// (commit-ish) the adapter resolves.
+    Commit(String),
+    /// The diff between two resolved revisions, `from` (old) to `to` (new).
+    /// Both strings are revspecs the adapter resolves.
+    RefRange {
+        /// Old-side revspec.
+        from: String,
+        /// New-side revspec.
+        to: String,
+    },
+}
+
 /// Per-symbol Git-history churn (tier-11b): how many commits in the attributed
 /// window changed lines covered by the symbol's defining span. Persisted in the
 /// `SYMBOL_CHURN` table keyed by [`SymbolId`]; produced by the `ariadne-graph`

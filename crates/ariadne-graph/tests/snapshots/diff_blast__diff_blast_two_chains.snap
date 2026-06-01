@@ -1,0 +1,8 @@
+---
+source: crates/ariadne-graph/tests/diff_blast.rs
+expression: fmt_report(&report)
+---
+seed 1 must=[2] may=[3] depth=2
+seed 4 must=[5] may=[6] depth=2
+union must=[2, 5] may=[3, 6]
+unresolved ["newfile.rs"]

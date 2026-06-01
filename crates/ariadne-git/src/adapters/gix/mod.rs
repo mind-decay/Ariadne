@@ -18,9 +18,11 @@ use gix::traverse::commit::simple::CommitTimeOrder;
 
 use crate::errors::GitError;
 
+mod diff;
 mod incremental;
 mod line_hunks;
 
+pub use diff::diff;
 pub use incremental::{IncrementalWalk, walk_since};
 pub use line_hunks::walk_line_hunks;
 
@@ -182,7 +184,7 @@ pub(super) fn accumulate(
 /// changed *directory* (tree) and submodule (commit); file-level churn counts
 /// only blobs/symlinks, so non-file entries are skipped via `entry_mode`. Each
 /// variant carries the destination `location` (the new path for a rewrite).
-fn change_path(change: &ChangeDetached) -> Option<String> {
+pub(super) fn change_path(change: &ChangeDetached) -> Option<String> {
     let (entry_mode, location) = match change {
         ChangeDetached::Addition {
             entry_mode,

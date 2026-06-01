@@ -83,7 +83,7 @@ pub fn walk_line_hunks(
 /// empty old side (the whole file is new); modifications and rewrites diff the
 /// previous blob against the new blob; deletions and non-blob entries (trees,
 /// submodules) contribute no new-side lines.
-fn collect_change_hunks(
+pub(super) fn collect_change_hunks(
     repo: &gix::Repository,
     change: &ChangeDetached,
     hunks: &mut Vec<LineHunk>,
@@ -128,7 +128,7 @@ fn collect_change_hunks(
 }
 
 /// Load a blob's raw bytes by object id.
-fn blob_bytes(repo: &gix::Repository, id: gix::ObjectId) -> Result<Vec<u8>, GitError> {
+pub(super) fn blob_bytes(repo: &gix::Repository, id: gix::ObjectId) -> Result<Vec<u8>, GitError> {
     let object = repo
         .find_object(id)
         .map_err(|e| GitError::Diff(e.to_string()))?;
@@ -139,7 +139,7 @@ fn blob_bytes(repo: &gix::Repository, id: gix::ObjectId) -> Result<Vec<u8>, GitE
 /// range as a 1-based inclusive [`LineHunk`] on `path`. imara-diff's `after`
 /// range is 0-based half-open over the new-side lines; a pure-deletion hunk has
 /// an empty `after` range and is skipped (no new-side line to attribute).
-fn push_new_side_hunks(old: &[u8], new: &[u8], path: &str, hunks: &mut Vec<LineHunk>) {
+pub(super) fn push_new_side_hunks(old: &[u8], new: &[u8], path: &str, hunks: &mut Vec<LineHunk>) {
     let input = InternedInput::new(byte_lines(old), byte_lines(new));
     let diff = Diff::compute(Algorithm::Histogram, &input);
     for hunk in diff.hunks() {

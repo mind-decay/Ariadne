@@ -18,13 +18,18 @@ thiserror = { workspace = true }
 # Tier-11: pure-Rust Git. `default-features = false` drops the network/transport
 # defaults (no curl/C). `blob-diff` enables `diff_tree_to_tree` (tree diffing);
 # `revision` enables `rev_walk` ancestor traversal; `sha1` selects the pure-Rust
-# RustCrypto SHA-1 object-id backend (no asm/C). All three are local, non-network
-# features, so the critical path stays pure-Rust [src: docs.rs/crate/gix/0.84.0/features ;
-# plan.md D5, RD7 ; docs/adr/0018-git-history-adapter.md].
+# RustCrypto SHA-1 object-id backend (no asm/C). Tier-14 adds `status` for the
+# `WorkingTree` diff (`Repository::status` → uncommitted index/worktree changes);
+# it pulls `dirwalk`/`gix-status`/`index`, none of which reference curl/reqwest/
+# transport (network lives only in the opt-in `*-http-transport-*` features), so
+# the critical path stays pure-Rust. All four are local, non-network features
+# [src: docs.rs/crate/gix/0.84.0/features ; plan.md D5, RD7, tier-14 D3 ;
+# docs/adr/0018-git-history-adapter.md ; docs/adr/0022-diff-aware-blast-radius.md].
 gix = { version = "=0.84.0", default-features = false, features = [
     "blob-diff",
     "revision",
     "sha1",
+    "status",
 ] }
 
 [dev-dependencies]

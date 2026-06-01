@@ -99,7 +99,7 @@ Shared derivation (RD11/RD12): tier-07a moves the per-file derivation out of `ar
 | tree-sitter | 0.26.x (v1 pin) | visibility/attribute query captures; cyclomatic complexity from CST | 04, 12 | https://tree-sitter.github.io/tree-sitter/using-parsers/queries/1-syntax.html |
 | salsa | =0.26.2 (v1 pin) | incremental query DB — input setters + durability drive the per-file re-derivation | 07a, 07b | https://docs.rs/salsa/0.26.2/salsa/ (Setter + Durability confirmed; Context7 quota-exhausted this session — setter chain grounded in-repo at crates/ariadne-salsa/tests/durability.rs:67) |
 | interprocess | 2.4.2 | daemon IPC (local socket) | 06 | https://docs.rs/interprocess/2.4.2/interprocess/ |
-| gix | =0.84.0 (`default-features=false`, `blob-diff`+`revision`+`sha1`; no network) | git history + tree/line diff (pure-Rust) | 11, 11a, 11b | https://lib.rs/crates/gix ; https://docs.rs/gix/0.84.0/gix/struct.Repository.html ; docs/adr/0018-git-history-adapter.md |
+| gix | =0.84.0 (`default-features=false`, `blob-diff`+`revision`+`sha1`+`status`; no network) | git history + tree/line diff + working-tree status (pure-Rust) | 11, 11a, 11b, 14 | https://lib.rs/crates/gix ; https://docs.rs/gix/0.84.0/gix/struct.Repository.html ; https://docs.rs/gix/0.84.0/gix/status/index.html ; docs/adr/0018-git-history-adapter.md ; docs/adr/0022-diff-aware-blast-radius.md |
 | async-lsp | 0.2.4 | LSP server adapter | 16 | https://lib.rs/crates/async-lsp |
 </tech_inventory>
 
