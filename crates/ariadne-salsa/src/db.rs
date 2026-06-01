@@ -278,6 +278,7 @@ impl AriadneDb {
                         defining_span: derive::span(file_id, def_range),
                         visibility: Visibility::from_byte(s.visibility_byte).unwrap_or_default(),
                         attributes: s.attributes.clone(),
+                        complexity: s.complexity,
                     },
                 ));
                 name_to_symbols

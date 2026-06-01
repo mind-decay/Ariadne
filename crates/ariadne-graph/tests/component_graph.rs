@@ -114,6 +114,7 @@ fn fixture() -> ComponentSnapshot {
                 },
                 visibility: Visibility::Unknown,
                 attributes: Vec::new(),
+                complexity: 0,
             },
         )
     };

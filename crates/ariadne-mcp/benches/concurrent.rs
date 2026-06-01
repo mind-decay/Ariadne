@@ -165,6 +165,7 @@ fn seed_large(storage: &RedbStorage) {
                     },
                     visibility: Visibility::Unknown,
                     attributes: Vec::new(),
+                    complexity: 0,
                 },
             );
             // Sparse edge graph: every symbol points to the next.

@@ -135,6 +135,7 @@ fn component_changeset() -> Changeset {
                 defining_span: span(file, 0, 64),
                 visibility: Visibility::Unknown,
                 attributes: Vec::new(),
+                complexity: 0,
             },
         );
     }
@@ -206,6 +207,7 @@ fn god_module_changeset() -> Changeset {
                 defining_span: span(file, 0, 64),
                 visibility: Visibility::Unknown,
                 attributes: Vec::new(),
+                complexity: 0,
             },
         );
     }
@@ -220,6 +222,7 @@ fn god_module_changeset() -> Changeset {
                 defining_span: span(3, 0, 16),
                 visibility: Visibility::Unknown,
                 attributes: Vec::new(),
+                complexity: 0,
             },
         );
     }
@@ -294,6 +297,7 @@ fn canonical_changeset() -> Changeset {
                 defining_span: span(file, 0, 32),
                 visibility: Visibility::Unknown,
                 attributes: Vec::new(),
+                complexity: 0,
             },
         );
     }

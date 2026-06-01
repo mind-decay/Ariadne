@@ -97,6 +97,9 @@ pub(crate) fn build_symbols(
             defining_byte_range: (0, file_len),
             visibility_byte: Visibility::Public.to_byte(),
             attributes: Vec::new(),
+            // The synthesized SFC component owns no decisions of its own;
+            // its script's decls carry their per-decl complexity (tier-12 D4).
+            complexity: 0,
         });
     }
     for decl in &facts.decls {
@@ -107,6 +110,7 @@ pub(crate) fn build_symbols(
             defining_byte_range: decl.def_byte_range,
             visibility_byte: decl.visibility_byte,
             attributes: decl.attributes.clone(),
+            complexity: decl.complexity,
         });
     }
     out

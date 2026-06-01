@@ -44,6 +44,7 @@ fn commit_revision_derives_symbols_and_cross_file_edge() {
             def_byte_range: (0, 14),
             visibility_byte: 3,
             attributes: Vec::new(),
+            complexity: 0,
         }],
         ..SyntacticFactsRaw::default()
     };
@@ -64,6 +65,7 @@ fn commit_revision_derives_symbols_and_cross_file_edge() {
             def_byte_range: (0, 25),
             visibility_byte: 3,
             attributes: Vec::new(),
+            complexity: 0,
         }],
         calls: vec![CallRaw {
             callee: "callee".to_owned(),

@@ -45,6 +45,7 @@ fn two_fn_facts(shift: u32) -> (Vec<u8>, SyntacticFactsRaw) {
                 def_byte_range: (shift, shift + 15),
                 visibility_byte: 3,
                 attributes: Vec::new(),
+                complexity: 0,
             },
             DeclRaw {
                 kind: "function".to_owned(),
@@ -53,6 +54,7 @@ fn two_fn_facts(shift: u32) -> (Vec<u8>, SyntacticFactsRaw) {
                 def_byte_range: (shift + 16, shift + 25),
                 visibility_byte: 3,
                 attributes: Vec::new(),
+                complexity: 0,
             },
         ],
         calls: vec![CallRaw {
@@ -192,6 +194,7 @@ fn build_file(i: usize, call: Option<usize>) -> (Vec<u8>, SyntacticFactsRaw, Fil
             def_byte_range: (0, def_end),
             visibility_byte: 3,
             attributes: Vec::new(),
+            complexity: 0,
         }],
         calls,
         ..SyntacticFactsRaw::default()
@@ -395,6 +398,7 @@ fn dup_fns(count: usize, shift: u32) -> (Vec<u8>, SyntacticFactsRaw, FileRecord)
             def_byte_range: (def_start, def_end),
             visibility_byte: 3,
             attributes: Vec::new(),
+            complexity: 0,
         });
     }
     let bytes = src.into_bytes();

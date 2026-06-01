@@ -29,6 +29,11 @@ pub struct FileRecord {
 /// v3 postcard layout extends the v2 byte prefix unchanged; the redb v2->v3
 /// migration step decodes the historical 4-field record and re-encodes it
 /// with the new fields defaulted [src: post-v1-roadmap plan.md RD10].
+///
+/// `complexity` is appended after `attributes` for the same reason: the v7
+/// postcard layout extends the v6 byte prefix unchanged, and the redb v6->v7
+/// migration re-encodes the historical 6-field record with `complexity`
+/// defaulted to 0 [src: post-v1-roadmap plan.md RD8 + tier-12 D1].
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct SymbolRecord {
     /// Canonical symbol name as emitted by the ingest pipeline.
@@ -46,6 +51,11 @@ pub struct SymbolRecord {
     /// declaration (e.g. Rust `#[test]`, Java `@Override`, TS decorators).
     /// Empty when none observed.
     pub attributes: Vec<String>,
+    /// `McCabe` cyclomatic complexity (`decisions + 1`, `>= 1`) for
+    /// function-like symbols (function / method / component); `0` for every
+    /// other kind and for any record produced before the field existed
+    /// [src: post-v1-roadmap plan.md RD8 + tier-12 D1/D2/D4].
+    pub complexity: u32,
 }
 
 /// Per-file Git-history churn record. Persisted in the `CHURN` table by the

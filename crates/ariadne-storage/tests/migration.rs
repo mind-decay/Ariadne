@@ -103,6 +103,7 @@ fn known_records() -> (
                 },
                 visibility: Visibility::Unknown,
                 attributes: Vec::new(),
+                complexity: 0,
             },
         )
     };
@@ -245,7 +246,7 @@ fn v1_fixture_migrates_in_place_with_all_records_intact() {
     drop(storage);
     assert_eq!(
         on_disk_schema_version(&work),
-        Some(6),
+        Some(7),
         "schema version advanced to current on disk",
     );
 }
@@ -268,7 +269,7 @@ fn older_version_with_no_migration_path_returns_schema_mismatch() {
 
     match RedbStorage::open(&path) {
         Err(StorageError::SchemaMismatch { found, expected }) => {
-            assert_eq!((found, expected), (0, 6), "no path -> rebuild signal");
+            assert_eq!((found, expected), (0, 7), "no path -> rebuild signal");
         }
         other => panic!("expected SchemaMismatch, got {other:?}"),
     }
@@ -386,7 +387,7 @@ fn v2_fixture_migrates_in_place_with_symbol_fields_preserved() {
     drop(storage);
     assert_eq!(
         on_disk_schema_version(&work),
-        Some(6),
+        Some(7),
         "schema version advanced to current on disk",
     );
 }
@@ -455,7 +456,7 @@ fn v3_database_gains_history_tables_with_records_intact() {
     drop(storage);
     assert_eq!(
         on_disk_schema_version(&work),
-        Some(6),
+        Some(7),
         "schema version advanced to current on disk",
     );
 }
@@ -530,7 +531,144 @@ fn v5_database_gains_symbol_churn_table_with_records_intact() {
     drop(storage);
     assert_eq!(
         on_disk_schema_version(&work),
+        Some(7),
+        "schema version advanced to current on disk",
+    );
+}
+
+/// Frozen v6 `SymbolRecord` layout — the six-field record that shipped from
+/// schema v3 through v6. Postcard is non-self-describing, so writing this
+/// struct produces the exact byte prefix a v7 `SymbolRecord` inherits when
+/// `complexity = 0` (the migration's default fill).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+struct SymbolRecordV6 {
+    canonical_name: String,
+    kind: String,
+    defining_file: FileId,
+    defining_span: Span,
+    visibility: Visibility,
+    attributes: Vec<String>,
+}
+
+fn fixture_v6_path() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("fixtures/schema-v6.redb")
+}
+
+/// Known v6 symbol records — non-default `visibility`/`attributes` so the
+/// "first six fields byte-identical" assertion is meaningful, not vacuous.
+fn known_symbols_v6() -> Vec<(SymbolId, SymbolRecordV6)> {
+    let symbol = |id: u64, name: &str, file: u32, start: u32, vis: Visibility, attrs: &[&str]| {
+        (
+            sid(id),
+            SymbolRecordV6 {
+                canonical_name: name.to_owned(),
+                kind: "function".to_owned(),
+                defining_file: fid(file),
+                defining_span: Span {
+                    file: fid(file),
+                    byte_start: start,
+                    byte_end: start + 5,
+                },
+                visibility: vis,
+                attributes: attrs.iter().map(|s| (*s).to_owned()).collect(),
+            },
+        )
+    };
+    vec![
+        symbol(1, "a::one", 1, 10, Visibility::Public, &["test"]),
+        symbol(2, "a::two", 1, 30, Visibility::Restricted, &[]),
+        symbol(
+            3,
+            "b::three",
+            2,
+            10,
+            Visibility::Private,
+            &["derive", "cfg"],
+        ),
+    ]
+}
+
+/// Regenerates the committed `fixtures/schema-v6.redb`. Ignored so a normal
+/// test run never rewrites the binary; invoke with `--ignored`.
+#[test]
+#[ignore = "regenerates fixtures/schema-v6.redb; run manually with --ignored"]
+fn generate_v6_schema_fixture() {
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let scratch = tmp.path().join("scratch.redb");
+
+    // Bootstrap a fresh database through the adapter so every table exists,
+    // then drop the handle before mutating directly.
+    drop(RedbStorage::open(&scratch).expect("bootstrap scratch"));
+
+    // Overwrite `SYMBOLS` with raw v6-encoded records + force the on-disk
+    // schema version to 6. The bootstrap above wrote the current version (v7);
+    // the explicit downgrade represents a database last touched by a v6 binary.
+    let db = Database::open(&scratch).expect("raw open");
+    let txn = db.begin_write().expect("begin_write");
+    {
+        let mut meta = txn.open_table(META).expect("open meta");
+        meta.insert("schema_version", &6u64).expect("downgrade");
+        let mut symbols = txn.open_table(SYMBOLS).expect("open symbols");
+        for (sid, v6) in known_symbols_v6() {
+            let key = symbol_key(sid);
+            let value = postcard::to_stdvec(&v6).expect("encode v6 record");
+            symbols
+                .insert(key.as_slice(), value.as_slice())
+                .expect("insert v6");
+        }
+    }
+    txn.commit().expect("commit");
+    drop(db);
+
+    let dest = fixture_v6_path();
+    std::fs::create_dir_all(dest.parent().expect("fixtures parent")).expect("mkdir fixtures");
+    std::fs::copy(&scratch, &dest).expect("write v6 fixture");
+}
+
+#[test]
+fn v6_fixture_migrates_in_place_with_complexity_defaulted() {
+    let fixture = fixture_v6_path();
+    assert!(
+        fixture.exists(),
+        "missing {} — run `generate_v6_schema_fixture` with --ignored",
+        fixture.display(),
+    );
+
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let work = tmp.path().join("index.redb");
+    std::fs::copy(&fixture, &work).expect("copy v6 fixture");
+    assert_eq!(
+        on_disk_schema_version(&work),
         Some(6),
+        "fixture must be a v6 database",
+    );
+
+    let storage = RedbStorage::open(&work).expect("v6 fixture must migrate, not error");
+    let snap = storage.snapshot().expect("snapshot");
+
+    for (_sid, v6) in known_symbols_v6() {
+        let in_file = snap
+            .symbols_in_file(v6.defining_file)
+            .expect("symbols_in_file");
+        let migrated = in_file
+            .iter()
+            .find(|r| r.canonical_name == v6.canonical_name)
+            .unwrap_or_else(|| panic!("symbol {} missing after migration", v6.canonical_name));
+        // First six v6 fields survive byte-identical (round-tripped).
+        assert_eq!(migrated.canonical_name, v6.canonical_name);
+        assert_eq!(migrated.kind, v6.kind);
+        assert_eq!(migrated.defining_file, v6.defining_file);
+        assert_eq!(migrated.defining_span, v6.defining_span);
+        assert_eq!(migrated.visibility, v6.visibility);
+        assert_eq!(migrated.attributes, v6.attributes);
+        // New field lands at its default.
+        assert_eq!(migrated.complexity, 0, "complexity defaulted to 0");
+    }
+
+    drop(storage);
+    assert_eq!(
+        on_disk_schema_version(&work),
+        Some(7),
         "schema version advanced to current on disk",
     );
 }

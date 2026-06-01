@@ -12,6 +12,7 @@ pub mod facts;
 pub mod incremental;
 pub mod registry;
 
+pub(crate) mod complexity;
 pub(crate) mod injection;
 
 pub use incremental::{TreeSitterParser, parse_file};

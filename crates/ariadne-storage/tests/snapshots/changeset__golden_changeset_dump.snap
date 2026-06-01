@@ -1,6 +1,6 @@
 ---
 source: crates/ariadne-storage/tests/changeset.rs
-assertion_line: 128
+assertion_line: 129
 expression: out
 ---
 == FILES ==
@@ -231,6 +231,7 @@ file 1:
     },
     visibility: Unknown,
     attributes: [],
+    complexity: 0,
 }
   SymbolRecord {
     canonical_name: "sym_02",
@@ -247,6 +248,7 @@ file 1:
     },
     visibility: Unknown,
     attributes: [],
+    complexity: 0,
 }
   SymbolRecord {
     canonical_name: "sym_03",
@@ -263,6 +265,7 @@ file 1:
     },
     visibility: Unknown,
     attributes: [],
+    complexity: 0,
 }
 file 2:
   SymbolRecord {
@@ -280,6 +283,7 @@ file 2:
     },
     visibility: Unknown,
     attributes: [],
+    complexity: 0,
 }
   SymbolRecord {
     canonical_name: "sym_05",
@@ -296,6 +300,7 @@ file 2:
     },
     visibility: Unknown,
     attributes: [],
+    complexity: 0,
 }
   SymbolRecord {
     canonical_name: "sym_06",
@@ -312,6 +317,7 @@ file 2:
     },
     visibility: Unknown,
     attributes: [],
+    complexity: 0,
 }
 file 3:
   SymbolRecord {
@@ -329,6 +335,7 @@ file 3:
     },
     visibility: Unknown,
     attributes: [],
+    complexity: 0,
 }
   SymbolRecord {
     canonical_name: "sym_08",
@@ -345,6 +352,7 @@ file 3:
     },
     visibility: Unknown,
     attributes: [],
+    complexity: 0,
 }
   SymbolRecord {
     canonical_name: "sym_09",
@@ -361,6 +369,7 @@ file 3:
     },
     visibility: Unknown,
     attributes: [],
+    complexity: 0,
 }
 file 4:
   SymbolRecord {
@@ -378,6 +387,7 @@ file 4:
     },
     visibility: Unknown,
     attributes: [],
+    complexity: 0,
 }
   SymbolRecord {
     canonical_name: "sym_11",
@@ -394,6 +404,7 @@ file 4:
     },
     visibility: Unknown,
     attributes: [],
+    complexity: 0,
 }
   SymbolRecord {
     canonical_name: "sym_12",
@@ -410,6 +421,7 @@ file 4:
     },
     visibility: Unknown,
     attributes: [],
+    complexity: 0,
 }
 file 5:
   SymbolRecord {
@@ -427,6 +439,7 @@ file 5:
     },
     visibility: Unknown,
     attributes: [],
+    complexity: 0,
 }
   SymbolRecord {
     canonical_name: "sym_14",
@@ -443,6 +456,7 @@ file 5:
     },
     visibility: Unknown,
     attributes: [],
+    complexity: 0,
 }
   SymbolRecord {
     canonical_name: "sym_15",
@@ -459,6 +473,7 @@ file 5:
     },
     visibility: Unknown,
     attributes: [],
+    complexity: 0,
 }
 == EDGES (outgoing per symbol) ==
 src 1:

@@ -72,6 +72,11 @@ impl MigrationRegistry {
                     to: 6,
                     apply: migrate_v5_to_v6,
                 },
+                MigrationStep {
+                    from: 6,
+                    to: 7,
+                    apply: migrate_v6_to_v7,
+                },
             ],
         }
     }
@@ -166,6 +171,11 @@ fn migrate_v2_to_v3(txn: &WriteTransaction) -> Result<(), RedbStorageError> {
             defining_span: v2.defining_span,
             visibility: Visibility::Unknown,
             attributes: Vec::new(),
+            // `complexity` was introduced at v7; a record re-encoded by this
+            // v2->v3 step is later carried forward by `migrate_v6_to_v7`,
+            // which is where the field gets its real default. The current
+            // `SymbolRecord` layout requires it here, so default it to 0.
+            complexity: 0,
         };
         let encoded = encode_value(&v3)?;
         table.insert(key_bytes.as_slice(), encoded.as_slice())?;
@@ -220,6 +230,60 @@ const SYMBOL_CHURN: TableDefinition<'_, &[u8], &[u8]> = TableDefinition::new("sy
 /// tier-11b-symbol-churn-attribution.md step 5].
 fn migrate_v5_to_v6(txn: &WriteTransaction) -> Result<(), RedbStorageError> {
     txn.open_table(SYMBOL_CHURN)?;
+    Ok(())
+}
+
+/// Frozen v6 `SymbolRecord` layout (`canonical_name`, `kind`, `defining_file`,
+/// `defining_span`, `visibility`, `attributes` — the six-field record that
+/// shipped from schema v3 through v6). v7 appends `complexity`; postcard is
+/// non-self-describing [src: <https://postcard.jamesmunns.com/wire-format>],
+/// so a v7 decode of a v6 body would read past the buffer. This frozen struct
+/// captures the v6 byte prefix exactly, mirroring [`SymbolRecordV2`].
+#[derive(Debug, Serialize, Deserialize)]
+struct SymbolRecordV6 {
+    canonical_name: String,
+    kind: String,
+    defining_file: FileId,
+    defining_span: Span,
+    visibility: Visibility,
+    attributes: Vec<String>,
+}
+
+/// v6 → v7: re-encode every `SYMBOLS` body so each record carries the new
+/// `complexity` field defaulted to `0`. Keys are untouched. The whole pass
+/// runs inside the caller's single `WriteTransaction`, so a failure before
+/// commit leaves the file at v6 — same collect-then-reinsert shape as
+/// [`migrate_v2_to_v3`] [src: post-v1-roadmap plan.md RD8 + tier-12 step 7].
+fn migrate_v6_to_v7(txn: &WriteTransaction) -> Result<(), RedbStorageError> {
+    // Collect first, then re-insert, so the iterator over the table is dropped
+    // before the mutating reopen — redb forbids interleaving a live iterator
+    // with a mutating `insert` on the same table.
+    let collected: Vec<(Vec<u8>, SymbolRecordV6)> = {
+        let table = txn.open_table(SYMBOLS)?;
+        let mut out = Vec::new();
+        for entry in table.iter()? {
+            let (key, value) = entry?;
+            let key_bytes = key.value().to_vec();
+            let v6: SymbolRecordV6 = decode_value(value.value())?;
+            out.push((key_bytes, v6));
+        }
+        out
+    };
+
+    let mut table = txn.open_table(SYMBOLS)?;
+    for (key_bytes, v6) in collected {
+        let v7 = SymbolRecord {
+            canonical_name: v6.canonical_name,
+            kind: v6.kind,
+            defining_file: v6.defining_file,
+            defining_span: v6.defining_span,
+            visibility: v6.visibility,
+            attributes: v6.attributes,
+            complexity: 0,
+        };
+        let encoded = encode_value(&v7)?;
+        table.insert(key_bytes.as_slice(), encoded.as_slice())?;
+    }
     Ok(())
 }
 
@@ -373,5 +437,25 @@ mod tests {
             .to_vec();
         assert_eq!(chain.len(), 5);
         assert_eq!((chain[0].from, chain[4].to), (1, 6));
+    }
+
+    #[test]
+    fn builtin_registry_covers_v6_to_v7() {
+        let chain = MigrationRegistry::builtin()
+            .plan(6, 7)
+            .expect("v6 -> v7 path")
+            .to_vec();
+        assert_eq!(chain.len(), 1);
+        assert_eq!((chain[0].from, chain[0].to), (6, 7));
+    }
+
+    #[test]
+    fn builtin_registry_covers_v1_to_v7() {
+        let chain = MigrationRegistry::builtin()
+            .plan(1, 7)
+            .expect("v1 -> v7 path")
+            .to_vec();
+        assert_eq!(chain.len(), 6);
+        assert_eq!((chain[0].from, chain[5].to), (1, 7));
     }
 }

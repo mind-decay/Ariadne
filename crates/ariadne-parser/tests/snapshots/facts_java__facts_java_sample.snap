@@ -18,6 +18,7 @@ SyntacticFacts {
             ),
             visibility: Public,
             attributes: [],
+            complexity: 0,
         },
         Decl {
             kind: Interface,
@@ -32,6 +33,7 @@ SyntacticFacts {
             ),
             visibility: Public,
             attributes: [],
+            complexity: 0,
         },
         Decl {
             kind: Method,
@@ -46,6 +48,7 @@ SyntacticFacts {
             ),
             visibility: Unknown,
             attributes: [],
+            complexity: 1,
         },
         Decl {
             kind: Enum,
@@ -60,6 +63,7 @@ SyntacticFacts {
             ),
             visibility: Public,
             attributes: [],
+            complexity: 0,
         },
         Decl {
             kind: Record,
@@ -74,6 +78,7 @@ SyntacticFacts {
             ),
             visibility: Public,
             attributes: [],
+            complexity: 0,
         },
         Decl {
             kind: Method,
@@ -88,6 +93,7 @@ SyntacticFacts {
             ),
             visibility: Public,
             attributes: [],
+            complexity: 1,
         },
         Decl {
             kind: Class,
@@ -102,6 +108,7 @@ SyntacticFacts {
             ),
             visibility: Unknown,
             attributes: [],
+            complexity: 0,
         },
         Decl {
             kind: Method,
@@ -118,6 +125,7 @@ SyntacticFacts {
             attributes: [
                 "Deprecated",
             ],
+            complexity: 1,
         },
         Decl {
             kind: Method,
@@ -134,6 +142,7 @@ SyntacticFacts {
             attributes: [
                 "Override",
             ],
+            complexity: 1,
         },
     ],
     imports: [

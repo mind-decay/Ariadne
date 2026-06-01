@@ -388,6 +388,7 @@ fn add_symbol_changeset() -> Changeset {
             },
             visibility: Visibility::Unknown,
             attributes: Vec::new(),
+            complexity: 0,
         },
     )
 }

@@ -78,6 +78,7 @@ pub fn canonical_changeset() -> Changeset {
                 defining_span: span(file, 0, 32),
                 visibility: Visibility::Unknown,
                 attributes: Vec::new(),
+                complexity: 0,
             },
         );
     }
@@ -142,6 +143,7 @@ pub fn component_changeset() -> Changeset {
                 defining_span: span(file, 0, 64),
                 visibility: Visibility::Unknown,
                 attributes: Vec::new(),
+                complexity: 0,
             },
         );
     }

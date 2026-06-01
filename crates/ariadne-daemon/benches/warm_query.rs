@@ -175,6 +175,7 @@ fn seed(db_path: &Path) {
                     },
                     visibility: Visibility::Unknown,
                     attributes: Vec::new(),
+                    complexity: 0,
                 },
             );
             // Chain edge: every symbol references the next, so a reverse-BFS

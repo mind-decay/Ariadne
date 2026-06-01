@@ -102,6 +102,11 @@ pub struct Decl {
     /// declaration — e.g. `["test"]` for `#[test] fn …`. Empty when none
     /// captured.
     pub attributes: Vec<String>,
+    /// `McCabe` cyclomatic complexity (`decisions + 1`) for function-like
+    /// decls; `0` for every other kind. Built `0` and filled by
+    /// [`attach_complexity`](super::complexity::attach_complexity) in
+    /// [`FactExtractor::extract`] [src: tier-12 D1/D2/D4].
+    pub complexity: u32,
 }
 
 /// An import statement.
@@ -351,6 +356,7 @@ impl FactExtractor {
                     def_byte_range: byte_range(def),
                     visibility: Visibility::Unknown,
                     attributes: Vec::new(),
+                    complexity: 0,
                 });
             } else if let Some(path) = import_path_node {
                 facts.imports.push(Import {
@@ -400,6 +406,9 @@ impl FactExtractor {
 
         attach_visibility(lang, &mut facts.decls, &visibility_marks);
         attach_attributes(&mut facts.decls, &attribute_marks);
+        // One CST walk attributes `McCabe` decisions to the innermost decl by
+        // span, then sets `decisions + 1` on function-like decls (tier-12 D3).
+        super::complexity::attach_complexity(lang, &mut facts.decls, tree);
 
         facts.decls.sort_by_key(|d| d.def_byte_range.0);
         facts.imports.sort_by_key(|i| i.byte_range.0);
@@ -546,7 +555,7 @@ fn best_decl_for(mark_range: (u32, u32), decls: &[Decl]) -> Option<usize> {
         .or_else(|| largest_contained_decl(mark_range, decls))
 }
 
-fn innermost_containing_decl(mark: (u32, u32), decls: &[Decl]) -> Option<usize> {
+pub(super) fn innermost_containing_decl(mark: (u32, u32), decls: &[Decl]) -> Option<usize> {
     let mut best: Option<usize> = None;
     let mut best_size: u64 = u64::MAX;
     for (i, decl) in decls.iter().enumerate() {

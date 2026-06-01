@@ -18,6 +18,7 @@ SyntacticFacts {
             ),
             visibility: Unknown,
             attributes: [],
+            complexity: 0,
         },
         Decl {
             kind: Variable,
@@ -32,6 +33,7 @@ SyntacticFacts {
             ),
             visibility: Unknown,
             attributes: [],
+            complexity: 0,
         },
     ],
     imports: [

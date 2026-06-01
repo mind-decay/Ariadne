@@ -98,9 +98,18 @@ pub fn arb_symbol_record() -> impl Strategy<Value = SymbolRecord> {
         arb_span(),
         arb_visibility(),
         arb_attributes(),
+        any::<u32>(),
     )
         .prop_map(
-            |(canonical_name, kind, defining_file, defining_span, visibility, attributes)| {
+            |(
+                canonical_name,
+                kind,
+                defining_file,
+                defining_span,
+                visibility,
+                attributes,
+                complexity,
+            )| {
                 SymbolRecord {
                     canonical_name,
                     kind,
@@ -108,6 +117,7 @@ pub fn arb_symbol_record() -> impl Strategy<Value = SymbolRecord> {
                     defining_span,
                     visibility,
                     attributes,
+                    complexity,
                 }
             },
         )

@@ -171,6 +171,7 @@ pub fn snapshot() -> MemSnapshot {
                     },
                     visibility: Visibility::Unknown,
                     attributes: Vec::new(),
+                    complexity: 0,
                 },
             )
         })

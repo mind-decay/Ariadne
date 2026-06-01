@@ -18,6 +18,7 @@ SyntacticFacts {
             ),
             visibility: Public,
             attributes: [],
+            complexity: 0,
         },
         Decl {
             kind: TypeAlias,
@@ -32,6 +33,7 @@ SyntacticFacts {
             ),
             visibility: Public,
             attributes: [],
+            complexity: 0,
         },
         Decl {
             kind: Method,
@@ -46,6 +48,7 @@ SyntacticFacts {
             ),
             visibility: Public,
             attributes: [],
+            complexity: 1,
         },
         Decl {
             kind: Function,
@@ -60,6 +63,7 @@ SyntacticFacts {
             ),
             visibility: Public,
             attributes: [],
+            complexity: 1,
         },
         Decl {
             kind: Function,
@@ -74,6 +78,7 @@ SyntacticFacts {
             ),
             visibility: Private,
             attributes: [],
+            complexity: 1,
         },
         Decl {
             kind: Function,
@@ -88,6 +93,7 @@ SyntacticFacts {
             ),
             visibility: Private,
             attributes: [],
+            complexity: 1,
         },
     ],
     imports: [

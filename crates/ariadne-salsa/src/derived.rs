@@ -59,6 +59,10 @@ pub struct DeclRaw {
     /// Attribute / annotation / decorator identifiers attached to the
     /// decl (e.g. `"test"` for Rust `#[test]`).
     pub attributes: Vec<String>,
+    /// `McCabe` cyclomatic complexity for function-like decls; `0` otherwise.
+    /// Carried verbatim from `ariadne_parser::Decl::complexity` at the
+    /// composition-root boundary [src: post-v1-roadmap tier-12 step 6].
+    pub complexity: u32,
 }
 
 /// Import record.
@@ -117,6 +121,10 @@ pub struct SymbolFactsRaw {
     /// Attribute / annotation / decorator identifiers on the defining
     /// occurrence.
     pub attributes: Vec<String>,
+    /// `McCabe` cyclomatic complexity for function-like symbols; `0` otherwise.
+    /// The driver writes it into `SymbolRecord::complexity` at commit
+    /// [src: post-v1-roadmap tier-12 step 6].
+    pub complexity: u32,
 }
 
 /// Edge record (salsa-internal mirror).

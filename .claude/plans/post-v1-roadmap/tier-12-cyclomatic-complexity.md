@@ -9,7 +9,8 @@ exit_criteria:
   - Per-language complexity goldens (Rust/Go/Python/TS/JS/Java/C#/Kotlin/C/C++) assert hand-counted values, including a branchy, a nested-function, and a boolean-operator case.
   - ADR-0020 records the metric, the strict-McCabe choice, the decl-span boundary rule, and the arrow-as-variable limitation.
   - "`cargo nextest run -p ariadne-parser -p ariadne-storage -p ariadne-core -p ariadne-salsa -p ariadne-cli` + architecture + clippy + fmt all green."
-status: pending
+status: completed
+completed: 2026-06-01
 ---
 
 <context>
@@ -40,6 +41,7 @@ v1 holds no per-function complexity signal — `weak_spots` reports god modules 
 - crates/ariadne-parser/tests/complexity.rs — new: per-language explicit `assert_eq!` complexity goldens.
 - crates/ariadne-parser/tests/snapshots/*.snap (+ sample fixtures) — modify: regenerate `facts_*` snapshots; review each `complexity` value by hand.
 - docs/adr/0020-cyclomatic-complexity.md — new: per docs/adr/_template.md.
+- Compile-forced cascade (not metric logic; `complexity` added to `SymbolRecord`/`DeclRaw`/`SymbolFactsRaw` forces every construction site to thread or fuzz the field): crates/ariadne-daemon/src/domain/facts.rs (production `convert_facts` threads `d.complexity`); crates/ariadne-daemon/{benches/warm_query.rs, tests/support.rs, tests/warm_analytics.rs}; crates/ariadne-graph/tests/{component_graph.rs, support.rs}; crates/ariadne-mcp/{benches/cold_start.rs, benches/concurrent.rs, tests/support.rs}; crates/ariadne-salsa/tests/{derivation.rs, incremental.rs}; crates/ariadne-storage/tests/{changeset.rs, support.rs} + tests/snapshots/changeset__golden_changeset_dump.snap (`arb_symbol_record` fuzzes via `any::<u32>()`).
 </files>
 
 <steps>

@@ -176,6 +176,7 @@ fn seed_files(storage: &RedbStorage) {
                     },
                     visibility: Visibility::Unknown,
                     attributes: Vec::new(),
+                    complexity: 0,
                 },
             );
             if f < FILE_COUNT && f % 2 == 0 {

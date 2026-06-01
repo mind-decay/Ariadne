@@ -51,6 +51,7 @@ fn deterministic_changeset() -> Changeset {
                 defining_span: span,
                 visibility: Visibility::Unknown,
                 attributes: Vec::new(),
+                complexity: 0,
             },
         );
     }
@@ -157,7 +158,7 @@ fn reopen_with_mismatched_schema_version_returns_schema_mismatch() {
     match err {
         StorageError::SchemaMismatch { found, expected } => {
             assert_eq!(found, 99);
-            assert_eq!(expected, 6);
+            assert_eq!(expected, 7);
         }
         other => panic!("expected SchemaMismatch, got {other:?}"),
     }

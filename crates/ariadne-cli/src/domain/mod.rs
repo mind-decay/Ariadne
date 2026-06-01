@@ -483,6 +483,7 @@ fn convert_facts(facts: &SyntacticFacts) -> SyntacticFactsRaw {
                 def_byte_range: d.def_byte_range,
                 visibility_byte: d.visibility.to_byte(),
                 attributes: d.attributes.clone(),
+                complexity: d.complexity,
             })
             .collect(),
         imports: facts

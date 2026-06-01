@@ -186,6 +186,7 @@ mod tests {
                 def_byte_range: (0, 13),
                 visibility_byte: 0,
                 attributes: vec!["test".to_owned()],
+                complexity: 0,
             }],
             ..Default::default()
         };
@@ -198,6 +199,7 @@ mod tests {
             defining_byte_range: (0, 13),
             visibility_byte: 0,
             attributes: Vec::new(),
+            complexity: 0,
         }];
         assert!(symbols_vec_bytes(&syms) > symbols_vec_bytes(&[]));
     }
