@@ -1,0 +1,79 @@
+---
+tier_id: tier-09
+title: Wire search_code/read_symbol into advisory + instructions + CLAUDE.md; re-measure token delta
+deps: [tier-05, tier-07, tier-08]
+exit_criteria:
+  - "The `ariadne-grep-advisor.sh` advisory (tier-04) names `search_code` for symbol-pattern Grep/Glob and `read_symbol` for symbol-targeted whole-file Reads, while still only ever returning `allow` (never `deny`)."
+  - "The MCP server `with_instructions` and the CLAUDE.md \"Ariadne code intelligence\" tool list both gain a Search/Read group listing `search_code` + `read_symbol`; server instructions stay within the 2KB cap."
+  - "The tier-05 adoption harness tallies the two new tool names, and a recorded re-run reports the real-tool token delta versus the tier-06 spike estimate."
+  - "Advisor classification tests, harness wiring, clippy `-D warnings`, fmt, and `cargo test --test architecture` are green; the behavioural ratio is reported, not gated."
+status: pending
+---
+
+<context>
+Tiers 07–08 shipped the capability; this tier closes the loop opened by the spike
+and connects the new tools to the adoption machinery. The tier-04 `PreToolUse`
+advisory currently nudges symbol-shaped greps toward `find_references`/
+`list_symbols`; it should now route them to `search_code`, and route symbol-
+targeted whole-file `Read`s to `read_symbol` — staying advisory (`allow` +
+`additionalContext`), never blocking [src: tier-04; plan.md D5, R5]. The server
+`with_instructions` and the CLAUDE.md tool list must advertise the new tools so
+they are discoverable (a scope-allowed CLAUDE.md edit: listing tools, not
+rewriting prose) [src: plan.md `<context>` out-of-scope clause; server.rs
+with_instructions]. Finally, re-measure the token delta with the real tools to
+confirm the spike's projection [src: tier-05; tier-06; D11].
+</context>
+
+<files>
+- `crates/ariadne-cli/src/commands/setup.rs` — update the advisor script template
+  (suggestion text + Read classification) [src: tier-04 files].
+- `<root>/.claude/hooks/ariadne-grep-advisor.sh` — this repo's installed copy.
+- `crates/ariadne-mcp/src/server.rs` — extend `with_instructions` (Search/Read
+  group), within the 2KB cap [src: server.rs with_instructions block].
+- `CLAUDE.md` — add a "Search / Read" bullet to the Ariadne tool list.
+- `crates/ariadne-e2e/` — extend the adoption harness tally + the deterministic
+  token-delta re-run (reuse the tier-06 method against the real tools).
+- `crates/ariadne-cli/tests/` — advisor classification cases for the new routing.
+</files>
+
+<steps>
+1. **Failing test.** Feed the advisor representative payloads: (a) a `Grep` for an
+   identifier/CamelCase pattern → expect `additionalContext` naming `search_code`;
+   (b) a `Read` of a `.rs` file whose path holds a known symbol → expect
+   `read_symbol` suggested; (c) a quoted-string `Grep` or `.md` Read → pass-through,
+   empty context. Run — fails (advisor still names only the old tools).
+2. **Update the advisor.** Extend the symbol-shaped heuristic and suggestion text:
+   pattern-shaped Grep/Glob → `search_code` (plus `find_definition`/
+   `find_references` as today); whole-file Read of a source file → `read_symbol`.
+   Keep `permissionDecision:"allow"` on match, `defer` otherwise; never `deny`
+   (D5, R5) [src: tier-04 steps 2–3].
+3. **Install via setup.** Update the template string in `setup.rs`; keep the install
+   idempotent and the Bash audit-gate PreToolUse entry intact [src: tier-04 step 4].
+4. **Server instructions.** Add a concise Search/Read line to `with_instructions`;
+   assert the total stays ≤2KB in a test [src: plan.md `<constraints>` 2KB cap].
+5. **CLAUDE.md list.** Add "Search / Read — `search_code`, `read_symbol`. Use to
+   find code by pattern and read a symbol's source without reading whole files."
+6. **Re-measure.** Extend the tier-05 harness to count `mcp__ariadne__search_code`/
+   `read_symbol`; re-run the tier-06 deterministic token-delta against the real
+   tools; record the numbers and compare to the spike estimate in this tier's notes.
+7. **Signal.** If the new tools see low real adoption, note escalating the advisory
+   from `allow` toward `ask` as a follow-up plan (not this tier) [src: tier-05 step 5].
+</steps>
+
+<verification>
+- `cargo nextest run -p ariadne-cli` — new advisor classification cases pass; re-run
+  `ariadne setup` is idempotent and preserves the audit-gate hook.
+- `cargo nextest run -p ariadne-e2e` — the wiring/harness compiles; the ignored
+  behavioural harness stays opt-in. Manual run records the real-tool token delta.
+- `cargo test --test architecture`; clippy `-D warnings`; fmt check; assert the
+  server instructions byte length ≤2KB.
+- Real run: in a fresh session here, grep for an existing symbol → confirm the
+  advisory now names `search_code`; report it. If not runnable in-session, say so
+  and report only the deterministic results — never fabricate a ratio.
+</verification>
+
+<rollback>
+Revert the advisor template + installed script, the `with_instructions` lines, the
+CLAUDE.md bullet, and the harness extension. Config + doc + test only; no product
+data path changes, so tiers 07–08 remain intact.
+</rollback>
