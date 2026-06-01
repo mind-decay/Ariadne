@@ -89,6 +89,37 @@ pub struct CoChangePair {
     pub count: u32,
 }
 
+/// Transient symbol-churn join input (tier-11b): one contiguous range of
+/// *new-side* lines changed by a single commit in `path`, 1-based and
+/// inclusive. Emitted by the `ariadne-git` adapter (per modified blob, via
+/// `gix` `blob-diff`) and consumed by the `ariadne-graph` symbol-churn
+/// attribution use-case. Never persisted — it is the symbol-agnostic wire
+/// between the git adapter and the symbol join (ADR-0019)
+/// [src: post-v1-roadmap plan.md RD7 + tier-11b].
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct LineHunk {
+    /// Repository-root-relative path the changed lines belong to.
+    pub path: String,
+    /// First changed line (1-based, inclusive).
+    pub start_line: u32,
+    /// Last changed line (1-based, inclusive).
+    pub end_line: u32,
+}
+
+/// Per-symbol Git-history churn (tier-11b): how many commits in the attributed
+/// window changed lines covered by the symbol's defining span. Persisted in the
+/// `SYMBOL_CHURN` table keyed by [`SymbolId`]; produced by the `ariadne-graph`
+/// attribution use-case from [`LineHunk`]s + symbol spans. A symbol with no
+/// attributed commit is absent from the table (read as zero), so only churned
+/// symbols are stored [src: post-v1-roadmap plan.md RD7 + tier-11b].
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct SymbolChurn {
+    /// The symbol the churn is attributed to.
+    pub symbol: SymbolId,
+    /// Number of commits in the window that touched the symbol's span.
+    pub commits: u32,
+}
+
 /// Edge kind tag. Definition / reference / import are the syntactic core;
 /// `Renders` and `UsesHook` carry the component graph (ADR-0012).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]

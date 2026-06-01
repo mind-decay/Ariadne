@@ -157,7 +157,7 @@ fn reopen_with_mismatched_schema_version_returns_schema_mismatch() {
     match err {
         StorageError::SchemaMismatch { found, expected } => {
             assert_eq!(found, 99);
-            assert_eq!(expected, 5);
+            assert_eq!(expected, 6);
         }
         other => panic!("expected SchemaMismatch, got {other:?}"),
     }

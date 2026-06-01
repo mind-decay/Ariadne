@@ -14,5 +14,7 @@
 pub mod adapters;
 pub mod errors;
 
-pub use adapters::gix::{HistoryOptions, HistoryReport, IncrementalWalk, walk_history, walk_since};
+pub use adapters::gix::{
+    HistoryOptions, HistoryReport, IncrementalWalk, walk_history, walk_line_hunks, walk_since,
+};
 pub use errors::GitError;

@@ -67,6 +67,11 @@ impl MigrationRegistry {
                     to: 5,
                     apply: migrate_v4_to_v5,
                 },
+                MigrationStep {
+                    from: 5,
+                    to: 6,
+                    apply: migrate_v5_to_v6,
+                },
             ],
         }
     }
@@ -202,6 +207,22 @@ fn migrate_v4_to_v5(txn: &WriteTransaction) -> Result<(), RedbStorageError> {
     Ok(())
 }
 
+/// `SYMBOL_CHURN` table definition — local mirror so the migration step owns
+/// the table name without leaking the adapter's table module (same pattern as
+/// the [`SYMBOLS`] / [`HISTORY_META`] mirrors above). Name matches
+/// [`crate::adapters::redb::tables`].
+const SYMBOL_CHURN: TableDefinition<'_, &[u8], &[u8]> = TableDefinition::new("symbol_churn");
+
+/// v5 → v6: create the per-symbol churn table in place so a pre-existing v5
+/// database gains the tier-11b symbol-churn store without a rebuild. Purely
+/// additive — no existing record is read or rewritten; opening a table inside
+/// the write transaction creates it when absent [src: post-v1-roadmap
+/// tier-11b-symbol-churn-attribution.md step 5].
+fn migrate_v5_to_v6(txn: &WriteTransaction) -> Result<(), RedbStorageError> {
+    txn.open_table(SYMBOL_CHURN)?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::{MigrationRegistry, MigrationStep, WriteTransaction};
@@ -332,5 +353,25 @@ mod tests {
             .to_vec();
         assert_eq!(chain.len(), 4);
         assert_eq!((chain[0].from, chain[3].to), (1, 5));
+    }
+
+    #[test]
+    fn builtin_registry_covers_v5_to_v6() {
+        let chain = MigrationRegistry::builtin()
+            .plan(5, 6)
+            .expect("v5 -> v6 path")
+            .to_vec();
+        assert_eq!(chain.len(), 1);
+        assert_eq!((chain[0].from, chain[0].to), (5, 6));
+    }
+
+    #[test]
+    fn builtin_registry_covers_v1_to_v6() {
+        let chain = MigrationRegistry::builtin()
+            .plan(1, 6)
+            .expect("v1 -> v6 path")
+            .to_vec();
+        assert_eq!(chain.len(), 5);
+        assert_eq!((chain[0].from, chain[4].to), (1, 6));
     }
 }

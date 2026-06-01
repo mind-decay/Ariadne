@@ -8,7 +8,8 @@ exit_criteria:
   - Attribution is deterministic — the same index yields the same per-symbol counts (no clock, no RNG).
   - The git adapter holds no symbol/parser dependency; the symbol join lives only in `ariadne-graph` (recorded in ADR-0019).
   - `cargo nextest run -p ariadne-git -p ariadne-graph -p ariadne-storage` + architecture + clippy + fmt all green.
-status: pending
+status: completed
+completed: 2026-06-01
 ---
 
 <context>
@@ -16,7 +17,8 @@ tier-11 records which files changed and how often; tier-13 hotspots want finer g
 </context>
 
 <files>
-- crates/ariadne-git/src/adapters/gix.rs — modify: per modified blob in a commit, emit new-side changed line-hunk ranges via `blob-diff` (the feature already enabled in tier-11).
+- crates/ariadne-git/src/adapters/gix/line_hunks.rs — new: per modified blob in a commit, emit new-side changed line-hunk ranges via `blob-diff` (the feature already enabled in tier-11). Lives in a submodule beside the existing `incremental.rs`, honouring the ≤200-line rule and the one-file-per-concern precedent.
+- crates/ariadne-git/src/adapters/gix/mod.rs — modify: declare + re-export the `line_hunks` submodule (`gix.rs` became the `gix/` directory module in tier-11a).
 - crates/ariadne-git/src/lib.rs — modify: expose the per-commit line-hunk output (pure type in `ariadne-core`).
 - crates/ariadne-core/src/domain/records.rs — modify: add `LineHunk { path, start_line, end_line }` (transient join input) + `SymbolChurn { symbol, commits }` (persisted) [src: crates/ariadne-core/src/domain/records.rs:11-49].
 - crates/ariadne-graph/src/symbol_churn.rs — new: the pure attribution use-case.
@@ -24,6 +26,7 @@ tier-11 records which files changed and how often; tier-13 hotspots want finer g
 - crates/ariadne-storage/src/adapters/redb/tables.rs — modify: add `SYMBOL_CHURN` (`&[u8]` `SymbolId` → postcard `SymbolChurn`); bump `SCHEMA_VERSION` by 1 [src: crates/ariadne-storage/src/adapters/redb/tables.rs:12-17].
 - crates/ariadne-storage/src/domain/migration.rs — modify: register the next step opening `SYMBOL_CHURN`.
 - crates/ariadne-cli/src/commands/index.rs — modify: feed git line-hunks + the symbol table + per-file line index into the graph use-case; persist.
+- crates/ariadne-cli/src/config.rs — modify: add `[history] symbol_churn_depth` (default 500) bounding attribution to a recent commit window so HEAD-layout line drift stays small (step 6, R-C3).
 - docs/adr/0019-symbol-churn-attribution.md — new (authored at build).
 </files>
 

@@ -1,15 +1,21 @@
 //! `ariadne index` — run the cold-index pipeline and commit to redb.
 
+use std::collections::{BTreeSet, HashMap};
 use std::path::Path;
 
 use anyhow::{Context, Result};
-use ariadne_core::Storage;
+use ariadne_core::{FileId, ReadSnapshot, Storage, SymbolId};
 use ariadne_daemon::IndexLock;
-use ariadne_git::{HistoryOptions, walk_since};
+use ariadne_git::{HistoryOptions, walk_line_hunks, walk_since};
+use ariadne_graph::{FileSymbolSpans, attribute_symbol_churn};
 use ariadne_storage::RedbStorage;
 
 use crate::config::Config;
 use crate::domain::{index_path, run_index};
+
+/// Chunk size for the symbol-churn snapshot scans — bounds the working set of
+/// the file/symbol streams the same way the cold-index count scans do.
+const CHURN_SCAN_CHUNK: usize = 65_536;
 
 /// Load the project config, run the full cold pipeline, print the per-phase
 /// timing breakdown + parse sub-phase breakdown on stderr, and the JSON-line
@@ -32,6 +38,7 @@ pub fn run(root: &Path, fresh: bool, scip: bool) -> Result<()> {
     // Cold `ariadne index` is the only redb opener in this process, so it needs
     // no cross-process serialization lock.
     refresh_history(root, &config, None)?;
+    refresh_symbol_churn(root, &config)?;
     println!("{}", serde_json::to_string(&summary)?);
     Ok(())
 }
@@ -142,6 +149,140 @@ fn with_index_lock<T>(lock: Option<&IndexLock>, f: impl FnOnce() -> Result<T>) -
         Some(l) => l.with(f),
         None => f(),
     }
+}
+
+/// Recompute and persist per-symbol churn (tier-11b): walk the recent commits'
+/// new-side `blob-diff` line hunks, attribute them to the symbol spans from the
+/// committed snapshot via the pure `ariadne-graph` use-case, and replace the
+/// `SYMBOL_CHURN` table. Wired here at the composition root — the symbol-agnostic
+/// `ariadne-git` adapter and the symbol join in `ariadne-graph` are joined only
+/// here (ADR-0019), so the daemon never depends on `ariadne-git` (RD7).
+///
+/// A non-Git project is skipped — there is no history to attribute, not a
+/// failure; genuine traversal/storage errors propagate. The `gix` walk holds no
+/// redb handle, matching `refresh_history`'s single-open-per-process discipline;
+/// the cold `ariadne index` is the sole opener, so no cross-process lock is
+/// needed [src: post-v1-roadmap tier-11b steps 3-5; tier-11a I1/I2].
+///
+/// # Errors
+/// Propagates Git-walk and storage failures.
+pub(crate) fn refresh_symbol_churn(root: &Path, config: &Config) -> Result<()> {
+    if !root.join(".git").exists() {
+        return Ok(());
+    }
+    // Collect each recent commit's new-side line hunks off any redb transaction.
+    let commit_hunks =
+        walk_line_hunks(root, config.history.symbol_churn_depth).context("walk git line hunks")?;
+
+    // Paths changed anywhere in the window. Symbols in untouched files have zero
+    // churn, so they need neither a disk read nor a line index.
+    let changed: BTreeSet<&str> = commit_hunks
+        .iter()
+        .flatten()
+        .map(|h| h.path.as_str())
+        .collect();
+
+    let storage =
+        RedbStorage::open(&index_path(root)).context("open redb index for symbol churn")?;
+    let symbol_lines = if changed.is_empty() {
+        Vec::new()
+    } else {
+        build_symbol_lines(root, &storage, &changed).context("build symbol line index")?
+    };
+
+    let churn = attribute_symbol_churn(&symbol_lines, &commit_hunks);
+    storage
+        .replace_symbol_churn(&churn)
+        .context("replace symbol churn")?;
+
+    eprintln!(
+        "[index] symbol churn: {} symbols across {} changed files",
+        churn.len(),
+        symbol_lines.len(),
+    );
+    Ok(())
+}
+
+/// Build the per-file attribution input for the changed paths: group each
+/// changed file's symbols (with their defining byte spans) by file and pair
+/// them with the file's HEAD line index, read from the on-disk bytes.
+///
+/// The bytes are read here at the composition root rather than threaded out of
+/// the parse — within one index run the working tree is the parse-time content,
+/// so the line index is identical; a `blake3` guard skips any file whose working
+/// tree has since diverged from the indexed revision, where the persisted byte
+/// offsets would no longer be valid [src: tier-11b step 5].
+fn build_symbol_lines(
+    root: &Path,
+    storage: &RedbStorage,
+    changed: &BTreeSet<&str>,
+) -> Result<Vec<FileSymbolSpans>> {
+    let snap = storage.snapshot().context("snapshot for symbol churn")?;
+
+    // Changed path -> FileId, and FileId -> indexed content hash (the validity
+    // guard for byte offsets against the on-disk bytes).
+    let mut file_of_path: HashMap<String, FileId> = HashMap::new();
+    let mut hash_of_file: HashMap<FileId, [u8; 32]> = HashMap::new();
+    for chunk in snap.iter_files(CHURN_SCAN_CHUNK)? {
+        for (id, rec) in chunk.context("scan files for symbol churn")? {
+            if changed.contains(rec.path.as_str()) {
+                hash_of_file.insert(id, rec.blake3);
+                file_of_path.insert(rec.path, id);
+            }
+        }
+    }
+
+    // Group changed files' symbols by FileId. iter_symbols is the only scan that
+    // yields the SymbolId (the redb key); symbols_in_file drops it.
+    let mut symbols_of_file: HashMap<FileId, Vec<(SymbolId, u32, u32)>> = HashMap::new();
+    for chunk in snap.iter_symbols(CHURN_SCAN_CHUNK)? {
+        for (sid, rec) in chunk.context("scan symbols for symbol churn")? {
+            if hash_of_file.contains_key(&rec.defining_file) {
+                symbols_of_file.entry(rec.defining_file).or_default().push((
+                    sid,
+                    rec.defining_span.byte_start,
+                    rec.defining_span.byte_end,
+                ));
+            }
+        }
+    }
+    drop(snap);
+
+    let mut out = Vec::new();
+    for (path, id) in file_of_path {
+        let Some(symbols) = symbols_of_file.remove(&id) else {
+            continue;
+        };
+        let Ok(content) = std::fs::read(root.join(&path)) else {
+            continue;
+        };
+        if blake3::hash(&content).as_bytes() != &hash_of_file[&id] {
+            continue;
+        }
+        out.push(FileSymbolSpans {
+            path,
+            line_starts: line_starts(&content),
+            symbols,
+        });
+    }
+    out.sort_by(|a, b| a.path.cmp(&b.path));
+    Ok(out)
+}
+
+/// Byte offset of each line's first byte (line 1 at offset 0): the HEAD line
+/// index the symbol-churn use-case converts byte spans against. A trailing
+/// newline yields a final start at `content.len()`, which is harmless — no
+/// symbol byte offset maps there.
+fn line_starts(content: &[u8]) -> Vec<u32> {
+    let mut starts = vec![0u32];
+    for (idx, &byte) in content.iter().enumerate() {
+        if byte == b'\n' {
+            if let Ok(next) = u32::try_from(idx + 1) {
+                starts.push(next);
+            }
+        }
+    }
+    starts
 }
 
 #[cfg(test)]

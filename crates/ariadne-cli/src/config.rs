@@ -61,6 +61,15 @@ pub struct HistoryConfig {
     /// [src: Tornhill, "Your Code as a Crime Scene", 2015; plan.md R-C2].
     #[serde(default = "default_max_files_per_commit")]
     pub max_files_per_commit: u32,
+    /// Per-symbol churn attribution is bounded to this many most-recent
+    /// commits. Attribution maps each commit's `blob-diff` line hunks onto the
+    /// *HEAD* line layout, so the signal drifts for commits predating later
+    /// line shifts; a recent window keeps that drift small while staying
+    /// meaningful (R-C3). `None` attributes over full history (exact only for
+    /// the latest revision) [src: plan.md RD7 + tier-11b step 6;
+    /// <https://understandlegacycode.com/blog/key-points-of-software-design-x-rays/>].
+    #[serde(default = "default_symbol_churn_depth")]
+    pub symbol_churn_depth: Option<u32>,
 }
 
 /// Default co-change exclusion threshold. Commits above this file count are
@@ -69,11 +78,23 @@ fn default_max_files_per_commit() -> u32 {
     50
 }
 
+/// Default symbol-churn attribution window: the most-recent 500 commits. Bounds
+/// HEAD-layout line drift (R-C3) while covering enough history for a stable
+/// per-function churn signal.
+//
+// The `Option` is fixed by the `symbol_churn_depth` field type (`None` = full
+// history), so this serde default returns `Some` unconditionally by contract.
+#[allow(clippy::unnecessary_wraps)]
+fn default_symbol_churn_depth() -> Option<u32> {
+    Some(500)
+}
+
 impl Default for HistoryConfig {
     fn default() -> Self {
         Self {
             depth: None,
             max_files_per_commit: default_max_files_per_commit(),
+            symbol_churn_depth: default_symbol_churn_depth(),
         }
     }
 }

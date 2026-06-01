@@ -19,8 +19,10 @@ use gix::traverse::commit::simple::CommitTimeOrder;
 use crate::errors::GitError;
 
 mod incremental;
+mod line_hunks;
 
 pub use incremental::{IncrementalWalk, walk_since};
+pub use line_hunks::walk_line_hunks;
 
 /// Bounds on the history walk, read from `config.toml` `[history]`.
 #[derive(Debug, Clone)]

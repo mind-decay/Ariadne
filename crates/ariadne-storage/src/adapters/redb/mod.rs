@@ -27,7 +27,8 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use ariadne_core::{
     Changeset, ChunkStream, CoChangePair, EdgeKey, EdgeRecord, FileChurn, FileId, FileRecord,
-    ReadSnapshot, RevisionId, Storage, StorageError, SymbolId, SymbolRecord, WriteTxn,
+    IdEncode, ReadSnapshot, RevisionId, Storage, StorageError, SymbolChurn, SymbolId, SymbolRecord,
+    WriteTxn,
 };
 use redb::{Database, ReadTransaction, ReadableDatabase, ReadableTable, WriteTransaction};
 
@@ -36,7 +37,7 @@ use crate::domain::migration::MigrationRegistry;
 use crate::errors::RedbStorageError;
 use tables::{
     CHURN, CO_CHANGE, EDGES, EDGES_BY_FILE, FILES, HISTORY_META, KEY_REVISION, KEY_SCHEMA_VERSION,
-    META, SYMBOLS,
+    META, SYMBOL_CHURN, SYMBOLS,
 };
 
 /// redb-backed [`Storage`] implementation. Owns the `Database` handle and a
@@ -121,6 +122,36 @@ impl RedbStorage {
         }
         Ok(out)
     }
+
+    /// Clear and rewrite the `SYMBOL_CHURN` table in one transaction. Deleting
+    /// then reopening recreates it empty before the new rows are inserted,
+    /// giving wholesale-replace semantics (mirrors [`Self::replace_history_inner`]).
+    /// The symbol revision counter is untouched — symbol churn is auxiliary
+    /// derived signal, not a graph mutation.
+    fn replace_symbol_churn_inner(&self, churn: &[SymbolChurn]) -> Result<(), RedbStorageError> {
+        let txn = self.db.begin_write()?;
+        txn.delete_table(SYMBOL_CHURN)?;
+        {
+            let mut table = txn.open_table(SYMBOL_CHURN)?;
+            for rec in churn {
+                let value = encode_value(rec)?;
+                table.insert(rec.symbol.to_bytes().as_slice(), value.as_slice())?;
+            }
+        }
+        txn.commit()?;
+        Ok(())
+    }
+
+    fn all_symbol_churn_inner(&self) -> Result<Vec<SymbolChurn>, RedbStorageError> {
+        let txn = self.db.begin_read()?;
+        let table = txn.open_table(SYMBOL_CHURN)?;
+        let mut out = Vec::new();
+        for entry in table.iter()? {
+            let (_key, value) = entry?;
+            out.push(decode_value::<SymbolChurn>(value.value())?);
+        }
+        Ok(out)
+    }
 }
 
 /// Canonical `CO_CHANGE` key for an `a < b` pair: `a` bytes, a `0x00`
@@ -168,6 +199,9 @@ fn bootstrap(db: &Database) -> Result<u64, RedbStorageError> {
     // tier-11a watermark store: exists on a fresh DB so a read before the first
     // ingest returns `None` rather than erroring on a missing table.
     let _ = txn.open_table(HISTORY_META)?;
+    // tier-11b per-symbol churn: exists on a fresh DB so a read before the first
+    // attribution returns empty rather than erroring on a missing table.
+    let _ = txn.open_table(SYMBOL_CHURN)?;
     txn.commit()?;
     Ok(rev)
 }
@@ -257,6 +291,14 @@ impl Storage for RedbStorage {
         head_oid: &[u8],
     ) -> Result<(), StorageError> {
         history::merge_history(&self.db, churn_delta, pair_delta, head_oid).map_err(Into::into)
+    }
+
+    fn replace_symbol_churn(&self, churn: &[SymbolChurn]) -> Result<(), StorageError> {
+        self.replace_symbol_churn_inner(churn).map_err(Into::into)
+    }
+
+    fn all_symbol_churn(&self) -> Result<Vec<SymbolChurn>, StorageError> {
+        self.all_symbol_churn_inner().map_err(Into::into)
     }
 }
 

@@ -245,7 +245,7 @@ fn v1_fixture_migrates_in_place_with_all_records_intact() {
     drop(storage);
     assert_eq!(
         on_disk_schema_version(&work),
-        Some(5),
+        Some(6),
         "schema version advanced to current on disk",
     );
 }
@@ -268,7 +268,7 @@ fn older_version_with_no_migration_path_returns_schema_mismatch() {
 
     match RedbStorage::open(&path) {
         Err(StorageError::SchemaMismatch { found, expected }) => {
-            assert_eq!((found, expected), (0, 5), "no path -> rebuild signal");
+            assert_eq!((found, expected), (0, 6), "no path -> rebuild signal");
         }
         other => panic!("expected SchemaMismatch, got {other:?}"),
     }
@@ -386,7 +386,7 @@ fn v2_fixture_migrates_in_place_with_symbol_fields_preserved() {
     drop(storage);
     assert_eq!(
         on_disk_schema_version(&work),
-        Some(5),
+        Some(6),
         "schema version advanced to current on disk",
     );
 }
@@ -455,7 +455,82 @@ fn v3_database_gains_history_tables_with_records_intact() {
     drop(storage);
     assert_eq!(
         on_disk_schema_version(&work),
-        Some(5),
+        Some(6),
+        "schema version advanced to current on disk",
+    );
+}
+
+/// `SYMBOL_CHURN` table mirror — local so the v5-simulating step can drop it,
+/// proving the v5 -> v6 step recreates it in place.
+const SYMBOL_CHURN: TableDefinition<'_, &[u8], &[u8]> = TableDefinition::new("symbol_churn");
+
+#[test]
+fn v5_database_gains_symbol_churn_table_with_records_intact() {
+    // A real v5 database has files/symbols/edges/churn but no symbol-churn
+    // table. Synthesize one by bootstrapping at the current version, writing
+    // the known record set, dropping the symbol-churn table, and forcing the
+    // on-disk version back to 5.
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let work = tmp.path().join("index.redb");
+    {
+        let storage = RedbStorage::open(&work).expect("bootstrap");
+        storage
+            .begin_write()
+            .expect("begin write")
+            .apply(&known_changeset())
+            .expect("apply");
+    }
+    let db = Database::open(&work).expect("raw open");
+    let txn = db.begin_write().expect("begin_write");
+    {
+        assert!(
+            txn.delete_table(SYMBOL_CHURN).expect("delete symbol_churn"),
+            "fresh bootstrap created the symbol_churn table",
+        );
+        let mut meta = txn.open_table(META).expect("open meta");
+        meta.insert("schema_version", &5u64).expect("downgrade");
+    }
+    txn.commit().expect("commit");
+    drop(db);
+    assert_eq!(on_disk_schema_version(&work), Some(5), "fixture is v5");
+
+    // Open through the adapter: the v5 -> v6 step recreates the table.
+    let storage = RedbStorage::open(&work).expect("v5 must migrate, not error");
+    let snap = storage.snapshot().expect("snapshot");
+
+    let (files, symbols, edges) = known_records();
+    for (id, rec) in &files {
+        assert_eq!(snap.file(*id).expect("file"), Some(rec.clone()));
+    }
+    for (_id, rec) in &symbols {
+        assert!(
+            snap.symbols_in_file(rec.defining_file)
+                .expect("symbols_in_file")
+                .contains(rec),
+        );
+    }
+    for (key, rec) in &edges {
+        assert!(
+            snap.outgoing_edges(key.src)
+                .expect("outgoing")
+                .contains(&(*key, rec.clone())),
+        );
+    }
+
+    // The recreated table reads back empty (no churn attributed yet) rather
+    // than erroring on a missing table.
+    assert!(
+        storage
+            .all_symbol_churn()
+            .expect("all_symbol_churn")
+            .is_empty(),
+        "symbol-churn table recreated empty",
+    );
+
+    drop(storage);
+    assert_eq!(
+        on_disk_schema_version(&work),
+        Some(6),
         "schema version advanced to current on disk",
     );
 }

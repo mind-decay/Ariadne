@@ -5,7 +5,7 @@
 
 use crate::domain::changeset::{Changeset, RevisionId};
 use crate::domain::records::{
-    CoChangePair, EdgeKey, EdgeRecord, FileChurn, FileRecord, SymbolRecord,
+    CoChangePair, EdgeKey, EdgeRecord, FileChurn, FileRecord, SymbolChurn, SymbolRecord,
 };
 use crate::domain::types::{FileId, SymbolId};
 use crate::domain::watcher::Invalidation;
@@ -108,6 +108,25 @@ pub trait Storage: Send + Sync {
         pair_delta: &[CoChangePair],
         head_oid: &[u8],
     ) -> Result<(), StorageError>;
+
+    /// Wholesale-replace the persisted per-symbol churn: clear the
+    /// `SYMBOL_CHURN` table and write `churn` in one backend transaction.
+    /// tier-11b recomputes the full attributed set on each index (the
+    /// `ariadne-graph` use-case is pure over the bounded window), so
+    /// replacement — not merge — is the contract, mirroring
+    /// [`Storage::replace_history`].
+    ///
+    /// # Errors
+    /// Returns [`StorageError`] variants for IO or corruption; the write is
+    /// rolled back on any error.
+    fn replace_symbol_churn(&self, churn: &[SymbolChurn]) -> Result<(), StorageError>;
+
+    /// Read every persisted [`SymbolChurn`] record. Symbols absent from the
+    /// table have zero attributed churn.
+    ///
+    /// # Errors
+    /// Backend-level IO or corruption.
+    fn all_symbol_churn(&self) -> Result<Vec<SymbolChurn>, StorageError>;
 }
 
 /// Atomic write half of the [`Storage`] port.
