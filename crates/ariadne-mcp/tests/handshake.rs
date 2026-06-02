@@ -82,6 +82,39 @@ async fn handshake_descriptions_carry_when_and_triggers() {
     client.cancel().await.ok();
 }
 
+/// Tier-01 step 3 — failing-first contract for D2. Every listed tool must
+/// carry `_meta {"anthropic/alwaysLoad": true}` so Claude Code keeps the tool
+/// always-loaded even when a consumer's `.mcp.json` lacks the server-level
+/// `alwaysLoad` flag; fails against the tier-15 tools (no `_meta`) before the
+/// per-tool `meta = always_load_meta()` attribute lands.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn handshake_tools_carry_always_load_meta() {
+    let (root, _guard) = support::seed_tiny_project();
+    let client = support::spawn_client(&root).await;
+
+    let tools = client.list_all_tools().await.expect("list_all_tools");
+    assert_eq!(
+        tools.len(),
+        EXPECTED_TOOLS,
+        "expected all {EXPECTED_TOOLS} Ariadne tools",
+    );
+
+    for tool in &tools {
+        let meta = tool
+            .meta
+            .as_ref()
+            .unwrap_or_else(|| panic!("tool `{}` carries no `_meta`", tool.name));
+        assert_eq!(
+            meta.get("anthropic/alwaysLoad"),
+            Some(&serde_json::Value::Bool(true)),
+            "tool `{}` `_meta` lacks `anthropic/alwaysLoad: true`: {meta:?}",
+            tool.name,
+        );
+    }
+
+    client.cancel().await.ok();
+}
+
 /// Tier-15 step 4 — regression snapshot of the name→description map.
 /// Locks the rewritten `#[tool]` strings against silent drift.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]

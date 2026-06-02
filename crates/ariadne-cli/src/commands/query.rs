@@ -34,9 +34,30 @@ use crate::domain::index_path;
 /// query-level error, or — on the cold path — the index is missing or the tool
 /// name is unknown.
 pub fn run(root: &Path, tool: &str, args_json: &str) -> Result<()> {
-    if let Some(output) = try_daemon(root, tool, args_json)? {
-        println!("{output}");
-        return Ok(());
+    println!("{}", run_tool(root, tool, args_json)?);
+    Ok(())
+}
+
+/// Route `tool` against `args_json` to the warm daemon, falling back to the
+/// cold in-process path, and return its result as pretty JSON text.
+///
+/// Serializing each tool's typed output struct directly (rather than through an
+/// order-less `serde_json::Value`) keeps the keys in struct-declaration order,
+/// so `ariadne query` prints `revision` first as it did before the digest
+/// refactor [src: audit/tier-02-report.md F1].
+///
+/// Shared by `ariadne query` (which prints it verbatim) and `ariadne digest`
+/// (which re-parses each result into a `Value` and composes them into bounded
+/// Markdown) so both resolve through the identical daemon/cold plumbing
+/// [src: tier-02 step 2].
+///
+/// # Errors
+/// Fails when the arguments do not parse, the daemon (or cold path) reports a
+/// query-level error, or — on the cold path — the index is missing or the tool
+/// name is unknown.
+pub fn run_tool(root: &Path, tool: &str, args_json: &str) -> Result<String> {
+    if let Some(json) = try_daemon(root, tool, args_json)? {
+        return Ok(json);
     }
 
     // Cold fallback: no daemon reachable (or an unknown tool the daemon
@@ -51,13 +72,12 @@ pub fn run(root: &Path, tool: &str, args_json: &str) -> Result<()> {
     }
     let storage = RedbStorage::open(&db_path).context("open redb index")?;
     let catalog = Catalog::build(&storage, root.display().to_string()).context("build catalog")?;
-    println!("{}", dispatch(&catalog, &storage, tool, args_json)?);
-    Ok(())
+    dispatch(&catalog, &storage, tool, args_json)
 }
 
-/// Try the warm daemon. Returns the projected JSON on a daemon answer, `None`
-/// when no daemon is reachable or the tool has no daemon-protocol variant
-/// (so the caller falls back to the cold path).
+/// Try the warm daemon. Returns the projected JSON text on a daemon answer,
+/// `None` when no daemon is reachable or the tool has no daemon-protocol
+/// variant (so the caller falls back to the cold path).
 ///
 /// # Errors
 /// Propagates an argument-parse failure, or a query-level daemon error
@@ -158,11 +178,11 @@ fn build_query(tool: &str, args: &str) -> Result<Option<DaemonQuery>> {
     Ok(Some(query))
 }
 
-/// Project a daemon [`DaemonResponse`] into the same pretty JSON the cold path
-/// prints. Each report payload mirrors the matching MCP output type
-/// field-for-field (tier-07), so serializing it yields the byte-identical JSON
-/// the cold path produces. A query-level [`DaemonResponse::Error`] becomes the
-/// same not-found failure the cold path raises.
+/// Project a daemon [`DaemonResponse`] into the same pretty JSON text the cold
+/// path produces. Each report payload mirrors the matching MCP output type
+/// field-for-field (tier-07), so serializing it yields the same JSON the cold
+/// path produces. A query-level [`DaemonResponse::Error`] becomes the same
+/// not-found failure the cold path raises.
 ///
 /// # Errors
 /// Returns the daemon's query-level error, a serialization failure, or a
@@ -294,7 +314,10 @@ fn parse<T: DeserializeOwned>(args: &str) -> Result<T> {
     serde_json::from_str(args).context("parse tool arguments JSON")
 }
 
-/// Serialize a tool output into pretty JSON.
+/// Serialize a tool output struct into pretty JSON text. Serializing the typed
+/// struct directly preserves field-declaration order (an order-less
+/// `serde_json::Value` round-trip would re-sort the keys alphabetically)
+/// [src: audit/tier-02-report.md F1].
 fn json<T: Serialize>(value: &T) -> Result<String> {
     serde_json::to_string_pretty(value).context("serialize tool output")
 }

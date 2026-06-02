@@ -7,7 +7,8 @@ exit_criteria:
   - "Output is bounded well under 10,000 chars and ends non-empty even when the graph is empty (minimal fallback)."
   - "The command resolves through the same daemon/cold path as `ariadne query`; warm daemon answers fast, cold falls back in-process."
   - "A golden-shape test asserts the markdown sections and the length bound on a fixture repo."
-status: pending
+status: completed
+completed: 2026-06-03
 ---
 
 <context>
@@ -69,3 +70,18 @@ tool-output guidance [src: https://www.anthropic.com/engineering/writing-tools-f
 Remove `commands/digest.rs`, the `Cmd::Digest` arm, and the `mod` registration;
 revert the `query.rs` refactor (inline the helper back). Pure additive code.
 </rollback>
+
+<audit_followups>
+- F1 (INFO, audit/tier-02-report.md) — resolved 2026-06-03. The original refactor
+  routed `query` output through an order-less `serde_json::Value`, re-sorting keys
+  alphabetically and contradicting step 2's "No behavior change to query".
+  Fix: the shared `run_tool` now returns pretty JSON **text**, serialized straight
+  from each tool's typed output struct (`serde_json::to_string_pretty`), so keys
+  stay in declaration order (`revision` first); `query` prints it verbatim and
+  `digest::fetch` re-parses it into a `Value` (field-name reads, order immaterial).
+  Restores the exact pre-refactor `query` output and drops the redundant
+  double-serialize on the hot path. Chosen over global `serde_json/preserve_order`
+  (would churn ~10 MCP/graph snapshots, out of tier scope) and over merely softening
+  the prose. Regression pinned by `tests/query.rs::query_preserves_struct_declaration_key_order`;
+  warm/cold byte-parity re-confirmed by `cli_daemon_parity`.
+</audit_followups>

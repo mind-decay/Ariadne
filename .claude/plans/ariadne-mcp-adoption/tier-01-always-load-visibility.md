@@ -4,10 +4,11 @@ title: Force Ariadne tool visibility — alwaysLoad in .mcp.json + per-tool _met
 deps: []
 exit_criteria:
   - "`ariadne setup` writes `\"alwaysLoad\": true` into the `ariadne` entry of `.mcp.json`, idempotently, leaving foreign entries untouched."
-  - "The MCP server attaches `_meta {\"anthropic/alwaysLoad\": true}` to every one of the 13 tools (verified by a handshake/list_tools test)."
+  - "The MCP server attaches `_meta {\"anthropic/alwaysLoad\": true}` to every tool (verified by a handshake/list_tools test)."
   - "Server `with_instructions` ≤2KB and frames when to search for the tools; descriptions unchanged in shape."
   - "This repo's `.mcp.json` re-run through `setup` now carries `alwaysLoad`; a fresh session shows Ariadne tools loaded without a ToolSearch step."
-status: pending
+status: completed
+completed: 2026-06-03
 ---
 
 <context>

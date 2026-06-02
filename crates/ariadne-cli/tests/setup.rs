@@ -66,6 +66,39 @@ fn setup_writes_all_three_artifacts() {
 }
 
 #[test]
+fn setup_writes_always_load_into_ariadne_entry() {
+    // Tier-01 D1: exempt the `ariadne` server from MCP Tool Search deferral by
+    // writing `"alwaysLoad": true` into its `.mcp.json` entry, leaving any
+    // foreign server untouched.
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let root = tmp.path();
+    let foreign = serde_json::json!({
+        "mcpServers": {
+            "other": { "command": "other-bin", "args": ["x"], "env": {} }
+        }
+    });
+    std::fs::write(
+        root.join(".mcp.json"),
+        serde_json::to_string_pretty(&foreign).unwrap(),
+    )
+    .unwrap();
+
+    run_setup(root);
+
+    let mcp: Value =
+        serde_json::from_str(&std::fs::read_to_string(root.join(".mcp.json")).unwrap()).unwrap();
+    assert_eq!(
+        mcp["mcpServers"]["ariadne"]["alwaysLoad"],
+        serde_json::json!(true),
+        "the ariadne entry must carry `alwaysLoad: true`",
+    );
+    assert_eq!(
+        mcp["mcpServers"]["other"], foreign["mcpServers"]["other"],
+        "the foreign entry must survive verbatim, with no `alwaysLoad` added",
+    );
+}
+
+#[test]
 fn setup_preserves_foreign_mcp_entry() {
     let tmp = tempfile::tempdir().expect("tempdir");
     let root = tmp.path();

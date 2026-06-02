@@ -1,6 +1,7 @@
 {
   "mcpServers": {
     "ariadne": {
+      "alwaysLoad": true,
       "args": [
         "serve",
         "--watch"

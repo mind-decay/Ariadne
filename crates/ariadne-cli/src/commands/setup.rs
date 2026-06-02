@@ -56,10 +56,17 @@ fn merge_mcp_json(root: &Path) -> Result<()> {
     // string `"ariadne"` — robust when `ariadne` is not on `PATH`.
     let exe = std::env::current_exe().context("resolve the running `ariadne` binary")?;
     let exe = std::path::absolute(&exe).context("make the binary path absolute")?;
+    // `alwaysLoad` exempts the `ariadne` server from MCP Tool Search deferral
+    // so all tool descriptions load every session regardless of
+    // `ENABLE_TOOL_SEARCH`; without it only tool names load at decision time
+    // and the trigger-phrase descriptions never reach the agent
+    // [src: https://code.claude.com/docs/en/mcp "Exempt a server from
+    // deferral"; .claude/plans/ariadne-mcp-adoption/plan.md D1].
     let entry = json!({
         "command": exe.to_string_lossy(),
         "args": ["serve", "--watch"],
         "env": {},
+        "alwaysLoad": true,
     });
 
     let servers = config

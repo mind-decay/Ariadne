@@ -3,6 +3,7 @@
 //! (src: .claude/plans/ariadne-core/tier-10-cli-e2e.md `<files>`).
 
 pub mod daemon;
+pub mod digest;
 pub mod index;
 pub mod init;
 pub mod mem;

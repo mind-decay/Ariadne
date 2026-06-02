@@ -85,6 +85,13 @@ enum Cmd {
         #[arg(long, default_value = ".")]
         root: PathBuf,
     },
+    /// Print a compact, agent-shaped project digest (revision + counts, top
+    /// coupled modules, a question→tool cheat-sheet) for session bootstrap.
+    Digest {
+        /// Project root.
+        #[arg(default_value = ".")]
+        root: PathBuf,
+    },
     /// Print index counts and the indexer availability matrix.
     Status {
         /// Project root.
@@ -154,6 +161,10 @@ fn run(cmd: Cmd) -> anyhow::Result<bool> {
             args_json,
             root,
         } => commands::query::run(&root, &tool, &args_json).map(|()| true),
+        Cmd::Digest { root } => {
+            commands::digest::run(&root);
+            Ok(true)
+        }
         Cmd::Status { root } => commands::status::run(&root).map(|()| true),
         Cmd::Mem { root } => Ok(commands::mem::run(&root)),
         Cmd::Daemon { action } => match action {

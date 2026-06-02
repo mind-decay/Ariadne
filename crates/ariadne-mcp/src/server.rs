@@ -186,7 +186,8 @@ impl AriadneServer {
     #[tool(
         description = "List symbols matching an optional substring + kind filter. Use \
 when locating a symbol by name or kind before opening files; triggers: \"where is the X \
-function\", \"list the structs in\"."
+function\", \"list the structs in\".",
+        meta = always_load_meta(),
     )]
     async fn list_symbols(
         &self,
@@ -208,7 +209,8 @@ function\", \"list the structs in\"."
     #[tool(
         description = "Find the defining symbol record by canonical name. Use when you \
 need the canonical definition site of a named symbol; triggers: \"where is X defined\", \
-\"go to definition of\"."
+\"go to definition of\".",
+        meta = always_load_meta(),
     )]
     async fn find_definition(
         &self,
@@ -228,7 +230,8 @@ need the canonical definition site of a named symbol; triggers: \"where is X def
     #[tool(
         description = "List references to a symbol with source spans. Use when you need \
 every use site of a symbol; triggers: \"who calls X\", \"where is X used\", \"find usages \
-of\"."
+of\".",
+        meta = always_load_meta(),
     )]
     async fn find_references(
         &self,
@@ -250,7 +253,8 @@ of\"."
     #[tool(
         description = "Compute the blast radius (must-touch + may-touch) of a symbol. \
 Use when assessing what a change to a symbol could break; triggers: \"what breaks if I \
-change X\", \"impact of changing\", \"is it safe to edit\"."
+change X\", \"impact of changing\", \"is it safe to edit\".",
+        meta = always_load_meta(),
     )]
     async fn blast_radius(
         &self,
@@ -272,7 +276,8 @@ change X\", \"impact of changing\", \"is it safe to edit\"."
     #[tool(
         description = "Summarize a file: symbols, fan-in/out, top dependencies. Use when \
 orienting in an unfamiliar file before reading it; triggers: \"what is in this file\", \
-\"summarize src/X.rs\"."
+\"summarize src/X.rs\".",
+        meta = always_load_meta(),
     )]
     async fn file_summary(
         &self,
@@ -294,7 +299,8 @@ orienting in an unfamiliar file before reading it; triggers: \"what is in this f
     #[tool(
         description = "Ranked plan-assist file list implicated by a symbol change. Use \
 when scoping which files a change touches before editing; triggers: \"what files do I \
-touch for X\", \"where do I start to change\"."
+touch for X\", \"where do I start to change\".",
+        meta = always_load_meta(),
     )]
     async fn plan_assist(
         &self,
@@ -315,7 +321,8 @@ touch for X\", \"where do I start to change\"."
     #[tool(
         description = "Per-file Ca/Ce/I/A/Distance Martin coupling metrics. Use when \
 assessing module dependency or architecture health; triggers: \"how coupled is\", \
-\"Martin coupling metrics for\"."
+\"Martin coupling metrics for\".",
+        meta = always_load_meta(),
     )]
     async fn coupling_report(
         &self,
@@ -335,7 +342,8 @@ assessing module dependency or architecture health; triggers: \"how coupled is\"
     #[tool(
         description = "Cycles, god modules, and dead-code candidates with reasons. Use \
 when hunting cycles, god modules, or dead code; triggers: \"what is wrong with this \
-codebase\", \"find tech debt\", \"any cycles\"."
+codebase\", \"find tech debt\", \"any cycles\".",
+        meta = always_load_meta(),
     )]
     async fn weak_spots(
         &self,
@@ -355,7 +363,8 @@ codebase\", \"find tech debt\", \"any cycles\"."
     #[tool(
         description = "Doc-like structured summary for one symbol. Use when you need a \
 structured explanation of one symbol; triggers: \"what does X do\", \"explain the symbol \
-X\"."
+X\".",
+        meta = always_load_meta(),
     )]
     async fn doc_for(
         &self,
@@ -375,7 +384,8 @@ X\"."
     #[tool(
         description = "Project-wide counts, revision, and root. Use when checking index \
 freshness or coverage before trusting results; triggers: \"is the index current\", \"how \
-big is the project\"."
+big is the project\".",
+        meta = always_load_meta(),
     )]
     async fn project_status(&self) -> Result<CallToolResult, ErrorData> {
         if let Some(resp) = self
@@ -393,7 +403,8 @@ big is the project\"."
     #[tool(
         description = "Markdown documentation summary for one module (file path). Use \
 when you need a doc-style summary of a file or module; triggers: \"document this \
-module\", \"overview of src/X.rs\"."
+module\", \"overview of src/X.rs\".",
+        meta = always_load_meta(),
     )]
     async fn doc_for_module(
         &self,
@@ -415,7 +426,8 @@ module\", \"overview of src/X.rs\"."
     #[tool(
         description = "Markdown architecture overview for the whole project. Use when \
 you need a whole-project architecture overview; triggers: \"explain the architecture\", \
-\"how is this project structured\"."
+\"how is this project structured\".",
+        meta = always_load_meta(),
     )]
     async fn doc_for_project(
         &self,
@@ -437,7 +449,8 @@ you need a whole-project architecture overview; triggers: \"explain the architec
     #[tool(
         description = "Static refactor suggestions (god modules, cycle breaks, misplaced \
 symbols). Use when you want concrete static refactor candidates; triggers: \"how should \
-I refactor\", \"cleanup suggestions for\"."
+I refactor\", \"cleanup suggestions for\".",
+        meta = always_load_meta(),
     )]
     async fn refactor_suggestions(
         &self,
@@ -460,7 +473,8 @@ I refactor\", \"cleanup suggestions for\"."
         description = "Rank files or symbols by churn × complexity (the Git change-frequency \
 × McCabe hotspot product). Use when finding the riskiest code to review or refactor first; \
 triggers: \"what are the hotspots\", \"which files change most and are most complex\", \
-\"where is the riskiest code\"."
+\"where is the riskiest code\".",
+        meta = always_load_meta(),
     )]
     async fn hotspots(
         &self,
@@ -481,7 +495,8 @@ triggers: \"what are the hotspots\", \"which files change most and are most comp
     #[tool(
         description = "Rank files (Σ) or symbols by McCabe cyclomatic complexity, descending. \
 Use when finding the most complex code to simplify or add tests to; triggers: \"what is the \
-most complex code\", \"cyclomatic complexity of\", \"which functions are hardest to follow\"."
+most complex code\", \"cyclomatic complexity of\", \"which functions are hardest to follow\".",
+        meta = always_load_meta(),
     )]
     async fn complexity(
         &self,
@@ -503,7 +518,8 @@ most complex code\", \"cyclomatic complexity of\", \"which functions are hardest
         description = "List file pairs that change together in Git history (logical coupling) \
 above the configured thresholds. Use when finding hidden dependencies that move together \
 despite no static edge; triggers: \"what changes together with\", \"co-change coupling\", \
-\"which files are logically coupled\"."
+\"which files are logically coupled\".",
+        meta = always_load_meta(),
     )]
     async fn co_change(
         &self,
@@ -528,7 +544,8 @@ despite no static edge; triggers: \"what changes together with\", \"co-change co
 impact of every symbol a diff touches (uncommitted working-tree changes by default, or a \
 commit / ref range). Use when scoping what your current changes affect before committing or \
 in review; triggers: \"what does my diff affect\", \"blast radius of my changes\", \"impact \
-of this commit\", \"what does this PR touch\"."
+of this commit\", \"what does this PR touch\".",
+        meta = always_load_meta(),
     )]
     async fn diff_blast_radius(
         &self,
@@ -574,16 +591,18 @@ impl ServerHandler for AriadneServer {
             .with_server_info(Implementation::from_build_env())
             .with_protocol_version(ProtocolVersion::V_2024_11_05)
             .with_instructions(
-                "Ariadne is a read-only semantic graph of the local project: symbols, \
-references, and dependency edges, kept current with the code. Prefer these tools over \
-grep, Read, or file-walking for any question about symbols, references, impact, or \
-architecture — the graph answers in one call where text search needs many and misses \
-cross-file edges. Workflow: navigate with list_symbols, find_definition, and \
-find_references; assess impact with blast_radius and plan_assist; check architecture \
-health with coupling_report, weak_spots, and refactor_suggestions; read generated docs \
-with doc_for, doc_for_module, and doc_for_project; verify index freshness with \
-project_status. Call these even when the answer seems known — the graph reflects the \
-current code, and assumptions may be stale.",
+                "For any question about symbols, references, impact, or architecture, \
+search for and call these Ariadne tools instead of grep, Read, or file-walking — the \
+graph answers in one call where text search needs many and misses cross-file edges. \
+Ariadne is a read-only semantic graph of the local project (symbols, references, and \
+dependency edges), kept current with the code. Navigate with list_symbols, \
+find_definition, find_references, and file_summary. Scope impact with blast_radius, \
+plan_assist, and diff_blast_radius. Assess architecture health with coupling_report, \
+weak_spots, and refactor_suggestions. Triage risk from Git history with hotspots, \
+complexity, and co_change. Read generated docs with doc_for, doc_for_module, and \
+doc_for_project. Verify index freshness with project_status before trusting results. \
+Call these even when the answer seems known — the graph reflects the current code, and \
+assumptions may be stale.",
             )
     }
 }
@@ -657,6 +676,25 @@ fn to_core_kinds(kinds: Option<&[EdgeKindFilter]>) -> Option<Vec<CoreEdgeKind>> 
             })
             .collect()
     })
+}
+
+/// The `_meta` marker exempting each Ariadne tool from MCP Tool Search
+/// deferral. Claude Code reads `anthropic/alwaysLoad` off each tool's `_meta`
+/// in the `tools/list` response and keeps that tool always-loaded — so its
+/// trigger-phrase description reaches the agent every session even when the
+/// consumer's `.mcp.json` carries no server-level `alwaysLoad` flag (plan D2,
+/// belt-and-suspenders with the `setup`-written server flag). Each `#[tool]`
+/// attaches it via `meta = always_load_meta()`, which rmcp expands to
+/// `Tool::with_meta(..)` [src: <https://code.claude.com/docs/en/mcp> "mark
+/// individual tools as always-loaded … anthropic/alwaysLoad"; rmcp 1.7.0
+/// `Tool::with_meta`].
+fn always_load_meta() -> rmcp::model::Meta {
+    let mut map = serde_json::Map::new();
+    map.insert(
+        "anthropic/alwaysLoad".to_owned(),
+        serde_json::Value::Bool(true),
+    );
+    rmcp::model::Meta(map)
 }
 
 fn wire<T: serde::Serialize>(value: &T) -> Result<CallToolResult, ErrorData> {
