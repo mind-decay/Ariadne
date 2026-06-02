@@ -1,0 +1,14 @@
+---
+source: crates/ariadne-mcp/tests/tools_co_change.rs
+expression: golden
+---
+{
+  "edges": [
+    {
+      "a": "src/alpha.rs",
+      "b": "src/beta.rs",
+      "degree": 0.46153846,
+      "shared_commits": 3
+    }
+  ]
+}

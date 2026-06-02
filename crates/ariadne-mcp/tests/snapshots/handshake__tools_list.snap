@@ -87,6 +87,89 @@ expression: golden
     "title": "BlastRadiusInput",
     "type": "object"
   },
+  "co_change": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Input to `co_change`. The three optional thresholds default to code-maat's\npublished values (`min_revs = 5`, `min_shared_commits = 5`,\n`min_degree = 0.30`) when omitted.",
+    "properties": {
+      "min_degree": {
+        "default": null,
+        "description": "Minimum coupling degree ∈ [0, 1]. Defaults to 0.30.",
+        "format": "float",
+        "type": [
+          "number",
+          "null"
+        ]
+      },
+      "min_revs": {
+        "default": null,
+        "description": "Minimum individual revisions per endpoint. Defaults to 5.",
+        "format": "uint32",
+        "minimum": 0,
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
+      "min_shared_commits": {
+        "default": null,
+        "description": "Minimum shared-commit support per pair. Defaults to 5.",
+        "format": "uint32",
+        "minimum": 0,
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
+      "prefix": {
+        "default": null,
+        "description": "Optional path-prefix scope: keeps an edge when either endpoint path is\nin scope (project-root-relative). Empty = all files.",
+        "type": [
+          "string",
+          "null"
+        ]
+      }
+    },
+    "title": "CoChangeInput",
+    "type": "object"
+  },
+  "complexity": {
+    "$defs": {
+      "Grain": {
+        "description": "Grain a `hotspots` / `complexity` query ranks at (tier-15b D2). File grain\nrolls each file's symbols up to one row (complexity summed); symbol grain\nreturns one row per symbol. Defaults to `File`.",
+        "oneOf": [
+          {
+            "const": "file",
+            "description": "One row per file, complexity summed over its symbols.",
+            "type": "string"
+          },
+          {
+            "const": "symbol",
+            "description": "One row per symbol, carrying its own complexity.",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Input to `hotspots` and `complexity` — a path-prefix scope and a grain.",
+    "properties": {
+      "grain": {
+        "$ref": "#/$defs/Grain",
+        "default": "file",
+        "description": "File (default) or symbol grain."
+      },
+      "prefix": {
+        "default": null,
+        "description": "Optional path-prefix filter (project-root-relative). Empty = all files.",
+        "type": [
+          "string",
+          "null"
+        ]
+      }
+    },
+    "title": "GrainScopeInput",
+    "type": "object"
+  },
   "coupling_report": {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "description": "Path-prefix scope shared by `coupling_report`, `weak_spots`,\n`doc_for_project`, and `refactor_suggestions`. Empty = all files.",
@@ -192,6 +275,44 @@ expression: golden
       "symbol"
     ],
     "title": "SymbolQuery",
+    "type": "object"
+  },
+  "hotspots": {
+    "$defs": {
+      "Grain": {
+        "description": "Grain a `hotspots` / `complexity` query ranks at (tier-15b D2). File grain\nrolls each file's symbols up to one row (complexity summed); symbol grain\nreturns one row per symbol. Defaults to `File`.",
+        "oneOf": [
+          {
+            "const": "file",
+            "description": "One row per file, complexity summed over its symbols.",
+            "type": "string"
+          },
+          {
+            "const": "symbol",
+            "description": "One row per symbol, carrying its own complexity.",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Input to `hotspots` and `complexity` — a path-prefix scope and a grain.",
+    "properties": {
+      "grain": {
+        "$ref": "#/$defs/Grain",
+        "default": "file",
+        "description": "File (default) or symbol grain."
+      },
+      "prefix": {
+        "default": null,
+        "description": "Optional path-prefix filter (project-root-relative). Empty = all files.",
+        "type": [
+          "string",
+          "null"
+        ]
+      }
+    },
+    "title": "GrainScopeInput",
     "type": "object"
   },
   "list_symbols": {

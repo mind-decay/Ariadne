@@ -1,0 +1,36 @@
+---
+source: crates/ariadne-mcp/tests/tools_hotspots.rs
+expression: golden
+---
+{
+  "rows": [
+    {
+      "churn": 5,
+      "complexity": 7,
+      "file": "",
+      "score": 1.0,
+      "symbol": {
+        "byte_end": 64,
+        "byte_start": 0,
+        "file": "src/alpha.rs",
+        "id": 1,
+        "kind": "function",
+        "name": "crate::alpha"
+      }
+    },
+    {
+      "churn": 2,
+      "complexity": 3,
+      "file": "",
+      "score": 0.17142858,
+      "symbol": {
+        "byte_end": 64,
+        "byte_start": 0,
+        "file": "src/beta.rs",
+        "id": 2,
+        "kind": "function",
+        "name": "crate::beta"
+      }
+    }
+  ]
+}

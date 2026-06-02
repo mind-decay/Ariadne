@@ -1,0 +1,32 @@
+---
+source: crates/ariadne-mcp/tests/tools_complexity.rs
+expression: golden
+---
+{
+  "rows": [
+    {
+      "complexity": 7,
+      "file": "",
+      "symbol": {
+        "byte_end": 64,
+        "byte_start": 0,
+        "file": "src/alpha.rs",
+        "id": 1,
+        "kind": "function",
+        "name": "crate::alpha"
+      }
+    },
+    {
+      "complexity": 3,
+      "file": "",
+      "symbol": {
+        "byte_end": 64,
+        "byte_start": 0,
+        "file": "src/beta.rs",
+        "id": 2,
+        "kind": "function",
+        "name": "crate::beta"
+      }
+    }
+  ]
+}

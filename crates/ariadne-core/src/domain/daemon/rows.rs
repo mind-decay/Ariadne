@@ -128,6 +128,49 @@ pub struct CycleBreakRow {
     pub rationale: String,
 }
 
+/// One ranked hotspot row (tier-15b). The grain is implied by which key is
+/// populated: `file` carries the path for a file-grain row; `symbol` carries
+/// the resolved symbol for a symbol-grain row (and `file` is empty).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct HotspotRow {
+    /// File path for a file-grain row; empty for a symbol-grain row.
+    pub file: String,
+    /// Resolved symbol for a symbol-grain row; `None` for a file-grain row.
+    pub symbol: Option<SymbolSummary>,
+    /// Raw churn (commits touching the unit) before normalization.
+    pub churn: u32,
+    /// Raw complexity (`McCabe`, summed for files) before normalization.
+    pub complexity: u32,
+    /// `norm_churn * norm_complexity` ∈ [0, 1]; `0` when either factor is `0`.
+    pub score: f32,
+}
+
+/// One ranked complexity row (tier-15b). The grain is implied by which key is
+/// populated, matching [`HotspotRow`].
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ComplexityRow {
+    /// File path for a file-grain row; empty for a symbol-grain row.
+    pub file: String,
+    /// Resolved symbol for a symbol-grain row; `None` for a file-grain row.
+    pub symbol: Option<SymbolSummary>,
+    /// `McCabe` complexity: per-file Σ (file grain) or the symbol's own value.
+    pub complexity: u32,
+}
+
+/// One logical-coupling edge between two files (tier-15b). Mirrors
+/// `ariadne_graph::CoChangeEdge` field-for-field.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CoChangeEdge {
+    /// Lexicographically-smaller path of the pair.
+    pub a: String,
+    /// Lexicographically-larger path of the pair.
+    pub b: String,
+    /// Commits that changed both files (the pair's support).
+    pub shared_commits: u32,
+    /// Coupling degree `shared / mean(revs_a, revs_b)` ∈ [0, 1].
+    pub degree: f32,
+}
+
 /// One misplaced-symbol finding in a refactor report.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MisplacedRow {

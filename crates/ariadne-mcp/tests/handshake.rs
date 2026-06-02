@@ -14,7 +14,9 @@ use std::collections::BTreeMap;
 
 /// Every Ariadne `#[tool]` exposed over MCP. Tier-15 asserts the full set
 /// is present and each description follows the discoverability template.
-const EXPECTED_TOOLS: usize = 13;
+/// Tier-15b adds the three Block-C analytics tools (`hotspots`, `complexity`,
+/// `co_change`), taking the catalog to 16.
+const EXPECTED_TOOLS: usize = 16;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn handshake_lists_expected_tools() {

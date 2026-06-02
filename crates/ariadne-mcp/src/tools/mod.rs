@@ -5,6 +5,8 @@
 //! small.
 
 pub mod blast_radius;
+pub mod co_change;
+pub mod complexity;
 pub mod coupling_report;
 pub mod doc_for;
 pub mod doc_module;
@@ -12,6 +14,7 @@ pub mod doc_project;
 pub mod file_summary;
 pub mod find_definition;
 pub mod find_references;
+pub mod hotspots;
 pub mod list_symbols;
 pub mod plan_assist;
 pub mod project_status;

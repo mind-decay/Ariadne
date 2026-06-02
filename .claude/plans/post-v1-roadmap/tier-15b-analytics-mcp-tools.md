@@ -9,7 +9,8 @@ exit_criteria:
   - A daemon/cold JSON-parity unit test (the `server.rs` `project_daemon` pattern) for each new arm, plus a spawned-server insta golden per tool.
   - handshake snapshots re-accepted at 16 tools; each new description carries the literal `Use when ` + a quoted trigger phrase.
   - `cargo nextest run -p ariadne-core -p ariadne-mcp -p ariadne-daemon` + architecture + clippy + fmt all green.
-status: pending
+status: completed
+completed: 2026-06-02
 ---
 
 <context>
@@ -31,6 +32,7 @@ tier-13 built `file_hotspots`/`symbol_hotspots`/`co_change_report` as pure `aria
 - crates/ariadne-mcp/src/types.rs — modify: `Hotspot*`, `Complexity*`, `CoChange*` input/output/row types + `Grain` — all `JsonSchema`.
 - crates/ariadne-mcp/src/tools/{hotspots,complexity,co_change}.rs + tools/mod.rs — new/modify: cold `handle` fns over `Catalog`.
 - crates/ariadne-mcp/src/server.rs — modify: three `#[tool]` methods (daemon-route + cold fallback) + three `project_daemon` arms; descriptions per the discoverability template.
+- crates/ariadne-cli/src/commands/query.rs — modify: `build_query`/`dispatch` arms for the three tools, the forced `project()` arms for the three new `DaemonResponse` variants (the enum is matched exhaustively), and `to_core_grain` mirroring `to_core_kinds` [src: audit F1 — forced exhaustive-match consequence].
 - crates/ariadne-mcp/tests/ + snapshots/ — new: spawned-server goldens for the three tools; re-accepted handshake snapshots (16 tools).
 - docs/codebase-overview.md — modify: list the three new tools (README + CLAUDE.md catalog finalized in 15c).
 </files>

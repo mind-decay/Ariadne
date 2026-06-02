@@ -6,8 +6,8 @@
 use serde::{Deserialize, Serialize};
 
 use super::rows::{
-    ComponentRow, CouplingRow, CycleBreakRow, CycleRow, DependencyRow, GodModuleRow, MisplacedRow,
-    PlanFileRow, ReferenceSite, SymbolSummary,
+    CoChangeEdge, ComplexityRow, ComponentRow, CouplingRow, CycleBreakRow, CycleRow, DependencyRow,
+    GodModuleRow, HotspotRow, MisplacedRow, PlanFileRow, ReferenceSite, SymbolSummary,
 };
 
 /// `blast_radius` report — the resolved target plus must / may dependents.
@@ -116,6 +116,29 @@ pub struct RefactorReport {
     pub misplaced_symbols: Vec<MisplacedRow>,
 }
 
+/// `hotspots` report — churn × complexity rows ranked strongest-first
+/// (tier-15b). Mirrors `ariadne_graph::HotspotReport` projected to wire rows.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct HotspotReport {
+    /// Ranked hotspot rows; the first is the strongest hotspot.
+    pub rows: Vec<HotspotRow>,
+}
+
+/// `complexity` report — `McCabe` rows ranked complexity-descending (tier-15b).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ComplexityReport {
+    /// Ranked complexity rows; the first is the most complex unit.
+    pub rows: Vec<ComplexityRow>,
+}
+
+/// `co_change` report — logical-coupling edges (tier-15b). Mirrors
+/// `ariadne_graph::CoChangeReport` projected to wire edges.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CoChangeReport {
+    /// Coupling edges that cleared the filters, degree-descending.
+    pub edges: Vec<CoChangeEdge>,
+}
+
 /// The daemon's reply to a [`super::DaemonRequest`]. Matched exhaustively
 /// by the transport adapter — see [`super::DaemonQuery`].
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -146,6 +169,12 @@ pub enum DaemonResponse {
     ProjectStatus(ProjectStatusReport),
     /// `refactor_suggestions` report.
     Refactor(RefactorReport),
+    /// `hotspots` report.
+    Hotspots(HotspotReport),
+    /// `complexity` report.
+    Complexity(ComplexityReport),
+    /// `co_change` report.
+    CoChange(CoChangeReport),
     /// A query-level failure (symbol / file / module not found, …). Mirrors
     /// the v1 MCP `NotFound` outcome without leaking an adapter error type.
     Error(String),

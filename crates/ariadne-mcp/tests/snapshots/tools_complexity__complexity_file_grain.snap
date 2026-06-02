@@ -1,0 +1,18 @@
+---
+source: crates/ariadne-mcp/tests/tools_complexity.rs
+expression: golden
+---
+{
+  "rows": [
+    {
+      "complexity": 7,
+      "file": "src/alpha.rs",
+      "symbol": null
+    },
+    {
+      "complexity": 3,
+      "file": "src/beta.rs",
+      "symbol": null
+    }
+  ]
+}

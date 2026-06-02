@@ -11,9 +11,10 @@ pub mod errors;
 
 pub use domain::changeset::{Changeset, RevisionId};
 pub use domain::daemon::{
-    BlastRadiusReport, ComponentRow, CouplingReport, CouplingRow, CycleBreakRow, CycleRow,
-    DaemonQuery, DaemonRequest, DaemonResponse, DependencyRow, DocForReport, DocReport,
-    EdgeKindFilter, FileSummaryReport, GodModuleRow, MisplacedRow, OutboundRow, PlanAssistReport,
+    BlastRadiusReport, CoChangeEdge, CoChangeReport, ComplexityReport, ComplexityRow, ComponentRow,
+    CouplingReport, CouplingRow, CycleBreakRow, CycleRow, DaemonQuery, DaemonRequest,
+    DaemonResponse, DependencyRow, DocForReport, DocReport, EdgeKindFilter, FileSummaryReport,
+    GodModuleRow, Grain, HotspotReport, HotspotRow, MisplacedRow, OutboundRow, PlanAssistReport,
     PlanFileRow, ProjectStatusReport, RefactorReport, ReferenceSite, SymbolSummary,
     WeakSpotsReport,
 };

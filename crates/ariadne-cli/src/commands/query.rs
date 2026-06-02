@@ -10,12 +10,14 @@
 use std::path::Path;
 
 use anyhow::{Context, Result, bail};
-use ariadne_core::{DaemonQuery, DaemonResponse, EdgeKindFilter as CoreEdgeKind};
+use ariadne_core::{
+    DaemonQuery, DaemonResponse, EdgeKindFilter as CoreEdgeKind, Grain as CoreGrain,
+};
 use ariadne_mcp::Catalog;
 use ariadne_mcp::tools;
 use ariadne_mcp::types::{
-    BlastRadiusInput, EdgeKindFilter, FileQuery, ListSymbolsInput, PlanAssistInput, ScopeInput,
-    SymbolQuery,
+    BlastRadiusInput, CoChangeInput, EdgeKindFilter, FileQuery, Grain, GrainScopeInput,
+    ListSymbolsInput, PlanAssistInput, ScopeInput, SymbolQuery,
 };
 use ariadne_storage::RedbStorage;
 use serde::Serialize;
@@ -128,6 +130,29 @@ fn build_query(tool: &str, args: &str) -> Result<Option<DaemonQuery>> {
         "refactor_suggestions" => DaemonQuery::RefactorSuggestions {
             prefix: parse::<ScopeInput>(args)?.prefix,
         },
+        "hotspots" => {
+            let i = parse::<GrainScopeInput>(args)?;
+            DaemonQuery::Hotspots {
+                prefix: i.prefix,
+                grain: to_core_grain(i.grain),
+            }
+        }
+        "complexity" => {
+            let i = parse::<GrainScopeInput>(args)?;
+            DaemonQuery::Complexity {
+                prefix: i.prefix,
+                grain: to_core_grain(i.grain),
+            }
+        }
+        "co_change" => {
+            let i = parse::<CoChangeInput>(args)?;
+            DaemonQuery::CoChange {
+                prefix: i.prefix,
+                min_revs: i.min_revs,
+                min_shared_commits: i.min_shared_commits,
+                min_degree: i.min_degree,
+            }
+        }
         _ => return Ok(None),
     };
     Ok(Some(query))
@@ -156,8 +181,20 @@ fn project(resp: DaemonResponse) -> Result<String> {
         DaemonResponse::Doc(report) => json(&report),
         DaemonResponse::ProjectStatus(report) => json(&report),
         DaemonResponse::Refactor(report) => json(&report),
+        DaemonResponse::Hotspots(report) => json(&report),
+        DaemonResponse::Complexity(report) => json(&report),
+        DaemonResponse::CoChange(report) => json(&report),
         DaemonResponse::Error(msg) => bail!("{msg}"),
         DaemonResponse::Pong => bail!("daemon answered Pong to a tool query"),
+    }
+}
+
+/// Map the MCP-facing grain onto the daemon protocol's grain (mirrors
+/// `crate::server::to_core_grain` in `ariadne-mcp`).
+fn to_core_grain(grain: Grain) -> CoreGrain {
+    match grain {
+        Grain::File => CoreGrain::File,
+        Grain::Symbol => CoreGrain::Symbol,
     }
 }
 
@@ -231,6 +268,18 @@ fn dispatch(cat: &Catalog, storage: &RedbStorage, tool: &str, args: &str) -> Res
             storage,
             &parse::<ScopeInput>(args)?,
         )?),
+        "hotspots" => json(&tools::hotspots::handle(
+            cat,
+            &parse::<GrainScopeInput>(args)?,
+        )),
+        "complexity" => json(&tools::complexity::handle(
+            cat,
+            &parse::<GrainScopeInput>(args)?,
+        )),
+        "co_change" => json(&tools::co_change::handle(
+            cat,
+            &parse::<CoChangeInput>(args)?,
+        )),
         other => bail!("unknown tool `{other}`; see `ariadne query --help`"),
     }
 }

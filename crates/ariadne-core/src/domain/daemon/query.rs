@@ -28,12 +28,27 @@ pub enum EdgeKindFilter {
     Inherits,
 }
 
+/// Grain a [`DaemonQuery::Hotspots`] / [`DaemonQuery::Complexity`] ranks at:
+/// per-file (Σ over the file's symbols) or per-symbol. Mirrors the MCP
+/// `Grain`; the daemon maps it to the matching graph use case (tier-15b D2).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Grain {
+    /// File grain: one row per file, complexity summed over its symbols.
+    File,
+    /// Symbol grain: one row per symbol, carrying its own complexity.
+    Symbol,
+}
+
 /// One v1 read query the daemon answers against its warm graph.
 ///
 /// Deliberately *not* `#[non_exhaustive]`: the transport adapter matches it
 /// exhaustively, so adding a variant fails to compile until the dispatcher
 /// learns it — the coupling we want for an internal protocol.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+///
+/// `Eq` is not derived: [`DaemonQuery::CoChange`] carries an `f32` coupling
+/// threshold, so the enum is only `PartialEq` (sufficient for the test
+/// assertions; the protocol is never a map key — tier-15b).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum DaemonQuery {
     /// Liveness probe. Answered with `DaemonResponse::Pong`.
     Ping,
@@ -108,5 +123,33 @@ pub enum DaemonQuery {
     RefactorSuggestions {
         /// Optional path-prefix scope (project-root-relative).
         prefix: Option<String>,
+    },
+    /// Churn × complexity hotspots at the requested grain (tier-15b).
+    Hotspots {
+        /// Optional path-prefix scope (project-root-relative).
+        prefix: Option<String>,
+        /// File or symbol grain.
+        grain: Grain,
+    },
+    /// `McCabe` cyclomatic complexity ranking at the requested grain (tier-15b).
+    Complexity {
+        /// Optional path-prefix scope (project-root-relative).
+        prefix: Option<String>,
+        /// File (Σ over the file's symbols) or symbol grain.
+        grain: Grain,
+    },
+    /// Logical-coupling (change-coupling) edges honoring the code-maat filters
+    /// (tier-15b). Each threshold is optional; an absent one falls back to the
+    /// `CoChangeConfig` default at the handler.
+    CoChange {
+        /// Optional path-prefix scope: keeps an edge when either endpoint
+        /// path is in scope (project-root-relative).
+        prefix: Option<String>,
+        /// Minimum individual revisions per endpoint; `None` = default.
+        min_revs: Option<u32>,
+        /// Minimum shared-commit support per pair; `None` = default.
+        min_shared_commits: Option<u32>,
+        /// Minimum coupling degree ∈ [0, 1]; `None` = default.
+        min_degree: Option<f32>,
     },
 }

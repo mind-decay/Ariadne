@@ -352,3 +352,108 @@ pub struct RefactorOutput {
     /// Symbols whose callers live mostly in another module.
     pub misplaced_symbols: Vec<MisplacedRow>,
 }
+
+/// Grain a `hotspots` / `complexity` query ranks at (tier-15b D2). File grain
+/// rolls each file's symbols up to one row (complexity summed); symbol grain
+/// returns one row per symbol. Defaults to `File`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum Grain {
+    /// One row per file, complexity summed over its symbols.
+    #[default]
+    File,
+    /// One row per symbol, carrying its own complexity.
+    Symbol,
+}
+
+/// Input to `hotspots` and `complexity` — a path-prefix scope and a grain.
+#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema, Default)]
+pub struct GrainScopeInput {
+    /// Optional path-prefix filter (project-root-relative). Empty = all files.
+    #[serde(default)]
+    pub prefix: Option<String>,
+    /// File (default) or symbol grain.
+    #[serde(default)]
+    pub grain: Grain,
+}
+
+/// One ranked hotspot row. Exactly one of `file` / `symbol` is populated,
+/// matching the report's grain (mirrors `ariadne_core::HotspotRow`).
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct HotspotRow {
+    /// File path for a file-grain row; empty for a symbol-grain row.
+    pub file: String,
+    /// Resolved symbol for a symbol-grain row; `null` for a file-grain row.
+    pub symbol: Option<SymbolSummary>,
+    /// Raw churn (commits touching the unit) before normalization.
+    pub churn: u32,
+    /// Raw complexity (`McCabe`, summed for files) before normalization.
+    pub complexity: u32,
+    /// `norm_churn * norm_complexity` ∈ [0, 1]; `0` when either factor is `0`.
+    pub score: f32,
+}
+
+/// Output of `hotspots`.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct HotspotOutput {
+    /// Ranked hotspot rows; the first is the strongest hotspot.
+    pub rows: Vec<HotspotRow>,
+}
+
+/// One ranked complexity row (mirrors `ariadne_core::ComplexityRow`).
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct ComplexityRow {
+    /// File path for a file-grain row; empty for a symbol-grain row.
+    pub file: String,
+    /// Resolved symbol for a symbol-grain row; `null` for a file-grain row.
+    pub symbol: Option<SymbolSummary>,
+    /// `McCabe` complexity: per-file Σ (file grain) or the symbol's own value.
+    pub complexity: u32,
+}
+
+/// Output of `complexity`.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct ComplexityOutput {
+    /// Ranked complexity rows; the first is the most complex unit.
+    pub rows: Vec<ComplexityRow>,
+}
+
+/// Input to `co_change`. The three optional thresholds default to code-maat's
+/// published values (`min_revs = 5`, `min_shared_commits = 5`,
+/// `min_degree = 0.30`) when omitted.
+#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema, Default)]
+pub struct CoChangeInput {
+    /// Optional path-prefix scope: keeps an edge when either endpoint path is
+    /// in scope (project-root-relative). Empty = all files.
+    #[serde(default)]
+    pub prefix: Option<String>,
+    /// Minimum individual revisions per endpoint. Defaults to 5.
+    #[serde(default)]
+    pub min_revs: Option<u32>,
+    /// Minimum shared-commit support per pair. Defaults to 5.
+    #[serde(default)]
+    pub min_shared_commits: Option<u32>,
+    /// Minimum coupling degree ∈ [0, 1]. Defaults to 0.30.
+    #[serde(default)]
+    pub min_degree: Option<f32>,
+}
+
+/// One logical-coupling edge (mirrors `ariadne_core::CoChangeEdge`).
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct CoChangeEdge {
+    /// Lexicographically-smaller path of the pair.
+    pub a: String,
+    /// Lexicographically-larger path of the pair.
+    pub b: String,
+    /// Commits that changed both files (the pair's support).
+    pub shared_commits: u32,
+    /// Coupling degree `shared / mean(revs_a, revs_b)` ∈ [0, 1].
+    pub degree: f32,
+}
+
+/// Output of `co_change`.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct CoChangeOutput {
+    /// Coupling edges that cleared the filters, degree-descending.
+    pub edges: Vec<CoChangeEdge>,
+}

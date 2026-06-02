@@ -7,7 +7,7 @@
 use ariadne_core::{DaemonQuery, DaemonResponse, SymbolId, SymbolSummary};
 
 use crate::domain::catalog::WarmCatalog;
-use crate::domain::queries::{docs, health, impact, meta, navigate, refactor};
+use crate::domain::queries::{analytics, docs, health, impact, meta, navigate, refactor};
 
 /// Run `query` against the warm `catalog`, returning the wire response.
 pub(crate) fn dispatch(catalog: &WarmCatalog, query: DaemonQuery) -> DaemonResponse {
@@ -38,6 +38,24 @@ pub(crate) fn dispatch(catalog: &WarmCatalog, query: DaemonQuery) -> DaemonRespo
         DaemonQuery::RefactorSuggestions { prefix } => {
             refactor::refactor_suggestions(catalog, prefix.as_deref())
         }
+        DaemonQuery::Hotspots { prefix, grain } => {
+            analytics::hotspots(catalog, prefix.as_deref(), grain)
+        }
+        DaemonQuery::Complexity { prefix, grain } => {
+            analytics::complexity(catalog, prefix.as_deref(), grain)
+        }
+        DaemonQuery::CoChange {
+            prefix,
+            min_revs,
+            min_shared_commits,
+            min_degree,
+        } => analytics::co_change(
+            catalog,
+            prefix.as_deref(),
+            min_revs,
+            min_shared_commits,
+            min_degree,
+        ),
     }
 }
 

@@ -1,4 +1,4 @@
-//! `AriadneServer` — rmcp `#[tool_router]` host wiring the 13 Ariadne
+//! `AriadneServer` — rmcp `#[tool_router]` host wiring the 16 Ariadne
 //! analytics into MCP. Each `#[tool]` method routes its query to the warm
 //! daemon over IPC (RD6) and projects the [`DaemonResponse`] into the v1 tool
 //! output shape; when no daemon is reachable it falls back to the per-tool
@@ -29,7 +29,9 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use ariadne_core::{DaemonQuery, DaemonResponse, EdgeKindFilter as CoreEdgeKind};
+use ariadne_core::{
+    DaemonQuery, DaemonResponse, EdgeKindFilter as CoreEdgeKind, Grain as CoreGrain,
+};
 use ariadne_storage::RedbStorage;
 use rmcp::handler::server::router::tool::ToolRouter;
 use rmcp::handler::server::wrapper::Parameters;
@@ -44,8 +46,8 @@ use crate::catalog::Catalog;
 use crate::errors::McpError;
 use crate::tools;
 use crate::types::{
-    BlastRadiusInput, EdgeKindFilter, FileQuery, ListSymbolsInput, PlanAssistInput, ScopeInput,
-    SymbolQuery,
+    BlastRadiusInput, CoChangeInput, EdgeKindFilter, FileQuery, Grain, GrainScopeInput,
+    ListSymbolsInput, PlanAssistInput, ScopeInput, SymbolQuery,
 };
 
 /// MCP server backing the Ariadne analytics tools. Clone-friendly so the
@@ -453,6 +455,73 @@ I refactor\", \"cleanup suggestions for\"."
             tools::refactor::handle(&catalog, &storage, &input).map_err(McpError::into_rmcp)?;
         wire(&out)
     }
+
+    #[tool(
+        description = "Rank files or symbols by churn × complexity (the Git change-frequency \
+× McCabe hotspot product). Use when finding the riskiest code to review or refactor first; \
+triggers: \"what are the hotspots\", \"which files change most and are most complex\", \
+\"where is the riskiest code\"."
+    )]
+    async fn hotspots(
+        &self,
+        Parameters(input): Parameters<GrainScopeInput>,
+    ) -> Result<CallToolResult, ErrorData> {
+        let query = DaemonQuery::Hotspots {
+            prefix: input.prefix.clone(),
+            grain: to_core_grain(input.grain),
+        };
+        if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
+            return project_daemon(resp);
+        }
+        let catalog = self.catalog().await?;
+        let out = tools::hotspots::handle(&catalog, &input);
+        wire(&out)
+    }
+
+    #[tool(
+        description = "Rank files (Σ) or symbols by McCabe cyclomatic complexity, descending. \
+Use when finding the most complex code to simplify or add tests to; triggers: \"what is the \
+most complex code\", \"cyclomatic complexity of\", \"which functions are hardest to follow\"."
+    )]
+    async fn complexity(
+        &self,
+        Parameters(input): Parameters<GrainScopeInput>,
+    ) -> Result<CallToolResult, ErrorData> {
+        let query = DaemonQuery::Complexity {
+            prefix: input.prefix.clone(),
+            grain: to_core_grain(input.grain),
+        };
+        if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
+            return project_daemon(resp);
+        }
+        let catalog = self.catalog().await?;
+        let out = tools::complexity::handle(&catalog, &input);
+        wire(&out)
+    }
+
+    #[tool(
+        description = "List file pairs that change together in Git history (logical coupling) \
+above the configured thresholds. Use when finding hidden dependencies that move together \
+despite no static edge; triggers: \"what changes together with\", \"co-change coupling\", \
+\"which files are logically coupled\"."
+    )]
+    async fn co_change(
+        &self,
+        Parameters(input): Parameters<CoChangeInput>,
+    ) -> Result<CallToolResult, ErrorData> {
+        let query = DaemonQuery::CoChange {
+            prefix: input.prefix.clone(),
+            min_revs: input.min_revs,
+            min_shared_commits: input.min_shared_commits,
+            min_degree: input.min_degree,
+        };
+        if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
+            return project_daemon(resp);
+        }
+        let catalog = self.catalog().await?;
+        let out = tools::co_change::handle(&catalog, &input);
+        wire(&out)
+    }
 }
 
 #[tool_handler]
@@ -495,11 +564,22 @@ fn project_daemon(resp: DaemonResponse) -> Result<CallToolResult, ErrorData> {
         DaemonResponse::Doc(report) => wire(&report),
         DaemonResponse::ProjectStatus(report) => wire(&report),
         DaemonResponse::Refactor(report) => wire(&report),
+        DaemonResponse::Hotspots(report) => wire(&report),
+        DaemonResponse::Complexity(report) => wire(&report),
+        DaemonResponse::CoChange(report) => wire(&report),
         DaemonResponse::Error(msg) => Err(ErrorData::internal_error(msg, None)),
         DaemonResponse::Pong => Err(ErrorData::internal_error(
             "daemon answered Pong to a tool query",
             None,
         )),
+    }
+}
+
+/// Map the MCP-facing grain onto the daemon protocol's grain.
+fn to_core_grain(grain: Grain) -> CoreGrain {
+    match grain {
+        Grain::File => CoreGrain::File,
+        Grain::Symbol => CoreGrain::Symbol,
     }
 }
 
@@ -856,6 +936,103 @@ mod tests {
             }],
         };
         assert_parity("refactor_suggestions", DaemonResponse::Refactor(c), &t);
+    }
+
+    #[test]
+    fn hotspots_arm_matches_cold_output() {
+        // File-grain and symbol-grain rows in one report exercise both the
+        // `file`-set and `symbol`-set projections.
+        let c = ariadne_core::HotspotReport {
+            rows: vec![
+                ariadne_core::HotspotRow {
+                    file: "src/a.rs".into(),
+                    symbol: None,
+                    churn: 9,
+                    complexity: 7,
+                    score: 1.0,
+                },
+                ariadne_core::HotspotRow {
+                    file: String::new(),
+                    symbol: Some(c_sym(1, "crate::f")),
+                    churn: 5,
+                    complexity: 7,
+                    score: 0.5,
+                },
+            ],
+        };
+        let t = crate::types::HotspotOutput {
+            rows: vec![
+                crate::types::HotspotRow {
+                    file: "src/a.rs".into(),
+                    symbol: None,
+                    churn: 9,
+                    complexity: 7,
+                    score: 1.0,
+                },
+                crate::types::HotspotRow {
+                    file: String::new(),
+                    symbol: Some(t_sym(1, "crate::f")),
+                    churn: 5,
+                    complexity: 7,
+                    score: 0.5,
+                },
+            ],
+        };
+        assert_parity("hotspots", DaemonResponse::Hotspots(c), &t);
+    }
+
+    #[test]
+    fn complexity_arm_matches_cold_output() {
+        let c = ariadne_core::ComplexityReport {
+            rows: vec![
+                ariadne_core::ComplexityRow {
+                    file: "src/a.rs".into(),
+                    symbol: None,
+                    complexity: 12,
+                },
+                ariadne_core::ComplexityRow {
+                    file: String::new(),
+                    symbol: Some(c_sym(2, "crate::g")),
+                    complexity: 4,
+                },
+            ],
+        };
+        let t = crate::types::ComplexityOutput {
+            rows: vec![
+                crate::types::ComplexityRow {
+                    file: "src/a.rs".into(),
+                    symbol: None,
+                    complexity: 12,
+                },
+                crate::types::ComplexityRow {
+                    file: String::new(),
+                    symbol: Some(t_sym(2, "crate::g")),
+                    complexity: 4,
+                },
+            ],
+        };
+        assert_parity("complexity", DaemonResponse::Complexity(c), &t);
+    }
+
+    #[test]
+    fn co_change_arm_matches_cold_output() {
+        let c = ariadne_core::CoChangeReport {
+            edges: vec![ariadne_core::CoChangeEdge {
+                a: "src/a.rs".into(),
+                b: "src/b.rs".into(),
+                shared_commits: 3,
+                degree: 0.461_538_46,
+            }],
+        };
+        let t = crate::types::CoChangeOutput {
+            edges: vec![crate::types::CoChangeEdge {
+                a: "src/a.rs".into(),
+                b: "src/b.rs".into(),
+                shared_commits: 3,
+                degree: 0.461_538_46,
+            }],
+        };
+        assert_parity("co_change", DaemonResponse::CoChange(c), &t);
     }
 
     #[test]

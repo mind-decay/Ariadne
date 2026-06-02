@@ -1,0 +1,22 @@
+---
+source: crates/ariadne-mcp/tests/tools_hotspots.rs
+expression: golden
+---
+{
+  "rows": [
+    {
+      "churn": 9,
+      "complexity": 7,
+      "file": "src/alpha.rs",
+      "score": 1.0,
+      "symbol": null
+    },
+    {
+      "churn": 4,
+      "complexity": 3,
+      "file": "src/beta.rs",
+      "score": 0.1904762,
+      "symbol": null
+    }
+  ]
+}

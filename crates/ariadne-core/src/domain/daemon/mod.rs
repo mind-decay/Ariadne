@@ -15,14 +15,15 @@ mod rows;
 
 use serde::{Deserialize, Serialize};
 
-pub use query::{DaemonQuery, EdgeKindFilter};
+pub use query::{DaemonQuery, EdgeKindFilter, Grain};
 pub use response::{
-    BlastRadiusReport, CouplingReport, DaemonResponse, DocForReport, DocReport, FileSummaryReport,
-    PlanAssistReport, ProjectStatusReport, RefactorReport, WeakSpotsReport,
+    BlastRadiusReport, CoChangeReport, ComplexityReport, CouplingReport, DaemonResponse,
+    DocForReport, DocReport, FileSummaryReport, HotspotReport, PlanAssistReport,
+    ProjectStatusReport, RefactorReport, WeakSpotsReport,
 };
 pub use rows::{
-    ComponentRow, CouplingRow, CycleBreakRow, CycleRow, DependencyRow, GodModuleRow, MisplacedRow,
-    OutboundRow, PlanFileRow, ReferenceSite, SymbolSummary,
+    CoChangeEdge, ComplexityRow, ComponentRow, CouplingRow, CycleBreakRow, CycleRow, DependencyRow,
+    GodModuleRow, HotspotRow, MisplacedRow, OutboundRow, PlanFileRow, ReferenceSite, SymbolSummary,
 };
 
 /// A request a client sends to the daemon over the local socket.
@@ -32,7 +33,10 @@ pub use rows::{
 /// built from and refreshes the graph before answering when the client has
 /// seen a newer index (risk R-B2). Liveness probes pass `revision: 0`,
 /// which never triggers a refresh.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+///
+/// `Eq` is not derived: the wrapped [`DaemonQuery`] carries an `f32` threshold
+/// (`CoChange`), so the request is only `PartialEq` (tier-15b).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DaemonRequest {
     /// Latest redb revision the client has observed (`0` = unknown).
     pub revision: u64,

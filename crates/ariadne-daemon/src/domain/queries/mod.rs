@@ -4,6 +4,7 @@
 //! for the MCP `Catalog` + redb snapshot
 //! [src: .claude/plans/post-v1-roadmap/tier-07-daemon-warm-graph.md step 5].
 
+pub(crate) mod analytics;
 pub(crate) mod docs;
 pub(crate) mod health;
 pub(crate) mod impact;
