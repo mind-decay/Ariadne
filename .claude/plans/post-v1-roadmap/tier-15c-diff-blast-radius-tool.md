@@ -10,7 +10,8 @@ exit_criteria:
   - A spawned-server golden exercises the tool on a fixture git repo with an uncommitted edit; a daemon/cold parity unit test passes.
   - Discoverability finalized: handshake snapshots at 17 tools; `docs/codebase-overview.md`, `README.md`, and CLAUDE.md's "Ariadne code intelligence" catalog updated (CLAUDE.md via `/rules-writer`).
   - `cargo nextest run -p ariadne-core -p ariadne-mcp -p ariadne-daemon` + architecture + clippy + fmt all green.
-status: pending
+status: completed
+completed: 2026-06-02
 ---
 
 <context>

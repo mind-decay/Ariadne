@@ -22,6 +22,10 @@ bitflags = { workspace = true }
 fxhash = { workspace = true }
 smallvec = { workspace = true }
 rayon = { workspace = true }
+# Span-builder validity guard (tier-15c D3): `spans_from` hashes a changed
+# file's on-disk bytes against its indexed `blake3` so stale byte offsets never
+# seed a wrong symbol. Same codec the indexer keys symbols with.
+blake3 = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }

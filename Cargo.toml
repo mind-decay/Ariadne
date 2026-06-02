@@ -31,6 +31,9 @@ ariadne-core = { path = "crates/ariadne-core" }
 ariadne-storage = { path = "crates/ariadne-storage" }
 ariadne-salsa = { path = "crates/ariadne-salsa" }
 ariadne-graph = { path = "crates/ariadne-graph" }
+# Git-history driven adapter (RD7). The MCP server links it to compute the live
+# diff for `diff_blast_radius`; the daemon must not (ADR-0023).
+ariadne-git = { path = "crates/ariadne-git" }
 
 # Runtime
 thiserror = "2"

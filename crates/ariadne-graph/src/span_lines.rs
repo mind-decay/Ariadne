@@ -36,6 +36,62 @@ pub struct FileSymbolSpans {
     pub symbols: Vec<(SymbolId, u32, u32)>,
 }
 
+/// One file's pre-guard join input (tier-15c D3): the path, the indexed content
+/// hash (the byte-offset validity guard), the symbols' defining byte spans, and
+/// the on-disk bytes the caller read. [`spans_from`] turns a batch of these into
+/// validated [`FileSymbolSpans`], shared by the CLI symbol-churn pass, the daemon
+/// `diff_blast` handler, and the cold MCP `diff_blast` tool so all three agree on
+/// the line index + staleness rule.
+#[derive(Debug, Clone)]
+pub struct FileSpanSource {
+    /// Repository-root-relative path of the file.
+    pub path: String,
+    /// Indexed content hash; on-disk bytes must hash to it or the file is dropped.
+    pub blake3: [u8; 32],
+    /// `(symbol, byte_start, byte_end)` half-open defining byte spans.
+    pub symbols: Vec<(SymbolId, u32, u32)>,
+    /// The file's current on-disk bytes, read by the caller (the composition root
+    /// owns the IO; this crate stays free of a filesystem dependency).
+    pub content: Vec<u8>,
+}
+
+/// Build the per-file [`FileSymbolSpans`] join input from raw `sources`, dropping
+/// any file whose on-disk bytes no longer hash to its indexed `blake3` (stale
+/// byte offsets). A dropped file contributes no spans, so its changed path
+/// surfaces downstream as unresolved rather than seeding a wrong symbol (D3). The
+/// result is sorted by path so downstream output is deterministic.
+#[must_use]
+pub fn spans_from(sources: Vec<FileSpanSource>) -> Vec<FileSymbolSpans> {
+    let mut out: Vec<FileSymbolSpans> = sources
+        .into_iter()
+        .filter(|s| blake3::hash(&s.content).as_bytes() == &s.blake3)
+        .map(|s| FileSymbolSpans {
+            line_starts: line_starts(&s.content),
+            path: s.path,
+            symbols: s.symbols,
+        })
+        .collect();
+    out.sort_by(|a, b| a.path.cmp(&b.path));
+    out
+}
+
+/// Byte offset of each line's first byte (line 1 at offset 0): the HEAD line
+/// index symbol byte spans are converted against. A trailing newline yields a
+/// final start at `content.len()`, which is harmless — no symbol byte offset maps
+/// there.
+#[must_use]
+pub fn line_starts(content: &[u8]) -> Vec<u32> {
+    let mut starts = vec![0u32];
+    for (idx, &byte) in content.iter().enumerate() {
+        if byte == b'\n' {
+            if let Ok(next) = u32::try_from(idx + 1) {
+                starts.push(next);
+            }
+        }
+    }
+    starts
+}
+
 /// One symbol's defining occurrence resolved to a 1-based inclusive HEAD line
 /// range, grouped by path for the per-changeset overlap check.
 struct SymbolLineRange {

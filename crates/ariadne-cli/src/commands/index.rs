@@ -7,7 +7,7 @@ use anyhow::{Context, Result};
 use ariadne_core::{FileId, ReadSnapshot, Storage, SymbolId};
 use ariadne_daemon::IndexLock;
 use ariadne_git::{HistoryOptions, walk_line_hunks, walk_since};
-use ariadne_graph::{FileSymbolSpans, attribute_symbol_churn};
+use ariadne_graph::{FileSpanSource, FileSymbolSpans, attribute_symbol_churn, spans_from};
 use ariadne_storage::RedbStorage;
 
 use crate::config::Config;
@@ -248,7 +248,11 @@ fn build_symbol_lines(
     }
     drop(snap);
 
-    let mut out = Vec::new();
+    // Read each changed file's on-disk bytes at the composition root, then hand
+    // the raw sources to the shared `spans_from` builder, which applies the
+    // `blake3` validity guard + line index + sort (tier-15c D3) so the CLI, the
+    // daemon, and the cold MCP path agree on the same line semantics.
+    let mut sources = Vec::new();
     for (path, id) in file_of_path {
         let Some(symbols) = symbols_of_file.remove(&id) else {
             continue;
@@ -256,33 +260,14 @@ fn build_symbol_lines(
         let Ok(content) = std::fs::read(root.join(&path)) else {
             continue;
         };
-        if blake3::hash(&content).as_bytes() != &hash_of_file[&id] {
-            continue;
-        }
-        out.push(FileSymbolSpans {
+        sources.push(FileSpanSource {
+            blake3: hash_of_file[&id],
             path,
-            line_starts: line_starts(&content),
             symbols,
+            content,
         });
     }
-    out.sort_by(|a, b| a.path.cmp(&b.path));
-    Ok(out)
-}
-
-/// Byte offset of each line's first byte (line 1 at offset 0): the HEAD line
-/// index the symbol-churn use-case converts byte spans against. A trailing
-/// newline yields a final start at `content.len()`, which is harmless — no
-/// symbol byte offset maps there.
-fn line_starts(content: &[u8]) -> Vec<u32> {
-    let mut starts = vec![0u32];
-    for (idx, &byte) in content.iter().enumerate() {
-        if byte == b'\n' {
-            if let Ok(next) = u32::try_from(idx + 1) {
-                starts.push(next);
-            }
-        }
-    }
-    starts
+    Ok(spans_from(sources))
 }
 
 #[cfg(test)]

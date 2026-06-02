@@ -1,12 +1,14 @@
-//! Impact queries: `blast_radius`, `file_summary`, `plan_assist`.
+//! Impact queries: `blast_radius`, `file_summary`, `plan_assist`, `diff_blast`.
 
 use std::collections::BTreeMap;
+use std::path::Path;
 
 use ariadne_core::{
-    BlastRadiusReport, ComponentRow, DaemonResponse, DependencyRow, EdgeKind, EdgeKindFilter,
-    FileId, FileSummaryReport, PlanAssistReport, PlanFileRow, ReadSnapshot, SymbolId,
+    BlastRadiusReport, ComponentRow, DaemonResponse, DependencyRow, DiffBlastReport, DiffSeed,
+    EdgeKind, EdgeKindFilter, FileId, FileSummaryReport, LineHunk, PlanAssistReport, PlanFileRow,
+    ReadSnapshot, StorageError, SymbolId,
 };
-use ariadne_graph::EdgeKindSet;
+use ariadne_graph::{EdgeKindSet, FileSpanSource, spans_from};
 
 use crate::domain::catalog::WarmCatalog;
 use crate::domain::dispatch::summarize;
@@ -182,4 +184,115 @@ pub(crate) fn plan_assist(
         });
     }
     DaemonResponse::PlanAssist(PlanAssistReport { files: rows })
+}
+
+/// Diff-aware blast radius of a changeset (tier-15c). The client computed the
+/// `hunks` + `changed_paths` (the git diff lives at the MCP composition root —
+/// the daemon never links `ariadne-git`, RD7); this builds the per-file symbol
+/// spans from the warm symbols + the changed files' bytes (hash-guarded so a
+/// file stale against its index degrades to `unresolved`, never a wrong seed),
+/// then runs the graph `diff_blast` use case and projects each `SymbolId` via
+/// the shared `summarize`.
+pub(crate) fn diff_blast(
+    cat: &WarmCatalog,
+    hunks: &[LineHunk],
+    changed_paths: &[String],
+    depth: Option<u8>,
+    kinds: Option<&[EdgeKindFilter]>,
+) -> DaemonResponse {
+    let depth = depth.unwrap_or(DEFAULT_DEPTH).max(1);
+    let set = filter_to_set(kinds.unwrap_or(&[]));
+    let sources = match collect_span_sources(cat, changed_paths) {
+        Ok(sources) => sources,
+        Err(err) => return DaemonResponse::Error(err.to_string()),
+    };
+    let spans = spans_from(sources);
+    let report = cat
+        .graph
+        .diff_blast(&spans, hunks, changed_paths, depth, set);
+
+    DaemonResponse::DiffBlast(DiffBlastReport {
+        seeds: report
+            .seeds
+            .into_iter()
+            .map(|s| DiffSeed {
+                symbol: summarize(cat, s.symbol),
+                must_touch: s
+                    .must_touch
+                    .into_iter()
+                    .map(|x| summarize(cat, x))
+                    .collect(),
+                may_touch: s.may_touch.into_iter().map(|x| summarize(cat, x)).collect(),
+                depth_used: s.depth_used,
+            })
+            .collect(),
+        must_touch: report
+            .must_touch
+            .into_iter()
+            .map(|x| summarize(cat, x))
+            .collect(),
+        may_touch: report
+            .may_touch
+            .into_iter()
+            .map(|x| summarize(cat, x))
+            .collect(),
+        unresolved: report.unresolved,
+    })
+}
+
+/// Build the per-file span sources for the changed paths from the warm catalog:
+/// each changed file's indexed `blake3` (the byte-offset validity guard), its
+/// symbols' defining byte spans, and its current on-disk bytes read under the
+/// project root. A changed path with no indexed symbols is skipped (it owns no
+/// seed, so it surfaces as `unresolved`); the `blake3` guard inside `spans_from`
+/// drops a file whose on-disk bytes diverged from the index. Mirrors the CLI
+/// `build_symbol_lines` shape (tier-15c D3).
+///
+/// # Errors
+/// Propagates snapshot read failures from the per-file `blake3` lookup, matching
+/// the cold path (`tools::diff_blast`) and the daemon's `file_summary` handler —
+/// a backend read error surfaces as a query error, not a silently-dropped seed.
+fn collect_span_sources(
+    cat: &WarmCatalog,
+    changed_paths: &[String],
+) -> Result<Vec<FileSpanSource>, StorageError> {
+    let mut hash_of_file: BTreeMap<FileId, [u8; 32]> = BTreeMap::new();
+    let mut file_of_path: BTreeMap<String, FileId> = BTreeMap::new();
+    for path in changed_paths {
+        if let Some(&fid) = cat.path_to_id.get(path) {
+            if let Some(rec) = cat.snap.file(fid)? {
+                hash_of_file.insert(fid, rec.blake3);
+                file_of_path.insert(path.clone(), fid);
+            }
+        }
+    }
+
+    let mut symbols_of_file: BTreeMap<FileId, Vec<(SymbolId, u32, u32)>> = BTreeMap::new();
+    for (sid, meta) in &cat.symbols {
+        if hash_of_file.contains_key(&meta.file) {
+            symbols_of_file.entry(meta.file).or_default().push((
+                *sid,
+                meta.byte_start,
+                meta.byte_end,
+            ));
+        }
+    }
+
+    let root = Path::new(&cat.root);
+    let mut sources = Vec::new();
+    for (path, fid) in file_of_path {
+        let Some(symbols) = symbols_of_file.remove(&fid) else {
+            continue;
+        };
+        let Ok(content) = std::fs::read(root.join(&path)) else {
+            continue;
+        };
+        sources.push(FileSpanSource {
+            blake3: hash_of_file[&fid],
+            path,
+            symbols,
+            content,
+        });
+    }
+    Ok(sources)
 }

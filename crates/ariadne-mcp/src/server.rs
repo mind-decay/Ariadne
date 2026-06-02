@@ -1,4 +1,4 @@
-//! `AriadneServer` — rmcp `#[tool_router]` host wiring the 16 Ariadne
+//! `AriadneServer` — rmcp `#[tool_router]` host wiring the 17 Ariadne
 //! analytics into MCP. Each `#[tool]` method routes its query to the warm
 //! daemon over IPC (RD6) and projects the [`DaemonResponse`] into the v1 tool
 //! output shape; when no daemon is reachable it falls back to the per-tool
@@ -46,8 +46,8 @@ use crate::catalog::Catalog;
 use crate::errors::McpError;
 use crate::tools;
 use crate::types::{
-    BlastRadiusInput, CoChangeInput, EdgeKindFilter, FileQuery, Grain, GrainScopeInput,
-    ListSymbolsInput, PlanAssistInput, ScopeInput, SymbolQuery,
+    BlastRadiusInput, CoChangeInput, DiffBlastInput, DiffSpecInput, EdgeKindFilter, FileQuery,
+    Grain, GrainScopeInput, ListSymbolsInput, PlanAssistInput, ScopeInput, SymbolQuery,
 };
 
 /// MCP server backing the Ariadne analytics tools. Clone-friendly so the
@@ -522,6 +522,49 @@ despite no static edge; triggers: \"what changes together with\", \"co-change co
         let out = tools::co_change::handle(&catalog, &input);
         wire(&out)
     }
+
+    #[tool(
+        description = "Compute the blast radius of a code change: the must-touch ∪ may-touch \
+impact of every symbol a diff touches (uncommitted working-tree changes by default, or a \
+commit / ref range). Use when scoping what your current changes affect before committing or \
+in review; triggers: \"what does my diff affect\", \"blast radius of my changes\", \"impact \
+of this commit\", \"what does this PR touch\"."
+    )]
+    async fn diff_blast_radius(
+        &self,
+        Parameters(input): Parameters<DiffBlastInput>,
+    ) -> Result<CallToolResult, ErrorData> {
+        // Run the git diff first — both the daemon and cold paths need its hunks
+        // + changed paths, and it must run here in the MCP process where
+        // `ariadne-git` is linked; the daemon never links git (RD7 / ADR-0023),
+        // so only the pre-computed hunks travel over the wire.
+        let spec = to_core_spec(&input.spec);
+        let (hunks, changed_paths) = ariadne_git::diff(&self.root, &spec)
+            .map_err(|e| McpError::Other(format!("git diff failed: {e}")).into_rmcp())?;
+
+        let query = DaemonQuery::DiffBlast {
+            hunks: hunks.clone(),
+            changed_paths: changed_paths.clone(),
+            depth: input.depth,
+            kinds: to_core_kinds(input.kinds.as_deref()),
+        };
+        if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
+            return project_daemon(resp);
+        }
+        let catalog = self.catalog().await?;
+        let storage = self.open_storage()?;
+        let out = tools::diff_blast::handle(
+            &catalog,
+            &storage,
+            &self.root,
+            &hunks,
+            &changed_paths,
+            input.depth,
+            input.kinds.as_deref(),
+        )
+        .map_err(McpError::into_rmcp)?;
+        wire(&out)
+    }
 }
 
 #[tool_handler]
@@ -567,11 +610,26 @@ fn project_daemon(resp: DaemonResponse) -> Result<CallToolResult, ErrorData> {
         DaemonResponse::Hotspots(report) => wire(&report),
         DaemonResponse::Complexity(report) => wire(&report),
         DaemonResponse::CoChange(report) => wire(&report),
+        DaemonResponse::DiffBlast(report) => wire(&report),
         DaemonResponse::Error(msg) => Err(ErrorData::internal_error(msg, None)),
         DaemonResponse::Pong => Err(ErrorData::internal_error(
             "daemon answered Pong to a tool query",
             None,
         )),
+    }
+}
+
+/// Map the MCP-facing diff spec onto the `ariadne-core` `DiffSpec` the git
+/// adapter resolves. The core type stays a wire/domain type free of `schemars`
+/// (tier-15c D4).
+fn to_core_spec(spec: &DiffSpecInput) -> ariadne_core::DiffSpec {
+    match spec {
+        DiffSpecInput::WorkingTree => ariadne_core::DiffSpec::WorkingTree,
+        DiffSpecInput::Commit(rev) => ariadne_core::DiffSpec::Commit(rev.clone()),
+        DiffSpecInput::RefRange { from, to } => ariadne_core::DiffSpec::RefRange {
+            from: from.clone(),
+            to: to.clone(),
+        },
     }
 }
 
@@ -1033,6 +1091,35 @@ mod tests {
             }],
         };
         assert_parity("co_change", DaemonResponse::CoChange(c), &t);
+    }
+
+    #[test]
+    fn diff_blast_arm_matches_cold_output() {
+        // A seed (`t`) plus an unresolved changed path exercises every field of
+        // the mirrored report families.
+        let c = ariadne_core::DiffBlastReport {
+            seeds: vec![ariadne_core::DiffSeed {
+                symbol: c_sym(1, "t"),
+                must_touch: vec![c_sym(2, "m")],
+                may_touch: vec![c_sym(3, "y")],
+                depth_used: 2,
+            }],
+            must_touch: vec![c_sym(2, "m")],
+            may_touch: vec![c_sym(3, "y")],
+            unresolved: vec!["src/new.rs".into()],
+        };
+        let t = crate::types::DiffBlastOutput {
+            seeds: vec![crate::types::DiffSeedRow {
+                symbol: t_sym(1, "t"),
+                must_touch: vec![t_sym(2, "m")],
+                may_touch: vec![t_sym(3, "y")],
+                depth_used: 2,
+            }],
+            must_touch: vec![t_sym(2, "m")],
+            may_touch: vec![t_sym(3, "y")],
+            unresolved: vec!["src/new.rs".into()],
+        };
+        assert_parity("diff_blast_radius", DaemonResponse::DiffBlast(c), &t);
     }
 
     #[test]

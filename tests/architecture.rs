@@ -138,4 +138,18 @@ fn architecture_invariants_hold() {
             }
         }
     }
+
+    // (5) RD7 / ADR-0023: the warm daemon must never link `ariadne-git`. The
+    //     git diff for `diff_blast_radius` is computed at the MCP/CLI
+    //     composition roots (which may link a driven adapter) and only the
+    //     pre-computed hunks travel over the wire, so the daemon stays git-free.
+    //     `ariadne-mcp → ariadne-git` is permitted (a driving→driven edge); this
+    //     pins the asymmetry tier-15c relies on.
+    if let Some(daemon_deps) = deps_by_crate.get("ariadne-daemon") {
+        assert!(
+            !daemon_deps.contains("ariadne-git"),
+            "ariadne-daemon must not depend on ariadne-git (RD7 / ADR-0023): the \
+             daemon receives pre-computed diff hunks over the wire and never links git",
+        );
+    }
 }

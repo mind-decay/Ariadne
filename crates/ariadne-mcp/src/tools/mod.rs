@@ -8,6 +8,7 @@ pub mod blast_radius;
 pub mod co_change;
 pub mod complexity;
 pub mod coupling_report;
+pub mod diff_blast;
 pub mod doc_for;
 pub mod doc_module;
 pub mod doc_project;

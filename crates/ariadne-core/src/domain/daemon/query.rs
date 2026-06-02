@@ -5,6 +5,8 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::domain::records::LineHunk;
+
 /// Edge-kind filter a client passes to [`DaemonQuery::BlastRadius`].
 /// Mirrors the MCP `EdgeKindFilter`; the daemon maps it to the in-RAM
 /// graph's edge-kind set.
@@ -151,5 +153,21 @@ pub enum DaemonQuery {
         min_shared_commits: Option<u32>,
         /// Minimum coupling degree ∈ [0, 1]; `None` = default.
         min_degree: Option<f32>,
+    },
+    /// Diff-aware blast radius of a changeset (tier-15c). The client (the MCP
+    /// composition root, which links `ariadne-git`; the daemon never does —
+    /// RD7 / ADR-0023) computes the diff and sends the new-side line `hunks`
+    /// plus the full `changed_paths` list over the wire; the daemon builds the
+    /// `FileSymbolSpans` from its warm symbols + the changed files' bytes and
+    /// runs the graph `diff_blast` use case.
+    DiffBlast {
+        /// New-side changed line ranges across the changeset.
+        hunks: Vec<LineHunk>,
+        /// Full changed-path list (a path owning no seed surfaces as unresolved).
+        changed_paths: Vec<String>,
+        /// Reverse-BFS hop limit per seed; the daemon defaults to 3.
+        depth: Option<u8>,
+        /// Edge-kind filter; empty / missing = all kinds.
+        kinds: Option<Vec<EdgeKindFilter>>,
     },
 }

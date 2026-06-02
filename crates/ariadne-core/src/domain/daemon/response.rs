@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use super::rows::{
     CoChangeEdge, ComplexityRow, ComponentRow, CouplingRow, CycleBreakRow, CycleRow, DependencyRow,
-    GodModuleRow, HotspotRow, MisplacedRow, PlanFileRow, ReferenceSite, SymbolSummary,
+    DiffSeed, GodModuleRow, HotspotRow, MisplacedRow, PlanFileRow, ReferenceSite, SymbolSummary,
 };
 
 /// `blast_radius` report — the resolved target plus must / may dependents.
@@ -139,6 +139,21 @@ pub struct CoChangeReport {
     pub edges: Vec<CoChangeEdge>,
 }
 
+/// `diff_blast_radius` report — per-seed radii plus the deduped must / may
+/// union and the changed paths that resolved to no symbol (tier-15c). Mirrors
+/// `ariadne_graph::DiffBlastReport` projected to wire rows.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DiffBlastReport {
+    /// Per-seed radius for each changed symbol, sorted by `SymbolId`.
+    pub seeds: Vec<DiffSeed>,
+    /// Union of every seed's first-hop dependents.
+    pub must_touch: Vec<SymbolSummary>,
+    /// Union of every seed's transitive dependents, minus `must_touch`.
+    pub may_touch: Vec<SymbolSummary>,
+    /// Changed paths that resolved to no symbol seed, sorted.
+    pub unresolved: Vec<String>,
+}
+
 /// The daemon's reply to a [`super::DaemonRequest`]. Matched exhaustively
 /// by the transport adapter — see [`super::DaemonQuery`].
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -175,6 +190,8 @@ pub enum DaemonResponse {
     Complexity(ComplexityReport),
     /// `co_change` report.
     CoChange(CoChangeReport),
+    /// `diff_blast_radius` report (tier-15c).
+    DiffBlast(DiffBlastReport),
     /// A query-level failure (symbol / file / module not found, …). Mirrors
     /// the v1 MCP `NotFound` outcome without leaking an adapter error type.
     Error(String),

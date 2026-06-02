@@ -18,12 +18,13 @@ use serde::{Deserialize, Serialize};
 pub use query::{DaemonQuery, EdgeKindFilter, Grain};
 pub use response::{
     BlastRadiusReport, CoChangeReport, ComplexityReport, CouplingReport, DaemonResponse,
-    DocForReport, DocReport, FileSummaryReport, HotspotReport, PlanAssistReport,
+    DiffBlastReport, DocForReport, DocReport, FileSummaryReport, HotspotReport, PlanAssistReport,
     ProjectStatusReport, RefactorReport, WeakSpotsReport,
 };
 pub use rows::{
     CoChangeEdge, ComplexityRow, ComponentRow, CouplingRow, CycleBreakRow, CycleRow, DependencyRow,
-    GodModuleRow, HotspotRow, MisplacedRow, OutboundRow, PlanFileRow, ReferenceSite, SymbolSummary,
+    DiffSeed, GodModuleRow, HotspotRow, MisplacedRow, OutboundRow, PlanFileRow, ReferenceSite,
+    SymbolSummary,
 };
 
 /// A request a client sends to the daemon over the local socket.

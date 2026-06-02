@@ -117,10 +117,13 @@ where text search needs many and misses cross-file edges.
 
 - Navigate — `list_symbols`, `find_definition`, `find_references`. Use when
   locating a symbol or its call sites ("where is `X` defined?").
-- Impact — `blast_radius`, `plan_assist`. Use when scoping a change ("what
-  breaks if I change `X`?").
+- Impact — `blast_radius`, `plan_assist`, `diff_blast_radius`. Use when scoping a
+  change ("what breaks if I change `X`?", "what does my current diff affect?").
 - Architecture — `coupling_report`, `weak_spots`, `refactor_suggestions`. Use
   when assessing structural health ("what are the worst modules?").
+- History analytics — `hotspots`, `complexity`, `co_change`. Use when triaging
+  risk from Git churn × complexity ("what's the riskiest code?", "what changes
+  together?").
 - Docs — `doc_for`, `doc_for_module`, `doc_for_project`. Use when summarizing a
   symbol, file, or the whole project ("document the `X` module").
 - Freshness — `project_status`. Use to confirm the index is current ("is the

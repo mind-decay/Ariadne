@@ -56,6 +56,12 @@ pub(crate) fn dispatch(catalog: &WarmCatalog, query: DaemonQuery) -> DaemonRespo
             min_shared_commits,
             min_degree,
         ),
+        DaemonQuery::DiffBlast {
+            hunks,
+            changed_paths,
+            depth,
+            kinds,
+        } => impact::diff_blast(catalog, &hunks, &changed_paths, depth, kinds.as_deref()),
     }
 }
 

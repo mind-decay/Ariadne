@@ -457,3 +457,67 @@ pub struct CoChangeOutput {
     /// Coupling edges that cleared the filters, degree-descending.
     pub edges: Vec<CoChangeEdge>,
 }
+
+/// Which changeset a `diff_blast_radius` query scopes (tier-15c D4). Mirrors
+/// `ariadne_core::DiffSpec` behind a `JsonSchema`-deriving input the MCP layer
+/// owns; the handler maps it to the core type (core stays a wire/domain type
+/// that need not derive `schemars`). Defaults to the uncommitted working tree.
+#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema, PartialEq, Eq, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum DiffSpecInput {
+    /// Uncommitted index + worktree changes against `HEAD` (the default).
+    #[default]
+    WorkingTree,
+    /// A single commit against its first parent; the string is a revspec
+    /// (commit-ish) the git adapter resolves.
+    Commit(String),
+    /// The diff between two resolved revisions, `from` (old) → `to` (new); both
+    /// strings are revspecs the git adapter resolves.
+    RefRange {
+        /// Old-side revspec.
+        from: String,
+        /// New-side revspec.
+        to: String,
+    },
+}
+
+/// Input to `diff_blast_radius`.
+#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema, Default)]
+pub struct DiffBlastInput {
+    /// Which changeset to scope. Defaults to the uncommitted working tree.
+    #[serde(default)]
+    pub spec: DiffSpecInput,
+    /// Reverse-BFS hop limit per changed seed. Defaults to 3.
+    #[serde(default)]
+    pub depth: Option<u8>,
+    /// Edge-kind filter set. Empty / missing = all kinds.
+    #[serde(default)]
+    pub kinds: Option<Vec<EdgeKindFilter>>,
+}
+
+/// One changed symbol's blast radius inside a [`DiffBlastOutput`] (mirrors
+/// `ariadne_core::DiffSeed` field-for-field).
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct DiffSeedRow {
+    /// The changed symbol the radius was seeded from.
+    pub symbol: SymbolSummary,
+    /// First-hop dependents of the seed.
+    pub must_touch: Vec<SymbolSummary>,
+    /// Transitive dependents beyond the first hop.
+    pub may_touch: Vec<SymbolSummary>,
+    /// Largest hop depth in this seed's returned set.
+    pub depth_used: u8,
+}
+
+/// Output of `diff_blast_radius` (mirrors `ariadne_core::DiffBlastReport`).
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct DiffBlastOutput {
+    /// Per-seed radius for each changed symbol, sorted by symbol id.
+    pub seeds: Vec<DiffSeedRow>,
+    /// Union of every seed's first-hop dependents.
+    pub must_touch: Vec<SymbolSummary>,
+    /// Union of every seed's transitive dependents, minus `must_touch`.
+    pub may_touch: Vec<SymbolSummary>,
+    /// Changed paths that resolved to no symbol seed, sorted.
+    pub unresolved: Vec<String>,
+}

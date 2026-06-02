@@ -184,6 +184,11 @@ fn project(resp: DaemonResponse) -> Result<String> {
         DaemonResponse::Hotspots(report) => json(&report),
         DaemonResponse::Complexity(report) => json(&report),
         DaemonResponse::CoChange(report) => json(&report),
+        // The CLI `query` subcommand does not expose `diff_blast_radius` (it is
+        // an MCP tool — tier-15c), so the daemon never returns this for a CLI
+        // request; the arm keeps the projection exhaustive against the shared
+        // protocol enum.
+        DaemonResponse::DiffBlast(report) => json(&report),
         DaemonResponse::Error(msg) => bail!("{msg}"),
         DaemonResponse::Pong => bail!("daemon answered Pong to a tool query"),
     }

@@ -21,6 +21,12 @@ ariadne-core = { workspace = true }
 ariadne-storage = { workspace = true }
 ariadne-salsa = { workspace = true }
 ariadne-graph = { workspace = true }
+# Git-history driven adapter (tier-15c D1): the MCP server computes the live
+# `DiffSpec` diff for `diff_blast_radius` in-process, where `ariadne-git` is
+# linked. The daemon never links it — it receives the pre-computed hunks over
+# the wire — so RD7 holds (ADR-0023). `ariadne-git` itself stays deps ⊆ {core},
+# so the architecture invariant is preserved [src: docs/adr/0023-mcp-git-diff-dependency.md].
+ariadne-git = { workspace = true }
 thiserror = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -51,6 +57,10 @@ serde_json = { workspace = true }
 insta = { workspace = true }
 tempfile = { workspace = true }
 pretty_assertions = { workspace = true }
+# The tier-15c diff-blast golden seeds an index whose file `blake3` must match
+# the on-disk worktree bytes (the span-builder validity guard), so it hashes the
+# fixture content with the same codec the indexer uses.
+blake3 = { workspace = true }
 
 [[bench]]
 name = "concurrent"

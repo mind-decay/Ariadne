@@ -13,10 +13,10 @@ pub use domain::changeset::{Changeset, RevisionId};
 pub use domain::daemon::{
     BlastRadiusReport, CoChangeEdge, CoChangeReport, ComplexityReport, ComplexityRow, ComponentRow,
     CouplingReport, CouplingRow, CycleBreakRow, CycleRow, DaemonQuery, DaemonRequest,
-    DaemonResponse, DependencyRow, DocForReport, DocReport, EdgeKindFilter, FileSummaryReport,
-    GodModuleRow, Grain, HotspotReport, HotspotRow, MisplacedRow, OutboundRow, PlanAssistReport,
-    PlanFileRow, ProjectStatusReport, RefactorReport, ReferenceSite, SymbolSummary,
-    WeakSpotsReport,
+    DaemonResponse, DependencyRow, DiffBlastReport, DiffSeed, DocForReport, DocReport,
+    EdgeKindFilter, FileSummaryReport, GodModuleRow, Grain, HotspotReport, HotspotRow,
+    MisplacedRow, OutboundRow, PlanAssistReport, PlanFileRow, ProjectStatusReport, RefactorReport,
+    ReferenceSite, SymbolSummary, WeakSpotsReport,
 };
 pub use domain::ports::{
     ChunkStream, Indexer, Parser, ReadSnapshot, Storage, WatcherSink, WriteTxn,

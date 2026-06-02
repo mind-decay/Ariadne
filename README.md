@@ -86,8 +86,9 @@ field can be overridden per-run with an `ARIADNE_*` environment variable
 
 ## Tool catalog
 
-The MCP server exposes 13 read-only analytics. Each is also reachable from the
-shell via `ariadne query <tool> '<json-args>'`.
+The MCP server exposes 17 read-only analytics. Most are also reachable from the
+shell via `ariadne query <tool> '<json-args>'` (`diff_blast_radius` is MCP-only —
+it needs the live working-tree diff).
 
 | Tool | What it answers |
 |---|---|
@@ -104,6 +105,10 @@ shell via `ariadne query <tool> '<json-args>'`.
 | `doc_for_module` | Markdown documentation for one file/module. |
 | `doc_for_project` | Markdown architecture overview of the project. |
 | `refactor_suggestions` | God-module splits, cycle breaks, misplaced symbols. |
+| `hotspots` | Files or symbols ranked by churn × complexity. |
+| `complexity` | Files or symbols ranked by McCabe cyclomatic complexity. |
+| `co_change` | File pairs that change together in Git history. |
+| `diff_blast_radius` | Blast radius of a diff (working tree, a commit, or a ref range). |
 
 ## Language support
 

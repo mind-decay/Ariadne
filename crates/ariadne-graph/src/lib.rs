@@ -36,5 +36,5 @@ pub use errors::GraphError;
 pub use hotspot::{HotspotEntry, HotspotGrain, HotspotReport, file_hotspots, symbol_hotspots};
 pub use plan_assist::{PlanAssist, PlanFile};
 pub use refactor::{CycleBreakProposal, GodModuleFinding, MisplacedSymbol};
-pub use span_lines::FileSymbolSpans;
+pub use span_lines::{FileSpanSource, FileSymbolSpans, line_starts, spans_from};
 pub use symbol_churn::attribute_symbol_churn;

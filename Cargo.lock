@@ -187,6 +187,7 @@ version = "1.0.0"
 dependencies = [
  "ariadne-core",
  "bitflags",
+ "blake3",
  "criterion",
  "fxhash",
  "insta",
@@ -203,9 +204,11 @@ name = "ariadne-mcp"
 version = "1.0.0"
 dependencies = [
  "ariadne-core",
+ "ariadne-git",
  "ariadne-graph",
  "ariadne-salsa",
  "ariadne-storage",
+ "blake3",
  "insta",
  "interprocess",
  "postcard",

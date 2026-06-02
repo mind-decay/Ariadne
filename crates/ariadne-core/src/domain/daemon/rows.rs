@@ -157,6 +157,21 @@ pub struct ComplexityRow {
     pub complexity: u32,
 }
 
+/// One changed symbol's blast radius inside a [`super::DiffBlastReport`]
+/// (tier-15c). Mirrors `ariadne_graph::DiffSeed`, projected to wire rows: the
+/// changed symbol plus its own must / may dependents.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DiffSeed {
+    /// The changed symbol the radius was seeded from.
+    pub symbol: SymbolSummary,
+    /// First-hop dependents of the seed.
+    pub must_touch: Vec<SymbolSummary>,
+    /// Transitive dependents beyond the first hop.
+    pub may_touch: Vec<SymbolSummary>,
+    /// Largest hop depth in this seed's returned set.
+    pub depth_used: u8,
+}
+
 /// One logical-coupling edge between two files (tier-15b). Mirrors
 /// `ariadne_graph::CoChangeEdge` field-for-field.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
