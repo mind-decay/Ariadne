@@ -88,6 +88,11 @@ fn digest_emits_bounded_agent_shaped_markdown() {
         digest.contains("When to use which tool"),
         "digest missing the `When to use which tool` cheat-sheet:\n{digest}",
     );
+    assert!(
+        !digest.contains("![architecture]"),
+        "digest leaked the project overview's sidecar SVG reference \
+         (overview_slice must drop the `## Architecture` diagram):\n{digest}",
+    );
     assert!(!digest.trim().is_empty(), "digest was empty");
     assert!(
         digest.len() < 10_000,

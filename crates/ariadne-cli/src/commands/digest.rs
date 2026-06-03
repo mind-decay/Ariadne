@@ -133,8 +133,9 @@ impl DigestData {
     }
 
     /// A short slice of the `doc_for_project` Markdown — the title and the
-    /// counts overview, dropping the large `## Layers` diagram and capping the
-    /// remainder to [`OVERVIEW_BUDGET`] characters.
+    /// counts synopsis, dropping the `## Architecture` diagram (and every
+    /// section after it) and capping the remainder to [`OVERVIEW_BUDGET`]
+    /// characters.
     fn write_overview(&self, out: &mut String) {
         let markdown = self
             .overview
@@ -240,10 +241,15 @@ fn coupling_total(row: &Value) -> u64 {
 }
 
 /// Trim the `doc_for_project` Markdown to a short overview: everything before
-/// the `## Layers` diagram section, capped to [`OVERVIEW_BUDGET`] characters.
+/// the `## Architecture` diagram section, capped to [`OVERVIEW_BUDGET`]
+/// characters. `## Architecture` is the first header after the `## Synopsis`
+/// counts paragraph in the redesigned project overview, so the slice keeps the
+/// title and synopsis and excludes the embedded `![architecture](…svg)`
+/// reference (tier-03 deleted the former `## Layers` section)
+/// [src: crates/ariadne-graph/tests/snapshots/docgen_fixture__project.snap].
 fn overview_slice(markdown: &str) -> String {
     let head = markdown
-        .split_once("\n## Layers")
+        .split_once("\n## Architecture")
         .map_or(markdown, |(before, _)| before)
         .trim();
     truncate_chars(head, OVERVIEW_BUDGET)
@@ -258,4 +264,64 @@ fn truncate_chars(s: &str, max: usize) -> String {
     let mut out: String = s.chars().take(max).collect();
     out.push('…');
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{OVERVIEW_BUDGET, overview_slice};
+
+    /// Mirrors the redesigned `doc_for_project` shape (tier-03): a title, a
+    /// `## Synopsis` counts paragraph, then a `## Architecture` section that
+    /// embeds the sidecar SVG, then later insight sections
+    /// [src: crates/ariadne-graph/tests/snapshots/docgen_fixture__project.snap].
+    const PROJECT_DOC: &str = "# Project Architecture Overview\n\n\
+         ## Synopsis\n\n\
+         5 crate(s) · 1 layer(s) · 8 source symbol(s) · 7 dependency edge(s) · languages: rust.\n\n\
+         ## Architecture\n\n\
+         ![architecture](codebase-overview.svg)\n\n\
+         | Crate | Layer | Role |\n\n\
+         ## Boundary violations\n\n\
+         No symbol-level boundary violations detected.\n";
+
+    #[test]
+    fn keeps_synopsis_and_drops_architecture_diagram() {
+        let slice = overview_slice(PROJECT_DOC);
+        assert!(
+            slice.contains("# Project Architecture Overview"),
+            "slice dropped the title:\n{slice}",
+        );
+        assert!(
+            slice.contains("## Synopsis"),
+            "slice dropped the synopsis section:\n{slice}",
+        );
+        assert!(
+            !slice.contains("## Architecture"),
+            "slice leaked the architecture diagram header:\n{slice}",
+        );
+        assert!(
+            !slice.contains("![architecture]"),
+            "slice leaked the sidecar SVG reference:\n{slice}",
+        );
+    }
+
+    #[test]
+    fn caps_at_overview_budget() {
+        let body = "x".repeat(OVERVIEW_BUDGET * 2);
+        let doc = format!("# Title\n\n{body}\n\n## Architecture\n\ntail");
+        let slice = overview_slice(&doc);
+        assert!(
+            slice.chars().count() <= OVERVIEW_BUDGET + 1,
+            "slice exceeded the budget (+ellipsis): {} chars",
+            slice.chars().count(),
+        );
+    }
+
+    #[test]
+    fn falls_back_to_whole_doc_without_architecture_header() {
+        let slice = overview_slice("# Title\n\n## Synopsis\n\njust counts");
+        assert!(
+            slice.contains("just counts"),
+            "slice dropped content:\n{slice}"
+        );
+    }
 }
