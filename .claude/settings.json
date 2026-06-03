@@ -10,6 +10,15 @@
           }
         ],
         "matcher": "Bash"
+      },
+      {
+        "hooks": [
+          {
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/ariadne-grep-advisor.sh",
+            "type": "command"
+          }
+        ],
+        "matcher": "Grep|Glob|Read"
       }
     ],
     "SessionStart": [

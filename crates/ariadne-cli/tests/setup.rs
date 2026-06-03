@@ -200,10 +200,16 @@ fn setup_installs_session_start_hook_preserving_existing_hooks() {
             .expect(".claude/settings.json must be valid JSON");
 
     // The foreign PreToolUse audit-gate survives the merge semantically: `Value`
-    // equality is order-insensitive, so this holds even though the on-disk key
-    // order was normalized (the input was deliberately unsorted).
-    assert_eq!(
-        settings["hooks"]["PreToolUse"], existing["hooks"]["PreToolUse"],
+    // equality is order-insensitive, so the seed's Bash entry is still a member
+    // even though the on-disk key order was normalized (the input was
+    // deliberately unsorted). Tier-04 adds a sibling `Grep|Glob|Read` advisory
+    // entry, so the array now holds both rather than only the seed — hence
+    // membership, not whole-array equality.
+    let seed_bash = &existing["hooks"]["PreToolUse"][0];
+    assert!(
+        settings["hooks"]["PreToolUse"]
+            .as_array()
+            .is_some_and(|arr| arr.contains(seed_bash)),
         "the existing PreToolUse audit-gate hook must survive the merge semantically",
     );
     // And it still resolves: the audit-gate matcher + command are reachable by

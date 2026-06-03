@@ -77,6 +77,114 @@ jq -n --arg ctx "$DIGEST" \
 exit 0
 "#;
 
+/// Project-root-relative path of the installed `PreToolUse` advisor script.
+const ADVISOR_SCRIPT: &str = ".claude/hooks/ariadne-grep-advisor.sh";
+
+/// Command string registered in `.claude/settings.json` for the advisory
+/// `PreToolUse` entry; `${CLAUDE_PROJECT_DIR}` is substituted by Claude Code to
+/// the project root, mirroring the `SessionStart` entry [src: tier-03 D3d;
+/// <https://code.claude.com/docs/en/hooks> placeholders].
+const ADVISOR_COMMAND: &str = "${CLAUDE_PROJECT_DIR}/.claude/hooks/ariadne-grep-advisor.sh";
+
+/// Matcher for the advisory entry — a pipe-alternation of exact tool names, so
+/// it fires on `Grep`, `Glob`, and `Read` and nothing else; the existing `Bash`
+/// audit-gate matcher is a separate array entry left untouched [src:
+/// <https://code.claude.com/docs/en/hooks> matcher patterns; plan.md D5].
+const ADVISOR_MATCHER: &str = "Grep|Glob|Read";
+
+/// POSIX `sh` template for the `PreToolUse` advisor. Unlike the `SessionStart`
+/// hook it shells out to nothing — a pure, dependency-light classifier (no
+/// `jq`, no `ariadne`) that reads the `PreToolUse` payload on stdin, applies a
+/// tight symbol-shaped heuristic to the search pattern, and either injects
+/// advisory context (`permissionDecision:"allow"` + `additionalContext`) or
+/// defers. Advisory by construction: it emits only `allow` or `defer`, NEVER
+/// `deny`/`ask`, so it cannot block a legitimate search (D5). Any unexpected or
+/// unparseable input defers (fail-open; precision over recall, R5). The injected
+/// `additionalContext` is a fixed quote-free string, so it interpolates into the
+/// JSON safely without `jq` [src: plan.md D5, R5;
+/// <https://code.claude.com/docs/en/hooks> `PreToolUse` schema].
+const ADVISOR_HOOK: &str = r#"#!/usr/bin/env sh
+# Ariadne PreToolUse advisor — for a symbol-shaped Grep/Glob pattern, returns
+# permissionDecision:"allow" plus additionalContext naming the Ariadne tool that
+# answers it in one call; every other call defers untouched. Installed by
+# `ariadne setup`; do not edit by hand. Advisory by construction: it emits only
+# "allow" or "defer", NEVER "deny"/"ask", so it can never block a legitimate
+# search (D5). Any unexpected input defers (fail-open; precision over recall, R5)
+# [src: plan.md D5, R5; https://code.claude.com/docs/en/hooks PreToolUse].
+
+set -u
+
+# Defer: let the tool call through unchanged, with no added context. This is the
+# only output besides a precise symbol-shaped match below.
+defer() {
+  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"defer"}}\n'
+  exit 0
+}
+
+# Nudge: allow the call and inject $1 as advisory additionalContext, then exit.
+# Each message is a fixed quote-free/backslash-free string, so it interpolates
+# into the JSON safely without jq.
+nudge() {
+  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","additionalContext":"%s"}}\n' "$1"
+  exit 0
+}
+
+# stdin carries the PreToolUse payload {"tool_name":...,"tool_input":{...}}. An
+# empty or unreadable payload defers.
+PAYLOAD=$(cat 2>/dev/null) || defer
+[ -n "$PAYLOAD" ] || defer
+
+# Extract the tool name (no jq: a flat string field). Anything we cannot read
+# cleanly leaves TOOL empty and defers below.
+TOOL=$(printf '%s' "$PAYLOAD" | sed -n 's/.*"tool_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+
+# Only Grep/Glob carry a search pattern worth classifying. Read takes a file
+# path, never a symbol query (and a bare filename like `Makefile` would look
+# identifier-shaped), so Read — and any other tool — defers.
+case "$TOOL" in
+  Grep|Glob) : ;;
+  *) defer ;;
+esac
+
+# Extract the search pattern up to the first quote. A value containing an
+# (escaped) quote — i.e. a quoted phrase — truncates to something the identifier
+# test below rejects, so it defers. Intended.
+QUERY=$(printf '%s' "$PAYLOAD" | sed -n 's/.*"pattern"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+[ -n "$QUERY" ] || defer
+
+# Two factual messages, one per shape (audit F1): a definition-shaped query (a
+# `::`-path or a CamelCase type) leads with find_definition; a snake_case query
+# leads with find_references/list_symbols. Both name all three nav tools and stay
+# quote- and backslash-free so they interpolate without jq [src: plan.md D5].
+DEF_CTX="Ariadne's read-only semantic graph can resolve this symbol in one call: find_definition jumps straight to where it is defined, find_references then lists every call site across files, and list_symbols searches symbol names by substring or kind. The graph captures cross-file edges a text grep misses; consider the Ariadne MCP tools before scanning text."
+REF_CTX="Ariadne's read-only semantic graph can resolve this symbol in one call: find_references lists every call site across files and list_symbols searches symbol names by substring or kind, while find_definition locates the definition. The graph captures cross-file edges a text grep misses; consider the Ariadne MCP tools before scanning text."
+
+# Symbol-shaped heuristic with a structural floor (precision over recall, R5).
+# The pattern must first be a bare identifier or a `::`-path; whitespace phrases,
+# quoted strings, regex metacharacters, globs and file paths (with `/` or `.`)
+# fail both and defer. A bare identifier then nudges ONLY if it carries a code
+# signal — a `::` path, a `_` (snake_case), or a case mix (CamelCase). A bare
+# all-lowercase or all-caps word with none of these (error, TODO, render) is
+# free-text-shaped and defers: the residual false-positive class R5 trades away
+# [src: audit F2].
+if printf '%s' "$QUERY" | grep -Eq '^[A-Za-z_][A-Za-z0-9_]*(::[A-Za-z_][A-Za-z0-9_]*)+$'; then
+  # Shape A — `::`-separated path (crate::mod::Type): definition-lead.
+  nudge "$DEF_CTX"
+elif printf '%s' "$QUERY" | grep -Eq '^[A-Za-z_][A-Za-z0-9_]*$'; then
+  # Shapes B/C — a bare identifier. Apply the structural floor.
+  if printf '%s' "$QUERY" | grep -q '_'; then
+    # Shape C — snake_case (has `_`): references-lead.
+    nudge "$REF_CTX"
+  elif printf '%s' "$QUERY" | grep -Eq '[A-Z]' && printf '%s' "$QUERY" | grep -Eq '[a-z]'; then
+    # Shape B — CamelCase / mixed case: definition-lead.
+    nudge "$DEF_CTX"
+  fi
+  # else: bare all-lowercase or all-caps word, no code signal — fall through.
+fi
+
+defer
+"#;
+
 /// Scaffold config, merge `.mcp.json`, refresh the `CLAUDE.md` block, report.
 ///
 /// # Errors
@@ -92,13 +200,14 @@ pub fn run(root: &Path) -> Result<()> {
     // Step C — refresh the CLAUDE.md discoverability block.
     write_claude_block(root)?;
 
-    // Step D — install the SessionStart hook and register it in settings.json.
-    install_session_start_hook(root)?;
+    // Step D — install the SessionStart digest hook + the PreToolUse advisor
+    // script, then register both in `.claude/settings.json`.
+    install_hooks(root)?;
 
     // Step E — report and point at the next step.
     println!("  .mcp.json        registered the `ariadne` MCP server");
     println!("  CLAUDE.md        wrote the Ariadne discoverability block");
-    println!("  settings.json    registered the SessionStart digest hook");
+    println!("  settings.json    registered the SessionStart digest + PreToolUse advisory hooks");
     println!("next: run `ariadne index` to build the index");
     Ok(())
 }
@@ -218,10 +327,12 @@ fn render_block() -> String {
     .join("\n")
 }
 
-/// Install the `SessionStart` hook: write the executable script, then register
-/// it in `<root>/.claude/settings.json`. Both steps are idempotent.
-fn install_session_start_hook(root: &Path) -> Result<()> {
+/// Install both hook scripts (the `SessionStart` digest hook and the
+/// `PreToolUse` advisor), then register both in `<root>/.claude/settings.json`.
+/// Every step is idempotent.
+fn install_hooks(root: &Path) -> Result<()> {
     write_hook_script(root)?;
+    write_advisor_script(root)?;
     merge_settings_json(root)?;
     Ok(())
 }
@@ -249,6 +360,19 @@ fn write_hook_script(root: &Path) -> Result<()> {
     Ok(())
 }
 
+/// Write `<root>/.claude/hooks/ariadne-grep-advisor.sh` from the embedded
+/// template and mark it executable. Unlike the `SessionStart` script the advisor
+/// is a pure classifier with no binary path to resolve, so the template is
+/// written verbatim — making a re-run byte-identical. Overwrites any prior copy.
+fn write_advisor_script(root: &Path) -> Result<()> {
+    let path = root.join(ADVISOR_SCRIPT);
+    let dir = path.parent().expect("advisor path has a parent");
+    std::fs::create_dir_all(dir).with_context(|| format!("create {}", dir.display()))?;
+    std::fs::write(&path, ADVISOR_HOOK).with_context(|| format!("write {}", path.display()))?;
+    set_executable(&path)?;
+    Ok(())
+}
+
 /// Mark `path` executable (`chmod +x`) on Unix; a no-op on other platforms.
 #[cfg(unix)]
 fn set_executable(path: &Path) -> Result<()> {
@@ -266,15 +390,16 @@ fn set_executable(_path: &Path) -> Result<()> {
     Ok(())
 }
 
-/// Deep-merge the `SessionStart` hook entry into `<root>/.claude/settings.json`,
-/// touching only `hooks.SessionStart`: every other event (notably the
-/// `PreToolUse` audit-gate) is preserved semantically — `serde_json` normalizes
-/// object key order on re-serialization (`Value` is a `BTreeMap`), so a
-/// hand-authored entry's keys may be re-sorted, but its keys and values survive
-/// intact. Idempotent — a prior Ariadne entry is dropped and re-appended, and
-/// because the first run normalizes the file a second run yields byte-identical
-/// output; foreign `SessionStart` entries are left in place
-/// [src: plan.md D3d; setup.rs `merge_mcp_json` object-entry pattern].
+/// Deep-merge the Ariadne hook entries into `<root>/.claude/settings.json`,
+/// touching only `hooks.SessionStart` (the digest hook) and
+/// `hooks.PreToolUse` (the advisory entry, matcher `Grep|Glob|Read`). Foreign
+/// entries — notably the Bash audit-gate under `PreToolUse` — are preserved
+/// semantically: `serde_json` normalizes object key order on re-serialization
+/// (`Value` is a `BTreeMap`), so a hand-authored entry's keys may be re-sorted,
+/// but its keys and values survive intact. Idempotent — each prior Ariadne entry
+/// is dropped and re-appended, and because the first run normalizes the file a
+/// second run yields byte-identical output; foreign entries are left in place
+/// [src: plan.md D3d, D5; setup.rs `merge_mcp_json` object-entry pattern].
 fn merge_settings_json(root: &Path) -> Result<()> {
     let path = root.join(".claude/settings.json");
     let mut config: Value = match std::fs::read_to_string(&path) {
@@ -290,21 +415,37 @@ fn merge_settings_json(root: &Path) -> Result<()> {
         .context("`.claude/settings.json` root must be a JSON object")?
         .entry("hooks")
         .or_insert_with(|| json!({}));
-    let session_start = hooks
+    let hooks = hooks
         .as_object_mut()
-        .context("`.claude/settings.json` `hooks` must be a JSON object")?
-        .entry("SessionStart")
-        .or_insert_with(|| json!([]));
+        .context("`.claude/settings.json` `hooks` must be a JSON object")?;
+
+    // SessionStart (tier-03): drop any prior Ariadne entry, then append a fresh
+    // one. This replaces our own entry in place (idempotent) while leaving
+    // foreign entries untouched.
+    let session_start = hooks.entry("SessionStart").or_insert_with(|| json!([]));
     let entries = session_start
         .as_array_mut()
         .context("`hooks.SessionStart` must be a JSON array")?;
-
-    // Drop any prior Ariadne entry, then append a fresh one. This replaces our
-    // own entry in place (idempotent) while leaving foreign entries untouched.
     entries.retain(|entry| !is_ariadne_session_start(entry));
     entries.push(json!({
         "hooks": [
             { "type": "command", "command": SESSION_START_COMMAND }
+        ]
+    }));
+
+    // PreToolUse (tier-04): the advisory entry (matcher `Grep|Glob|Read`),
+    // alongside any foreign matcher — notably the Bash audit-gate. Same in-place
+    // replace, so the audit-gate entry survives the merge [src: plan.md D5;
+    // .claude/settings.json].
+    let pre_tool_use = hooks.entry("PreToolUse").or_insert_with(|| json!([]));
+    let pre_entries = pre_tool_use
+        .as_array_mut()
+        .context("`hooks.PreToolUse` must be a JSON array")?;
+    pre_entries.retain(|entry| !is_ariadne_advisory(entry));
+    pre_entries.push(json!({
+        "matcher": ADVISOR_MATCHER,
+        "hooks": [
+            { "type": "command", "command": ADVISOR_COMMAND }
         ]
     }));
 
@@ -327,5 +468,20 @@ fn is_ariadne_session_start(entry: &Value) -> bool {
             hooks
                 .iter()
                 .any(|h| h.get("command").and_then(Value::as_str) == Some(SESSION_START_COMMAND))
+        })
+}
+
+/// Whether a `PreToolUse` array entry is the Ariadne advisory — identified by a
+/// `command` matching [`ADVISOR_COMMAND`] in its `hooks` list (the matcher is
+/// not consulted, so a re-run that changed the matcher still replaces in place
+/// rather than duplicating). Foreign matchers (the Bash audit-gate) never match.
+fn is_ariadne_advisory(entry: &Value) -> bool {
+    entry
+        .get("hooks")
+        .and_then(Value::as_array)
+        .is_some_and(|hooks| {
+            hooks
+                .iter()
+                .any(|h| h.get("command").and_then(Value::as_str) == Some(ADVISOR_COMMAND))
         })
 }

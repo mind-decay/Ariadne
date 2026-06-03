@@ -7,7 +7,8 @@ exit_criteria:
   - "Non-symbol queries (log strings, comments, non-code paths) pass through with no added context (decision `defer`/`allow`, empty context)."
   - "`ariadne setup` installs the script and PreToolUse entry idempotently, preserving the existing Bash audit-gate PreToolUse hook."
   - "This repo's settings.json gains the advisory hook; a real grep for a symbol shows the injected suggestion."
-status: pending
+status: completed
+completed: 2026-06-03
 ---
 
 <context>
