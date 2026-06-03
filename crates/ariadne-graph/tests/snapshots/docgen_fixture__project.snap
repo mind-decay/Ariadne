@@ -4,50 +4,38 @@ expression: md
 ---
 # Project Architecture Overview
 
-## Overview
+## Synopsis
 
-5 modules · 8 symbols · 7 edges · 1 dependency cycle(s).
+5 crate(s) · 1 layer(s) · 8 source symbol(s) · 7 dependency edge(s) · languages: rust.
 
-## Layers
+## Architecture
 
-```mermaid
-flowchart TD
-    g0["api"]
-    g1["core ⇄ db"]
-    g2["util"]
-    g3["types"]
-    g0 --> g1
-    g1 --> g2
-    g1 --> g3
-```
+![architecture](codebase-overview.svg)
 
-## Hot-Spots
+| Crate | Layer | Role |
+| --- | --- | --- |
+| `api` | Interior | Volatile leaf module — depends outward, little depended upon. |
+| `core` | Interior | Intermediate module — balanced inbound and outbound coupling. |
+| `db` | Interior | Intermediate module — balanced inbound and outbound coupling. |
+| `types` | Interior | Stable foundational module — many dependents, few dependencies. |
+| `util` | Interior | Stable foundational module — many dependents, few dependencies. |
 
-| Module | Ce | Cycles | Dead | Score |
-| --- | --- | --- | --- | --- |
-| `core` | 3 | 1 | 2 | 6 |
-| `api` | 1 | 0 | 1 | 2 |
-| `db` | 1 | 1 | 0 | 2 |
-| `types` | 0 | 0 | 0 | 0 |
-| `util` | 0 | 0 | 0 | 0 |
+## Boundary violations
 
-## Coupling
+No symbol-level boundary violations detected.
 
-| Module | Ca | Ce | I | A | Distance |
-| --- | --- | --- | --- | --- | --- |
-| `api` | 0 | 1 | 1.00 | 0.00 | 0.00 |
-| `core` | 2 | 3 | 0.60 | 0.00 | 0.40 |
-| `db` | 1 | 1 | 0.50 | 0.00 | 0.50 |
-| `types` | 1 | 0 | 0.00 | 0.00 | 1.00 |
-| `util` | 1 | 0 | 0.00 | 0.00 | 1.00 |
+## Cycle clusters
 
-## Glossary
+1 dependency cluster(s) detected.
 
-- `core::run` (function) — `src/core.rs`
-- `db::query` (function) — `src/db.rs`
-- `db::connect` (function) — `src/db.rs`
-- `util::log` (function) — `src/util.rs`
-- `types::Config` (struct) — `src/types.rs`
-- `core::init` (function) — `src/core.rs`
-- `core::shutdown` (function) — `src/core.rs`
-- `api::serve` (function) — `src/api.rs`
+- 3 members (`core::run`, `db::query`, `db::connect`) — suggested cut: `core::run` → `db::query`
+
+## Risk hot-spots
+
+_Git history unavailable — risk hot-spots need per-file churn._
+
+## Refactor & change-coupling
+
+**God modules.** None detected.
+
+**Hidden change-coupling.** _Git history unavailable — change-coupling needs co-change data._

@@ -49,8 +49,14 @@ async fn doc_for_project_renders_overview() {
         md.contains("# Project Architecture Overview"),
         "missing overview header, got:\n{md}"
     );
-    assert!(md.contains("flowchart TD"), "missing Mermaid layer diagram");
-    assert!(md.contains("## Hot-Spots"), "missing Hot-Spots section");
+    assert!(
+        md.contains("![architecture](codebase-overview.svg)"),
+        "missing sidecar SVG reference, got:\n{md}"
+    );
+    assert!(
+        md.contains("## Risk hot-spots"),
+        "missing Risk hot-spots section, got:\n{md}"
+    );
 
     client.cancel().await.ok();
 }

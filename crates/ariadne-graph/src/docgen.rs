@@ -10,25 +10,26 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 
-use ariadne_core::{ReadSnapshot, SymbolId};
+use ariadne_core::{CoChangePair, FileChurn, ReadSnapshot, SymbolId};
 use petgraph::Direction::{Incoming, Outgoing};
-use petgraph::algo::{condensation, toposort};
-use petgraph::graph::DiGraph;
 use petgraph::stable_graph::NodeIndex;
 use petgraph::visit::{EdgeRef, IntoEdgeReferences};
 
 use crate::build::GraphIndex;
 use crate::coupling::{CouplingMetrics, ModuleSpec};
-use crate::cycles::{Cycle, CycleReport};
-use crate::dead::{DeadCodeConfig, DeadCodeReport};
+use crate::cycles::Cycle;
+use crate::dead::DeadCodeConfig;
+use crate::diagram::{DiagramEdge, DiagramNode, DiagramOpts, render_svg};
 use crate::doc_model::DocScope;
+use crate::docgen_insights;
 use crate::errors::GraphError;
 use crate::heuristics::{self, SymbolTable};
 
 /// Cap on rows in the per-module caller / callee tables.
 const TOP_N: usize = 10;
-/// Cap on rows in the project glossary and hot-spot tables.
-const LIST_N: usize = 10;
+/// Hard cap on rendered architecture-diagram nodes; the workspace has ~12
+/// crates, so this never truncates here but guards huge external repos.
+const ARCH_MAX_NODES: usize = 24;
 
 /// Render a Markdown summary for one module: purpose, public API,
 /// inbound / outbound coupling, cycles, and dead code.
@@ -188,61 +189,110 @@ every module member._\n\n",
     Ok(md)
 }
 
-/// Render a project-wide Markdown architecture overview: layer diagram
-/// (SCC condensation), hot-spots, coupling table, and glossary. An empty
+/// Render a project-wide Markdown architecture overview as deterministic,
+/// system-only insight: a synopsis, a crate-level architecture table (with a
+/// sidecar SVG reference), symbol-edge boundary violations, cycle clusters,
+/// churn × complexity risk hot-spots, and refactor / hidden change-coupling.
+/// Risk and change-coupling consume the git-history vectors `churn` /
+/// `co_change`; empty history degrades to explicit lines (D6). An empty
 /// project yields a `no modules` placeholder rather than an error.
 ///
 /// # Errors
 /// Propagates [`GraphError::Storage`] when the snapshot scan fails.
+#[allow(clippy::too_many_arguments)]
 pub fn for_project(
     graph: &GraphIndex,
     snap: &dyn ReadSnapshot,
     modules: &[ModuleSpec],
+    churn: &[FileChurn],
+    co_change: &[CoChangePair],
     scope: &DocScope,
 ) -> Result<String, GraphError> {
     let table = SymbolTable::from_snapshot(snap)?;
     let mut md = String::from("# Project Architecture Overview\n\n");
-    h2(&mut md, "Overview");
     if modules.is_empty() {
+        h2(&mut md, "Synopsis");
         md.push_str("_No modules indexed._\n");
         return Ok(md);
     }
-    // Doc-layer source scoping: the layer diagram and the aggregate
-    // Hot-Spots / Coupling tables report only in-scope (default: Source)
-    // modules; the graph itself is never filtered [src: plan.md D3].
+    // Doc-layer source scoping: every reported section covers only in-scope
+    // (default: Source) modules; the graph itself is never filtered [D3].
     let scoped: Vec<ModuleSpec> = modules
         .iter()
         .filter(|m| scope.include(&m.name))
         .cloned()
         .collect();
-    let cycles = graph.cycle_report();
-    let dead = graph.dead_code(&DeadCodeConfig::default());
-    let _ = writeln!(
-        md,
-        "{} modules · {} symbols · {} edges · {} dependency cycle(s).",
-        modules.len(),
-        graph.symbol_count(),
-        graph.edge_count(),
-        cycles.cycles.len()
-    );
-    md.push('\n');
 
-    h2(&mut md, "Layers");
-    md.push_str(&render_layers(graph, &scoped));
-    md.push('\n');
+    h2(&mut md, "Synopsis");
+    md.push_str(&docgen_insights::synopsis(graph, &scoped, &table, scope));
 
-    let stats: Vec<ModuleStat> = scoped
-        .iter()
-        .map(|m| module_stat(graph, m, &cycles, &dead))
-        .collect();
+    h2(&mut md, "Architecture");
+    md.push_str(&docgen_insights::architecture_section(graph, &scoped));
 
-    h2(&mut md, "Hot-Spots");
-    push_hotspots(&mut md, &stats);
-    h2(&mut md, "Coupling");
-    push_coupling(&mut md, &stats);
-    h2(&mut md, "Glossary");
-    push_glossary(&mut md, graph, &table);
+    h2(&mut md, "Boundary violations");
+    md.push_str(&docgen_insights::boundary_violations(graph, &table, scope));
+
+    h2(&mut md, "Cycle clusters");
+    md.push_str(&docgen_insights::cycle_clusters(graph, &table));
+
+    h2(&mut md, "Risk hot-spots");
+    md.push_str(&docgen_insights::risk_hotspots(&table, churn, scope));
+
+    h2(&mut md, "Refactor & change-coupling");
+    md.push_str(&docgen_insights::change_coupling(
+        graph, snap, &scoped, churn, co_change, &table,
+    )?);
+
     Ok(md)
+}
+
+/// Render the crate-level architecture DAG to a deterministic sidecar SVG
+/// (D2/D4). Scoped file-modules aggregate into crate nodes via [`crate_key`];
+/// inter-crate symbol edges become diagram edges, deduped and capped, then
+/// drawn by the tier-02 [`render_svg`] emitter. Pure and IO-free — the CLI
+/// owns the file write.
+#[must_use]
+pub fn architecture_svg(graph: &GraphIndex, modules: &[ModuleSpec], scope: &DocScope) -> String {
+    let scoped: Vec<ModuleSpec> = modules
+        .iter()
+        .filter(|m| scope.include(&m.name))
+        .cloned()
+        .collect();
+    let member_of = heuristics::member_index(graph, &scoped);
+
+    let node_ids: BTreeSet<String> = scoped
+        .iter()
+        .map(|m| docgen_insights::crate_key(&m.name).to_owned())
+        .collect();
+    let mut edge_set: BTreeSet<(String, String)> = BTreeSet::new();
+    for er in graph.graph.edge_references() {
+        if let (Some(&si), Some(&di)) = (member_of.get(&er.source()), member_of.get(&er.target())) {
+            let src = docgen_insights::crate_key(&scoped[si].name);
+            let dst = docgen_insights::crate_key(&scoped[di].name);
+            if src != dst {
+                edge_set.insert((src.to_owned(), dst.to_owned()));
+            }
+        }
+    }
+
+    let nodes: Vec<DiagramNode> = node_ids
+        .into_iter()
+        .map(|id| DiagramNode {
+            label: id.clone(),
+            id,
+        })
+        .collect();
+    let edges: Vec<DiagramEdge> = edge_set
+        .into_iter()
+        .map(|(from, to)| DiagramEdge { from, to })
+        .collect();
+    render_svg(
+        &nodes,
+        &edges,
+        &DiagramOpts {
+            max_nodes: ARCH_MAX_NODES,
+        },
+    )
 }
 
 /// Append a level-2 header followed by a blank line.
@@ -253,7 +303,7 @@ fn h2(md: &mut String, title: &str) {
 }
 
 /// One-line static purpose inference from the module's coupling shape.
-fn purpose(m: &CouplingMetrics) -> &'static str {
+pub(crate) fn purpose(m: &CouplingMetrics) -> &'static str {
     if m.afferent == 0 && m.efferent == 0 {
         "Isolated module — no coupling to the rest of the graph."
     } else if m.instability < 0.3 {
@@ -286,159 +336,4 @@ fn push_symbol_table(md: &mut String, table: &SymbolTable, role: &str, rows: &[(
         let _ = writeln!(md, "| `{}` | {} | {n} |", table.name(*id), table.kind(*id));
     }
     md.push('\n');
-}
-
-/// Per-module aggregate row backing the hot-spot and coupling tables.
-struct ModuleStat {
-    name: String,
-    afferent: u32,
-    efferent: u32,
-    instability: f32,
-    abstractness: f32,
-    distance: f32,
-    cycles: u32,
-    dead: u32,
-}
-
-/// Collapse one module into a [`ModuleStat`].
-fn module_stat(
-    graph: &GraphIndex,
-    m: &ModuleSpec,
-    cycles: &CycleReport,
-    dead: &DeadCodeReport,
-) -> ModuleStat {
-    let metrics = graph
-        .coupling_report(std::slice::from_ref(m))
-        .rows
-        .into_iter()
-        .next()
-        .expect("coupling_report emits one row per input module");
-    let cyc = cycles
-        .cycles
-        .iter()
-        .filter(|c| c.members.iter().any(|s| m.members.contains(s)))
-        .count();
-    let d = dead
-        .symbols
-        .iter()
-        .filter(|d| m.members.contains(&d.id))
-        .count();
-    ModuleStat {
-        name: metrics.name,
-        afferent: metrics.afferent,
-        efferent: metrics.efferent,
-        instability: metrics.instability,
-        abstractness: metrics.abstractness,
-        distance: metrics.distance,
-        cycles: u32::try_from(cyc).unwrap_or(u32::MAX),
-        dead: u32::try_from(d).unwrap_or(u32::MAX),
-    }
-}
-
-/// Append the hot-spot table: top [`LIST_N`] modules by combined
-/// `Ce + cycle membership + dead-code count`.
-fn push_hotspots(md: &mut String, stats: &[ModuleStat]) {
-    let mut ranked: Vec<(&ModuleStat, u32)> = stats
-        .iter()
-        .map(|s| {
-            (
-                s,
-                s.efferent.saturating_add(s.cycles).saturating_add(s.dead),
-            )
-        })
-        .collect();
-    ranked.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.name.cmp(&b.0.name)));
-    ranked.truncate(LIST_N);
-    md.push_str("| Module | Ce | Cycles | Dead | Score |\n| --- | --- | --- | --- | --- |\n");
-    for (s, score) in ranked {
-        let _ = writeln!(
-            md,
-            "| `{}` | {} | {} | {} | {score} |",
-            s.name, s.efferent, s.cycles, s.dead
-        );
-    }
-    md.push('\n');
-}
-
-/// Append the per-module Martin coupling table, sorted by module name.
-fn push_coupling(md: &mut String, stats: &[ModuleStat]) {
-    let mut rows: Vec<&ModuleStat> = stats.iter().collect();
-    rows.sort_by(|a, b| a.name.cmp(&b.name));
-    md.push_str("| Module | Ca | Ce | I | A | Distance |\n| --- | --- | --- | --- | --- | --- |\n");
-    for s in rows {
-        let _ = writeln!(
-            md,
-            "| `{}` | {} | {} | {:.2} | {:.2} | {:.2} |",
-            s.name, s.afferent, s.efferent, s.instability, s.abstractness, s.distance
-        );
-    }
-    md.push('\n');
-}
-
-/// Append the glossary: top [`LIST_N`] symbols by fan-in.
-fn push_glossary(md: &mut String, graph: &GraphIndex, table: &SymbolTable) {
-    let mut ranked: Vec<(SymbolId, usize)> = graph
-        .index
-        .keys()
-        .map(|&id| (id, graph.fan_in(id)))
-        .collect();
-    ranked.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
-    ranked.truncate(LIST_N);
-    if ranked.is_empty() {
-        md.push_str("_No symbols indexed._\n");
-        return;
-    }
-    for (id, _) in ranked {
-        let _ = writeln!(
-            md,
-            "- `{}` ({}) — `{}`",
-            table.name(id),
-            table.kind(id),
-            table.path(id)
-        );
-    }
-}
-
-/// Render the module dependency DAG as a Mermaid `flowchart TD` block.
-/// SCC condensation collapses mutually-dependent module groups; topo-sort
-/// of the condensation fixes a deterministic layer ordering.
-fn render_layers(graph: &GraphIndex, modules: &[ModuleSpec]) -> String {
-    let member_of = heuristics::member_index(graph, modules);
-    let mut mg: DiGraph<usize, ()> = DiGraph::new();
-    let nodes: Vec<NodeIndex> = (0..modules.len()).map(|i| mg.add_node(i)).collect();
-    let mut edges: BTreeSet<(usize, usize)> = BTreeSet::new();
-    for er in graph.graph.edge_references() {
-        if let (Some(&s), Some(&d)) = (member_of.get(&er.source()), member_of.get(&er.target())) {
-            if s != d {
-                edges.insert((s, d));
-            }
-        }
-    }
-    for (s, d) in &edges {
-        mg.add_edge(nodes[*s], nodes[*d], ());
-    }
-    let condensed = condensation(mg, true);
-    let order = toposort(&condensed, None).expect("condensation make_acyclic=true is acyclic");
-    let pos: BTreeMap<NodeIndex, usize> = order.iter().enumerate().map(|(i, n)| (*n, i)).collect();
-
-    let mut out = String::from("```mermaid\nflowchart TD\n");
-    for (i, n) in order.iter().enumerate() {
-        let mut names: Vec<&str> = condensed[*n]
-            .iter()
-            .map(|mi| modules[*mi].name.as_str())
-            .collect();
-        names.sort_unstable();
-        let _ = writeln!(out, "    g{i}[\"{}\"]", names.join(" ⇄ "));
-    }
-    let mut layer_edges: Vec<(usize, usize)> = condensed
-        .edge_references()
-        .map(|er| (pos[&er.source()], pos[&er.target()]))
-        .collect();
-    layer_edges.sort_unstable();
-    layer_edges.dedup();
-    for (a, b) in layer_edges {
-        let _ = writeln!(out, "    g{a} --> g{b}");
-    }
-    out.push_str("```\n");
-    out
 }

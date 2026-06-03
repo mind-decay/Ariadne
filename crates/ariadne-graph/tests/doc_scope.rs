@@ -109,16 +109,18 @@ fn for_project_omits_fixtures_but_graph_keeps_them() {
         },
     ];
     let snap = support::empty_snapshot();
-    let md =
-        docgen::for_project(&graph, &snap, &modules, &DocScope::default()).expect("for_project");
+    let md = docgen::for_project(&graph, &snap, &modules, &[], &[], &DocScope::default())
+        .expect("for_project");
 
+    // tier-03 reports crates, not per-file paths: the source module's crate
+    // (`ariadne-graph`) appears in the Architecture table.
     assert!(
-        md.contains("crates/ariadne-graph/src/docgen.rs"),
-        "source module must appear in the doc:\n{md}"
+        md.contains("ariadne-graph"),
+        "source crate must appear in the doc:\n{md}"
     );
     assert!(
         !md.contains("jquery.js"),
-        "fixture module must be filtered from the Hot-Spots/Coupling tables:\n{md}"
+        "fixture module must be filtered from every reported section:\n{md}"
     );
     // Scope is doc-layer only: the fixture symbol still resolves in the
     // graph (its inbound edge survives), proving the graph was not mutated.

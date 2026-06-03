@@ -74,6 +74,18 @@ impl SymbolTable {
             .and_then(|r| self.files.get(&r.defining_file))
             .map_or("", String::as_str)
     }
+
+    /// Borrow every `SymbolId → SymbolRecord` pair in [`SymbolId`] order. Used
+    /// by the project-doc insight helpers to fold per-file complexity and map
+    /// files to their symbols without a second snapshot scan.
+    pub(crate) fn symbols(&self) -> &BTreeMap<SymbolId, SymbolRecord> {
+        &self.symbols
+    }
+
+    /// Iterate every known file path in [`FileId`] order.
+    pub(crate) fn file_paths(&self) -> impl Iterator<Item = &str> {
+        self.files.values().map(String::as_str)
+    }
 }
 
 /// Ratio of two counts in f32, computed in f64 so the denominator

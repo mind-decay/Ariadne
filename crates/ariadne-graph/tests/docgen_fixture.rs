@@ -21,8 +21,15 @@ fn golden_module_doc_core() {
 #[test]
 fn golden_project_doc() {
     let fx = support::core_fixture();
-    let md = docgen::for_project(&fx.graph, &fx.snapshot, &fx.modules, &DocScope::default())
-        .expect("for_project");
+    let md = docgen::for_project(
+        &fx.graph,
+        &fx.snapshot,
+        &fx.modules,
+        &[],
+        &[],
+        &DocScope::default(),
+    )
+    .expect("for_project");
     insta::assert_snapshot!("project", md);
 }
 
@@ -30,7 +37,7 @@ fn golden_project_doc() {
 fn empty_project_has_no_modules_placeholder() {
     let graph = GraphIndex::new();
     let snap = support::empty_snapshot();
-    let md = docgen::for_project(&graph, &snap, &[], &DocScope::default())
+    let md = docgen::for_project(&graph, &snap, &[], &[], &[], &DocScope::default())
         .expect("for_project on empty project");
     assert!(
         md.contains("_No modules indexed._"),
@@ -75,13 +82,13 @@ proptest! {
     fn project_doc_insertion_order_independent(seed in any::<u64>()) {
         let reference = {
             let fx = support::core_fixture();
-            docgen::for_project(&fx.graph, &fx.snapshot, &fx.modules, &DocScope::default())
+            docgen::for_project(&fx.graph, &fx.snapshot, &fx.modules, &[], &[], &DocScope::default())
                 .expect("reference render")
         };
         let graph = support::shuffled_graph(seed);
         let snap = support::snapshot();
         let modules = support::modules();
-        let shuffled = docgen::for_project(&graph, &snap, &modules, &DocScope::default())
+        let shuffled = docgen::for_project(&graph, &snap, &modules, &[], &[], &DocScope::default())
             .expect("shuffled render");
         prop_assert_eq!(reference, shuffled);
     }

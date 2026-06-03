@@ -64,8 +64,14 @@ pub(crate) fn doc_for_module(cat: &WarmCatalog, path: &str) -> DaemonResponse {
 /// Markdown architecture overview for the project, scoped by `prefix`.
 pub(crate) fn doc_for_project(cat: &WarmCatalog, prefix: Option<&str>) -> DaemonResponse {
     let modules = build_modules(cat, prefix);
-    match ariadne_graph::docgen::for_project(&cat.graph, &cat.snap, &modules, &DocScope::default())
-    {
+    match ariadne_graph::docgen::for_project(
+        &cat.graph,
+        &cat.snap,
+        &modules,
+        &cat.churn,
+        &cat.co_change,
+        &DocScope::default(),
+    ) {
         Ok(markdown) => DaemonResponse::Doc(DocReport { markdown }),
         Err(err) => DaemonResponse::Error(err.to_string()),
     }

@@ -385,10 +385,18 @@ pub fn cold_doc_project(root: &Path, prefix: Option<&str>) -> String {
     let modules = reference.modules(prefix);
     let storage = RedbStorage::open(&index_path(root)).expect("open redb");
     let snap = storage.snapshot().expect("snapshot");
+    // Mirror the warm catalog's load + sort so the cold render is byte-identical
+    // [src: daemon catalog.rs:147-150].
+    let mut churn = storage.all_churn().expect("churn");
+    churn.sort_by(|a, b| a.path.cmp(&b.path));
+    let mut co_change = storage.all_co_change().expect("co_change");
+    co_change.sort_by(|a, b| a.a.cmp(&b.a).then_with(|| a.b.cmp(&b.b)));
     ariadne_graph::docgen::for_project(
         &reference.graph,
         &snap,
         &modules,
+        &churn,
+        &co_change,
         &ariadne_graph::DocScope::default(),
     )
     .expect("render project")

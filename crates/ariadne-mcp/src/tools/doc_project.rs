@@ -21,8 +21,14 @@ pub fn handle<S: Storage>(
 ) -> Result<DocOutput, McpError> {
     let modules = build_modules(cat, scope.prefix.as_deref());
     let snap = storage.snapshot().map_err(McpError::Storage)?;
-    let markdown =
-        ariadne_graph::docgen::for_project(&cat.graph, &snap, &modules, &DocScope::default())
-            .map_err(McpError::Graph)?;
+    let markdown = ariadne_graph::docgen::for_project(
+        &cat.graph,
+        &snap,
+        &modules,
+        &cat.churn,
+        &cat.co_change,
+        &DocScope::default(),
+    )
+    .map_err(McpError::Graph)?;
     Ok(DocOutput { markdown })
 }

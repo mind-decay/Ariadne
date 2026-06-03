@@ -8,7 +8,8 @@ exit_criteria:
   - "Cycle clusters names the largest SCC with its member count and >=1 suggested cut edge; Risk hot-spots rank by churn x complexity over source-scoped files only"
   - "git-history vectors threaded through; empty history degrades to an explicit 'history unavailable' line, deterministically"
   - "golden Markdown test green; render twice -> identical bytes; cargo clippy/fmt/deny/architecture green"
-status: pending
+status: completed
+completed: 2026-06-04
 ---
 
 <context>
