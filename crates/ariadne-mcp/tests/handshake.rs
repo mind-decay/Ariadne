@@ -151,6 +151,14 @@ async fn handshake_snapshots_server_instructions() {
         .instructions
         .clone()
         .expect("server instructions present");
+    // Claude Code truncates server instructions at a 2KB cap; the Search/Read
+    // line (tier-09) must keep the total under it [src: plan.md `<constraints>`
+    // 2KB cap].
+    assert!(
+        instructions.len() <= 2048,
+        "server instructions are {} bytes, over the 2KB cap",
+        instructions.len(),
+    );
     insta::assert_snapshot!("server_instructions", instructions);
 
     client.cancel().await.ok();

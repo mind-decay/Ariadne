@@ -638,7 +638,9 @@ search for and call these Ariadne tools instead of grep, Read, or file-walking â
 graph answers in one call where text search needs many and misses cross-file edges. \
 Ariadne is a read-only semantic graph of the local project (symbols, references, and \
 dependency edges), kept current with the code. Navigate with list_symbols, \
-find_definition, find_references, and file_summary. Scope impact with blast_radius, \
+find_definition, find_references, and file_summary. Search symbols by name pattern with \
+search_code, and read a symbol's source straight from disk with read_symbol instead of \
+grepping or reading whole files. Scope impact with blast_radius, \
 plan_assist, and diff_blast_radius. Assess architecture health with coupling_report, \
 weak_spots, and refactor_suggestions. Triage risk from Git history with hotspots, \
 complexity, and co_change. Read generated docs with doc_for, doc_for_module, and \

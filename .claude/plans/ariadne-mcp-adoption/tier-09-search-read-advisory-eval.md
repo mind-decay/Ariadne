@@ -7,7 +7,8 @@ exit_criteria:
   - "The MCP server `with_instructions` and the CLAUDE.md \"Ariadne code intelligence\" tool list both gain a Search/Read group listing `search_code` + `read_symbol`; server instructions stay within the 2KB cap."
   - "The tier-05 adoption harness tallies the two new tool names, and a recorded re-run reports the real-tool token delta versus the tier-06 spike estimate."
   - "Advisor classification tests, harness wiring, clippy `-D warnings`, fmt, and `cargo test --test architecture` are green; the behavioural ratio is reported, not gated."
-status: pending
+status: completed
+completed: 2026-06-03
 ---
 
 <context>
@@ -85,3 +86,33 @@ Revert the advisor template + installed script, the `with_instructions` lines, t
 CLAUDE.md bullet, and the harness extension. Config + doc + test only; no product
 data path changes, so tiers 07–08 remain intact.
 </rollback>
+
+<notes>
+Real-tool token-delta re-measure (`adoption_harness.rs::real_tool_token_delta_vs_grep`,
+`#[ignore]`, run manually over this repo's live index, revision 560). Baseline = Σ grep
+matching-line bytes for the symbol across the indexed corpus + whole-file Read of the
+defining file; prototype = real `search_code` output bytes + real `read_symbol`
+(`context` mode) output bytes; token proxy = bytes/4 (matches the tier-06 spike method).
+
+| Shape | Symbol | Baseline tok | Proto tok | Reduction |
+|-------|--------|-------------:|----------:|----------:|
+| find-definition | Catalog | 4263 | 945 | 77.8% |
+| find-definition | RedbStorage | 6895 | 210 | 96.9% |
+| find-definition | SymbolSummary | 6645 | 342 | 94.8% |
+| search-by-pattern | doc_for | 1665 | 908 | 45.4% |
+| search-by-pattern | summarize | 1439 | 402 | 72.0% |
+| search-by-pattern | handle | 76929 | 1932 | 97.4% |
+| read-body | find_symbol | 4330 | 210 | 95.1% |
+| read-body | build | 7813 | 1536 | 80.3% |
+
+Median real-tool reduction across 8 tasks: **87.5%** — confirms the tier-06 spike's
+87.3% projection (≥40% D11 threshold) with the shipped tools rather than the hand-rolled
+prototype. The two arms run over the same indexed corpus; targets resolve in the live
+catalog (asserted by `read_symbol`).
+
+Signal (step 7): the deterministic delta confirms the value; real behavioural adoption is
+measured by the `#[ignore]` `adoption_ratio_baseline_vs_treated` harness (now tallying
+`search_code`/`read_symbol`), reported not gated. If a recorded behavioural run shows low
+real uptake of the two new tools, escalating the advisory from `allow` toward `ask` is a
+follow-up plan, not this tier [src: tier-05 step 5; plan.md D5].
+</notes>

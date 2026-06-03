@@ -1,11 +1,12 @@
 #!/usr/bin/env sh
-# Ariadne PreToolUse advisor — for a symbol-shaped Grep/Glob pattern, returns
-# permissionDecision:"allow" plus additionalContext naming the Ariadne tool that
-# answers it in one call; every other call defers untouched. Installed by
-# `ariadne setup`; do not edit by hand. Advisory by construction: it emits only
-# "allow" or "defer", NEVER "deny"/"ask", so it can never block a legitimate
-# search (D5). Any unexpected input defers (fail-open; precision over recall, R5)
-# [src: plan.md D5, R5; https://code.claude.com/docs/en/hooks PreToolUse].
+# Ariadne PreToolUse advisor — for a symbol-shaped Grep/Glob pattern, or a
+# whole-file Read of a source file, returns permissionDecision:"allow" plus
+# additionalContext naming the Ariadne tool that answers it in one call; every
+# other call defers untouched. Installed by `ariadne setup`; do not edit by hand.
+# Advisory by construction: it emits only "allow" or "defer", NEVER "deny"/"ask",
+# so it can never block a legitimate search (D5). Any unexpected input defers
+# (fail-open; precision over recall, R5)
+# [src: plan.md D5, R5, D8, D9; https://code.claude.com/docs/en/hooks PreToolUse].
 
 set -u
 
@@ -33,48 +34,63 @@ PAYLOAD=$(cat 2>/dev/null) || defer
 # cleanly leaves TOOL empty and defers below.
 TOOL=$(printf '%s' "$PAYLOAD" | sed -n 's/.*"tool_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
 
-# Only Grep/Glob carry a search pattern worth classifying. Read takes a file
-# path, never a symbol query (and a bare filename like `Makefile` would look
-# identifier-shaped), so Read — and any other tool — defers.
+# Three factual messages, all quote- and backslash-free so they interpolate
+# without jq. The two Grep/Glob messages differ only in lead tool by shape (audit
+# F1): a definition-shaped query (a `::`-path or a CamelCase type) leads with
+# find_definition; a snake_case query leads with find_references. Both name
+# search_code — the symbol-pattern search D8 adds — alongside the nav tools. The
+# Read message names read_symbol — the source-read primitive D9 adds [src: plan.md
+# D5, D8, D9].
+SEARCH_DEF_CTX="Ariadne's read-only semantic graph can resolve this symbol in one call: find_definition jumps straight to where it is defined, find_references then lists every call site across files, search_code finds symbols by name pattern or kind, and list_symbols searches symbol names by substring. The graph captures cross-file edges a text grep misses; consider the Ariadne MCP tools before scanning text."
+SEARCH_REF_CTX="Ariadne's read-only semantic graph can resolve this symbol in one call: find_references lists every call site across files, search_code finds symbols by name pattern or kind, and list_symbols searches symbol names by substring, while find_definition locates the definition. The graph captures cross-file edges a text grep misses; consider the Ariadne MCP tools before scanning text."
+READ_CTX="Ariadne's read-only semantic graph can return a symbol's source without reading the whole file: read_symbol returns a symbol's signature, full body, or body with surrounding context straight from the live file, and find_definition locates the symbol first. Consider the Ariadne MCP tools before reading the whole file."
+
+# Branch by tool. Grep/Glob carry a search pattern to classify; Read carries a
+# file path to classify by extension; any other tool defers.
 case "$TOOL" in
-  Grep|Glob) : ;;
+  Grep|Glob)
+    # Extract the search pattern up to the first quote. A value containing an
+    # (escaped) quote — i.e. a quoted phrase — truncates to something the
+    # identifier test below rejects, so it defers. Intended.
+    QUERY=$(printf '%s' "$PAYLOAD" | sed -n 's/.*"pattern"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+    [ -n "$QUERY" ] || defer
+
+    # Symbol-shaped heuristic with a structural floor (precision over recall,
+    # R5). The pattern must first be a bare identifier or a `::`-path; whitespace
+    # phrases, quoted strings, regex metacharacters, globs and file paths (with
+    # `/` or `.`) fail both and defer. A bare identifier then nudges ONLY if it
+    # carries a code signal — a `::` path, a `_` (snake_case), or a case mix
+    # (CamelCase). A bare all-lowercase or all-caps word with none of these
+    # (error, TODO, render) is free-text-shaped and defers: the residual
+    # false-positive class R5 trades away [src: audit F2].
+    if printf '%s' "$QUERY" | grep -Eq '^[A-Za-z_][A-Za-z0-9_]*(::[A-Za-z_][A-Za-z0-9_]*)+$'; then
+      # Shape A — `::`-separated path (crate::mod::Type): definition-lead.
+      nudge "$SEARCH_DEF_CTX"
+    elif printf '%s' "$QUERY" | grep -Eq '^[A-Za-z_][A-Za-z0-9_]*$'; then
+      # Shapes B/C — a bare identifier. Apply the structural floor.
+      if printf '%s' "$QUERY" | grep -q '_'; then
+        # Shape C — snake_case (has `_`): references-lead.
+        nudge "$SEARCH_REF_CTX"
+      elif printf '%s' "$QUERY" | grep -Eq '[A-Z]' && printf '%s' "$QUERY" | grep -Eq '[a-z]'; then
+        # Shape B — CamelCase / mixed case: definition-lead.
+        nudge "$SEARCH_DEF_CTX"
+      fi
+      # else: bare all-lowercase or all-caps word, no code signal — fall through.
+    fi
+    ;;
+  Read)
+    # Extract the file path. A whole-file Read of a source file is what
+    # read_symbol replaces; classify by extension against the canonical
+    # extension table the indexer recognises (ariadne-core Lang::from_extension),
+    # so a Read of a non-source file (.md, .toml, Makefile, /etc/hosts) defers.
+    FILE=$(printf '%s' "$PAYLOAD" | sed -n 's/.*"file_path"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+    [ -n "$FILE" ] || defer
+    case "$FILE" in
+      *.rs|*.ts|*.mts|*.cts|*.tsx|*.js|*.jsx|*.mjs|*.cjs|*.vue|*.svelte|*.astro|*.py|*.pyi|*.go|*.java|*.kt|*.kts|*.cs|*.c|*.h|*.cpp|*.cc|*.cxx|*.c++|*.hpp|*.hh|*.hxx)
+        nudge "$READ_CTX" ;;
+    esac
+    ;;
   *) defer ;;
 esac
-
-# Extract the search pattern up to the first quote. A value containing an
-# (escaped) quote — i.e. a quoted phrase — truncates to something the identifier
-# test below rejects, so it defers. Intended.
-QUERY=$(printf '%s' "$PAYLOAD" | sed -n 's/.*"pattern"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
-[ -n "$QUERY" ] || defer
-
-# Two factual messages, one per shape (audit F1): a definition-shaped query (a
-# `::`-path or a CamelCase type) leads with find_definition; a snake_case query
-# leads with find_references/list_symbols. Both name all three nav tools and stay
-# quote- and backslash-free so they interpolate without jq [src: plan.md D5].
-DEF_CTX="Ariadne's read-only semantic graph can resolve this symbol in one call: find_definition jumps straight to where it is defined, find_references then lists every call site across files, and list_symbols searches symbol names by substring or kind. The graph captures cross-file edges a text grep misses; consider the Ariadne MCP tools before scanning text."
-REF_CTX="Ariadne's read-only semantic graph can resolve this symbol in one call: find_references lists every call site across files and list_symbols searches symbol names by substring or kind, while find_definition locates the definition. The graph captures cross-file edges a text grep misses; consider the Ariadne MCP tools before scanning text."
-
-# Symbol-shaped heuristic with a structural floor (precision over recall, R5).
-# The pattern must first be a bare identifier or a `::`-path; whitespace phrases,
-# quoted strings, regex metacharacters, globs and file paths (with `/` or `.`)
-# fail both and defer. A bare identifier then nudges ONLY if it carries a code
-# signal — a `::` path, a `_` (snake_case), or a case mix (CamelCase). A bare
-# all-lowercase or all-caps word with none of these (error, TODO, render) is
-# free-text-shaped and defers: the residual false-positive class R5 trades away
-# [src: audit F2].
-if printf '%s' "$QUERY" | grep -Eq '^[A-Za-z_][A-Za-z0-9_]*(::[A-Za-z_][A-Za-z0-9_]*)+$'; then
-  # Shape A — `::`-separated path (crate::mod::Type): definition-lead.
-  nudge "$DEF_CTX"
-elif printf '%s' "$QUERY" | grep -Eq '^[A-Za-z_][A-Za-z0-9_]*$'; then
-  # Shapes B/C — a bare identifier. Apply the structural floor.
-  if printf '%s' "$QUERY" | grep -q '_'; then
-    # Shape C — snake_case (has `_`): references-lead.
-    nudge "$REF_CTX"
-  elif printf '%s' "$QUERY" | grep -Eq '[A-Z]' && printf '%s' "$QUERY" | grep -Eq '[a-z]'; then
-    # Shape B — CamelCase / mixed case: definition-lead.
-    nudge "$DEF_CTX"
-  fi
-  # else: bare all-lowercase or all-caps word, no code signal — fall through.
-fi
 
 defer

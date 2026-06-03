@@ -1,8 +1,8 @@
 {
   "slug": "ariadne-mcp-adoption",
-  "audited_commit": "b2159990b225b08af440caaf9521a4aa1cdb96ea",
-  "tier_id": "tier-08",
+  "audited_commit": "7aaf9f8742e9b8fe969d8e574ab158dbacc0437f",
+  "tier_id": "tier-09",
   "verdict": "PASS",
-  "audited_at": "2026-06-03T20:30:00Z",
-  "report": "audit/tier-08-report.md"
+  "audited_at": "2026-06-03T21:10:00Z",
+  "report": "audit/tier-09-report.md"
 }

@@ -208,6 +208,92 @@ fn advisor_defers_non_source_paths() {
 }
 
 #[test]
+fn advisor_names_search_code_for_symbol_shaped_grep() {
+    // Tier-09: a symbol-pattern Grep/Glob is what `search_code` answers (regex /
+    // substring over symbol names) — the injected context must name it alongside
+    // the navigation tools, for both a CamelCase type and a snake_case identifier
+    // [src: tier-09 step 2; plan.md D8].
+    let (_tmp, script) = install_advisor();
+    for pattern in ["Catalog", "fooBar", "merge_settings_json"] {
+        let payload = format!(r#"{{"tool_name":"Grep","tool_input":{{"pattern":"{pattern}"}}}}"#);
+        let out = run_advisor(&script, &payload);
+        let v: Value = serde_json::from_str(out.trim()).expect("advisor emits valid JSON");
+        let hso = &v["hookSpecificOutput"];
+        assert_eq!(
+            hso["permissionDecision"], "allow",
+            "symbol-shaped pattern `{pattern}` must nudge, got: {out}",
+        );
+        let ctx = hso["additionalContext"]
+            .as_str()
+            .expect("a nudge must carry additionalContext");
+        assert!(
+            ctx.contains("search_code"),
+            "additionalContext must name `search_code` for a symbol-pattern Grep, got: {ctx}",
+        );
+    }
+}
+
+#[test]
+fn advisor_nudges_read_symbol_for_source_file_read() {
+    // Tier-09: a whole-file `Read` of a source file is what `read_symbol`
+    // replaces (it returns a symbol's source straight from disk). The advisor
+    // must `allow` and name `read_symbol`, across the languages Ariadne indexes
+    // [src: tier-09 step 2; plan.md D9].
+    let (_tmp, script) = install_advisor();
+    for path in [
+        "crates/ariadne-cli/src/commands/setup.rs",
+        "src/index.ts",
+        "app/models/user.py",
+        "pkg/server/main.go",
+    ] {
+        let payload = format!(r#"{{"tool_name":"Read","tool_input":{{"file_path":"{path}"}}}}"#);
+        let out = run_advisor(&script, &payload);
+        let v: Value = serde_json::from_str(out.trim()).expect("advisor emits valid JSON");
+        let hso = &v["hookSpecificOutput"];
+        assert_eq!(
+            hso["permissionDecision"], "allow",
+            "a source-file Read of `{path}` must nudge, got: {out}",
+        );
+        let ctx = hso["additionalContext"]
+            .as_str()
+            .expect("a nudge must carry additionalContext");
+        assert!(
+            ctx.contains("read_symbol"),
+            "additionalContext must name `read_symbol` for a source-file Read, got: {ctx}",
+        );
+    }
+}
+
+#[test]
+fn advisor_defers_quoted_grep_and_doc_read_without_new_tools() {
+    // Tier-09 step 1(c): a quoted free-text Grep and a `.md`/non-source Read are
+    // pass-throughs — they must defer with no `additionalContext`, and must never
+    // leak the new tool names into a deferred output.
+    let (_tmp, script) = install_advisor();
+    for payload in [
+        r#"{"tool_name":"Grep","tool_input":{"pattern":"failed to connect to daemon"}}"#,
+        r#"{"tool_name":"Read","tool_input":{"file_path":"docs/architecture.md"}}"#,
+        r#"{"tool_name":"Read","tool_input":{"file_path":"Cargo.toml"}}"#,
+    ] {
+        let out = run_advisor(&script, payload);
+        let v: Value = serde_json::from_str(out.trim()).expect("advisor emits valid JSON");
+        let hso = &v["hookSpecificOutput"];
+        assert_eq!(
+            hso["permissionDecision"], "defer",
+            "a free-text / non-source pass-through must defer, got: {out}",
+        );
+        assert!(
+            hso.get("additionalContext").is_none(),
+            "a deferred call must carry no additionalContext, got: {out}",
+        );
+        assert!(
+            !out.contains("search_code") && !out.contains("read_symbol"),
+            "a deferred call must not name the search/read tools, got: {out}",
+        );
+    }
+}
+
+#[test]
 fn advisor_never_denies_or_asks() {
     // D5: the advisory must never block a legitimate search. Across every shape
     // — symbol, phrase, glob, path, empty, garbage — the decision is only ever

@@ -117,6 +117,8 @@ where text search needs many and misses cross-file edges.
 
 - Navigate — `list_symbols`, `find_definition`, `find_references`. Use when
   locating a symbol or its call sites ("where is `X` defined?").
+- Search / Read — `search_code`, `read_symbol`. Use to find code by pattern
+  and read a symbol's source without reading whole files.
 - Impact — `blast_radius`, `plan_assist`, `diff_blast_radius`. Use when scoping a
   change ("what breaks if I change `X`?", "what does my current diff affect?").
 - Architecture — `coupling_report`, `weak_spots`, `refactor_suggestions`. Use

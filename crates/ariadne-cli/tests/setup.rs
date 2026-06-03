@@ -73,7 +73,14 @@ fn setup_writes_all_three_artifacts() {
     // history-analytics and diff-blast-radius tools later tiers added — guards
     // against the render template drifting behind the shipped MCP tools and
     // silently downgrading a consumer's CLAUDE.md on `setup`.
-    for tool in ["diff_blast_radius", "hotspots", "complexity", "co_change"] {
+    for tool in [
+        "diff_blast_radius",
+        "hotspots",
+        "complexity",
+        "co_change",
+        "search_code",
+        "read_symbol",
+    ] {
         assert!(
             claude.contains(tool),
             "CLAUDE.md Ariadne block must mention `{tool}`",
