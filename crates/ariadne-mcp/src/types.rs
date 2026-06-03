@@ -79,6 +79,95 @@ pub struct ListSymbolsInput {
     pub limit: Option<u32>,
 }
 
+/// Input to `search_code`. Generalises [`ListSymbolsInput`]: the name match
+/// is a case-insensitive substring by default, or a regular expression when
+/// `regex` is set, narrowed by optional `path` glob / `kind` / `lang` /
+/// `visibility` filters [src: tier-07 D8].
+#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
+pub struct SearchCodeInput {
+    /// Name pattern. A case-insensitive substring of the canonical name by
+    /// default; a regular expression when `regex` is true. Empty = no name
+    /// filter.
+    #[serde(default)]
+    pub query: String,
+    /// Treat `query` as a regular expression instead of a substring.
+    #[serde(default)]
+    pub regex: bool,
+    /// Optional Unix glob the defining file path must match (e.g.
+    /// `src/**/*.rs`).
+    #[serde(default)]
+    pub path: Option<String>,
+    /// Optional exact kind filter (e.g. `function`, `struct`).
+    #[serde(default)]
+    pub kind: Option<String>,
+    /// Optional language-tag filter (e.g. `rust`, `typescript`).
+    #[serde(default)]
+    pub lang: Option<String>,
+    /// Optional visibility filter (`public`, `restricted`, `private`,
+    /// `unknown`).
+    #[serde(default)]
+    pub visibility: Option<String>,
+    /// Maximum rows returned. Defaults to 64.
+    #[serde(default)]
+    pub limit: Option<u32>,
+}
+
+/// Input to `read_symbol`. Resolves a symbol to its defining span and reads
+/// the live file under the catalog root, returning just that slice — `file`
+/// disambiguates an overloaded name, `mode` selects how much to return, and
+/// `context_lines` widens the `context` mode [src: tier-08 D9].
+#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
+pub struct ReadSymbolInput {
+    /// Canonical name of the symbol to read.
+    pub symbol: String,
+    /// Optional defining-file path (project-root-relative) to pick one of
+    /// several symbols sharing `symbol`. Omitted = the first match.
+    #[serde(default)]
+    pub file: Option<String>,
+    /// How much to return: `signature` (the declaration line), `full` (the
+    /// whole defining span, the default), or `context` (±`context_lines`).
+    #[serde(default)]
+    pub mode: Option<String>,
+    /// Lines of surrounding context for `context` mode. Defaults to 3.
+    #[serde(default)]
+    pub context_lines: Option<u32>,
+}
+
+/// Output of `read_symbol` — a slice of source read live from disk for the
+/// resolved symbol's defining span. `stale` is `true` when the recorded span
+/// ran past the current file length (the slice is then clamped, never
+/// fabricated) [src: tier-08 D9, R7].
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct SourceSlice {
+    /// Canonical name of the resolved symbol.
+    pub name: String,
+    /// Defining file path (project-root-relative) the slice was read from.
+    pub file: String,
+    /// 1-based first line of the returned slice.
+    pub line_start: u32,
+    /// 1-based last line of the returned slice.
+    pub line_end: u32,
+    /// Byte offset of the returned slice's start in the file.
+    pub byte_start: u32,
+    /// Byte offset of the returned slice's end in the file (clamped to the
+    /// current file length when the recorded span was stale).
+    pub byte_end: u32,
+    /// Catalog revision the span was resolved against.
+    pub revision: u64,
+    /// `true` when the recorded span exceeded the current file length, so the
+    /// slice was clamped.
+    pub stale: bool,
+    /// The returned source text (lossy-UTF8 of the byte slice).
+    pub source: String,
+    /// Other defining-file paths sharing `name`, surfaced only when `file` was
+    /// omitted and several symbols matched: the resolver returns the first and
+    /// lists the rest here so the caller knows overloads existed and can
+    /// re-query with `file` to pin one. Empty when the name was unambiguous or
+    /// `file` was supplied (tier-08 step 4 "+ note").
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub alternatives: Vec<String>,
+}
+
 /// Input to `find_definition` / `find_references` / `doc_for`.
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
 pub struct SymbolQuery {

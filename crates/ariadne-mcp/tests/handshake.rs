@@ -16,8 +16,9 @@ use std::collections::BTreeMap;
 /// is present and each description follows the discoverability template.
 /// Tier-15b adds the three Block-C analytics tools (`hotspots`, `complexity`,
 /// `co_change`), taking the catalog to 16; tier-15c adds `diff_blast_radius`,
-/// taking it to 17.
-const EXPECTED_TOOLS: usize = 17;
+/// taking it to 17; tier-07 adds `search_code`, taking it to 18; tier-08 adds
+/// `read_symbol`, taking it to 19.
+const EXPECTED_TOOLS: usize = 19;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn handshake_lists_expected_tools() {

@@ -18,7 +18,7 @@ tiers:
 ---
 
 <context>
-Ariadne ships 13 read-only graph tools with trigger-phrase descriptions and an
+Ariadne ships 17 read-only graph tools with trigger-phrase descriptions and an
 assertive `with_instructions` ("Prefer these tools over grep, Read…"), echoed in
 CLAUDE.md. In practice Claude still reaches for native `grep`/`Read`. Root cause,
 verified this session:
@@ -40,7 +40,7 @@ forcing tool visibility, (b) bootstrapping a project digest each session, (c)
 advisory steering on symbol-shaped greps — shipped as Ariadne product features so
 every consumer project benefits, dogfooded here.
 
-Capability gap (tiers 06–09): the 13 tools navigate and analyze but cannot
+Capability gap (tiers 06–09): the 17 tools navigate and analyze but cannot
 *search* (only `list_symbols` name-substring) or *return source* (outputs are
 metadata + spans, so Claude still `Read`s whole files). Adds two deterministic
 primitives — `search_code` and `read_symbol` (D8/D9), gated by a spike (tier-06).
@@ -114,11 +114,11 @@ fallback for free text and non-parsed files); the MCP startup-latency fix
 - D8 — `search_code`: regex-or-substring on symbol name + optional `path` glob /
   `kind` / `lang` / `visibility` / `limit` → ranked `SymbolSummary`. Pure
   projection over the in-RAM `Catalog` (no new domain port), like `list_symbols`
-  [src: catalog.rs:60-153; tools/list_symbols.rs:11-32].
+  [src: crates/ariadne-mcp/src/catalog.rs:71-185; tools/list_symbols.rs:12-32].
 - D9 — `read_symbol`: symbol → span, read the live file under `Catalog.root`,
   return mode `signature|full|context(±N)` + file, line range, `revision`,
   `stale:true` (clamp, never fail). Disk IO in new `adapters/source.rs` [src:
-  catalog.rs:77-79; CLAUDE.md "IO under src/adapters/"; tables.rs:15-36 no source].
+  crates/ariadne-mcp/src/catalog.rs:96; CLAUDE.md "IO under src/adapters/"; tables.rs:15-36 no source].
 - D10 — Promote transitive `regex` 1.12.3 (linear-time, `size_limit`/`nest_limit`
   bound — no ReDoS) + `glob` 0.3.3 (`matches_path`, `**`) to direct `ariadne-mcp`
   deps; pure-Rust, already in `Cargo.lock` via `ignore`; signed off this session

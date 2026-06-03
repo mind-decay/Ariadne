@@ -18,6 +18,11 @@ pub enum McpError {
     /// Caller asked about an unknown symbol or path.
     #[error("not found: {0}")]
     NotFound(String),
+    /// Caller supplied a malformed argument (e.g. an invalid `regex` query or
+    /// `path` glob) — distinct from a server fault so it maps to the JSON-RPC
+    /// `invalid_params` code rather than `internal_error`.
+    #[error("invalid input: {0}")]
+    InvalidInput(String),
     /// Catch-all for paths surfaced as plain strings.
     #[error("mcp: {0}")]
     Other(String),
@@ -26,8 +31,17 @@ pub enum McpError {
 impl McpError {
     /// Convert into the rmcp wire error type so `#[tool]` handlers can
     /// return `Result<CallToolResult, rmcp::ErrorData>`.
+    ///
+    /// Caller-input faults ([`Self::InvalidInput`]) map to JSON-RPC
+    /// `invalid_params` so a client can tell a bad argument from a server
+    /// fault; every other variant maps to `internal_error`
+    /// [src: rmcp-1.7.0 model.rs:556 `ErrorData::invalid_params`].
     #[must_use]
     pub fn into_rmcp(self) -> rmcp::ErrorData {
-        rmcp::ErrorData::internal_error(self.to_string(), None)
+        let message = self.to_string();
+        match self {
+            Self::InvalidInput(_) => rmcp::ErrorData::invalid_params(message, None),
+            _ => rmcp::ErrorData::internal_error(message, None),
+        }
     }
 }

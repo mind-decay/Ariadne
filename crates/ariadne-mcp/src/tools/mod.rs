@@ -19,7 +19,9 @@ pub mod hotspots;
 pub mod list_symbols;
 pub mod plan_assist;
 pub mod project_status;
+pub mod read_symbol;
 pub mod refactor;
+pub mod search_code;
 pub mod weak_spots;
 
 use ariadne_core::SymbolId;

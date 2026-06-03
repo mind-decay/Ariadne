@@ -47,7 +47,8 @@ use crate::errors::McpError;
 use crate::tools;
 use crate::types::{
     BlastRadiusInput, CoChangeInput, DiffBlastInput, DiffSpecInput, EdgeKindFilter, FileQuery,
-    Grain, GrainScopeInput, ListSymbolsInput, PlanAssistInput, ScopeInput, SymbolQuery,
+    Grain, GrainScopeInput, ListSymbolsInput, PlanAssistInput, ReadSymbolInput, ScopeInput,
+    SearchCodeInput, SymbolQuery,
 };
 
 /// MCP server backing the Ariadne analytics tools. Clone-friendly so the
@@ -203,6 +204,47 @@ function\", \"list the structs in\".",
         }
         let catalog = self.catalog().await?;
         let out = tools::list_symbols::handle(&catalog, &input);
+        wire(&out)
+    }
+
+    #[tool(
+        description = "Search the codebase for symbols by name pattern — case-insensitive \
+substring, or a regular expression when `regex` is true — optionally narrowed by a path \
+glob, kind, language, or visibility. Use when finding symbols whose exact name you do not \
+know, or scoping a name search to a path / kind, instead of grepping; triggers: \"search \
+for functions matching\", \"find symbols named like\", \"grep the codebase for\".",
+        meta = always_load_meta(),
+    )]
+    async fn search_code(
+        &self,
+        Parameters(input): Parameters<SearchCodeInput>,
+    ) -> Result<CallToolResult, ErrorData> {
+        // Pure read projection over the in-RAM catalog (D8): no daemon query
+        // variant exists for it, so it always answers from the cold catalog,
+        // built lazily on first use like every other cold-path arm.
+        let catalog = self.catalog().await?;
+        let out = tools::search_code::handle(&catalog, &input).map_err(McpError::into_rmcp)?;
+        wire(&out)
+    }
+
+    #[tool(
+        description = "Read a symbol's source straight from disk by name, in `signature`, \
+`full` (default), or `context` (±N lines) mode — without reading the whole file. Returns \
+the file, 1-based line range, byte range, and the index `revision` (with `stale: true` if \
+the file changed since indexing). Use when you need the actual code of a symbol you can \
+name, instead of opening the file with Read; triggers: \"show me the source of X\", \"read \
+the body of X\", \"what does X look like\".",
+        meta = always_load_meta(),
+    )]
+    async fn read_symbol(
+        &self,
+        Parameters(input): Parameters<ReadSymbolInput>,
+    ) -> Result<CallToolResult, ErrorData> {
+        // Reads the live file under the catalog root (D9): no daemon query
+        // variant exists, so it always answers from the cold catalog, built
+        // lazily on first use like every other cold-path arm.
+        let catalog = self.catalog().await?;
+        let out = tools::read_symbol::handle(&catalog, &input).map_err(McpError::into_rmcp)?;
         wire(&out)
     }
 

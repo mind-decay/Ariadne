@@ -24,6 +24,13 @@ toml = "0.9"
 [dev-dependencies]
 tempfile = { workspace = true }
 pretty_assertions = { workspace = true }
+# tier-06 search/read spike (throwaway harness). `ariadne-storage` is a driven
+# adapter — a dev-edge from `ariadne-e2e` is architecture-legal; `ariadne-mcp`
+# (driving) is never linked [src: tests/architecture.rs:40-45,126-139].
+ariadne-storage = { workspace = true }
+# Symbol-name regex search arm; already in Cargo.lock via `ignore`
+# [src: Cargo.lock regex 1.12.3].
+regex = "1.12.3"
 
 # Per-language suites live under tests/repos/ and are declared explicitly —
 # cargo only auto-discovers test files directly under tests/.

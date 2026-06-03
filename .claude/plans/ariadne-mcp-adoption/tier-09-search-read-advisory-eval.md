@@ -29,11 +29,15 @@ confirm the spike's projection [src: tier-05; tier-06; D11].
   (suggestion text + Read classification) [src: tier-04 files].
 - `<root>/.claude/hooks/ariadne-grep-advisor.sh` — this repo's installed copy.
 - `crates/ariadne-mcp/src/server.rs` — extend `with_instructions` (Search/Read
-  group), within the 2KB cap [src: server.rs with_instructions block].
+  group), within the 2KB cap [src: server.rs:593].
+- `crates/ariadne-mcp/tests/snapshots/handshake__server_instructions.snap` — accept
+  the regenerated instructions snapshot (the `with_instructions` edit changes it).
 - `CLAUDE.md` — add a "Search / Read" bullet to the Ariadne tool list.
-- `crates/ariadne-e2e/` — extend the adoption harness tally + the deterministic
-  token-delta re-run (reuse the tier-06 method against the real tools).
-- `crates/ariadne-cli/tests/` — advisor classification cases for the new routing.
+- `crates/ariadne-e2e/tests/adoption_harness.rs` — extend the `Tally` struct to count
+  `search_code`/`read_symbol` + reuse the tier-06 deterministic token-delta method
+  against the real tools [src: adoption_harness.rs:62-69].
+- `crates/ariadne-cli/tests/` — advisor classification cases for the new routing
+  (advisor matcher `Grep|Glob|Read`) [src: adoption_wiring.rs:35].
 </files>
 
 <steps>
@@ -49,13 +53,16 @@ confirm the spike's projection [src: tier-05; tier-06; D11].
    (D5, R5) [src: tier-04 steps 2–3].
 3. **Install via setup.** Update the template string in `setup.rs`; keep the install
    idempotent and the Bash audit-gate PreToolUse entry intact [src: tier-04 step 4].
-4. **Server instructions.** Add a concise Search/Read line to `with_instructions`;
-   assert the total stays ≤2KB in a test [src: plan.md `<constraints>` 2KB cap].
+4. **Server instructions.** Add a concise Search/Read line to `with_instructions`
+   [src: server.rs:593]; assert the total stays ≤2KB in a test and accept the
+   regenerated `handshake__server_instructions.snap` [src: plan.md `<constraints>`
+   2KB cap].
 5. **CLAUDE.md list.** Add "Search / Read — `search_code`, `read_symbol`. Use to
    find code by pattern and read a symbol's source without reading whole files."
-6. **Re-measure.** Extend the tier-05 harness to count `mcp__ariadne__search_code`/
+6. **Re-measure.** Extend the tier-05 `Tally` to count `mcp__ariadne__search_code`/
    `read_symbol`; re-run the tier-06 deterministic token-delta against the real
-   tools; record the numbers and compare to the spike estimate in this tier's notes.
+   tools; record the numbers and compare to the spike estimate in this tier's notes
+   [src: adoption_harness.rs:62-69].
 7. **Signal.** If the new tools see low real adoption, note escalating the advisory
    from `allow` toward `ask` as a follow-up plan (not this tier) [src: tier-05 step 5].
 </steps>
@@ -66,7 +73,8 @@ confirm the spike's projection [src: tier-05; tier-06; D11].
 - `cargo nextest run -p ariadne-e2e` — the wiring/harness compiles; the ignored
   behavioural harness stays opt-in. Manual run records the real-tool token delta.
 - `cargo test --test architecture`; clippy `-D warnings`; fmt check; assert the
-  server instructions byte length ≤2KB.
+  server instructions byte length ≤2KB; `cargo nextest run -p ariadne-mcp -E
+  'test(handshake)'` passes with the accepted `handshake__server_instructions.snap`.
 - Real run: in a fresh session here, grep for an existing symbol → confirm the
   advisory now names `search_code`; report it. If not runnable in-session, say so
   and report only the deterministic results — never fabricate a ratio.

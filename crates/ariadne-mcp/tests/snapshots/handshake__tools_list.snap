@@ -507,6 +507,47 @@ expression: golden
     "properties": {},
     "type": "object"
   },
+  "read_symbol": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Input to `read_symbol`. Resolves a symbol to its defining span and reads\nthe live file under the catalog root, returning just that slice — `file`\ndisambiguates an overloaded name, `mode` selects how much to return, and\n`context_lines` widens the `context` mode [src: tier-08 D9].",
+    "properties": {
+      "context_lines": {
+        "default": null,
+        "description": "Lines of surrounding context for `context` mode. Defaults to 3.",
+        "format": "uint32",
+        "minimum": 0,
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
+      "file": {
+        "default": null,
+        "description": "Optional defining-file path (project-root-relative) to pick one of\nseveral symbols sharing `symbol`. Omitted = the first match.",
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "mode": {
+        "default": null,
+        "description": "How much to return: `signature` (the declaration line), `full` (the\nwhole defining span, the default), or `context` (±`context_lines`).",
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "symbol": {
+        "description": "Canonical name of the symbol to read.",
+        "type": "string"
+      }
+    },
+    "required": [
+      "symbol"
+    ],
+    "title": "ReadSymbolInput",
+    "type": "object"
+  },
   "refactor_suggestions": {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "description": "Path-prefix scope shared by `coupling_report`, `weak_spots`,\n`doc_for_project`, and `refactor_suggestions`. Empty = all files.",
@@ -521,6 +562,66 @@ expression: golden
       }
     },
     "title": "ScopeInput",
+    "type": "object"
+  },
+  "search_code": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Input to `search_code`. Generalises [`ListSymbolsInput`]: the name match\nis a case-insensitive substring by default, or a regular expression when\n`regex` is set, narrowed by optional `path` glob / `kind` / `lang` /\n`visibility` filters [src: tier-07 D8].",
+    "properties": {
+      "kind": {
+        "default": null,
+        "description": "Optional exact kind filter (e.g. `function`, `struct`).",
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "lang": {
+        "default": null,
+        "description": "Optional language-tag filter (e.g. `rust`, `typescript`).",
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "limit": {
+        "default": null,
+        "description": "Maximum rows returned. Defaults to 64.",
+        "format": "uint32",
+        "minimum": 0,
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
+      "path": {
+        "default": null,
+        "description": "Optional Unix glob the defining file path must match (e.g.\n`src/**/*.rs`).",
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "query": {
+        "default": "",
+        "description": "Name pattern. A case-insensitive substring of the canonical name by\ndefault; a regular expression when `regex` is true. Empty = no name\nfilter.",
+        "type": "string"
+      },
+      "regex": {
+        "default": false,
+        "description": "Treat `query` as a regular expression instead of a substring.",
+        "type": "boolean"
+      },
+      "visibility": {
+        "default": null,
+        "description": "Optional visibility filter (`public`, `restricted`, `private`,\n`unknown`).",
+        "type": [
+          "string",
+          "null"
+        ]
+      }
+    },
+    "title": "SearchCodeInput",
     "type": "object"
   },
   "weak_spots": {
