@@ -1,0 +1,10 @@
+# Adoption-harness question set — codebase questions whose answer a graph tool
+# returns in one call (find_references / blast_radius / find_definition /
+# doc_for_project / list_symbols). One question per line; blank and `#` lines
+# are ignored. References the symbols in the harness fixture (src/math.rs,
+# src/pipeline.rs, src/main.rs) [src: tier-05 step 3].
+Who calls the function `double` in this codebase?
+What breaks if I change the signature of the `helper` function?
+Where is the `compute` function defined and what does it call?
+Give me an overview of this project's architecture and module structure.
+List every function defined in this codebase.

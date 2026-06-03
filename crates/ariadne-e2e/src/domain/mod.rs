@@ -219,6 +219,25 @@ pub fn run_init(root: &Path) -> Result<()> {
     Ok(())
 }
 
+/// Run `ariadne setup` against `root`.
+///
+/// # Errors
+/// Fails when the binary exits non-zero.
+pub fn run_setup(root: &Path) -> Result<()> {
+    let output = Command::new(ariadne_binary())
+        .arg("setup")
+        .arg(root)
+        .output()
+        .context("spawn `ariadne setup`")?;
+    if !output.status.success() {
+        bail!(
+            "ariadne setup failed: {}",
+            String::from_utf8_lossy(&output.stderr).trim()
+        );
+    }
+    Ok(())
+}
+
 /// Run `ariadne index` against `root` and parse the JSON-line summary.
 ///
 /// # Errors

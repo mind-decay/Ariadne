@@ -7,7 +7,8 @@ exit_criteria:
   - "A headless adoption harness runs a fixed codebase-question set and reports the ratio of `mcp__ariadne__*` calls to `Grep`/`Read` calls."
   - "Baseline (setup reverted) vs treated (setup applied) ratios are recorded in this tier's verification notes."
   - "Behavioral ratio is reported, never a hard CI gate (model non-determinism); only the wiring asserts gate."
-status: pending
+status: completed
+completed: 2026-06-03
 ---
 
 <context>
@@ -63,6 +64,51 @@ gate CI; the behavioral adoption ratio is measured and reported [src: plan.md D7
   behavioral measurement is deferred and report only the deterministic wiring
   result — never fabricate a ratio.
 </verification>
+
+<results>
+Recorded 2026-06-03. No product code introduced — only the e2e test, harness,
+and question fixture.
+
+**Deterministic wiring gate** — `adoption_wiring.rs::setup_composes_the_full_adoption_wiring`
+passes on the default `cargo nextest run -p ariadne-e2e` pass (4 passed, ignored
+harness excluded). It runs `ariadne setup` on a temp project pre-seeded with a
+foreign Bash `PreToolUse` entry, then asserts: `.mcp.json` ariadne
+`alwaysLoad:true`; `.claude/settings.json` carries the SessionStart digest hook
+and the `Grep|Glob|Read` advisory entry *and* preserves the foreign Bash entry;
+both hook scripts exist and are `+x`; after `ariadne index`, `ariadne digest`
+exits 0 with a composed (non-fallback) document under the 10k cap.
+
+**Behavioral harness** — `adoption_harness.rs` (`#[ignore]`), real run
+2026-06-03, 5-question set, nested headless `claude -p` (model `claude-opus-4-8`,
+`--output-format stream-json`), `mcp__ariadne__*` vs `Grep`/`Read` per D7:
+
+| Variant | ariadne | grep | read | glob | ratio (ariadne:grep+read) | ariadne share | tokens in / out |
+|---------|---------|------|------|------|---------------------------|---------------|-----------------|
+| Baseline (setup reverted) | 0 | 4 | 8 | 1 | 0.00 | 0% | 24224 / 3193 |
+| Treated (setup applied)   | 11 | 0 | 1 | 0 | 11.00 | 92% | 28372 / 1980 |
+
+Delta: ariadne share **0% → 92% (+92 pts)** against the plan `<context>` success
+target (Ariadne the majority path, >50%) — **met**. Output tokens fell
+(3193 → 1980); input tokens rose modestly (24224 → 28372) from the SessionStart
+digest injection plus the always-loaded tool descriptions — a net shift strongly
+toward the graph path.
+
+Caveats: counts the `Grep`/`Read`/`Glob` native tools (D7); `grep`/`cat` issued
+via `Bash` are not tallied; model tool-choice is non-deterministic (R2), so the
+harness stays `#[ignore]` and never gates CI. Nested sessions inherit the
+operator's global Claude config; the baseline-vs-treated delta isolates the
+Ariadne wiring within that fixed environment.
+
+**Escalation (step 5)** — not triggered. Treated adoption (92%) already clears
+the majority-path target, so the tier-04 advisory stays `allow`; revisit only if
+a future consumer measures low adoption.
+
+Commands: `cargo nextest run -p ariadne-e2e` (4 passed, 14 skipped);
+`cargo nextest run -p ariadne-e2e --run-ignored all -E 'test(adoption_ratio_baseline_vs_treated)' --no-capture`
+(1 passed, 147s, numbers above); `cargo test --test architecture` (ok);
+`cargo clippy --workspace --all-targets --all-features -- -D warnings` (clean);
+`cargo fmt --all --check` (clean).
+</results>
 
 <rollback>
 Remove the e2e test + harness + fixture; no product code is introduced in this
