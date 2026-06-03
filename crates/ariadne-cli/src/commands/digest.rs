@@ -214,10 +214,10 @@ fn write_cheat_sheet(out: &mut String) {
 fn fallback() -> String {
     "## Ariadne\n\n\
      Ariadne's read-only semantic graph is configured for this project but produced no digest \
-     this session (the daemon is starting, or the index is empty). Run `ariadne index` if \
-     symbols are missing, then query `project_status` to confirm the index is current. Prefer \
-     the Ariadne tools over grep and Read for symbol, reference, impact, and architecture \
-     questions.\n"
+     this session (the daemon is starting, or the index is empty). `ariadne index` rebuilds the \
+     index when symbols are missing; `project_status` reports whether it is current. The Ariadne \
+     tools answer symbol, reference, impact, and architecture questions in one call where grep \
+     and Read take many.\n"
         .to_owned()
 }
 

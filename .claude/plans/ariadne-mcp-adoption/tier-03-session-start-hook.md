@@ -7,7 +7,8 @@ exit_criteria:
   - "`ariadne setup` installs the script and registers the SessionStart entry in `.claude/settings.json`, idempotently, preserving existing hooks (e.g. the Bash audit-gate)."
   - "additionalContext is phrased as factual project state, not imperative commands."
   - "This repo's settings.json gains the SessionStart hook; a fresh session shows the digest in context."
-status: pending
+status: completed
+completed: 2026-06-03
 ---
 
 <context>
@@ -20,6 +21,40 @@ statements — imperative out-of-band text trips Claude's prompt-injection defen
 plan.md D3, D6; setup.rs:25-86]. The existing PreToolUse/Bash audit-gate must
 survive the merge [src: .claude/settings.json].
 </context>
+
+<decisions>
+Recorded this session while hardening the sibling Bash audit-gate hook; they
+constrain how this tier is built [src: https://code.claude.com/docs/en/hooks
+PreToolUse/SessionStart output; .claude/settings.json; .claude/hooks/audit-gate.sh].
+- D3a — Build the hook's JSON with `jq -n --arg`/`--rawfile`, never string
+  interpolation. The digest can carry quotes, backslashes, and newlines;
+  interpolating it into a hand-written `{...}` is the parse-failure bug class.
+  `jq` escaping guarantees the `additionalContext` payload always parses
+  [verified this session: the audit-gate rewrite uses `jq -n --arg`].
+- D3b — Exact emit on exit 0:
+  `{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":<digest>}}`.
+  `additionalContext` is factual (the tier-02 digest already is); add no
+  imperative wrapper. Do not confuse with PreToolUse: `permissionDecision`/`deny`
+  is a *blocking* verb and has no place in a SessionStart injection.
+- D3c — Make the script fail-open: a missing binary, empty digest, or non-zero
+  exit prints the minimal factual fallback and exits 0 — never a non-zero exit
+  or malformed JSON (both surface as a `hook error` and defeat the bootstrap).
+- D3d — The settings.json merge must DEEP-merge `hooks`: add/replace only
+  `hooks.SessionStart`, leaving `hooks.PreToolUse` (the audit-gate) semantically
+  intact — `serde_json` re-sorts object keys on serialize (`Value` is a
+  `BTreeMap`), so a hand-authored entry's key order may change but its keys and
+  values survive. Because the first run normalizes the file, a second `setup`
+  run yields byte-identical settings.json. Mirror `merge_mcp_json`'s
+  object-entry pattern [setup.rs:72-81]. `matcher` filters tool NAME, so the
+  SessionStart entry needs no matcher (fires on every session start).
+- D3e — Sibling state the new session inherits: the live audit-gate this tier must
+  preserve was rewritten this session — it now fires only on real `git commit`/`push`
+  invocations (segment-aware, not substring), blocks via `permissionDecision:"deny"`
+  JSON, is fail-open, and blocks ONLY on a FAIL verdict (the stale-PASS/HEAD-advanced
+  gate was removed). Build's `git commit` of this tier is therefore no longer
+  blocked by a stale audit; the merge must still preserve that PreToolUse entry
+  verbatim.
+</decisions>
 
 <files>
 - `crates/ariadne-cli/src/commands/setup.rs` — install hook script + register the
