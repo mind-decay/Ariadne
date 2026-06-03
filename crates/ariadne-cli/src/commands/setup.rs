@@ -102,8 +102,8 @@ const ADVISOR_MATCHER: &str = "Grep|Glob|Read";
 /// or `defer`, NEVER `deny`/`ask`, so it cannot block a legitimate search (D5).
 /// Any unexpected or unparseable input defers (fail-open; precision over recall,
 /// R5). The injected `additionalContext` is a fixed quote-free string, so it
-/// interpolates into the JSON safely without `jq` [src: plan.md D5, R5, D8, D9;
-/// <https://code.claude.com/docs/en/hooks> `PreToolUse` schema].
+/// interpolates into the JSON safely without `jq` \[src: plan.md D5, R5, D8, D9;
+/// <https://code.claude.com/docs/en/hooks> `PreToolUse` schema\].
 const ADVISOR_HOOK: &str = r#"#!/usr/bin/env sh
 # Ariadne PreToolUse advisor — for a symbol-shaped Grep/Glob pattern, or a
 # whole-file Read of a source file, returns permissionDecision:"allow" plus

@@ -104,7 +104,7 @@ pub struct Decl {
     pub attributes: Vec<String>,
     /// `McCabe` cyclomatic complexity (`decisions + 1`) for function-like
     /// decls; `0` for every other kind. Built `0` and filled by
-    /// [`attach_complexity`](super::complexity::attach_complexity) in
+    /// `attach_complexity` in
     /// [`FactExtractor::extract`] [src: tier-12 D1/D2/D4].
     pub complexity: u32,
 }

@@ -9,7 +9,7 @@
 //! a malformed `query` regex or `path` glob surfaces as a typed
 //! [`McpError`], never a panic. The regex is bounded by `size_limit` +
 //! `nest_limit` so an adversarial pattern cannot exhaust resources (no
-//! `ReDoS`) [src: tier-07 `<context>`; docs.rs/regex/1.12.3 `RegexBuilder`].
+//! `ReDoS`) \[src: tier-07 `<context>`; docs.rs/regex/1.12.3 `RegexBuilder`\].
 
 use ariadne_core::Visibility;
 use regex::{Regex, RegexBuilder};

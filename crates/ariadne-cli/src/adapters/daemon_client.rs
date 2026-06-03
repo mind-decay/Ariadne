@@ -9,8 +9,8 @@
 //! of duplicating the codec. That keeps the duplicated client transport at
 //! exactly one file (the MCP client), so ADR-0015's deferred `ariadne-ipc`
 //! crate stays deferred — "warranted only if per-adapter client duplication
-//! later exceeds one file" [src: docs/adr/0015-daemon-mode-ipc.md
-//! `<consequences>`]. This is the tier-10 step-2 decision: reuse the daemon's
+//! later exceeds one file" \[src: docs/adr/0015-daemon-mode-ipc.md
+//! `<consequences>`\]. This is the tier-10 step-2 decision: reuse the daemon's
 //! transport rather than add `interprocess` to the CLI.
 //!
 //! Connection policy mirrors the tier-09 MCP client (risk R-B3): try the

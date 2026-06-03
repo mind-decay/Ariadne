@@ -729,9 +729,9 @@ fn to_core_kinds(kinds: Option<&[EdgeKindFilter]>) -> Option<Vec<CoreEdgeKind>> 
 /// consumer's `.mcp.json` carries no server-level `alwaysLoad` flag (plan D2,
 /// belt-and-suspenders with the `setup`-written server flag). Each `#[tool]`
 /// attaches it via `meta = always_load_meta()`, which rmcp expands to
-/// `Tool::with_meta(..)` [src: <https://code.claude.com/docs/en/mcp> "mark
+/// `Tool::with_meta(..)` \[src: <https://code.claude.com/docs/en/mcp> "mark
 /// individual tools as always-loaded … anthropic/alwaysLoad"; rmcp 1.7.0
-/// `Tool::with_meta`].
+/// `Tool::with_meta`\].
 fn always_load_meta() -> rmcp::model::Meta {
     let mut map = serde_json::Map::new();
     map.insert(

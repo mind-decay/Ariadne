@@ -186,7 +186,7 @@ fn migrate_v2_to_v3(txn: &WriteTransaction) -> Result<(), RedbStorageError> {
 /// `CHURN` / `CO_CHANGE` table definitions — local mirrors so the migration
 /// step owns the table names without leaking the adapter's table module (same
 /// pattern as the [`SYMBOLS`] mirror above). Names match
-/// [`crate::adapters::redb::tables`].
+/// `crate::adapters::redb::tables`.
 const CHURN: TableDefinition<'_, &[u8], &[u8]> = TableDefinition::new("churn");
 const CO_CHANGE: TableDefinition<'_, &[u8], &[u8]> = TableDefinition::new("co_change");
 
@@ -204,7 +204,7 @@ fn migrate_v3_to_v4(txn: &WriteTransaction) -> Result<(), RedbStorageError> {
 /// `HISTORY_META` table definition — local mirror so the migration step owns
 /// the table name without leaking the adapter's table module (same pattern as
 /// the [`SYMBOLS`] / [`CHURN`] mirrors above). Name matches
-/// [`crate::adapters::redb::tables`].
+/// `crate::adapters::redb::tables`.
 const HISTORY_META: TableDefinition<'_, &str, &[u8]> = TableDefinition::new("history_meta");
 
 /// v4 → v5: create the byte-valued `HISTORY_META` table in place so a
@@ -220,7 +220,7 @@ fn migrate_v4_to_v5(txn: &WriteTransaction) -> Result<(), RedbStorageError> {
 /// `SYMBOL_CHURN` table definition — local mirror so the migration step owns
 /// the table name without leaking the adapter's table module (same pattern as
 /// the [`SYMBOLS`] / [`HISTORY_META`] mirrors above). Name matches
-/// [`crate::adapters::redb::tables`].
+/// `crate::adapters::redb::tables`.
 const SYMBOL_CHURN: TableDefinition<'_, &[u8], &[u8]> = TableDefinition::new("symbol_churn");
 
 /// v5 → v6: create the per-symbol churn table in place so a pre-existing v5
