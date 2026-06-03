@@ -21,6 +21,7 @@ use crate::build::GraphIndex;
 use crate::coupling::{CouplingMetrics, ModuleSpec};
 use crate::cycles::{Cycle, CycleReport};
 use crate::dead::{DeadCodeConfig, DeadCodeReport};
+use crate::doc_model::DocScope;
 use crate::errors::GraphError;
 use crate::heuristics::{self, SymbolTable};
 
@@ -37,6 +38,9 @@ const LIST_N: usize = 10;
 /// filter from tier-09 step 3 cannot yet be applied. The rendered
 /// section states this limitation inline.
 ///
+/// `_scope` is accepted so every doc caller threads a [`DocScope`]
+/// uniformly; module-level scope filtering arrives in tier-04.
+///
 /// # Errors
 /// Propagates [`GraphError::Storage`] when the snapshot scan fails.
 ///
@@ -48,6 +52,7 @@ pub fn for_module(
     graph: &GraphIndex,
     snap: &dyn ReadSnapshot,
     module: &ModuleSpec,
+    _scope: &DocScope,
 ) -> Result<String, GraphError> {
     let table = SymbolTable::from_snapshot(snap)?;
     let member_ix: BTreeSet<NodeIndex> = module
@@ -193,6 +198,7 @@ pub fn for_project(
     graph: &GraphIndex,
     snap: &dyn ReadSnapshot,
     modules: &[ModuleSpec],
+    scope: &DocScope,
 ) -> Result<String, GraphError> {
     let table = SymbolTable::from_snapshot(snap)?;
     let mut md = String::from("# Project Architecture Overview\n\n");
@@ -201,6 +207,14 @@ pub fn for_project(
         md.push_str("_No modules indexed._\n");
         return Ok(md);
     }
+    // Doc-layer source scoping: the layer diagram and the aggregate
+    // Hot-Spots / Coupling tables report only in-scope (default: Source)
+    // modules; the graph itself is never filtered [src: plan.md D3].
+    let scoped: Vec<ModuleSpec> = modules
+        .iter()
+        .filter(|m| scope.include(&m.name))
+        .cloned()
+        .collect();
     let cycles = graph.cycle_report();
     let dead = graph.dead_code(&DeadCodeConfig::default());
     let _ = writeln!(
@@ -214,10 +228,10 @@ pub fn for_project(
     md.push('\n');
 
     h2(&mut md, "Layers");
-    md.push_str(&render_layers(graph, modules));
+    md.push_str(&render_layers(graph, &scoped));
     md.push('\n');
 
-    let stats: Vec<ModuleStat> = modules
+    let stats: Vec<ModuleStat> = scoped
         .iter()
         .map(|m| module_stat(graph, m, &cycles, &dead))
         .collect();

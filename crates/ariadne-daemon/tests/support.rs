@@ -301,7 +301,15 @@ pub fn cold_doc_module(root: &Path, path: &str) -> Option<String> {
     let module = modules.iter().find(|m| m.name == path)?;
     let storage = RedbStorage::open(&index_path(root)).expect("open redb");
     let snap = storage.snapshot().expect("snapshot");
-    Some(ariadne_graph::docgen::for_module(&reference.graph, &snap, module).expect("render module"))
+    Some(
+        ariadne_graph::docgen::for_module(
+            &reference.graph,
+            &snap,
+            module,
+            &ariadne_graph::DocScope::default(),
+        )
+        .expect("render module"),
+    )
 }
 
 /// Cold-build the refactor report directly through `ariadne-graph::refactor`
@@ -377,7 +385,13 @@ pub fn cold_doc_project(root: &Path, prefix: Option<&str>) -> String {
     let modules = reference.modules(prefix);
     let storage = RedbStorage::open(&index_path(root)).expect("open redb");
     let snap = storage.snapshot().expect("snapshot");
-    ariadne_graph::docgen::for_project(&reference.graph, &snap, &modules).expect("render project")
+    ariadne_graph::docgen::for_project(
+        &reference.graph,
+        &snap,
+        &modules,
+        &ariadne_graph::DocScope::default(),
+    )
+    .expect("render project")
 }
 
 /// Spawn `serve` on a background thread and block until it answers.

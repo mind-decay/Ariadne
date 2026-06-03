@@ -5,6 +5,7 @@
 //! the module identity.
 
 use ariadne_core::Storage;
+use ariadne_graph::DocScope;
 
 use crate::catalog::Catalog;
 use crate::errors::McpError;
@@ -29,6 +30,7 @@ pub fn handle<S: Storage>(
         .ok_or_else(|| McpError::NotFound(format!("module {}", input.path)))?;
     let snap = storage.snapshot().map_err(McpError::Storage)?;
     let markdown =
-        ariadne_graph::docgen::for_module(&cat.graph, &snap, module).map_err(McpError::Graph)?;
+        ariadne_graph::docgen::for_module(&cat.graph, &snap, module, &DocScope::default())
+            .map_err(McpError::Graph)?;
     Ok(DocOutput { markdown })
 }

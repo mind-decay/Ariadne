@@ -6,7 +6,7 @@
 //! so the render never cold-reads redb.
 
 use ariadne_core::{DaemonResponse, DocForReport, DocReport};
-use ariadne_graph::EdgeKindSet;
+use ariadne_graph::{DocScope, EdgeKindSet};
 
 use crate::domain::catalog::WarmCatalog;
 use crate::domain::dispatch::summarize;
@@ -55,7 +55,7 @@ pub(crate) fn doc_for_module(cat: &WarmCatalog, path: &str) -> DaemonResponse {
     let Some(module) = modules.iter().find(|m| m.name == path) else {
         return DaemonResponse::Error(format!("module {path} not found"));
     };
-    match ariadne_graph::docgen::for_module(&cat.graph, &cat.snap, module) {
+    match ariadne_graph::docgen::for_module(&cat.graph, &cat.snap, module, &DocScope::default()) {
         Ok(markdown) => DaemonResponse::Doc(DocReport { markdown }),
         Err(err) => DaemonResponse::Error(err.to_string()),
     }
@@ -64,7 +64,8 @@ pub(crate) fn doc_for_module(cat: &WarmCatalog, path: &str) -> DaemonResponse {
 /// Markdown architecture overview for the project, scoped by `prefix`.
 pub(crate) fn doc_for_project(cat: &WarmCatalog, prefix: Option<&str>) -> DaemonResponse {
     let modules = build_modules(cat, prefix);
-    match ariadne_graph::docgen::for_project(&cat.graph, &cat.snap, &modules) {
+    match ariadne_graph::docgen::for_project(&cat.graph, &cat.snap, &modules, &DocScope::default())
+    {
         Ok(markdown) => DaemonResponse::Doc(DocReport { markdown }),
         Err(err) => DaemonResponse::Error(err.to_string()),
     }
