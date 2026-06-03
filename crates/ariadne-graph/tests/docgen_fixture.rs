@@ -6,15 +6,35 @@
 
 mod support;
 
+use ariadne_core::FileChurn;
 use ariadne_graph::{DocScope, GraphIndex, docgen};
 use proptest::prelude::*;
+
+/// Populated per-file churn so the module-doc golden exercises the risk line.
+fn churn() -> Vec<FileChurn> {
+    ["src/core.rs", "src/db.rs", "src/api.rs"]
+        .iter()
+        .map(|p| FileChurn {
+            path: (*p).to_owned(),
+            commits: 10,
+            author_keys: Vec::new(),
+            last_changed_ns: 0,
+        })
+        .collect()
+}
 
 #[test]
 fn golden_module_doc_core() {
     let fx = support::core_fixture();
     let core = support::module_named(&fx.modules, "core");
-    let md = docgen::for_module(&fx.graph, &fx.snapshot, core, &DocScope::default())
-        .expect("for_module");
+    let md = docgen::for_module(
+        &fx.graph,
+        &fx.snapshot,
+        core,
+        &churn(),
+        &DocScope::default(),
+    )
+    .expect("for_module");
     insta::assert_snapshot!("module_core", md);
 }
 
@@ -58,6 +78,7 @@ proptest! {
                 &fx.graph,
                 &fx.snapshot,
                 support::module_named(&fx.modules, "core"),
+                &[],
                 &DocScope::default(),
             )
             .expect("reference render")
@@ -69,6 +90,7 @@ proptest! {
             &graph,
             &snap,
             support::module_named(&modules, "core"),
+            &[],
             &DocScope::default(),
         )
         .expect("shuffled render");

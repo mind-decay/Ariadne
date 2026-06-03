@@ -8,7 +8,8 @@ exit_criteria:
   - "non-source neighbours (fixtures/tests) are excluded from the coupling tables via DocScope"
   - "empty git-history degrades the risk line to an explicit 'history unavailable', deterministically"
   - "golden Markdown test green; render twice -> identical bytes; cargo clippy/fmt/deny/architecture green"
-status: pending
+status: completed
+completed: 2026-06-04
 ---
 
 <context>
@@ -22,15 +23,22 @@ crates/ariadne-graph/src/docgen.rs:47-184]. Full context: plan.md.
 <files>
 - crates/ariadne-graph/src/docgen.rs — MODIFY `for_module`: extend signature to
   `for_module(graph, snap, module, churn: &[FileChurn], scope: &DocScope)`; richer sections + neighbourhood SVG.
-- crates/ariadne-graph/src/docgen.rs — ADD `pub fn module_svg(graph, module, scope) -> String`
-  (module node + top-N scoped callers/callees → `diagram::render_svg`).
+- crates/ariadne-graph/src/docgen.rs — ADD
+  `pub fn module_svg(graph, snap, module, scope) -> Result<String, GraphError>`
+  (module node + top-N scope-filtered callers/callees → `diagram::render_svg`; takes `snap` to
+  resolve neighbour paths for scoping, INFO-1).
 - crates/ariadne-graph/src/docgen_insights.rs — REUSE/extend helpers (role, `risk_line` from tier-03).
 - crates/ariadne-graph/src/lib.rs — re-export `module_svg` (façade only).
 - crates/ariadne-daemon/src/domain/queries/docs.rs — MODIFY `doc_for_module`: pass `&cat.churn`,
   `&DocScope::default()` [src: docs.rs:53-62; catalog.rs:147-152].
 - crates/ariadne-mcp/src/tools/doc_module.rs — MODIFY: pass `&cat.churn`, `&DocScope::default()`.
 - crates/ariadne-graph/tests/docgen_fixture.rs — MODIFY module-doc golden.
-- crates/ariadne-graph/tests/docgen_module.rs — NEW. asserts sections + SVG determinism + empty-history path.
+- crates/ariadne-graph/tests/docgen_module.rs — NEW. asserts sections + SVG determinism +
+  SVG neighbour scoping + empty-history path.
+- crates/ariadne-daemon/tests/support.rs — MODIFY (compile-forced): `cold_doc_module` threads the
+  new `for_module` signature (INFO-2).
+- crates/ariadne-mcp/tests/tools_doc.rs — MODIFY (compile-forced): doc test matches the new
+  signature + the removed "Public API" section (INFO-2).
 </files>
 
 <steps>
@@ -43,9 +51,12 @@ crates/ariadne-graph/src/docgen.rs:47-184]. Full context: plan.md.
    [src: crates/ariadne-graph/src/docgen.rs:242-252].
 3. **Neighbourhood SVG**: build a node set of the module + its top-N scoped callers (Incoming) and
    callees (Outgoing) from the existing edge walk [src: crates/ariadne-graph/src/docgen.rs:66-84];
-   feed to `diagram::render_svg`; embed `![neighbourhood](…svg)`. The MCP/daemon path returns
-   Markdown that references the SVG by relative path; the SVG file itself is written only by the
-   tier-06 CLI (the read-only tool does no IO).
+   feed to `diagram::render_svg`; embed `![neighbourhood](…svg)`. `module_svg` takes `snap` and
+   resolves each neighbour's defining path via the `SymbolTable`, scope-filtering fixture/test
+   neighbours out of the diagram exactly like the coupling tables — so the SVG never draws a
+   neighbour the table omits (INFO-1). Neighbour nodes are labelled by `SymbolId` (`#<id>`). The
+   MCP/daemon path returns Markdown that references the SVG by relative path; the SVG file itself is
+   written only by the tier-06 CLI (the read-only tool does no IO).
 4. **Coupling**: keep named caller/callee tables but filter both through `DocScope.include` so
    non-source neighbours (fixtures/tests) drop out.
 5. **Cycles / Dead code**: retain existing logic [src: docgen.rs:149-182]; if the module participates

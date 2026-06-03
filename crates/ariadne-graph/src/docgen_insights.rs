@@ -17,7 +17,7 @@ use petgraph::visit::{EdgeRef, IntoEdgeReferences};
 
 use crate::build::GraphIndex;
 use crate::co_change::{CoChangeConfig, CoChangeEdge, co_change_report};
-use crate::coupling::ModuleSpec;
+use crate::coupling::{CouplingMetrics, ModuleSpec};
 use crate::cycles::Cycle;
 use crate::doc_model::{DocScope, LayerHint, crate_of};
 use crate::docgen::purpose;
@@ -48,6 +48,19 @@ fn layer_label(layer: LayerHint) -> &'static str {
         LayerHint::Adapter => "Adapter",
         LayerHint::Interior => "Interior",
     }
+}
+
+/// Crate-aware one-line role for a module (tier-04 step 2): the module name,
+/// its owning crate (from the defining-file path), the hexagonal layer it sits
+/// in, and the coupling-shape sentence (stable / volatile / intermediate)
+/// shared with the project crate table [src: `docgen::purpose`].
+pub(crate) fn module_role(name: &str, file_path: &str, metrics: &CouplingMetrics) -> String {
+    let crate_name = crate_key(file_path);
+    let layer = layer_label(LayerHint::of(file_path));
+    format!(
+        "`{name}` — crate `{crate_name}`, {layer} layer. {}",
+        purpose(metrics)
+    )
 }
 
 /// One-paragraph synopsis: scoped crate / layer counts, source symbol and edge
@@ -360,6 +373,30 @@ pub(crate) fn file_complexity_map(table: &SymbolTable) -> BTreeMap<String, u32> 
         *map.entry(path.to_owned()).or_insert(0) += rec.complexity;
     }
     map
+}
+
+/// Single-file churn × complexity risk line for the module's defining file
+/// (tier-04 step 6). Reuses `file_hotspots` over the *whole* churn set so the
+/// score is the file's repo-relative risk, mirroring the project risk table.
+/// Empty git history degrades to an explicit history-unavailable line (D6).
+pub(crate) fn risk_line(file_path: &str, churn: &[FileChurn], table: &SymbolTable) -> String {
+    if churn.is_empty() {
+        return "_Git history unavailable — risk needs per-file churn._".to_owned();
+    }
+    let complexity = file_complexity_map(table);
+    let report = file_hotspots(churn, &complexity);
+    for entry in &report.entries {
+        let HotspotGrain::File { path } = &entry.grain else {
+            continue;
+        };
+        if path == file_path {
+            return format!(
+                "Churn {} × complexity {} → risk {:.2} (repo-relative).",
+                entry.churn, entry.complexity, entry.score
+            );
+        }
+    }
+    "_No Git history recorded for this file._".to_owned()
 }
 
 /// Refactor & change-coupling: structural god modules plus co-changing file

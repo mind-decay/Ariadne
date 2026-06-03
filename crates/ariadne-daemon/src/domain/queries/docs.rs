@@ -55,7 +55,13 @@ pub(crate) fn doc_for_module(cat: &WarmCatalog, path: &str) -> DaemonResponse {
     let Some(module) = modules.iter().find(|m| m.name == path) else {
         return DaemonResponse::Error(format!("module {path} not found"));
     };
-    match ariadne_graph::docgen::for_module(&cat.graph, &cat.snap, module, &DocScope::default()) {
+    match ariadne_graph::docgen::for_module(
+        &cat.graph,
+        &cat.snap,
+        module,
+        &cat.churn,
+        &DocScope::default(),
+    ) {
         Ok(markdown) => DaemonResponse::Doc(DocReport { markdown }),
         Err(err) => DaemonResponse::Error(err.to_string()),
     }

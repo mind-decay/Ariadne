@@ -30,17 +30,21 @@ const TOP_N: usize = 10;
 /// Hard cap on rendered architecture-diagram nodes; the workspace has ~12
 /// crates, so this never truncates here but guards huge external repos.
 const ARCH_MAX_NODES: usize = 24;
+/// Hard cap on rendered module-neighbourhood nodes (centre + top-N callers /
+/// callees). `TOP_N` bounds each side, so this only guards pathological fan-in.
+const NEIGHBOURHOOD_MAX_NODES: usize = 24;
 
-/// Render a Markdown summary for one module: purpose, public API,
-/// inbound / outbound coupling, cycles, and dead code.
+/// Render a deterministic Markdown summary for one module as system-only
+/// insight: its crate-aware role, a sidecar dependency-neighbourhood SVG
+/// reference, scope-filtered named inbound/outbound coupling, cycle
+/// participation, dead code, and a churn × complexity risk line.
 ///
-/// The "Public API" table lists *every* module member: `SymbolRecord`
-/// carries no visibility flag pre-SCIP-refinement, so the export-only
-/// filter from tier-09 step 3 cannot yet be applied. The rendered
-/// section states this limitation inline.
-///
-/// `_scope` is accepted so every doc caller threads a [`DocScope`]
-/// uniformly; module-level scope filtering arrives in tier-04.
+/// Non-source neighbours (fixtures / tests / vendored) are dropped from the
+/// coupling tables via [`DocScope`]; the graph itself is never filtered (D3).
+/// The risk line consumes the git-history `churn` vector; empty history
+/// degrades it to an explicit "history unavailable" line (D6). The
+/// neighbourhood SVG is referenced by relative path — the read-only tool emits
+/// no IO, the tier-06 CLI writes the sidecar file (D4).
 ///
 /// # Errors
 /// Propagates [`GraphError::Storage`] when the snapshot scan fails.
@@ -53,7 +57,8 @@ pub fn for_module(
     graph: &GraphIndex,
     snap: &dyn ReadSnapshot,
     module: &ModuleSpec,
-    _scope: &DocScope,
+    churn: &[FileChurn],
+    scope: &DocScope,
 ) -> Result<String, GraphError> {
     let table = SymbolTable::from_snapshot(snap)?;
     let member_ix: BTreeSet<NodeIndex> = module
@@ -69,25 +74,20 @@ pub fn for_module(
         .expect("coupling_report emits one row per input module");
     let cohesion = heuristics::cohesion(graph, module);
 
-    let mut callers: BTreeMap<SymbolId, u32> = BTreeMap::new();
-    let mut targets: BTreeMap<SymbolId, u32> = BTreeMap::new();
-    let mut inbound_of: BTreeMap<SymbolId, u32> = BTreeMap::new();
-    for s in &module.members {
-        let Some(&ix) = graph.index.get(s) else {
-            continue;
-        };
-        for er in graph.graph.edges_directed(ix, Incoming) {
-            if !member_ix.contains(&er.source()) {
-                *callers.entry(graph.graph[er.source()]).or_default() += 1;
-                *inbound_of.entry(*s).or_default() += 1;
-            }
-        }
-        for er in graph.graph.edges_directed(ix, Outgoing) {
-            if !member_ix.contains(&er.target()) {
-                *targets.entry(graph.graph[er.target()]).or_default() += 1;
-            }
-        }
-    }
+    // Defining file of the module (its members share one file in production);
+    // basis for the crate/layer role, the SVG sidecar name, and the risk line.
+    let file_path = module
+        .members
+        .iter()
+        .map(|s| table.path(*s))
+        .find(|p| !p.is_empty())
+        .unwrap_or("");
+
+    // Inbound (callers) / outbound (callees) symbol histograms from the edge
+    // walk, then doc-layer source scoping over each neighbour's defining path.
+    let (callers, targets) = neighbour_histograms(graph, module, &member_ix);
+    let scoped_callers = scope_filter(&callers, &table, scope);
+    let scoped_targets = scope_filter(&targets, &table, scope);
 
     let cycles = graph.cycle_report();
     let touching: Vec<&Cycle> = cycles
@@ -106,9 +106,14 @@ pub fn for_module(
     let mut md = String::new();
     let _ = writeln!(md, "# Module `{}`", module.name);
     md.push('\n');
-    h2(&mut md, "Purpose");
-    md.push_str(purpose(metrics));
-    md.push_str("\n\n");
+
+    h2(&mut md, "Role");
+    let _ = writeln!(
+        md,
+        "{}",
+        docgen_insights::module_role(&module.name, file_path, metrics)
+    );
+    md.push('\n');
     let _ = writeln!(
         md,
         "Members: {} · cohesion {cohesion:.2} · abstractness {:.2}.",
@@ -117,40 +122,19 @@ pub fn for_module(
     );
     md.push('\n');
 
-    h2(&mut md, "Public API");
-    if module.members.is_empty() {
-        md.push_str("_No symbols defined._\n\n");
-    } else {
-        md.push_str(
-            "_Visibility metadata is unavailable pre-SCIP-refinement; the table lists \
-every module member._\n\n",
-        );
-        md.push_str("| Symbol | Kind | Inbound refs |\n| --- | --- | --- |\n");
-        for s in &module.members {
-            let _ = writeln!(
-                md,
-                "| `{}` | {} | {} |",
-                table.name(*s),
-                table.kind(*s),
-                inbound_of.get(s).copied().unwrap_or(0)
-            );
-        }
-        md.push('\n');
-    }
-
-    h2(&mut md, "Inbound coupling");
-    let _ = writeln!(md, "Afferent coupling (Ca): {}.", metrics.afferent);
+    h2(&mut md, "Neighbourhood");
+    let _ = writeln!(md, "![neighbourhood]({})", svg_ref(file_path, &module.name));
     md.push('\n');
-    push_symbol_table(&mut md, &table, "Caller", &top(&callers));
 
-    h2(&mut md, "Outbound coupling");
+    h2(&mut md, "Coupling");
     let _ = writeln!(
         md,
-        "Efferent coupling (Ce): {} · instability (I): {:.2}.",
-        metrics.efferent, metrics.instability
+        "Afferent (Ca): {} · efferent (Ce): {} · instability (I): {:.2}.",
+        metrics.afferent, metrics.efferent, metrics.instability
     );
     md.push('\n');
-    push_symbol_table(&mut md, &table, "Callee", &top(&targets));
+    push_symbol_table(&mut md, &table, "Caller", &top(&scoped_callers));
+    push_symbol_table(&mut md, &table, "Callee", &top(&scoped_targets));
 
     h2(&mut md, "Cycles");
     if touching.is_empty() {
@@ -173,9 +157,9 @@ every module member._\n\n",
         md.push('\n');
     }
 
-    h2(&mut md, "Dead Code");
+    h2(&mut md, "Dead code");
     if dead_members.is_empty() {
-        md.push_str("No dead symbols detected.\n");
+        md.push_str("No dead symbols detected.\n\n");
     } else {
         for id in &dead_members {
             let _ = writeln!(
@@ -185,8 +169,110 @@ every module member._\n\n",
                 table.kind(*id)
             );
         }
+        md.push('\n');
     }
+
+    h2(&mut md, "Risk");
+    let _ = writeln!(
+        md,
+        "{}",
+        docgen_insights::risk_line(file_path, churn, &table)
+    );
+    md.push('\n');
     Ok(md)
+}
+
+/// Build the inbound-caller / outbound-callee symbol histograms for `module`
+/// from the graph edge walk, counting only edges that cross the module
+/// boundary (`member_ix`) [src: tier-04 step 3].
+fn neighbour_histograms(
+    graph: &GraphIndex,
+    module: &ModuleSpec,
+    member_ix: &BTreeSet<NodeIndex>,
+) -> (BTreeMap<SymbolId, u32>, BTreeMap<SymbolId, u32>) {
+    let mut callers: BTreeMap<SymbolId, u32> = BTreeMap::new();
+    let mut targets: BTreeMap<SymbolId, u32> = BTreeMap::new();
+    for s in &module.members {
+        let Some(&ix) = graph.index.get(s) else {
+            continue;
+        };
+        for er in graph.graph.edges_directed(ix, Incoming) {
+            if !member_ix.contains(&er.source()) {
+                *callers.entry(graph.graph[er.source()]).or_default() += 1;
+            }
+        }
+        for er in graph.graph.edges_directed(ix, Outgoing) {
+            if !member_ix.contains(&er.target()) {
+                *targets.entry(graph.graph[er.target()]).or_default() += 1;
+            }
+        }
+    }
+    (callers, targets)
+}
+
+/// Render the module's dependency neighbourhood to a deterministic sidecar SVG
+/// (tier-04 step 3): the module as a centre node, its top-N boundary-crossing
+/// callers above and callees below, drawn by the tier-02 [`render_svg`]
+/// emitter. Pure and IO-free — the CLI owns the file write.
+///
+/// Neighbour nodes are path-scope-filtered through [`DocScope`] exactly like
+/// the [`for_module`] coupling tables (resolved via the snapshot's
+/// [`SymbolTable`]), so a fixture/test neighbour the table omits never appears
+/// in the diagram either (D3). Nodes are labelled by [`SymbolId`] (`#<id>`) —
+/// the emitter draws identity, not names. An out-of-scope module (`scope`
+/// rejects its name) renders an empty diagram.
+///
+/// # Errors
+/// Propagates [`GraphError::Storage`] when the snapshot scan fails.
+pub fn module_svg(
+    graph: &GraphIndex,
+    snap: &dyn ReadSnapshot,
+    module: &ModuleSpec,
+    scope: &DocScope,
+) -> Result<String, GraphError> {
+    let opts = DiagramOpts {
+        max_nodes: NEIGHBOURHOOD_MAX_NODES,
+    };
+    if !scope.include(&module.name) {
+        return Ok(render_svg(&[], &[], &opts));
+    }
+    let table = SymbolTable::from_snapshot(snap)?;
+    let member_ix: BTreeSet<NodeIndex> = module
+        .members
+        .iter()
+        .filter_map(|s| graph.index.get(s).copied())
+        .collect();
+    let (callers, targets) = neighbour_histograms(graph, module, &member_ix);
+    let scoped_callers = scope_filter(&callers, &table, scope);
+    let scoped_targets = scope_filter(&targets, &table, scope);
+
+    let centre = module.name.clone();
+    let mut node_ids: BTreeSet<String> = BTreeSet::new();
+    node_ids.insert(centre.clone());
+    let mut edge_set: BTreeSet<(String, String)> = BTreeSet::new();
+    for (id, _) in top(&scoped_callers) {
+        let node = sym_node(id);
+        node_ids.insert(node.clone());
+        edge_set.insert((node, centre.clone()));
+    }
+    for (id, _) in top(&scoped_targets) {
+        let node = sym_node(id);
+        node_ids.insert(node.clone());
+        edge_set.insert((centre.clone(), node));
+    }
+
+    let nodes: Vec<DiagramNode> = node_ids
+        .into_iter()
+        .map(|id| DiagramNode {
+            label: id.clone(),
+            id,
+        })
+        .collect();
+    let edges: Vec<DiagramEdge> = edge_set
+        .into_iter()
+        .map(|(from, to)| DiagramEdge { from, to })
+        .collect();
+    Ok(render_svg(&nodes, &edges, &opts))
 }
 
 /// Render a project-wide Markdown architecture overview as deterministic,
@@ -322,6 +408,46 @@ fn top(map: &BTreeMap<SymbolId, u32>) -> Vec<(SymbolId, u32)> {
     v.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
     v.truncate(TOP_N);
     v
+}
+
+/// Drop `symbol → count` entries whose defining path is out of `scope`
+/// (fixtures / tests / vendored), keeping the coupling tables source-only (D3).
+fn scope_filter(
+    map: &BTreeMap<SymbolId, u32>,
+    table: &SymbolTable,
+    scope: &DocScope,
+) -> BTreeMap<SymbolId, u32> {
+    map.iter()
+        .filter(|(id, _)| scope.include(table.path(**id)))
+        .map(|(k, c)| (*k, *c))
+        .collect()
+}
+
+/// Deterministic relative file name for a module's neighbourhood sidecar SVG,
+/// slugged from its defining-file path (or module name when the path is
+/// unknown): every non-alphanumeric byte becomes `-`, suffixed with `.svg`.
+fn svg_ref(file_path: &str, name: &str) -> String {
+    let basis = if file_path.is_empty() {
+        name
+    } else {
+        file_path
+    };
+    let mut slug = String::with_capacity(basis.len() + 4);
+    for c in basis.chars() {
+        if c.is_ascii_alphanumeric() {
+            slug.push(c.to_ascii_lowercase());
+        } else {
+            slug.push('-');
+        }
+    }
+    slug.push_str(".svg");
+    slug
+}
+
+/// Diagram node id/label for a neighbour symbol. The emitter is snapshot-free,
+/// so the identity is the numeric [`SymbolId`] prefixed with `#`.
+fn sym_node(id: SymbolId) -> String {
+    format!("#{}", id.get())
 }
 
 /// Append a `role | kind | edges` table for a ranked symbol list.

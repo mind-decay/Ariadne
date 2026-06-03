@@ -29,8 +29,13 @@ pub fn handle<S: Storage>(
         .find(|m| m.name == input.path)
         .ok_or_else(|| McpError::NotFound(format!("module {}", input.path)))?;
     let snap = storage.snapshot().map_err(McpError::Storage)?;
-    let markdown =
-        ariadne_graph::docgen::for_module(&cat.graph, &snap, module, &DocScope::default())
-            .map_err(McpError::Graph)?;
+    let markdown = ariadne_graph::docgen::for_module(
+        &cat.graph,
+        &snap,
+        module,
+        &cat.churn,
+        &DocScope::default(),
+    )
+    .map_err(McpError::Graph)?;
     Ok(DocOutput { markdown })
 }

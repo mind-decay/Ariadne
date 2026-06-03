@@ -4,34 +4,24 @@ expression: md
 ---
 # Module `core`
 
-## Purpose
+## Role
 
-Intermediate module — balanced inbound and outbound coupling.
+`core` — crate `src`, Interior layer. Intermediate module — balanced inbound and outbound coupling.
 
 Members: 3 · cohesion 0.17 · abstractness 0.00.
 
-## Public API
+## Neighbourhood
 
-_Visibility metadata is unavailable pre-SCIP-refinement; the table lists every module member._
+![neighbourhood](src-core-rs.svg)
 
-| Symbol | Kind | Inbound refs |
-| --- | --- | --- |
-| `core::init` | function | 0 |
-| `core::run` | function | 2 |
-| `core::shutdown` | function | 0 |
+## Coupling
 
-## Inbound coupling
-
-Afferent coupling (Ca): 2.
+Afferent (Ca): 2 · efferent (Ce): 3 · instability (I): 0.60.
 
 | Caller | Kind | Edges |
 | --- | --- | --- |
 | `api::serve` | function | 1 |
 | `db::connect` | function | 1 |
-
-## Outbound coupling
-
-Efferent coupling (Ce): 3 · instability (I): 0.60.
 
 | Callee | Kind | Edges |
 | --- | --- | --- |
@@ -45,7 +35,11 @@ Module participates in 1 dependency cycle(s):
 
 - `core::run` ⇄ `db::query` ⇄ `db::connect`
 
-## Dead Code
+## Dead code
 
 - `core::init` (function) — no callers, no exports
 - `core::shutdown` (function) — no callers, no exports
+
+## Risk
+
+Churn 10 × complexity 0 → risk 0.00 (repo-relative).

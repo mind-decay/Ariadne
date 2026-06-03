@@ -37,7 +37,7 @@ pub use dead::{DeadCodeConfig, DeadCodeReport, DeadSymbol};
 pub use diagram::{DiagramEdge, DiagramNode, DiagramOpts, render_svg};
 pub use diff_blast::{DiffBlastReport, DiffSeed};
 pub use doc_model::{DocKind, DocScope, LayerHint, crate_of};
-pub use docgen::architecture_svg;
+pub use docgen::{architecture_svg, module_svg};
 pub use errors::GraphError;
 pub use hotspot::{HotspotEntry, HotspotGrain, HotspotReport, file_hotspots, symbol_hotspots};
 pub use plan_assist::{PlanAssist, PlanFile};

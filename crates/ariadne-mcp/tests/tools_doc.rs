@@ -24,11 +24,19 @@ async fn doc_for_module_renders_markdown() {
         md.contains("# Module `src/util.rs`"),
         "missing module header, got:\n{md}"
     );
-    assert!(md.contains("## Public API"), "missing Public API section");
-    assert!(md.contains("## Cycles"), "missing Cycles section");
+    // Tier-04 insight sections replace the bare Public API member dump.
+    for header in [
+        "## Role",
+        "## Neighbourhood",
+        "## Coupling",
+        "## Cycles",
+        "## Risk",
+    ] {
+        assert!(md.contains(header), "missing {header} section, got:\n{md}");
+    }
     assert!(
-        md.contains("crate::util::helper"),
-        "module symbol absent from doc"
+        md.contains("![neighbourhood](") && md.contains(".svg)"),
+        "missing neighbourhood SVG reference, got:\n{md}"
     );
 
     client.cancel().await.ok();

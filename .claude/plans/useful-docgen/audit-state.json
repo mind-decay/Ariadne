@@ -1,8 +1,8 @@
 {
   "slug": "useful-docgen",
-  "audited_commit": "f4339f0a26fd31756430aa2cc59542f35786f667",
-  "tier_id": "tier-03",
+  "audited_commit": "fb76303efe7936d8415c9c2b110f9815f9dbbceb",
+  "tier_id": "tier-04",
   "verdict": "PASS",
-  "audited_at": "2026-06-03T21:45:56Z",
-  "report": "audit/tier-03-report.md"
+  "audited_at": "2026-06-04T00:23:18Z",
+  "report": "audit/tier-04-report.md"
 }

@@ -301,11 +301,16 @@ pub fn cold_doc_module(root: &Path, path: &str) -> Option<String> {
     let module = modules.iter().find(|m| m.name == path)?;
     let storage = RedbStorage::open(&index_path(root)).expect("open redb");
     let snap = storage.snapshot().expect("snapshot");
+    // Mirror the warm catalog's load + sort so the cold render is byte-identical
+    // [src: daemon catalog.rs:147-148].
+    let mut churn = storage.all_churn().expect("churn");
+    churn.sort_by(|a, b| a.path.cmp(&b.path));
     Some(
         ariadne_graph::docgen::for_module(
             &reference.graph,
             &snap,
             module,
+            &churn,
             &ariadne_graph::DocScope::default(),
         )
         .expect("render module"),
