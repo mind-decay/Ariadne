@@ -92,12 +92,18 @@ pub struct Fixture {
     pub modules: Vec<ModuleSpec>,
 }
 
+/// Canonical fixture files under real `crates/<name>/` paths so the modules
+/// map to actual crates (`crate_of`) and exercise every layer: the
+/// domain-interior crates `ariadne-core` / `ariadne-salsa` (flat `src/`, layer
+/// override → Domain), the adapter crate `ariadne-storage` (`src/adapters` →
+/// Adapter), and the interior crate `ariadne-cli`. `core.rs` and `db.rs` share
+/// `ariadne-core`, so their SCC stays intra-crate (still listed, not withheld).
 const FILES: [(u32, &str); 5] = [
-    (1, "src/core.rs"),
-    (2, "src/api.rs"),
-    (3, "src/db.rs"),
-    (4, "src/util.rs"),
-    (5, "src/types.rs"),
+    (1, "crates/ariadne-core/src/core.rs"),
+    (2, "crates/ariadne-cli/src/api.rs"),
+    (3, "crates/ariadne-core/src/db.rs"),
+    (4, "crates/ariadne-storage/src/adapters/redb/util.rs"),
+    (5, "crates/ariadne-salsa/src/types.rs"),
 ];
 
 /// `(id, canonical_name, kind, defining_file)`.
@@ -188,6 +194,50 @@ pub fn empty_snapshot() -> MemSnapshot {
     }
 }
 
+/// Build a [`MemSnapshot`] from explicit `(file_id, path)` files and
+/// `(symbol_id, canonical_name, kind, file_id)` symbols, for tests that need
+/// real crate-path modules rather than the canonical fixture's bare names.
+#[must_use]
+pub fn snapshot_from(files: &[(u32, &str)], symbols: &[(u64, &str, &str, u32)]) -> MemSnapshot {
+    let files = files
+        .iter()
+        .map(|&(id, path)| {
+            (
+                fid(id),
+                FileRecord {
+                    path: path.to_owned(),
+                    lang: Lang::Rust,
+                    size: 0,
+                    blake3: [0u8; 32],
+                    mtime_ns: 0,
+                },
+            )
+        })
+        .collect();
+    let symbols = symbols
+        .iter()
+        .map(|&(id, name, kind, file)| {
+            (
+                sid(id),
+                SymbolRecord {
+                    canonical_name: name.to_owned(),
+                    kind: kind.to_owned(),
+                    defining_file: fid(file),
+                    defining_span: Span {
+                        file: fid(file),
+                        byte_start: 0,
+                        byte_end: 0,
+                    },
+                    visibility: Visibility::Unknown,
+                    attributes: Vec::new(),
+                    complexity: 0,
+                },
+            )
+        })
+        .collect();
+    MemSnapshot { files, symbols }
+}
+
 /// One [`ModuleSpec`] per source file.
 #[must_use]
 pub fn modules() -> Vec<ModuleSpec> {
@@ -197,20 +247,25 @@ pub fn modules() -> Vec<ModuleSpec> {
         abstract_members: BTreeSet::new(),
     };
     vec![
-        spec("core", &[1, 2, 3]),
-        spec("api", &[4]),
-        spec("db", &[5, 6]),
-        spec("util", &[7]),
-        spec("types", &[8]),
+        spec("crates/ariadne-core/src/core.rs", &[1, 2, 3]),
+        spec("crates/ariadne-cli/src/api.rs", &[4]),
+        spec("crates/ariadne-core/src/db.rs", &[5, 6]),
+        spec("crates/ariadne-storage/src/adapters/redb/util.rs", &[7]),
+        spec("crates/ariadne-salsa/src/types.rs", &[8]),
     ]
 }
 
-/// Locate a module by name; panics when absent.
+/// Locate a module by its exact name or, for the canonical fixture, by file
+/// stem — `module_named(.., "core")` resolves the module whose path ends
+/// `/core.rs`. The fixture's stems are unique, so the match is unambiguous;
+/// callers holding a full path (e.g. a refactor finding) match exactly.
+/// Panics when absent.
 #[must_use]
 pub fn module_named<'a>(modules: &'a [ModuleSpec], name: &str) -> &'a ModuleSpec {
+    let suffix = format!("/{name}.rs");
     modules
         .iter()
-        .find(|m| m.name == name)
+        .find(|m| m.name == name || m.name.ends_with(&suffix))
         .expect("module present in fixture")
 }
 

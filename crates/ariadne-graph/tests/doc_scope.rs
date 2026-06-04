@@ -35,6 +35,22 @@ fn classify_buckets_paths_by_priority() {
         classify("crates/ariadne-scip/src/gen/scip.pb.rs"),
         DocKind::Generated
     );
+    // Manifests, lock, and the `.claude/` plan tree are project metadata, not
+    // first-party source — they classify as Config and drop out of scope.
+    assert_eq!(classify("Cargo.toml"), DocKind::Config);
+    assert_eq!(classify("Cargo.lock"), DocKind::Config);
+    assert_eq!(
+        classify(".claude/plans/post-v1-roadmap/audit-state.json"),
+        DocKind::Config
+    );
+}
+
+#[test]
+fn config_paths_drop_out_of_default_scope() {
+    let scope = DocScope::default();
+    assert!(!scope.include("Cargo.toml"));
+    assert!(!scope.include("Cargo.lock"));
+    assert!(!scope.include(".claude/plans/post-v1-roadmap/audit-state.json"));
 }
 
 #[test]

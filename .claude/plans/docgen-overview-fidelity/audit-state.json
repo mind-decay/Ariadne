@@ -1,0 +1,8 @@
+{
+  "slug": "docgen-overview-fidelity",
+  "audited_commit": "c54557c1bf319928abefa59ae340c2cae52a4ea6",
+  "tier_id": "tier-01",
+  "verdict": "PASS",
+  "audited_at": "2026-06-04T14:53:26+03:00",
+  "report": "audit/tier-01-report.md"
+}

@@ -19,7 +19,7 @@ use crate::build::GraphIndex;
 use crate::co_change::{CoChangeConfig, CoChangeEdge, co_change_report};
 use crate::coupling::{CouplingMetrics, ModuleSpec};
 use crate::cycles::Cycle;
-use crate::doc_model::{DocScope, LayerHint, crate_of};
+use crate::doc_model::{DocScope, LayerHint, crate_of, layer_of};
 use crate::docgen::purpose;
 use crate::errors::GraphError;
 use crate::heuristics::SymbolTable;
@@ -33,6 +33,10 @@ const REPR_MEMBERS: usize = 6;
 /// Efferent-coupling threshold above which a crate is flagged a god module —
 /// matches the daemon health tuning [src: daemon queries/health.rs:15].
 const GOD_THRESHOLD: f32 = 15.0;
+/// Architecture-table Role cell while the coupling-shape role is withheld: it
+/// reads the cross-crate edge set R1 corrupts, so it is suppressed until the
+/// resolver fix re-enables it [src: plan.md D1].
+const ROLE_WITHHELD: &str = "_withheld (R1)_";
 
 /// Crate bucket for a module name (a file path in production). Uses the
 /// `crates/<name>/` prefix when present, else the path's first segment, so
@@ -56,7 +60,9 @@ fn layer_label(layer: LayerHint) -> &'static str {
 /// shared with the project crate table [src: `docgen::purpose`].
 pub(crate) fn module_role(name: &str, file_path: &str, metrics: &CouplingMetrics) -> String {
     let crate_name = crate_key(file_path);
-    let layer = layer_label(LayerHint::of(file_path));
+    // Override-aware layer so a flat-`src` interior crate (core/graph/salsa)
+    // reads Domain here, matching the project Architecture table (audit I4).
+    let layer = layer_label(layer_of(file_path));
     format!(
         "`{name}` — crate `{crate_name}`, {layer} layer. {}",
         purpose(metrics)
@@ -71,12 +77,14 @@ pub(crate) fn synopsis(
     table: &SymbolTable,
     scope: &DocScope,
 ) -> String {
-    let crates: BTreeSet<&str> = scoped.iter().map(|m| crate_key(&m.name)).collect();
+    // Count only crates under `crates/`; non-crate dirs (e.g. `tools/`) yield
+    // `crate_of(..) == None` and are excluded from the crate tally.
+    let crates: BTreeSet<&str> = scoped.iter().filter_map(|m| crate_of(&m.name)).collect();
 
     // LayerHint is not `Ord`/`Hash`; tally distinct layers in a fixed array.
     let mut layer_seen = [false; 3];
     for m in scoped {
-        match LayerHint::of(&m.name) {
+        match layer_of(&m.name) {
             LayerHint::Domain => layer_seen[0] = true,
             LayerHint::Adapter => layer_seen[1] = true,
             LayerHint::Interior => layer_seen[2] = true,
@@ -131,46 +139,41 @@ languages: {lang_list}.",
 }
 
 /// Crate-level architecture table: one row per scoped crate with its dominant
-/// layer and coupling-shape role, preceded by the sidecar SVG reference (D4).
-pub(crate) fn architecture_section(graph: &GraphIndex, scoped: &[ModuleSpec]) -> String {
-    let mut members: BTreeMap<String, BTreeSet<SymbolId>> = BTreeMap::new();
+/// layer, preceded by the sidecar SVG reference (D4). The coupling-shape Role
+/// column is withheld — it reads the cross-crate edge set R1 corrupts — and a
+/// note under the table states why; tier-03 restores it after the resolver fix
+/// [src: plan.md D1].
+///
+/// Crates are grouped by [`crate_of`] (only `crates/<name>/` paths), matching
+/// the synopsis count — a non-`crates/` directory such as `tools/` yields no
+/// row, so the table and the synopsis agree (audit I2).
+pub(crate) fn architecture_section(scoped: &[ModuleSpec]) -> String {
+    // Tally each crate's per-file layer votes (override-aware), in crate-name
+    // order via the `BTreeMap` key. Modules outside `crates/` (e.g. `tools/`)
+    // are not crates, so they contribute no row.
     let mut layer_votes: BTreeMap<String, [u32; 3]> = BTreeMap::new();
     for m in scoped {
-        let key = crate_key(&m.name).to_owned();
-        members
-            .entry(key.clone())
-            .or_default()
-            .extend(m.members.iter().copied());
-        let votes = layer_votes.entry(key).or_insert([0; 3]);
-        match LayerHint::of(&m.name) {
+        let Some(crate_name) = crate_of(&m.name) else {
+            continue;
+        };
+        let votes = layer_votes.entry(crate_name.to_owned()).or_insert([0; 3]);
+        match layer_of(&m.name) {
             LayerHint::Domain => votes[0] += 1,
             LayerHint::Adapter => votes[1] += 1,
             LayerHint::Interior => votes[2] += 1,
         }
     }
-    let specs: Vec<ModuleSpec> = members
-        .into_iter()
-        .map(|(name, members)| ModuleSpec {
-            name,
-            members,
-            abstract_members: BTreeSet::new(),
-        })
-        .collect();
-    let coupling = graph.coupling_report(&specs);
 
     let mut md = String::from("![architecture](codebase-overview.svg)\n\n");
     md.push_str("| Crate | Layer | Role |\n| --- | --- | --- |\n");
-    for row in &coupling.rows {
-        let votes = layer_votes.get(&row.name).copied().unwrap_or([0; 3]);
+    for (name, votes) in &layer_votes {
         let _ = writeln!(
             md,
-            "| `{}` | {} | {} |",
-            row.name,
-            layer_label(dominant_layer(votes)),
-            purpose(row)
+            "| `{name}` | {} | {ROLE_WITHHELD} |",
+            layer_label(dominant_layer(*votes))
         );
     }
-    md.push('\n');
+    md.push_str("\nRole withheld — depends on cross-crate edge accuracy (R1).\n\n");
     md
 }
 
@@ -186,50 +189,26 @@ fn dominant_layer(votes: [u32; 3]) -> LayerHint {
     kinds[best]
 }
 
-/// Symbol-edge boundary violations (D5): domain→adapter, core→non-core, and
-/// cross-crate adapter→adapter edges, over source-scoped endpoints only.
+/// Symbol-edge boundary violations (D5). Withheld: the domain→adapter,
+/// core→non-core, and cross-crate adapter→adapter checks all read the
+/// cross-crate edge set R1 corrupts, so the section emits a single explicit
+/// withheld line instead of false positives. The `graph` / `table` / `scope`
+/// parameters and [`classify_violation`] are retained so tier-03 reverts this
+/// suppression cleanly once the resolver fix lands [src: plan.md D1].
 pub(crate) fn boundary_violations(
-    graph: &GraphIndex,
-    table: &SymbolTable,
-    scope: &DocScope,
+    _graph: &GraphIndex,
+    _table: &SymbolTable,
+    _scope: &DocScope,
 ) -> String {
-    let mut viols: BTreeSet<(String, String, &'static str)> = BTreeSet::new();
-    for er in graph.graph.edge_references() {
-        let (src, dst) = (graph.graph[er.source()], graph.graph[er.target()]);
-        let (sp, dp) = (table.path(src), table.path(dst));
-        if sp.is_empty() || dp.is_empty() || !scope.include(sp) || !scope.include(dp) {
-            continue;
-        }
-        if let Some(reason) = classify_violation(
-            crate_of(sp),
-            crate_of(dp),
-            LayerHint::of(sp),
-            LayerHint::of(dp),
-        ) {
-            viols.insert((
-                format!("`{}`", table.name(src)),
-                format!("`{}`", table.name(dst)),
-                reason,
-            ));
-        }
-    }
-
-    let mut md = String::new();
-    if viols.is_empty() {
-        md.push_str("No symbol-level boundary violations detected.\n\n");
-        return md;
-    }
-    for (src, dst, reason) in viols.iter().take(LIST_N) {
-        let _ = writeln!(md, "- {src} → {dst} — {reason}");
-    }
-    if viols.len() > LIST_N {
-        let _ = writeln!(md, "- … and {} more.", viols.len() - LIST_N);
-    }
-    md.push('\n');
-    md
+    "_Withheld — symbol-edge boundary checks depend on cross-crate edge accuracy \
+(R1); re-enabled after the resolver fix._\n\n"
+        .to_owned()
 }
 
 /// Classify one symbol edge against the hexagonal invariants; `None` = clean.
+/// Retained for tier-03's re-enable of [`boundary_violations`]; unused while
+/// that section is withheld [src: plan.md D1].
+#[allow(dead_code)]
 fn classify_violation(
     src_crate: Option<&str>,
     dst_crate: Option<&str>,
@@ -254,46 +233,81 @@ fn classify_violation(
     None
 }
 
-/// Cycle clusters ranked by member count: each lists its size, representative
-/// members, and the lowest-`(src, dst)` member edge as a suggested cut.
-pub(crate) fn cycle_clusters(graph: &GraphIndex, table: &SymbolTable) -> String {
+/// Cycle clusters ranked by member count: each in-scope intra-crate cluster
+/// lists its size, representative members, and the lowest-`(src, dst)` member
+/// edge as a suggested cut. Clusters with any out-of-scope member are dropped
+/// (test/fixture noise); cross-crate clusters span the edge set R1 corrupts, so
+/// they are withheld behind an explicit count line until the resolver fix
+/// re-enables them [src: plan.md D1].
+pub(crate) fn cycle_clusters(graph: &GraphIndex, table: &SymbolTable, scope: &DocScope) -> String {
     let report = graph.cycle_report();
     let mut md = String::new();
     if report.cycles.is_empty() {
         md.push_str("No dependency cycles detected.\n\n");
         return md;
     }
-    let mut clusters: Vec<&Cycle> = report.cycles.iter().collect();
-    clusters.sort_by(|a, b| {
-        b.members
-            .len()
-            .cmp(&a.members.len())
-            .then(a.members.cmp(&b.members))
-    });
-    let _ = writeln!(
-        md,
-        "{} dependency cluster(s) detected.\n",
-        report.cycles.len()
-    );
-    for cluster in clusters.iter().take(LIST_N) {
-        let shown: Vec<String> = cluster
+    // Source-scope each cluster: keep only clusters whose every member maps to
+    // an in-scope (Source) path, then split by crate span.
+    let mut intra: Vec<&Cycle> = Vec::new();
+    let mut cross = 0usize;
+    for cluster in &report.cycles {
+        if !cluster
             .members
             .iter()
-            .take(REPR_MEMBERS)
-            .map(|s| format!("`{}`", table.name(*s)))
+            .all(|s| scope.include(table.path(*s)))
+        {
+            continue;
+        }
+        let crates: BTreeSet<&str> = cluster
+            .members
+            .iter()
+            .map(|s| crate_key(table.path(*s)))
             .collect();
-        let extra = cluster.members.len().saturating_sub(REPR_MEMBERS);
-        let tail = if extra > 0 {
-            format!(" +{extra} more")
+        if crates.len() > 1 {
+            cross += 1;
         } else {
-            String::new()
-        };
+            intra.push(cluster);
+        }
+    }
+    if intra.is_empty() && cross == 0 {
+        md.push_str("No source-scoped dependency cycles detected.\n\n");
+        return md;
+    }
+    if !intra.is_empty() {
+        intra.sort_by(|a, b| {
+            b.members
+                .len()
+                .cmp(&a.members.len())
+                .then(a.members.cmp(&b.members))
+        });
+        let _ = writeln!(md, "{} dependency cluster(s) detected.\n", intra.len());
+        for cluster in intra.iter().take(LIST_N) {
+            let shown: Vec<String> = cluster
+                .members
+                .iter()
+                .take(REPR_MEMBERS)
+                .map(|s| format!("`{}`", table.name(*s)))
+                .collect();
+            let extra = cluster.members.len().saturating_sub(REPR_MEMBERS);
+            let tail = if extra > 0 {
+                format!(" +{extra} more")
+            } else {
+                String::new()
+            };
+            let _ = writeln!(
+                md,
+                "- {} members ({}{tail}) — suggested cut: {}",
+                cluster.members.len(),
+                shown.join(", "),
+                suggested_cut(graph, cluster, table)
+            );
+        }
+    }
+    if cross > 0 {
         let _ = writeln!(
             md,
-            "- {} members ({}{tail}) — suggested cut: {}",
-            cluster.members.len(),
-            shown.join(", "),
-            suggested_cut(graph, cluster, table)
+            "_Withheld — {cross} cross-crate dependency cluster(s) depend on cross-crate edge \
+accuracy (R1); re-enabled after the resolver fix._"
         );
     }
     md.push('\n');
@@ -413,6 +427,7 @@ pub(crate) fn change_coupling(
     churn: &[FileChurn],
     co_change: &[CoChangePair],
     table: &SymbolTable,
+    scope: &DocScope,
 ) -> Result<String, GraphError> {
     let mut md = String::new();
 
@@ -439,9 +454,14 @@ pub(crate) fn change_coupling(
     }
     let report = co_change_report(churn, co_change, &CoChangeConfig::default());
     let path_syms = path_symbols(table);
+    // Source-scope both endpoints before the structural filter: drops test /
+    // snapshot / fixture co-change pairs (and the trivial "source ⇄ own test"
+    // pairs) so only real hidden source coupling competes for the `LIST_N`
+    // slots [src: plan.md D3].
     let hidden: Vec<&CoChangeEdge> = report
         .edges
         .iter()
+        .filter(|e| scope.include(&e.a) && scope.include(&e.b))
         .filter(|e| !structurally_linked(graph, &path_syms, &e.a, &e.b))
         .take(LIST_N)
         .collect();

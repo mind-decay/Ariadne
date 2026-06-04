@@ -6,7 +6,7 @@ expression: md
 
 ## Synopsis
 
-5 crate(s) · 1 layer(s) · 8 source symbol(s) · 7 dependency edge(s) · languages: rust.
+4 crate(s) · 3 layer(s) · 8 source symbol(s) · 7 dependency edge(s) · languages: rust.
 
 ## Architecture
 
@@ -14,15 +14,16 @@ expression: md
 
 | Crate | Layer | Role |
 | --- | --- | --- |
-| `api` | Interior | Volatile leaf module — depends outward, little depended upon. |
-| `core` | Interior | Intermediate module — balanced inbound and outbound coupling. |
-| `db` | Interior | Intermediate module — balanced inbound and outbound coupling. |
-| `types` | Interior | Stable foundational module — many dependents, few dependencies. |
-| `util` | Interior | Stable foundational module — many dependents, few dependencies. |
+| `ariadne-cli` | Interior | _withheld (R1)_ |
+| `ariadne-core` | Domain | _withheld (R1)_ |
+| `ariadne-salsa` | Domain | _withheld (R1)_ |
+| `ariadne-storage` | Adapter | _withheld (R1)_ |
+
+Role withheld — depends on cross-crate edge accuracy (R1).
 
 ## Boundary violations
 
-No symbol-level boundary violations detected.
+_Withheld — symbol-edge boundary checks depend on cross-crate edge accuracy (R1); re-enabled after the resolver fix._
 
 ## Cycle clusters
 

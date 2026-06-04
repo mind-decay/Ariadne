@@ -21,11 +21,16 @@ pub enum DocKind {
     Vendored,
     /// Build-generated code (`target/`, `*.pb.rs`).
     Generated,
+    /// Project metadata, not first-party source: manifests / lock / config
+    /// (`Cargo.toml`, `*.lock`, `*.json`, `*.yaml`) and the `.claude/` plan
+    /// and audit tree. Kept out of the default scope so co-change /
+    /// risk surfaces report code coupling, not manifest churn.
+    Config,
 }
 
 /// Classify `path` into a [`DocKind`] by deterministic string match in a
-/// fixed priority order: Vendored → Generated → Fixture → Test → Source.
-/// All matching is pure string work; no IO.
+/// fixed priority order: Vendored → Generated → Fixture → Test → Config →
+/// Source. All matching is pure string work; no IO.
 #[must_use]
 pub fn classify(path: &str) -> DocKind {
     if path.contains("node_modules/") || path.ends_with(".min.js") {
@@ -42,9 +47,26 @@ pub fn classify(path: &str) -> DocKind {
         || path.ends_with("/tests.rs")
     {
         DocKind::Test
+    } else if path.contains(".claude/") || is_config_ext(path) {
+        DocKind::Config
     } else {
         DocKind::Source
     }
+}
+
+/// True when `path`'s file extension marks project metadata (manifest, lock,
+/// or config): `toml` / `lock` / `json` / `yaml` / `yml`, matched
+/// case-insensitively. Used by [`classify`] to bucket such paths as
+/// [`DocKind::Config`].
+fn is_config_ext(path: &str) -> bool {
+    std::path::Path::new(path)
+        .extension()
+        .and_then(|e| e.to_str())
+        .is_some_and(|e| {
+            ["toml", "lock", "json", "yaml", "yml"]
+                .iter()
+                .any(|ext| e.eq_ignore_ascii_case(ext))
+        })
 }
 
 /// Doc-layer module filter. The default keeps only [`DocKind::Source`]
@@ -92,6 +114,25 @@ pub enum LayerHint {
     Adapter,
     /// Crate interior — neither domain nor adapter (façade, errors, …).
     Interior,
+}
+
+/// Crate names whose flat `src/` layout (no `src/domain` segment) hides their
+/// domain-interior role from the [`LayerHint::of`] path heuristic. Pinned from
+/// CLAUDE.md `<architecture>`: `ariadne-core` (types + ports), `ariadne-graph`
+/// (analytics use cases), and `ariadne-salsa` (incremental query DB) are the
+/// domain interior \[src: CLAUDE.md `<architecture>`\].
+const DOMAIN_INTERIOR_CRATES: [&str; 3] = ["ariadne-core", "ariadne-graph", "ariadne-salsa"];
+
+/// Hexagonal layer for `path`, applying the domain-interior crate override
+/// before the [`LayerHint::of`] path heuristic: a file in a flat-`src` domain
+/// crate reports [`LayerHint::Domain`]; every other path falls back to the
+/// path-segment heuristic \[src: CLAUDE.md `<architecture>`\].
+#[must_use]
+pub fn layer_of(path: &str) -> LayerHint {
+    match crate_of(path) {
+        Some(name) if DOMAIN_INTERIOR_CRATES.contains(&name) => LayerHint::Domain,
+        _ => LayerHint::of(path),
+    }
 }
 
 impl LayerHint {

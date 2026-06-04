@@ -12,15 +12,19 @@ use proptest::prelude::*;
 
 /// Populated per-file churn so the module-doc golden exercises the risk line.
 fn churn() -> Vec<FileChurn> {
-    ["src/core.rs", "src/db.rs", "src/api.rs"]
-        .iter()
-        .map(|p| FileChurn {
-            path: (*p).to_owned(),
-            commits: 10,
-            author_keys: Vec::new(),
-            last_changed_ns: 0,
-        })
-        .collect()
+    [
+        "crates/ariadne-core/src/core.rs",
+        "crates/ariadne-core/src/db.rs",
+        "crates/ariadne-cli/src/api.rs",
+    ]
+    .iter()
+    .map(|p| FileChurn {
+        path: (*p).to_owned(),
+        commits: 10,
+        author_keys: Vec::new(),
+        last_changed_ns: 0,
+    })
+    .collect()
 }
 
 #[test]

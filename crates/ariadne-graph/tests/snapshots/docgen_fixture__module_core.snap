@@ -2,17 +2,17 @@
 source: crates/ariadne-graph/tests/docgen_fixture.rs
 expression: md
 ---
-# Module `core`
+# Module `crates/ariadne-core/src/core.rs`
 
 ## Role
 
-`core` — crate `src`, Interior layer. Intermediate module — balanced inbound and outbound coupling.
+`crates/ariadne-core/src/core.rs` — crate `ariadne-core`, Domain layer. Intermediate module — balanced inbound and outbound coupling.
 
 Members: 3 · cohesion 0.17 · abstractness 0.00.
 
 ## Neighbourhood
 
-![neighbourhood](src-core-rs.svg)
+![neighbourhood](crates-ariadne-core-src-core-rs.svg)
 
 ## Coupling
 

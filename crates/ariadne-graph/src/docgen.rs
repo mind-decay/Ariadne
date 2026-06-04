@@ -20,7 +20,7 @@ use crate::coupling::{CouplingMetrics, ModuleSpec};
 use crate::cycles::Cycle;
 use crate::dead::DeadCodeConfig;
 use crate::diagram::{DiagramEdge, DiagramNode, DiagramOpts, render_svg};
-use crate::doc_model::DocScope;
+use crate::doc_model::{DocScope, crate_of};
 use crate::docgen_insights;
 use crate::errors::GraphError;
 use crate::heuristics::{self, SymbolTable};
@@ -313,30 +313,32 @@ pub fn for_project(
     md.push_str(&docgen_insights::synopsis(graph, &scoped, &table, scope));
 
     h2(&mut md, "Architecture");
-    md.push_str(&docgen_insights::architecture_section(graph, &scoped));
+    md.push_str(&docgen_insights::architecture_section(&scoped));
 
     h2(&mut md, "Boundary violations");
     md.push_str(&docgen_insights::boundary_violations(graph, &table, scope));
 
     h2(&mut md, "Cycle clusters");
-    md.push_str(&docgen_insights::cycle_clusters(graph, &table));
+    md.push_str(&docgen_insights::cycle_clusters(graph, &table, scope));
 
     h2(&mut md, "Risk hot-spots");
     md.push_str(&docgen_insights::risk_hotspots(&table, churn, scope));
 
     h2(&mut md, "Refactor & change-coupling");
     md.push_str(&docgen_insights::change_coupling(
-        graph, snap, &scoped, churn, co_change, &table,
+        graph, snap, &scoped, churn, co_change, &table, scope,
     )?);
 
     Ok(md)
 }
 
 /// Render the crate-level architecture DAG to a deterministic sidecar SVG
-/// (D2/D4). Scoped file-modules aggregate into crate nodes via [`crate_key`];
+/// (D2/D4). Scoped file-modules aggregate into crate nodes via [`crate_of`];
 /// inter-crate symbol edges become diagram edges, deduped and capped, then
-/// drawn by the tier-02 [`render_svg`] emitter. Pure and IO-free — the CLI
-/// owns the file write.
+/// drawn by the tier-02 [`render_svg`] emitter. Modules outside `crates/`
+/// (e.g. `tools/`) are not crates, so they draw no node — keeping the diagram
+/// consistent with the synopsis count and the Architecture table (audit I2).
+/// Pure and IO-free — the CLI owns the file write.
 #[must_use]
 pub fn architecture_svg(graph: &GraphIndex, modules: &[ModuleSpec], scope: &DocScope) -> String {
     let scoped: Vec<ModuleSpec> = modules
@@ -348,13 +350,16 @@ pub fn architecture_svg(graph: &GraphIndex, modules: &[ModuleSpec], scope: &DocS
 
     let node_ids: BTreeSet<String> = scoped
         .iter()
-        .map(|m| docgen_insights::crate_key(&m.name).to_owned())
+        .filter_map(|m| crate_of(&m.name))
+        .map(ToOwned::to_owned)
         .collect();
     let mut edge_set: BTreeSet<(String, String)> = BTreeSet::new();
     for er in graph.graph.edge_references() {
         if let (Some(&si), Some(&di)) = (member_of.get(&er.source()), member_of.get(&er.target())) {
-            let src = docgen_insights::crate_key(&scoped[si].name);
-            let dst = docgen_insights::crate_key(&scoped[di].name);
+            let (Some(src), Some(dst)) = (crate_of(&scoped[si].name), crate_of(&scoped[di].name))
+            else {
+                continue;
+            };
             if src != dst {
                 edge_set.insert((src.to_owned(), dst.to_owned()));
             }

@@ -13,18 +13,22 @@ mod support;
 use ariadne_core::FileChurn;
 use ariadne_graph::{DocScope, docgen, module_svg};
 
-/// One commit-rich churn row per fixture source file. `src/core.rs` is the
+/// One commit-rich churn row per fixture source file. `core.rs` is the
 /// `core` module's defining file, so its risk line is populated.
 fn churn() -> Vec<FileChurn> {
-    ["src/core.rs", "src/db.rs", "src/api.rs"]
-        .iter()
-        .map(|p| FileChurn {
-            path: (*p).to_owned(),
-            commits: 10,
-            author_keys: Vec::new(),
-            last_changed_ns: 0,
-        })
-        .collect()
+    [
+        "crates/ariadne-core/src/core.rs",
+        "crates/ariadne-core/src/db.rs",
+        "crates/ariadne-cli/src/api.rs",
+    ]
+    .iter()
+    .map(|p| FileChurn {
+        path: (*p).to_owned(),
+        commits: 10,
+        author_keys: Vec::new(),
+        last_changed_ns: 0,
+    })
+    .collect()
 }
 
 #[test]
@@ -134,9 +138,10 @@ fn module_svg_is_deterministic_and_well_formed() {
         first.trim_end().ends_with("</svg>"),
         "unclosed SVG:\n{first}"
     );
-    // The module node and at least one neighbour edge are drawn.
+    // The module node (labelled by the module's path) and at least one
+    // neighbour edge are drawn.
     assert!(
-        first.contains(">core<"),
+        first.contains(">crates/ariadne-core/src/core.rs<"),
         "missing module node, got:\n{first}"
     );
     assert!(

@@ -2,5 +2,5 @@
 source: crates/ariadne-graph/tests/refactor_cases.rs
 expression: fmt_gods(&gods)
 ---
-module=core Ce=3 cohesion=0.1667 top_outbound=[(2, 2), (1, 1)]
+module=crates/ariadne-core/src/core.rs Ce=3 cohesion=0.1667 top_outbound=[(2, 2), (1, 1)]
   suggestion=Consider extracting `core::run` — it accounts for 67% of this module's outbound coupling.

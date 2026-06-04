@@ -1,25 +1,23 @@
-<svg viewBox="0 0 2036 188" width="2036" height="188" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 1868 188" width="1868" height="188" xmlns="http://www.w3.org/2000/svg">
 <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth"><polygon points="0,0 9,3 0,6" fill="#555"/></marker></defs>
 <line x1="94" y1="164" x2="430" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="94" y1="164" x2="262" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="94" y1="164" x2="1102" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="94" y1="164" x2="934" y2="120" stroke="#555" marker-end="url(#arrow)"/>
-<line x1="94" y1="164" x2="1270" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="94" y1="164" x2="1774" y2="120" stroke="#555" marker-end="url(#arrow)"/>
-<line x1="94" y1="164" x2="598" y2="120" stroke="#555" marker-end="url(#arrow)"/>
+<line x1="94" y1="164" x2="1270" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="94" y1="164" x2="1438" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="94" y1="164" x2="1606" y2="120" stroke="#555" marker-end="url(#arrow)"/>
-<line x1="94" y1="164" x2="1942" y2="120" stroke="#555" marker-end="url(#arrow)"/>
+<line x1="94" y1="164" x2="598" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="94" y1="164" x2="766" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="430" y1="164" x2="94" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="430" y1="164" x2="262" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="430" y1="164" x2="1102" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="430" y1="164" x2="934" y2="120" stroke="#555" marker-end="url(#arrow)"/>
-<line x1="430" y1="164" x2="1270" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="430" y1="164" x2="1774" y2="120" stroke="#555" marker-end="url(#arrow)"/>
-<line x1="430" y1="164" x2="598" y2="120" stroke="#555" marker-end="url(#arrow)"/>
+<line x1="430" y1="164" x2="1270" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="430" y1="164" x2="1438" y2="120" stroke="#555" marker-end="url(#arrow)"/>
-<line x1="430" y1="164" x2="1942" y2="120" stroke="#555" marker-end="url(#arrow)"/>
+<line x1="430" y1="164" x2="598" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="262" y1="164" x2="94" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="1102" y1="164" x2="94" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="1102" y1="164" x2="430" y2="120" stroke="#555" marker-end="url(#arrow)"/>
@@ -31,43 +29,37 @@
 <line x1="934" y1="164" x2="94" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="934" y1="164" x2="430" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="934" y1="164" x2="262" y2="120" stroke="#555" marker-end="url(#arrow)"/>
+<line x1="1774" y1="164" x2="94" y2="120" stroke="#555" marker-end="url(#arrow)"/>
+<line x1="1774" y1="164" x2="430" y2="120" stroke="#555" marker-end="url(#arrow)"/>
+<line x1="1774" y1="164" x2="262" y2="120" stroke="#555" marker-end="url(#arrow)"/>
+<line x1="1774" y1="164" x2="1606" y2="120" stroke="#555" marker-end="url(#arrow)"/>
+<line x1="1774" y1="164" x2="598" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="1270" y1="164" x2="94" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="1270" y1="164" x2="430" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="1270" y1="164" x2="262" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="1270" y1="164" x2="934" y2="120" stroke="#555" marker-end="url(#arrow)"/>
-<line x1="1270" y1="164" x2="1942" y2="120" stroke="#555" marker-end="url(#arrow)"/>
-<line x1="1774" y1="164" x2="94" y2="120" stroke="#555" marker-end="url(#arrow)"/>
-<line x1="1774" y1="164" x2="430" y2="120" stroke="#555" marker-end="url(#arrow)"/>
-<line x1="1774" y1="164" x2="262" y2="120" stroke="#555" marker-end="url(#arrow)"/>
-<line x1="1774" y1="164" x2="598" y2="120" stroke="#555" marker-end="url(#arrow)"/>
-<line x1="1774" y1="164" x2="1606" y2="120" stroke="#555" marker-end="url(#arrow)"/>
-<line x1="598" y1="164" x2="94" y2="120" stroke="#555" marker-end="url(#arrow)"/>
-<line x1="598" y1="164" x2="430" y2="120" stroke="#555" marker-end="url(#arrow)"/>
-<line x1="598" y1="164" x2="262" y2="120" stroke="#555" marker-end="url(#arrow)"/>
-<line x1="598" y1="164" x2="1942" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="1438" y1="164" x2="94" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="1438" y1="164" x2="430" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="1438" y1="164" x2="262" y2="120" stroke="#555" marker-end="url(#arrow)"/>
-<line x1="1438" y1="164" x2="1270" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="1438" y1="164" x2="1774" y2="120" stroke="#555" marker-end="url(#arrow)"/>
+<line x1="1438" y1="164" x2="1270" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="1606" y1="164" x2="94" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="1606" y1="164" x2="430" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="1606" y1="164" x2="262" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="1606" y1="164" x2="1102" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="1606" y1="164" x2="934" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="1606" y1="164" x2="766" y2="120" stroke="#555" marker-end="url(#arrow)"/>
-<line x1="1942" y1="164" x2="94" y2="120" stroke="#555" marker-end="url(#arrow)"/>
-<line x1="1942" y1="164" x2="430" y2="120" stroke="#555" marker-end="url(#arrow)"/>
-<line x1="1942" y1="164" x2="262" y2="120" stroke="#555" marker-end="url(#arrow)"/>
-<line x1="1942" y1="164" x2="766" y2="120" stroke="#555" marker-end="url(#arrow)"/>
-<line x1="766" y1="164" x2="94" y2="120" stroke="#555" marker-end="url(#arrow)"/>
-<line x1="766" y1="164" x2="430" y2="120" stroke="#555" marker-end="url(#arrow)"/>
+<line x1="598" y1="164" x2="94" y2="120" stroke="#555" marker-end="url(#arrow)"/>
+<line x1="598" y1="164" x2="430" y2="120" stroke="#555" marker-end="url(#arrow)"/>
+<line x1="598" y1="164" x2="262" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="94" y1="68" x2="94" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="94" y1="68" x2="430" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="94" y1="68" x2="262" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="94" y1="68" x2="934" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="94" y1="68" x2="1270" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <line x1="94" y1="68" x2="1438" y2="120" stroke="#555" marker-end="url(#arrow)"/>
+<line x1="766" y1="164" x2="94" y2="120" stroke="#555" marker-end="url(#arrow)"/>
+<line x1="766" y1="164" x2="430" y2="120" stroke="#555" marker-end="url(#arrow)"/>
 <rect x="24" y="24" width="140" height="44" rx="6" fill="#eef" stroke="#557"/>
 <text x="94" y="51" text-anchor="middle" font-family="sans-serif" font-size="13">ariadne-watcher</text>
 <rect x="24" y="120" width="140" height="44" rx="6" fill="#eef" stroke="#557"/>
@@ -92,6 +84,4 @@
 <text x="1606" y="147" text-anchor="middle" font-family="sans-serif" font-size="13">ariadne-scip</text>
 <rect x="1704" y="120" width="140" height="44" rx="6" fill="#eef" stroke="#557"/>
 <text x="1774" y="147" text-anchor="middle" font-family="sans-serif" font-size="13">ariadne-storage</text>
-<rect x="1872" y="120" width="140" height="44" rx="6" fill="#eef" stroke="#557"/>
-<text x="1942" y="147" text-anchor="middle" font-family="sans-serif" font-size="13">tools</text>
 </svg>
