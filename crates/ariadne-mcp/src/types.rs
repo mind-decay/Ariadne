@@ -341,7 +341,9 @@ pub struct CycleRow {
     pub members: Vec<String>,
 }
 
-/// Output of `doc_for`.
+/// Output of `doc_for`. Mirrors [`ariadne_core::DocForReport`] field-for-field
+/// so the cold projection serializes to the byte-identical JSON the warm
+/// daemon path produces (tier-05 parity).
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct DocForOutput {
     /// Synthesized signature line.
@@ -353,8 +355,21 @@ pub struct DocForOutput {
     /// One-line brief — tier-08 returns the canonical name; richer docs
     /// land alongside the SCIP doc-string ingest path.
     pub brief: String,
-    /// Public callers (first 16 by id).
+    /// Must-touch (funnel) callers — the blast-radius `must` set, first 16 by
+    /// id, scope-filtered to source neighbours.
     pub public_refs: Vec<SymbolSummary>,
+    /// Role one-liner: `kind` situated in the defining file's hexagonal layer.
+    pub role: String,
+    /// Defining file's churn × complexity risk ∈ [0, 1]; `None` when no Git
+    /// history is indexed.
+    pub file_risk: Option<f32>,
+    /// Count of must-touch callers — the immediate-dominator predecessors within
+    /// the doc blast depth (3), the unfiltered blast-radius `must`.
+    pub blast_must: u32,
+    /// Count of may-touch callers — the other transitive callers within the doc
+    /// blast depth (3), the blast-radius `may`. `0` only when every caller is a
+    /// funnel point.
+    pub blast_may: u32,
 }
 
 /// Output of `project_status`.

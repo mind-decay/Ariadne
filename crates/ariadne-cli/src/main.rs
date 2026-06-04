@@ -92,6 +92,23 @@ enum Cmd {
         #[arg(default_value = ".")]
         root: PathBuf,
     },
+    /// Write the project architecture overview to a Markdown file plus a
+    /// sidecar SVG diagram (configurable paths).
+    Doc {
+        /// Project root (locates the index).
+        #[arg(default_value = ".")]
+        root: PathBuf,
+        /// Markdown output path; relative paths resolve against `root`.
+        #[arg(long, default_value = "docs/codebase-overview.md")]
+        out: PathBuf,
+        /// SVG sidecar output path; relative paths resolve against `root`.
+        #[arg(long, default_value = "docs/codebase-overview.svg")]
+        svg: PathBuf,
+        /// Extra substring excludes layered atop the default `Source`-only
+        /// doc scope; repeatable.
+        #[arg(long)]
+        exclude: Vec<String>,
+    },
     /// Print index counts and the indexer availability matrix.
     Status {
         /// Project root.
@@ -165,6 +182,12 @@ fn run(cmd: Cmd) -> anyhow::Result<bool> {
             commands::digest::run(&root);
             Ok(true)
         }
+        Cmd::Doc {
+            root,
+            out,
+            svg,
+            exclude,
+        } => commands::doc::run(&root, &out, &svg, &exclude).map(|()| true),
         Cmd::Status { root } => commands::status::run(&root).map(|()| true),
         Cmd::Mem { root } => Ok(commands::mem::run(&root)),
         Cmd::Daemon { action } => match action {

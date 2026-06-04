@@ -34,9 +34,10 @@ pub struct GodModuleFinding {
     pub efferent: u32,
     /// Cohesion proxy in `[0, 1]`.
     pub cohesion: f32,
-    /// Outbound traffic grouped by target symbol, ranked by edge count.
+    /// Module members ranked by external fan-out (edges leaving the
+    /// module), highest first — the best extraction candidates.
     pub top_outbound: Vec<(SymbolId, u32)>,
-    /// Human-readable split suggestion referencing the hottest target.
+    /// Human-readable split suggestion naming the highest-fan-out member.
     pub suggestion: String,
 }
 
@@ -91,29 +92,40 @@ pub fn god_modules(
             .iter()
             .filter_map(|s| graph.index.get(s).copied())
             .collect();
-        let mut outbound: BTreeMap<SymbolId, u32> = BTreeMap::new();
+        // `external` keys on the edge *target* and drives Ce (distinct
+        // external symbols depended on). `by_member` keys on the source
+        // *member* and drives `top_outbound` + the suggestion — the member
+        // with the most external edges is the best extraction candidate
+        // [src: plan.md D1; refactor.rs traversal].
+        let mut external: BTreeSet<SymbolId> = BTreeSet::new();
+        let mut by_member: BTreeMap<SymbolId, u32> = BTreeMap::new();
         let mut total_out: u32 = 0;
         for &ix in &member_ix {
+            let mut member_out: u32 = 0;
             for er in graph.graph.edges_directed(ix, Outgoing) {
                 if !member_ix.contains(&er.target()) {
-                    *outbound.entry(graph.graph[er.target()]).or_default() += 1;
+                    external.insert(graph.graph[er.target()]);
+                    member_out += 1;
                     total_out += 1;
                 }
             }
+            if member_out > 0 {
+                by_member.insert(graph.graph[ix], member_out);
+            }
         }
-        let efferent = u32::try_from(outbound.len()).unwrap_or(u32::MAX);
+        let efferent = u32::try_from(external.len()).unwrap_or(u32::MAX);
         let cohesion = heuristics::cohesion(graph, module);
         if f64::from(efferent) <= f64::from(threshold) || cohesion >= COHESION_FLOOR {
             continue;
         }
-        let mut top: Vec<(SymbolId, u32)> = outbound.into_iter().collect();
+        let mut top: Vec<(SymbolId, u32)> = by_member.into_iter().collect();
         top.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
         top.truncate(TOP_OUTBOUND);
         let suggestion = top.first().map_or_else(String::new, |&(sym, cnt)| {
             let pct = pct_of(cnt, total_out);
             format!(
-                "Consider splitting `{}` out into its own module — currently {pct}% of \
-outbound traffic flows through it.",
+                "Consider extracting `{}` — it accounts for {pct}% of this module's \
+outbound coupling.",
                 table.name(sym)
             )
         });

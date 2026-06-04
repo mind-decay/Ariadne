@@ -67,7 +67,13 @@ pub struct WeakSpotsReport {
 }
 
 /// `doc_for` report — structured single-symbol summary.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+///
+/// Tier-05 appends deterministic, system-only enrichment fields (`role`,
+/// `file_risk`, `blast_must`, `blast_may`) after the original surface. The
+/// pre-existing fields keep their name and order so no consumer breaks; the
+/// cold (MCP/CLI) and warm (daemon) paths compute every field identically so
+/// the structured output is byte-equal on either route (parity).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DocForReport {
     /// Synthesized signature line.
     pub signature: String,
@@ -77,8 +83,21 @@ pub struct DocForReport {
     pub file: String,
     /// One-line brief.
     pub brief: String,
-    /// Public callers (first 16 by id).
+    /// Must-touch (funnel) callers — the blast-radius `must` set, first 16 by
+    /// id, scope-filtered to source neighbours.
     pub public_refs: Vec<SymbolSummary>,
+    /// Role one-liner: `kind` situated in the defining file's hexagonal layer.
+    pub role: String,
+    /// Defining file's churn × complexity risk ∈ [0, 1]; `None` when no Git
+    /// history is indexed.
+    pub file_risk: Option<f32>,
+    /// Count of must-touch callers — the immediate-dominator predecessors within
+    /// the doc blast depth (3), the unfiltered blast-radius `must`.
+    pub blast_must: u32,
+    /// Count of may-touch callers — the other transitive callers within the doc
+    /// blast depth (3), the blast-radius `may`. `0` only when every caller is a
+    /// funnel point.
+    pub blast_may: u32,
 }
 
 /// `doc_for_module` / `doc_for_project` — one rendered Markdown document.

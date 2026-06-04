@@ -122,7 +122,7 @@ handlers are the *recipe* to mirror, not a dependency [src: crates/ariadne-daemo
 - `ariadne-mcp` (driving adapter): cold doc tools thread the same; Markdown shape unchanged
   (now references the sidecar SVG by relative path); renders enriched `DocForReport`.
 - `ariadne-cli` (driving adapter): new `commands/doc.rs` writes `.md`+`.svg`, owns the
-  configurable exclude globs. Only this layer touches the filesystem.
+  configurable exclude substrings. Only this layer touches the filesystem.
 </architecture>
 
 <tech_inventory>

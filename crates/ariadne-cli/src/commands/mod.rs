@@ -4,6 +4,7 @@
 
 pub mod daemon;
 pub mod digest;
+pub mod doc;
 pub mod index;
 pub mod init;
 pub mod mem;

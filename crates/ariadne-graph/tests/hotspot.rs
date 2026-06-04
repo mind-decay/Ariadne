@@ -12,7 +12,7 @@ use std::collections::BTreeMap;
 use std::fmt::Write as _;
 
 use ariadne_core::{FileChurn, SymbolChurn, SymbolId};
-use ariadne_graph::{HotspotGrain, HotspotReport, file_hotspots, symbol_hotspots};
+use ariadne_graph::{HotspotGrain, HotspotReport, file_hotspots, file_risk, symbol_hotspots};
 
 fn sid(n: u64) -> SymbolId {
     SymbolId::new(n).expect("nonzero symbol id")
@@ -104,6 +104,56 @@ fn hot_file_ranks_first_and_zero_complexity_scores_zero() {
     );
 
     insta::assert_snapshot!("file_hotspots", fmt_report(&report));
+}
+
+/// The direct single-file [`file_risk`] score equals the `score` the full
+/// [`file_hotspots`] ranking carries for that file — for every file in the set,
+/// across the score space (hot / cold / zero-complexity / max-complexity) —
+/// proving the F3 short-circuit kept the metric byte-identical while dropping
+/// the rank + sort. Empty churn is `None`; a file outside the churn set is
+/// `0.0` [src: .claude/plans/useful-docgen/audit/tier-05-report.md F3].
+#[test]
+// The product reproduces the ranked `f32` exactly, so an exact compare is the
+// intended parity assertion, not an approximate-equality bug.
+#[allow(clippy::float_cmp)]
+fn file_risk_matches_ranked_score() {
+    let (churn, complexity) = file_inputs();
+    let report = file_hotspots(&churn, &complexity);
+
+    for path in [
+        "src/hot.rs",
+        "src/cold.rs",
+        "src/churned_simple.rs",
+        "src/complex_stable.rs",
+    ] {
+        let ranked = report
+            .entries
+            .iter()
+            .find_map(|e| match &e.grain {
+                HotspotGrain::File { path: p } if p == path => Some(e.score),
+                _ => None,
+            })
+            .expect("file present in the ranking");
+        assert_eq!(
+            file_risk(path, &churn, &complexity),
+            Some(ranked),
+            "direct file_risk equals the ranked score for {path}",
+        );
+    }
+
+    // A file outside the churn set scores 0.0 (present in neither factor).
+    assert_eq!(
+        file_risk("src/ghost.rs", &churn, &complexity),
+        Some(0.0),
+        "a file absent from the churn set scores 0.0",
+    );
+
+    // No Git history to rank against ⇒ None, never a fabricated 0.0.
+    assert_eq!(
+        file_risk("src/hot.rs", &[], &complexity),
+        None,
+        "empty churn yields None, not a score",
+    );
 }
 
 #[test]

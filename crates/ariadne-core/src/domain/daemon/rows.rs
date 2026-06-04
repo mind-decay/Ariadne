@@ -94,9 +94,9 @@ pub struct CycleRow {
 /// One outbound-traffic row inside a [`GodModuleRow`].
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct OutboundRow {
-    /// Target symbol canonical name.
+    /// Module member's canonical name.
     pub symbol: String,
-    /// Number of edges flowing to that symbol.
+    /// Number of that member's edges leaving the module (external fan-out).
     pub edges: u32,
 }
 
@@ -109,7 +109,7 @@ pub struct GodModuleRow {
     pub efferent: u32,
     /// Cohesion proxy in `[0, 1]`.
     pub cohesion: f32,
-    /// Outbound traffic grouped by target symbol.
+    /// Module members ranked by external fan-out (extraction candidates).
     pub top_outbound: Vec<OutboundRow>,
     /// Human-readable split suggestion.
     pub suggestion: String,

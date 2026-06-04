@@ -51,6 +51,72 @@ pub fn seed_tiny_project() -> (PathBuf, TempDir) {
     (project_root, dir)
 }
 
+/// Seed a project whose `crate::api::endpoint` is called from one source
+/// neighbour (`src/api.rs`) and one test-path neighbour
+/// (`tests/api_callers.rs`). Drives the tier-05 `doc_for` scope filter:
+/// `DocScope.include` keeps the source caller in `public_refs` and drops the
+/// test caller, while the blast counts still reflect both reverse-1-hop
+/// callers (scope is a doc-layer filter, never a graph mutation — D3).
+#[must_use]
+pub fn seed_doc_scope_project() -> (PathBuf, TempDir) {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let project_root = dir.path().to_path_buf();
+    let storage_path = project_root.join(".ariadne").join("index.redb");
+    let storage = RedbStorage::open(&storage_path).expect("open redb");
+
+    let mut cs = Changeset::new();
+    for (id, path) in [(1u32, "src/api.rs"), (2, "tests/api_callers.rs")] {
+        cs = cs.upsert_file(
+            fid(id),
+            FileRecord {
+                path: path.into(),
+                lang: Lang::Rust,
+                size: 128,
+                blake3: [u8::try_from(id).expect("file id fits u8"); 32],
+                mtime_ns: i128::from(id),
+            },
+        );
+    }
+    for (id, name, file) in [
+        (1u64, "crate::api::endpoint", 1u32),
+        (2, "crate::api::caller_src", 1),
+        (3, "crate::api_callers::caller_test", 2),
+    ] {
+        cs = cs.upsert_symbol(
+            sid(id),
+            SymbolRecord {
+                canonical_name: name.into(),
+                kind: "function".into(),
+                defining_file: fid(file),
+                defining_span: span(file, 0, 32),
+                visibility: Visibility::Unknown,
+                attributes: Vec::new(),
+                complexity: 0,
+            },
+        );
+    }
+    // Both callers reference the endpoint (reverse-1-hop predecessors).
+    for (src, file) in [(2u64, 1u32), (3, 2)] {
+        cs = cs.add_edge(
+            EdgeKey {
+                src: sid(src),
+                kind: EdgeKind::References,
+                dst: sid(1),
+            },
+            EdgeRecord {
+                source_span: span(file, 64, 96),
+                evidence_lang: Lang::Rust,
+                weight: 1,
+            },
+        );
+    }
+
+    let txn = storage.begin_write().expect("begin");
+    txn.apply(&cs).expect("apply changeset");
+    drop(storage);
+    (project_root, dir)
+}
+
 /// Seed a project whose `.ariadne/index.redb` has bootstrapped-but-empty
 /// tables — no files, symbols, or edges. Drives the negative
 /// `doc_for_project` case (tier-09 `<verification>`).

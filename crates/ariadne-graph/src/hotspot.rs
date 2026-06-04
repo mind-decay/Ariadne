@@ -119,6 +119,42 @@ pub fn file_hotspots(
     rank(units)
 }
 
+/// File-level churn × complexity risk for `file_path`: its `score` ∈ [0, 1]
+/// in the repo-wide [`file_hotspots`] ranking, or `None` when `churn` is empty
+/// (no Git history to rank against). A file present in neither the churn set
+/// nor `file_complexity` scores `0.0`. Computed from the same inputs the cold
+/// and warm catalogs both carry, so `doc_for`'s `file_risk` is identical on
+/// either path (parity) [src: plan.md tier-05 D6].
+///
+/// Scores the one queried file directly — max-normalizing churn and complexity
+/// over the churn set exactly as [`file_hotspots`] / [`rank`] do — instead of
+/// ranking and sorting every file then searching for one row. The returned
+/// score is byte-identical to `file_hotspots(..).find(file_path).score`; the
+/// difference is only the dropped O(files·log files) sort and report
+/// allocation, since a single-symbol `doc_for` never needs the full ranking
+/// [src: .claude/plans/useful-docgen/audit/tier-05-report.md F3].
+#[must_use]
+#[allow(clippy::cast_possible_truncation)]
+pub fn file_risk(
+    file_path: &str,
+    churn: &[FileChurn],
+    file_complexity: &BTreeMap<String, u32>,
+) -> Option<f32> {
+    if churn.is_empty() {
+        return None;
+    }
+    // Per-unit complexity mirrors `file_hotspots`: a churn file absent from the
+    // complexity map contributes `0`, and `max_complexity` is taken over the
+    // churn set (the ranked units), never over every `file_complexity` entry.
+    let complexity_of = |c: &FileChurn| file_complexity.get(&c.path).copied().unwrap_or(0);
+    let max_churn = churn.iter().map(|c| c.commits).max().unwrap_or(0);
+    let max_complexity = churn.iter().map(complexity_of).max().unwrap_or(0);
+    let score = churn.iter().find(|c| c.path == file_path).map_or(0.0, |c| {
+        (norm(c.commits, max_churn) * norm(complexity_of(c), max_complexity)) as f32
+    });
+    Some(score)
+}
+
 /// Rank symbols by churn × complexity. Churn is [`SymbolChurn::commits`];
 /// complexity is the symbol's entry in `symbol_complexity` (its `McCabe`
 /// complexity), or `0` when absent. One entry per [`SymbolChurn`].

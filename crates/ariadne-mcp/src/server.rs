@@ -1,4 +1,4 @@
-//! `AriadneServer` — rmcp `#[tool_router]` host wiring the 17 Ariadne
+//! `AriadneServer` — rmcp `#[tool_router]` host wiring the 19 Ariadne
 //! analytics into MCP. Each `#[tool]` method routes its query to the warm
 //! daemon over IPC (RD6) and projects the [`DaemonResponse`] into the v1 tool
 //! output shape; when no daemon is reachable it falls back to the per-tool
@@ -982,6 +982,10 @@ mod tests {
             file: "src/f.rs".into(),
             brief: "brief".into(),
             public_refs: vec![c_sym(1, "r")],
+            role: "function in the interior layer".into(),
+            file_risk: Some(0.5),
+            blast_must: 1,
+            blast_may: 0,
         };
         let t = crate::types::DocForOutput {
             signature: "fn f()".into(),
@@ -989,6 +993,10 @@ mod tests {
             file: "src/f.rs".into(),
             brief: "brief".into(),
             public_refs: vec![t_sym(1, "r")],
+            role: "function in the interior layer".into(),
+            file_risk: Some(0.5),
+            blast_must: 1,
+            blast_may: 0,
         };
         assert_parity("doc_for", DaemonResponse::DocFor(c), &t);
     }

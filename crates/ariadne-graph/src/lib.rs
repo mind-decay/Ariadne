@@ -36,10 +36,12 @@ pub use cycles::{Cycle, CycleReport};
 pub use dead::{DeadCodeConfig, DeadCodeReport, DeadSymbol};
 pub use diagram::{DiagramEdge, DiagramNode, DiagramOpts, render_svg};
 pub use diff_blast::{DiffBlastReport, DiffSeed};
-pub use doc_model::{DocKind, DocScope, LayerHint, crate_of};
+pub use doc_model::{DocKind, DocScope, LayerHint, crate_of, symbol_role};
 pub use docgen::{architecture_svg, module_svg};
 pub use errors::GraphError;
-pub use hotspot::{HotspotEntry, HotspotGrain, HotspotReport, file_hotspots, symbol_hotspots};
+pub use hotspot::{
+    HotspotEntry, HotspotGrain, HotspotReport, file_hotspots, file_risk, symbol_hotspots,
+};
 pub use plan_assist::{PlanAssist, PlanFile};
 pub use refactor::{CycleBreakProposal, GodModuleFinding, MisplacedSymbol};
 pub use span_lines::{FileSpanSource, FileSymbolSpans, line_starts, spans_from};

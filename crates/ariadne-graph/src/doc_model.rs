@@ -106,4 +106,28 @@ impl LayerHint {
             LayerHint::Interior
         }
     }
+
+    /// The lowercase word naming this layer, used in role one-liners.
+    #[must_use]
+    fn word(self) -> &'static str {
+        match self {
+            LayerHint::Domain => "domain",
+            LayerHint::Adapter => "adapter",
+            LayerHint::Interior => "interior",
+        }
+    }
+}
+
+/// One-line role descriptor for a symbol: its `kind` situated in the
+/// hexagonal layer (and crate, when under `crates/`) of its defining `file`.
+/// Derived purely from `kind` + the path's coupling shape, so the cold and
+/// warm `doc_for` paths compute the identical string (parity)
+/// [src: plan.md tier-05; CLAUDE.md `<architecture>`].
+#[must_use]
+pub fn symbol_role(kind: &str, file: &str) -> String {
+    let layer = LayerHint::of(file).word();
+    match crate_of(file) {
+        Some(name) => format!("{kind} in the {name} {layer} layer"),
+        None => format!("{kind} in the {layer} layer"),
+    }
 }

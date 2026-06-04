@@ -59,6 +59,43 @@ fn golden_god_modules() {
     insta::assert_snapshot!("god_modules", fmt_gods(&gods));
 }
 
+/// The split suggestion must name an extractable *member* of the module
+/// (D1), never an external callee, and re-keying the histogram must not
+/// silently redefine `Ce` (it stays the count of distinct external
+/// targets) [src: plan.md D1/D3, `exit_criteria`].
+#[test]
+fn god_module_split_names_a_member_and_pins_ce() {
+    use std::collections::BTreeSet;
+
+    let fx = support::core_fixture();
+    let gods =
+        refactor::god_modules(&fx.graph, &fx.snapshot, &fx.modules, 2.0).expect("god_modules scan");
+    let finding = gods.first().expect("core qualifies as a god module");
+    let module = support::module_named(&fx.modules, &finding.module);
+
+    // D1: top_outbound[0] names a member, so "extract <member>" is coherent.
+    let named = finding.top_outbound[0].0;
+    assert!(
+        module.members.contains(&named),
+        "top_outbound[0] {named:?} must be a member of module {}",
+        finding.module
+    );
+
+    // Ce = distinct external targets — recomputed straight from the fixture
+    // so the re-keying cannot redefine it.
+    let members: BTreeSet<u64> = module.members.iter().map(|s| s.get()).collect();
+    let expected_ce = support::edges()
+        .iter()
+        .filter(|&&(src, dst, _)| members.contains(&src) && !members.contains(&dst))
+        .map(|&(_, dst, _)| dst)
+        .collect::<BTreeSet<u64>>()
+        .len();
+    assert_eq!(
+        finding.efferent as usize, expected_ce,
+        "efferent (Ce) must equal the count of distinct external targets"
+    );
+}
+
 #[test]
 fn golden_cycle_break() {
     let fx = support::core_fixture();

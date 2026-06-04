@@ -4,10 +4,11 @@ title: CLI `doc` command — write .md + sidecar .svg
 deps: [tier-03, tier-02]
 exit_criteria:
   - "ariadne doc writes docs/codebase-overview.md AND docs/codebase-overview.svg (configurable paths); re-running is byte-identical"
-  - "--exclude <glob> populates DocScope.extra_excludes and is honoured by the rendered output"
+  - "--exclude <substring> populates DocScope.extra_excludes and is honoured by the rendered output"
   - "regenerated docs/codebase-overview.svg opens and visually renders in a bare IDE Markdown preview (no extension); jquery.js absent, largest SCC named"
   - "cli doc-command test green; cargo clippy/fmt/deny/architecture green"
-status: pending
+status: completed
+completed: 2026-06-04
 ---
 
 <context>
@@ -22,13 +23,13 @@ Full context: plan.md.
 
 <files>
 - crates/ariadne-cli/src/commands/doc.rs — NEW. `ariadne doc [--out PATH] [--svg PATH]
-  [--exclude GLOB]...`; builds the cold catalog (`ariadne_mcp::Catalog::build` over `RedbStorage`,
+  [--exclude SUBSTRING]...`; builds the cold catalog (`ariadne_mcp::Catalog::build` over `RedbStorage`,
   as `query` does), reads `cat.churn`/`cat.co_change`/`snapshot`, calls `docgen::for_project` +
   `architecture_svg` with a `DocScope` from `--exclude`, writes `.md` (relative `![](…svg)` link) + `.svg`.
 - crates/ariadne-cli/src/commands/mod.rs — `pub mod doc;` and dispatch the new variant.
 - crates/ariadne-cli/src/main.rs — add a `Doc { root, out, svg, exclude }` variant to the `Cmd` enum
   (main.rs:31) + its match arm.
-- crates/ariadne-cli/src/config.rs — OPTIONAL default exclude globs + default out/svg paths.
+- crates/ariadne-cli/src/config.rs — OPTIONAL default exclude substrings + default out/svg paths.
 - crates/ariadne-cli/tests/doc_command.rs — NEW. runs the command on a fixture repo, asserts both
   files written, byte-identical on re-run, and `--exclude` changes the output.
 - docs/codebase-overview.md + docs/codebase-overview.svg — REGENERATED artefacts (committed).
@@ -37,8 +38,9 @@ Full context: plan.md.
 <steps>
 1. Write failing `tests/doc_command.rs`: invoke `ariadne doc --out <tmp>/o.md --svg <tmp>/o.svg`
    on a small fixture repo; assert both files exist, the `.md` contains `![architecture](o.svg)`
-   (relative basename), re-running yields identical bytes, and adding `--exclude '**/fixtures/**'`
-   removes a fixture row.
+   (relative basename), re-running yields identical bytes, and adding `--exclude <substring>`
+   (e.g. a crate name) removes the matching module row — `DocScope::include` excludes by
+   `path.contains`, not glob [src: crates/ariadne-graph/src/doc_model.rs:64-70].
 2. Implement `commands/doc.rs`: reuse the cold catalog-build path used by `query`
    [src: crates/ariadne-cli/src/commands/query.rs]; construct `DocScope { extra_excludes }` from
    `--exclude`; call `for_project(&cat.graph, &snap, &modules, &cat.churn, &cat.co_change, &scope)`

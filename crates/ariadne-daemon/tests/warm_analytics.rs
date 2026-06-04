@@ -168,6 +168,13 @@ fn doc_for_matches_cold() {
             file: "src/lib.rs".to_owned(),
             brief: "crate::run".to_owned(),
             public_refs: vec![reference.summ("crate::main")],
+            // Tier-05 enrichment: `crate::run` is a plain interior-layer
+            // function; the fixture has no Git history, so `file_risk` is
+            // `None`; `crate::main` is its only reverse-1-hop caller.
+            role: "function in the interior layer".to_owned(),
+            file_risk: None,
+            blast_must: 1,
+            blast_may: 0,
         }),
     );
 }
