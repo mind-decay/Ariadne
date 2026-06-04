@@ -244,6 +244,10 @@ impl AriadneDb {
         for sf in &self.files {
             let file_id = sf.file_id;
             let rel_path = &sf.record.path;
+            // Scoping key for edge resolution: the crate this file belongs to
+            // (ADR-0024). Computed once per file and shared by its symbol
+            // candidates and its caller facts.
+            let package = derive::package_of(rel_path).to_owned();
             changeset.file_upserts.push((file_id, sf.record.clone()));
 
             // Both queries are salsa-memoized; the second call is a cache hit.
@@ -288,12 +292,14 @@ impl AriadneDb {
                         id,
                         file: file_id,
                         def_start: def_range.0,
+                        package: package.clone(),
                     });
                 locals.push(LocalSymbol { id, def_range });
             }
 
             facts_by_file.push(FileFacts {
                 file_id,
+                package,
                 lang: sf.record.lang,
                 symbols: locals,
                 calls: raw

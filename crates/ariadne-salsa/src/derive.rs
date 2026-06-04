@@ -43,6 +43,33 @@ pub(crate) struct SymbolCandidate {
     pub file: FileId,
     /// Defining-occurrence byte start.
     pub def_start: u32,
+    /// Package (crate) the defining file belongs to — the scoping key for
+    /// [`resolve_edges`] [src: ADR-0024].
+    pub package: String,
+}
+
+/// A candidate reduced for [`resolve_edges`]: its id plus the package scoping
+/// key, in `(file, def_start)` order. Drops the byte offset once sorting is
+/// done [src: ADR-0024].
+pub(crate) struct ResolvedCandidate {
+    /// Resolved symbol id.
+    pub id: SymbolId,
+    /// Package (crate) the defining file belongs to.
+    pub package: String,
+}
+
+/// Package (crate) a path belongs to for edge-resolution scoping: the first
+/// segment after a `crates/` prefix (`crates/<name>/…` → `<name>`), else the
+/// empty string — all non-`crates/` files share one package, so a single-crate
+/// project resolves cross-file as before. Mirrors
+/// `ariadne_graph::doc_model::crate_of` so resolution scope matches docgen's
+/// crate attribution; replicated here because `ariadne-salsa` may not depend on
+/// `ariadne-graph` [src: tests/architecture.rs lines 30-35; ADR-0024].
+pub(crate) fn package_of(path: &str) -> &str {
+    path.strip_prefix("crates/")
+        .and_then(|rest| rest.split('/').next())
+        .filter(|name| !name.is_empty())
+        .unwrap_or("")
 }
 
 /// Per-file facts retained between the symbol pass and the edge pass. Each
@@ -52,6 +79,9 @@ pub(crate) struct SymbolCandidate {
 pub(crate) struct FileFacts {
     /// File the sites live in.
     pub file_id: FileId,
+    /// Package (crate) this file belongs to — the caller's scoping key for
+    /// [`resolve_edges`] [src: ADR-0024].
+    pub package: String,
     /// Evidence language for resolved edges.
     pub lang: Lang,
     /// Local symbols (for the enclosing-symbol `src` lookup).
@@ -150,17 +180,26 @@ fn sfc_component_name(rel_path: &str) -> String {
         .map_or_else(|| rel_path.to_owned(), |s| s.to_string_lossy().into_owned())
 }
 
-/// Reduce each name's candidate list to [`SymbolId`]s, sorted by
+/// Reduce each name's candidate list to `(id, package)` pairs, sorted by
 /// `(defining FileId, def byte start)` so edge-`dst` selection is independent
 /// of file-iteration order [src: crates/ariadne-cli/src/domain/mod.rs:689-699].
+/// The package key is retained for the scoped resolution in [`resolve_edges`]
+/// [src: ADR-0024].
 pub(crate) fn sort_candidates(
     name_to_symbols: HashMap<String, Vec<SymbolCandidate>>,
-) -> HashMap<String, Vec<SymbolId>> {
+) -> HashMap<String, Vec<ResolvedCandidate>> {
     name_to_symbols
         .into_iter()
         .map(|(name, mut cands)| {
             cands.sort_by_key(|c| (c.file, c.def_start));
-            (name, cands.into_iter().map(|c| c.id).collect())
+            let resolved = cands
+                .into_iter()
+                .map(|c| ResolvedCandidate {
+                    id: c.id,
+                    package: c.package,
+                })
+                .collect();
+            (name, resolved)
         })
         .collect()
 }
@@ -170,18 +209,23 @@ pub(crate) fn sort_candidates(
 /// A call site becomes a [`EdgeKind::References`] edge, a render site a
 /// [`EdgeKind::Renders`] edge, a hook site a [`EdgeKind::UsesHook`] edge. For
 /// each, `src` is the innermost declaration whose span contains the site and
-/// `dst` is the named symbol — same-file match preferred, else the first
-/// global match. An unresolved `src` or `dst`, or a self-loop, drops the edge:
-/// the same best-effort policy for all three kinds
-/// [src: crates/ariadne-cli/src/domain/mod.rs:718-768].
+/// `dst` is the named symbol resolved by scope precedence (ADR-0024):
+/// same-file → same-crate → unambiguous-global (the name has exactly one
+/// workspace definition). A callee with no in-scope definition that is also
+/// ambiguous globally — the std `Vec::new()` shape, where `new` is captured as
+/// a bare name defined in many crates — binds to no symbol and drops the edge,
+/// rather than collapsing onto an arbitrary same-named symbol. An unresolved
+/// `src` or `dst`, or a self-loop, drops the edge: the same best-effort policy
+/// for all three kinds [src: ADR-0024; crates/ariadne-cli/src/domain/mod.rs:718-768].
 pub(crate) fn resolve_edges(
     facts_by_file: &[FileFacts],
-    name_to_symbols: &HashMap<String, Vec<SymbolId>>,
+    name_to_symbols: &HashMap<String, Vec<ResolvedCandidate>>,
 ) -> Vec<(EdgeKey, EdgeRecord)> {
     let mut seen: HashSet<EdgeKey> = HashSet::new();
     let mut out = Vec::new();
     for facts in facts_by_file {
         let local_ids: HashSet<SymbolId> = facts.symbols.iter().map(|l| l.id).collect();
+        let caller_package = facts.package.as_str();
         let mut resolve = |kind: EdgeKind, name: &str, range: (u32, u32)| {
             let Some(src) = enclosing_symbol(&facts.symbols, range) else {
                 return;
@@ -189,11 +233,18 @@ pub(crate) fn resolve_edges(
             let Some(candidates) = name_to_symbols.get(name) else {
                 return;
             };
-            let Some(dst) = candidates
-                .iter()
-                .find(|c| local_ids.contains(c))
-                .or_else(|| candidates.first())
-                .copied()
+            // Scope precedence: a definition in the caller's own file, else one
+            // in the caller's crate, else — only when the name is unambiguous
+            // workspace-wide — its single global definition. No in-scope and
+            // ambiguous ⇒ no edge (the candidate lists are already sorted, so
+            // each `find`/`first` is deterministic) [src: ADR-0024].
+            let same_file = candidates.iter().find(|c| local_ids.contains(&c.id));
+            let same_crate = || candidates.iter().find(|c| c.package == caller_package);
+            let unambiguous = || (candidates.len() == 1).then(|| &candidates[0]);
+            let Some(dst) = same_file
+                .or_else(same_crate)
+                .or_else(unambiguous)
+                .map(|c| c.id)
             else {
                 return;
             };

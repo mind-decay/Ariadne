@@ -8,7 +8,8 @@ exit_criteria:
   - "Resolution is scoped: a callee resolves to an in-scope definition (same file → same crate → import-visible) when one exists; a callee with no in-scope definition (e.g. std `Vec::new`) yields NO edge — both asserted by tests"
   - "After re-index, `apply_writes` carries no outbound edge to a `new` defined in another crate (asserted via the graph or an equivalent fixture)"
   - "`cargo test --test architecture` green; warm==cold parity green; existing navigation/reference tests unchanged-green; same input → identical edge set (determinism)"
-status: pending
+status: completed
+completed: 2026-06-04
 ---
 
 <context>
