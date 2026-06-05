@@ -1,0 +1,8 @@
+{
+  "slug": "r1-resolver-completion",
+  "audited_commit": "97f122a01b2ed4b85e1a0dea5e609eabcdd7544f",
+  "tier_id": "tier-04",
+  "verdict": "PASS",
+  "audited_at": "2026-06-05T12:26:24Z",
+  "report": "audit/tier-04-report.md"
+}

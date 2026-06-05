@@ -8,7 +8,7 @@ exit_criteria:
   - "Architecture Role column restored; `ariadne-cli` and `ariadne-e2e` render a volatile-leaf role (instability > 0.7), never `Stable foundational … many dependents`"
   - "Cross-crate cycle clusters un-suppressed and listed with qualified member names"
   - "`ariadne doc` twice → byte-identical; clippy/fmt/architecture/warm==cold green"
-status: pending
+status: blocked
 ---
 
 <context>
@@ -81,3 +81,43 @@ tier-02 `<rollback>`].
 crates/ariadne-graph/tests/ docs/codebase-overview.md docs/codebase-overview.svg`.
 Reverts to the tier-01 suppressed-but-honest state; no other crate touched.
 </rollback>
+
+<blockers>
+BLOCKED on a complete R1 fix — tier-02's resolver scoping is insufficient, so the
+real edge set is not yet reliable and exit criterion #3 (cli/e2e volatile-leaf)
+fails on the regenerated overview.
+
+Evidence (fresh in-place re-index with the R1-fixed binary, 5448→3971 edges,
+daemon stopped, authoritative crate-level Ca/Ce printed from `architecture_section`):
+- `ariadne-e2e` (test crate — nothing legitimately depends on it): Ca=62, Ce=8,
+  I=0.114 → renders "Stable foundational"; all 62 cross-crate afferent edges are
+  phantom (name-collision resolution of generic callees like `connect`/`notify`
+  from mcp/daemon onto e2e symbols).
+- `ariadne-cli` (binary crate — nothing depends on it): Ca=91, Ce=34, I=0.272 →
+  "Stable foundational"; the 91 cross-crate afferent are phantom.
+- Contrast `ariadne-core` (Ca=34, Ce=0, I=0.000) renders "Stable foundational"
+  *correctly* — everything legitimately depends on core.
+- Boundary violations are reduced (154→29) but not near-zero; the residual set
+  rides the same still-imperfect cross-crate edges.
+
+This is the plan's documented risk ("Re-enabling (T3) still shows residual false
+positives") and BLOCKED condition ("blocks on the dedicated R1 implementation
+plan"). The tier-02 R1 fix scoped same-file→same-crate→import-visible but still
+leaks cross-crate resolution for method/generic callees with no same-crate
+definition (e.g. `socket.connect()` in mcp → `ariadne-e2e::connect`).
+
+DONE and verified green: all rendering code (boundary dedup on
+(SymbolId,SymbolId,reason) + `crate::name` qualifier; Role column restored via
+`purpose`; cross-crate cycle listing qualified) plus the fixture tests, the
+`docgen_fixture__project` snapshot, the full `ariadne-graph` suite (69),
+`ariadne-daemon`+`ariadne-mcp` (104, incl. warm==cold), clippy, fmt, and the
+architecture test. On reliable edges the code is correct (the snapshot proves an
+efferent-only cli renders volatile-leaf). The tier-03 code is held uncommitted;
+`docs/codebase-overview.{md,svg}` were reverted to the tier-01 honest state so the
+committed overview is not regressed while the edges remain unreliable.
+
+Unblock: complete the R1 resolver fix (drop cross-crate resolution for callees
+with no in-scope definition; leave them edge-less) under a dedicated plan, then
+re-run this tier's `<verification>` — cli/e2e must read volatile-leaf and the
+cross-crate boundary set near-zero before `status: completed`.
+</blockers>
