@@ -16,7 +16,7 @@ use std::collections::hash_map::Entry;
 use std::path::Path;
 
 use ariadne_core::Lang;
-use ariadne_parser::{DeclKind, FactExtractor, ParserRegistry, SyntacticFacts};
+use ariadne_parser::{CallKind, DeclKind, FactExtractor, ParserRegistry, SyntacticFacts};
 use ariadne_salsa::{CallRaw, DeclRaw, HookRaw, ImportRaw, RenderRaw, SyntacticFactsRaw};
 
 /// Map a path to its [`Lang`] by file extension, via [`Lang::from_extension`].
@@ -101,6 +101,7 @@ fn convert_facts(facts: &SyntacticFacts) -> SyntacticFactsRaw {
             .iter()
             .map(|c| CallRaw {
                 callee: c.callee.clone(),
+                kind_byte: call_kind_byte(c.kind),
                 byte_range: c.byte_range,
             })
             .collect(),
@@ -120,6 +121,17 @@ fn convert_facts(facts: &SyntacticFacts) -> SyntacticFactsRaw {
                 byte_range: h.byte_range,
             })
             .collect(),
+    }
+}
+
+/// Byte mirror of an `ariadne_parser` call shape (`Free=0`, `Method=1`,
+/// `Path=2`). Copied verbatim from the CLI composition root so the two roots
+/// emit identical `CallRaw.kind_byte` [src: crates/ariadne-cli/src/domain/mod.rs].
+fn call_kind_byte(kind: CallKind) -> u8 {
+    match kind {
+        CallKind::Free => 0,
+        CallKind::Method => 1,
+        CallKind::Path => 2,
     }
 }
 

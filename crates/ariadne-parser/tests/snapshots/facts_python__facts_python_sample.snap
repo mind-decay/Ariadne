@@ -1,6 +1,5 @@
 ---
 source: crates/ariadne-parser/tests/facts_python.rs
-assertion_line: 10
 expression: facts
 ---
 SyntacticFacts {
@@ -132,6 +131,7 @@ SyntacticFacts {
     calls: [
         CallSite {
             callee: "Counter",
+            kind: Free,
             byte_range: (
                 266,
                 273,
@@ -139,6 +139,7 @@ SyntacticFacts {
         },
         CallSite {
             callee: "Path",
+            kind: Free,
             byte_range: (
                 330,
                 334,
@@ -146,6 +147,7 @@ SyntacticFacts {
         },
         CallSite {
             callee: "read_text",
+            kind: Method,
             byte_range: (
                 341,
                 350,
@@ -153,6 +155,7 @@ SyntacticFacts {
         },
         CallSite {
             callee: "loads",
+            kind: Method,
             byte_range: (
                 369,
                 374,

@@ -79,6 +79,13 @@ pub struct ImportRaw {
 pub struct CallRaw {
     /// Callee identifier text.
     pub callee: String,
+    /// Call shape as a single byte (`0=Free`, `1=Method`, `2=Path`), mapped
+    /// from `ariadne_parser::CallKind` at the composition root. A fieldless
+    /// enum has no `salsa::Update` auto-impl, so the salsa boundary uses a byte
+    /// mirror like `DeclRaw::visibility_byte`; the resolver decodes it to gate
+    /// the cross-crate fallback to `Free` calls
+    /// [src: <https://docs.rs/salsa/0.26.2/salsa/trait.Update.html>; ADR-0024].
+    pub kind_byte: u8,
     /// `(byte_start, byte_end)` of the callee identifier.
     pub byte_range: (u32, u32),
 }

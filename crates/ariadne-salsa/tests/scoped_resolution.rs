@@ -41,8 +41,10 @@ fn fn_decl(name: &str, def_end: u32) -> DeclRaw {
     }
 }
 
-/// Seed a file carrying one function decl and zero or more bare-name call
-/// sites, all nested inside that decl's span.
+/// Seed a file carrying one function decl and zero or more bare-name (`Free`)
+/// call sites, all nested inside that decl's span. `Free` is the shape the
+/// existing scoped-resolution tests assert; the spike tests use
+/// [`seed_kinded_caller`] for the `Method`/`Path` shapes.
 fn seed_fn_with_calls(
     db: &mut AriadneDb,
     file_id: u32,
@@ -50,8 +52,8 @@ fn seed_fn_with_calls(
     fn_name: &str,
     callees: &[&str],
 ) {
-    // A body wide enough to contain every call range below.
-    let body_end: u32 = 256;
+    // Call ranges sit at 16-byte strides, all inside the decl span seeded by
+    // `seed_file_with_calls`.
     let calls = callees
         .iter()
         .enumerate()
@@ -59,10 +61,36 @@ fn seed_fn_with_calls(
             let start = 16 + u32::try_from(i).expect("few calls") * 16;
             CallRaw {
                 callee: (*callee).to_owned(),
+                kind_byte: 0,
                 byte_range: (start, start + 8),
             }
         })
         .collect();
+    seed_file_with_calls(db, file_id, path, fn_name, calls);
+}
+
+/// Seed a `user` caller file whose single call site to `callee` carries the
+/// given shape byte (`1=Method`, `2=Path`). The spike tests use this to
+/// reproduce the `socket.connect()` / `Foo::new()` phantom shapes.
+fn seed_kinded_caller(db: &mut AriadneDb, file_id: u32, path: &str, callee: &str, kind_byte: u8) {
+    let calls = vec![CallRaw {
+        callee: callee.to_owned(),
+        kind_byte,
+        byte_range: (16, 24),
+    }];
+    seed_file_with_calls(db, file_id, path, "user", calls);
+}
+
+/// Materialise one seeded file: a single `fn_name` decl spanning the file and
+/// the given call sites nested inside it.
+fn seed_file_with_calls(
+    db: &mut AriadneDb,
+    file_id: u32,
+    path: &str,
+    fn_name: &str,
+    calls: Vec<CallRaw>,
+) {
+    let body_end: u32 = 256;
     let facts = SyntacticFactsRaw {
         decls: vec![fn_decl(fn_name, body_end)],
         calls,
@@ -124,7 +152,8 @@ fn same_crate_call_resolves_within_caller_crate_not_collision() {
     seed_fn_with_calls(&mut db, 1, "crates/crate_b/src/lib.rs", "helper", &[]);
     // File 2 — crate A's own `helper`: the in-scope, correct target.
     seed_fn_with_calls(&mut db, 2, "crates/crate_a/src/lib.rs", "helper", &[]);
-    // File 3 — crate A's caller, in a different file from A's `helper`.
+    // File 3 — crate A's caller, in a different file from A's `helper`. Free
+    // shape: the same-crate tier resolves it regardless of the gate.
     seed_fn_with_calls(
         &mut db,
         3,
@@ -185,7 +214,8 @@ fn unambiguous_global_callee_resolves_cross_crate() {
 
     // The only `helper` in the workspace lives in crate A.
     seed_fn_with_calls(&mut db, 1, "crates/crate_a/src/lib.rs", "helper", &[]);
-    // Crate B calls it with no import statement (the fixture shape).
+    // Crate B calls it with no import statement (the fixture shape). Free shape:
+    // the unambiguous-global tier must still resolve it across crates.
     seed_fn_with_calls(&mut db, 2, "crates/crate_b/src/lib.rs", "run", &["helper"]);
 
     let symbols = commit_and_read(&mut db, &storage);
@@ -195,5 +225,54 @@ fn unambiguous_global_callee_resolves_cross_crate() {
     assert!(
         reference_targets(&storage, run).contains(&helper_a),
         "unambiguous cross-crate callee must still resolve to its single definition",
+    );
+}
+
+/// R1 completion spike — method-shaped phantom. `socket.connect()` captures the
+/// bare member name `connect`, defined exactly once workspace-wide (in crate B)
+/// but never in the caller's crate. The pre-gate resolver bound it cross-crate
+/// via the `unambiguous-global` tier — the phantom afferent edge. The shape gate
+/// refuses that fallback for `Method` calls, so a method-shaped cross-crate
+/// callee with no in-scope definition yields NO edge.
+#[test]
+fn method_shaped_cross_crate_callee_yields_no_edge() {
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let storage = RedbStorage::open(&tmp.path().join("index.redb")).expect("open redb");
+    let mut db = AriadneDb::new();
+
+    // The only `connect` in the workspace lives in crate B.
+    seed_fn_with_calls(&mut db, 1, "crates/crate_b/src/lib.rs", "connect", &[]);
+    // Crate A calls `socket.connect()` → captured as a Method-shaped `connect`.
+    seed_kinded_caller(&mut db, 2, "crates/crate_a/src/lib.rs", "connect", 1);
+
+    let symbols = commit_and_read(&mut db, &storage);
+    let user = id_in_file(&symbols, "user", 2);
+
+    assert!(
+        reference_targets(&storage, user).is_empty(),
+        "method-shaped cross-crate callee `connect` must yield no edge (the phantom)",
+    );
+}
+
+/// R1 completion spike — path-shaped phantom twin. `Foo::new()` captures the
+/// bare associated name `build`, unique workspace-wide but out of the caller's
+/// crate. The gate refuses the cross-crate fallback for `Path` calls too.
+#[test]
+fn path_shaped_cross_crate_callee_yields_no_edge() {
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let storage = RedbStorage::open(&tmp.path().join("index.redb")).expect("open redb");
+    let mut db = AriadneDb::new();
+
+    // The only `build` in the workspace lives in crate B.
+    seed_fn_with_calls(&mut db, 1, "crates/crate_b/src/lib.rs", "build", &[]);
+    // Crate A calls `Foo::build()` → captured as a Path-shaped `build`.
+    seed_kinded_caller(&mut db, 2, "crates/crate_a/src/lib.rs", "build", 2);
+
+    let symbols = commit_and_read(&mut db, &storage);
+    let user = id_in_file(&symbols, "user", 2);
+
+    assert!(
+        reference_targets(&storage, user).is_empty(),
+        "path-shaped cross-crate callee `build` must yield no edge (the phantom)",
     );
 }

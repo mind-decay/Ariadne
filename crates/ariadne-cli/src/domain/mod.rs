@@ -19,7 +19,7 @@ use std::time::{Duration, Instant};
 
 use anyhow::{Context, Result};
 use ariadne_core::{FileId, FileRecord, Lang, ReadSnapshot, Storage};
-use ariadne_parser::{DeclKind, FactExtractor, ParserRegistry, SyntacticFacts};
+use ariadne_parser::{CallKind, DeclKind, FactExtractor, ParserRegistry, SyntacticFacts};
 use ariadne_salsa::{
     AriadneDb, CallRaw, DeclRaw, HookRaw, ImportRaw, RenderRaw, SyntacticFactsRaw,
 };
@@ -499,6 +499,7 @@ fn convert_facts(facts: &SyntacticFacts) -> SyntacticFactsRaw {
             .iter()
             .map(|c| CallRaw {
                 callee: c.callee.clone(),
+                kind_byte: call_kind_byte(c.kind),
                 byte_range: c.byte_range,
             })
             .collect(),
@@ -518,6 +519,19 @@ fn convert_facts(facts: &SyntacticFacts) -> SyntacticFactsRaw {
                 byte_range: h.byte_range,
             })
             .collect(),
+    }
+}
+
+/// Byte mirror of an `ariadne_parser` call shape for the `Update`-safe salsa
+/// `CallRaw.kind_byte` (`Free=0`, `Method=1`, `Path=2`); the resolver decodes
+/// it to gate the cross-crate fallback to free calls [src: ADR-0024]. Mirrors
+/// `decl_kind_tag` / `Visibility::to_byte` — the map lives at the composition
+/// root because `ariadne-salsa` may not depend on `ariadne-parser`.
+fn call_kind_byte(kind: CallKind) -> u8 {
+    match kind {
+        CallKind::Free => 0,
+        CallKind::Method => 1,
+        CallKind::Path => 2,
     }
 }
 

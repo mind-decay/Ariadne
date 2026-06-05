@@ -69,6 +69,7 @@ fn commit_revision_derives_symbols_and_cross_file_edge() {
         }],
         calls: vec![CallRaw {
             callee: "callee".to_owned(),
+            kind_byte: 0,
             byte_range: (14, 20),
         }],
         ..SyntacticFactsRaw::default()

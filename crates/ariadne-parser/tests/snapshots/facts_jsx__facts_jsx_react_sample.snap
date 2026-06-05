@@ -1,6 +1,5 @@
 ---
 source: crates/ariadne-parser/tests/facts_jsx.rs
-assertion_line: 18
 expression: facts
 ---
 SyntacticFacts {
@@ -63,6 +62,7 @@ SyntacticFacts {
     calls: [
         CallSite {
             callee: "useState",
+            kind: Free,
             byte_range: (
                 174,
                 182,
@@ -70,6 +70,7 @@ SyntacticFacts {
         },
         CallSite {
             callee: "setOpen",
+            kind: Free,
             byte_range: (
                 214,
                 221,

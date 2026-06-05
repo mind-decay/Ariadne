@@ -72,8 +72,36 @@ pub(crate) fn package_of(path: &str) -> &str {
         .unwrap_or("")
 }
 
+/// Syntactic shape of a call site, decoded from `CallRaw.kind_byte` at the
+/// changeset boundary. Derive-local because `ariadne-salsa` may not depend on
+/// `ariadne-parser`; mirrors `ariadne_parser::CallKind` so the resolver can
+/// gate the cross-crate fallback to free calls [src: ADR-0024; tests/architecture.rs].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum CallKind {
+    /// Bare-identifier call — eligible for the cross-crate fallback.
+    Free,
+    /// Receiver/member call — cross-crate fallback refused.
+    Method,
+    /// Scoped/qualified call — cross-crate fallback refused.
+    Path,
+}
+
+impl CallKind {
+    /// Decode the composition-root byte mirror (`0=Free`, `1=Method`,
+    /// `2=Path`). An unknown byte falls back to `Free`, the recall-preserving
+    /// default — the only producers are the two `call_kind_byte` roots, which
+    /// never emit another value [src: crates/ariadne-cli/src/domain/mod.rs].
+    pub(crate) fn from_byte(byte: u8) -> Self {
+        match byte {
+            1 => Self::Method,
+            2 => Self::Path,
+            _ => Self::Free,
+        }
+    }
+}
+
 /// Per-file facts retained between the symbol pass and the edge pass. Each
-/// `(name, range)` pair is an unresolved site — a callee, a rendered child
+/// site is an unresolved `(name, …, range)` — a callee, a rendered child
 /// component, or a hook — the edge pass resolves against the global symbol
 /// table [src: crates/ariadne-cli/src/domain/mod.rs:177-184].
 pub(crate) struct FileFacts {
@@ -86,8 +114,9 @@ pub(crate) struct FileFacts {
     pub lang: Lang,
     /// Local symbols (for the enclosing-symbol `src` lookup).
     pub symbols: Vec<LocalSymbol>,
-    /// Call sites: `(callee, range)`.
-    pub calls: Vec<(String, (u32, u32))>,
+    /// Call sites: `(callee, shape, range)`. The shape gates the cross-crate
+    /// fallback in [`resolve_edges`].
+    pub calls: Vec<(String, CallKind, (u32, u32))>,
     /// Render sites: `(component, range)`.
     pub renders: Vec<(String, (u32, u32))>,
     /// Hook sites: `(callee, range)`.
@@ -211,12 +240,17 @@ pub(crate) fn sort_candidates(
 /// each, `src` is the innermost declaration whose span contains the site and
 /// `dst` is the named symbol resolved by scope precedence (ADR-0024):
 /// same-file → same-crate → unambiguous-global (the name has exactly one
-/// workspace definition). A callee with no in-scope definition that is also
-/// ambiguous globally — the std `Vec::new()` shape, where `new` is captured as
-/// a bare name defined in many crates — binds to no symbol and drops the edge,
-/// rather than collapsing onto an arbitrary same-named symbol. An unresolved
-/// `src` or `dst`, or a self-loop, drops the edge: the same best-effort policy
-/// for all three kinds [src: ADR-0024; crates/ariadne-cli/src/domain/mod.rs:718-768].
+/// workspace definition). The cross-crate `unambiguous-global` tier is gated by
+/// call shape: it fires only for `Free` calls. A `Method`/`Path` callee
+/// (`socket.connect()`, `Foo::new()`) captures only the bare member/segment
+/// name, so binding it cross-crate by that bare name is a phantom — the gate
+/// refuses it, yielding no edge unless a same-file/same-crate definition exists
+/// [src: r1-resolver-completion plan D1]. A bare callee with no in-scope
+/// definition that is also ambiguous globally — the std `Vec::new()` shape —
+/// likewise binds to no symbol. Render and hook sites pass the gate
+/// unconditionally (their resolution is unchanged). An unresolved `src` or
+/// `dst`, or a self-loop, drops the edge: the same best-effort policy for all
+/// three kinds [src: ADR-0024; crates/ariadne-cli/src/domain/mod.rs:718-768].
 pub(crate) fn resolve_edges(
     facts_by_file: &[FileFacts],
     name_to_symbols: &HashMap<String, Vec<ResolvedCandidate>>,
@@ -226,7 +260,7 @@ pub(crate) fn resolve_edges(
     for facts in facts_by_file {
         let local_ids: HashSet<SymbolId> = facts.symbols.iter().map(|l| l.id).collect();
         let caller_package = facts.package.as_str();
-        let mut resolve = |kind: EdgeKind, name: &str, range: (u32, u32)| {
+        let mut resolve = |edge: EdgeKind, name: &str, range: (u32, u32), cross_crate_ok: bool| {
             let Some(src) = enclosing_symbol(&facts.symbols, range) else {
                 return;
             };
@@ -234,24 +268,31 @@ pub(crate) fn resolve_edges(
                 return;
             };
             // Scope precedence: a definition in the caller's own file, else one
-            // in the caller's crate, else — only when the name is unambiguous
-            // workspace-wide — its single global definition. No in-scope and
-            // ambiguous ⇒ no edge (the candidate lists are already sorted, so
-            // each `find`/`first` is deterministic) [src: ADR-0024].
+            // in the caller's crate, else — only when `cross_crate_ok` and the
+            // name is unambiguous workspace-wide — its single global definition.
+            // No in-scope match (and ambiguous or gated) ⇒ no edge (the
+            // candidate lists are already sorted, so each `find`/`first` is
+            // deterministic) [src: ADR-0024; r1-resolver-completion D1].
             let same_file = candidates.iter().find(|c| local_ids.contains(&c.id));
             let same_crate = || candidates.iter().find(|c| c.package == caller_package);
             let unambiguous = || (candidates.len() == 1).then(|| &candidates[0]);
-            let Some(dst) = same_file
-                .or_else(same_crate)
-                .or_else(unambiguous)
-                .map(|c| c.id)
-            else {
+            let in_scope = same_file.or_else(same_crate);
+            let resolved = if cross_crate_ok {
+                in_scope.or_else(unambiguous)
+            } else {
+                in_scope
+            };
+            let Some(dst) = resolved.map(|c| c.id) else {
                 return;
             };
             if dst == src {
                 return;
             }
-            let key = EdgeKey { src, kind, dst };
+            let key = EdgeKey {
+                src,
+                kind: edge,
+                dst,
+            };
             if !seen.insert(key) {
                 return;
             }
@@ -264,14 +305,21 @@ pub(crate) fn resolve_edges(
                 },
             ));
         };
-        for (callee, range) in &facts.calls {
-            resolve(EdgeKind::References, callee, *range);
+        for (callee, kind, range) in &facts.calls {
+            // Only a free-identifier callee is eligible for the cross-crate
+            // unambiguous-global fallback; a method/path shape is not.
+            resolve(
+                EdgeKind::References,
+                callee,
+                *range,
+                matches!(kind, CallKind::Free),
+            );
         }
         for (component, range) in &facts.renders {
-            resolve(EdgeKind::Renders, component, *range);
+            resolve(EdgeKind::Renders, component, *range, true);
         }
         for (callee, range) in &facts.hooks {
-            resolve(EdgeKind::UsesHook, callee, *range);
+            resolve(EdgeKind::UsesHook, callee, *range, true);
         }
     }
     out

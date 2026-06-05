@@ -58,11 +58,11 @@
   source: (string) @import.path) @import
 
 (call_expression
-  function: (identifier) @call.callee)
+  function: (identifier) @call.free)
 
 (call_expression
   function: (member_expression
-    property: (property_identifier) @call.callee))
+    property: (property_identifier) @call.method))
 
 ; --- JSX --------------------------------------------------------------------
 

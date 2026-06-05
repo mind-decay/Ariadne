@@ -1,6 +1,5 @@
 ---
 source: crates/ariadne-parser/tests/facts_vue.rs
-assertion_line: 138
 expression: facts
 ---
 SyntacticFacts {
@@ -70,6 +69,7 @@ SyntacticFacts {
     calls: [
         CallSite {
             callee: "defineProps",
+            kind: Free,
             byte_range: (
                 225,
                 236,
@@ -77,6 +77,7 @@ SyntacticFacts {
         },
         CallSite {
             callee: "ref",
+            kind: Free,
             byte_range: (
                 272,
                 275,

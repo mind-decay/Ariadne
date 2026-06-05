@@ -19,8 +19,16 @@
 (import_declaration
   (scoped_identifier) @import.path) @import
 
+; An object-less invocation (`foo()`) is a free call; one with a receiver
+; (`obj.foo()`) is a method call. `!object` negates the field's presence
+; [src: https://tree-sitter.github.io/tree-sitter/using-parsers/queries/1-syntax.html].
 (method_invocation
-  name: (identifier) @call.callee)
+  !object
+  name: (identifier) @call.free)
+
+(method_invocation
+  object: (_)
+  name: (identifier) @call.method)
 
 ; tier-04 visibility / attribute captures.
 ;   @visibility  the `modifiers` node — its text contains every modifier

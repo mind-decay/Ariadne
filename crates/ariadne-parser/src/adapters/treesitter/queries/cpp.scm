@@ -33,15 +33,15 @@
   name: (namespace_identifier) @name) @def.module
 
 (call_expression
-  function: (identifier) @call.callee)
+  function: (identifier) @call.free)
 
 (call_expression
   function: (field_expression
-    field: (field_identifier) @call.callee))
+    field: (field_identifier) @call.method))
 
 (call_expression
   function: (qualified_identifier
-    name: (identifier) @call.callee))
+    name: (identifier) @call.path))
 
 ; tier-04 visibility / attribute captures.
 ;   @visibility  `storage_class_specifier` (`static`) and C++

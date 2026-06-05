@@ -4,7 +4,8 @@
 ;   @name        the declared symbol's identifier
 ;   @import      the whole import statement
 ;   @import.path the raw module string (with surrounding quotes)
-;   @call.callee the callee identifier of a call expression
+;   @call.<shape> the callee identifier of a call expression; shape suffix is
+;                 `free` (bare) or `method` (member access)
 ; node-type reference: https://github.com/tree-sitter/tree-sitter-javascript/blob/master/src/node-types.json
 
 (function_declaration
@@ -31,11 +32,11 @@
   source: (string) @import.path) @import
 
 (call_expression
-  function: (identifier) @call.callee)
+  function: (identifier) @call.free)
 
 (call_expression
   function: (member_expression
-    property: (property_identifier) @call.callee))
+    property: (property_identifier) @call.method))
 
 ; --- JSX (tier-02) ----------------------------------------------------------
 ; `.jsx` parses with the JavaScript grammar, which emits JSX nodes natively;

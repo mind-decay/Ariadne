@@ -10,7 +10,9 @@
 //!   declared identifier. Kind tag = the suffix after the `.`.
 //! - `@import` on the whole statement; `@import.path` on the module-path
 //!   node.
-//! - `@call.callee` on the callee identifier of a call/invocation.
+//! - `@call.<shape>` on the callee identifier of a call/invocation, where
+//!   `<shape>` is `free` (bare identifier), `method` (receiver/member call),
+//!   or `path` (scoped/qualified call). The suffix maps to [`CallKind`].
 //!
 //! tree-sitter API contract: iteration over `QueryMatches` requires
 //! `StreamingIterator` in scope.
@@ -118,11 +120,43 @@ pub struct Import {
     pub byte_range: (u32, u32),
 }
 
+/// Shape of a call site, read from the grammar's own call sub-pattern via the
+/// `@call.<shape>` capture-name suffix. The resolver gates its cross-crate
+/// `unambiguous-global` fallback to `Free` calls: a `Method`/`Path` callee
+/// captures only the bare member/segment name (`connect` for `socket.connect()`,
+/// `new` for `Foo::new()`), so binding it cross-crate by that bare name is the
+/// phantom edge the gate refuses [src: ADR-0024; r1-resolver-completion plan D1].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum CallKind {
+    /// Bare-identifier call — `helper()`.
+    Free,
+    /// Receiver/member call — `socket.connect()`, `obj.method()`.
+    Method,
+    /// Scoped/qualified call — `Foo::new()`, `ns::func()`.
+    Path,
+}
+
+impl CallKind {
+    /// Map a `@call.<shape>` capture-name suffix to its [`CallKind`]. Every
+    /// grammar's call captures are relabeled to `free`/`method`/`path`; an
+    /// unknown suffix (a relabel miss) falls back to `Free`, the recall-
+    /// preserving default [src: r1-resolver-completion plan D2].
+    fn from_capture_suffix(suffix: &str) -> Self {
+        match suffix {
+            "method" => Self::Method,
+            "path" => Self::Path,
+            _ => Self::Free,
+        }
+    }
+}
+
 /// A call/invocation site.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CallSite {
     /// Callee identifier text.
     pub callee: String,
+    /// Syntactic shape of the call, from the `@call.<shape>` capture suffix.
+    pub kind: CallKind,
     /// Byte range of the callee identifier.
     pub byte_range: (u32, u32),
 }
@@ -314,7 +348,7 @@ impl FactExtractor {
             let mut def_node: Option<(Node<'_>, DeclKind)> = None;
             let mut name_node: Option<Node<'_>> = None;
             let mut import_path_node: Option<Node<'_>> = None;
-            let mut call_callee_node: Option<Node<'_>> = None;
+            let mut call_callee_node: Option<(Node<'_>, CallKind)> = None;
             let mut render_node: Option<Node<'_>> = None;
             let mut hook_node: Option<Node<'_>> = None;
 
@@ -339,8 +373,8 @@ impl FactExtractor {
                     }
                 } else if name == "import.path" {
                     import_path_node = Some(capture.node);
-                } else if name == "call.callee" {
-                    call_callee_node = Some(capture.node);
+                } else if let Some(shape) = name.strip_prefix("call.") {
+                    call_callee_node = Some((capture.node, CallKind::from_capture_suffix(shape)));
                 } else if name == "render.component" {
                     render_node = Some(capture.node);
                 } else if name == "hook.callee" {
@@ -363,9 +397,10 @@ impl FactExtractor {
                     path: text_of(path, source),
                     byte_range: byte_range(path),
                 });
-            } else if let Some(callee) = call_callee_node {
+            } else if let Some((callee, kind)) = call_callee_node {
                 facts.calls.push(CallSite {
                     callee: text_of(callee, source),
+                    kind,
                     byte_range: byte_range(callee),
                 });
             } else if let Some(tag) = render_node {

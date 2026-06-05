@@ -23,7 +23,7 @@ Spike findings (locus pinned before any edit):
   [src: crates/ariadne-parser/src/adapters/treesitter/queries/rust.scm:38-40;
   crates/ariadne-parser/src/adapters/treesitter/facts.rs:122-128].
 - The resolver is the pure driver pass
-  [src: crates/ariadne-salsa/src/derive.rs:177-227 `resolve_edges`], fed from
+  [src: crates/ariadne-salsa/src/derive.rs:220-278 `resolve_edges`], fed from
   [src: crates/ariadne-salsa/src/db.rs:239-324 `build_changeset`]. Pre-fix it
   preferred a same-file match, **else `candidates.first()`** — the arbitrary
   same-name global that is the phantom.
@@ -109,7 +109,7 @@ drops the edge. `SymbolId` derivation and SCIP-precise naming are untouched
 
 <sources>
 - `[src: .claude/plans/docgen-overview-fidelity/plan.md R1, D2; tier-02-edge-resolution.md]`
-- `[src: crates/ariadne-salsa/src/derive.rs:39-110,156-227 ; src/db.rs:239-324]`
+- `[src: crates/ariadne-salsa/src/derive.rs:39-110,220-278 ; src/db.rs:239-324]`
 - `[src: crates/ariadne-parser/src/adapters/treesitter/queries/rust.scm:35-44 ; facts.rs:122-128]`
 - `[src: crates/ariadne-storage/src/adapters/redb/apply.rs (proof case)]`
 - `[src: crates/ariadne-cli/tests/doc_command.rs:19-22 ; crates/ariadne-salsa/tests/scoped_resolution.rs]`

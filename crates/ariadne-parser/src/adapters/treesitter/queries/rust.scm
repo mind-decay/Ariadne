@@ -33,15 +33,15 @@
   argument: (_) @import.path) @import
 
 (call_expression
-  function: (identifier) @call.callee)
+  function: (identifier) @call.free)
 
 (call_expression
   function: (scoped_identifier
-    name: (identifier) @call.callee))
+    name: (identifier) @call.path))
 
 (call_expression
   function: (field_expression
-    field: (field_identifier) @call.callee))
+    field: (field_identifier) @call.method))
 
 (visibility_modifier) @visibility
 

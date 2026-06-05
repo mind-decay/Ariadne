@@ -14,11 +14,11 @@
   module_name: (dotted_name) @import.path) @import
 
 (call
-  function: (identifier) @call.callee)
+  function: (identifier) @call.free)
 
 (call
   function: (attribute
-    attribute: (identifier) @call.callee))
+    attribute: (identifier) @call.method))
 
 ; tier-04 attribute captures (Python has no visibility keyword;
 ; underscore/dunder conventions are captured via the decl `@name` and

@@ -305,7 +305,13 @@ impl AriadneDb {
                 calls: raw
                     .calls
                     .iter()
-                    .map(|c| (c.callee.clone(), c.byte_range))
+                    .map(|c| {
+                        (
+                            c.callee.clone(),
+                            derive::CallKind::from_byte(c.kind_byte),
+                            c.byte_range,
+                        )
+                    })
                     .collect(),
                 renders: raw
                     .renders

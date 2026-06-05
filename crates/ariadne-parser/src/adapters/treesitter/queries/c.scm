@@ -17,11 +17,11 @@
   declarator: (type_identifier) @name) @def.type
 
 (call_expression
-  function: (identifier) @call.callee)
+  function: (identifier) @call.free)
 
 (call_expression
   function: (field_expression
-    field: (field_identifier) @call.callee))
+    field: (field_identifier) @call.method))
 
 ; tier-04 visibility / attribute captures.
 ;   @visibility  `storage_class_specifier` — `static` collapses to

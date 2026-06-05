@@ -1,6 +1,5 @@
 ---
 source: crates/ariadne-parser/tests/facts_rust.rs
-assertion_line: 10
 expression: facts
 ---
 SyntacticFacts {
@@ -187,6 +186,7 @@ SyntacticFacts {
     calls: [
         CallSite {
             callee: "new",
+            kind: Path,
             byte_range: (
                 428,
                 431,

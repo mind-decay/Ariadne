@@ -1,6 +1,5 @@
 ---
 source: crates/ariadne-parser/tests/facts_tsx.rs
-assertion_line: 56
 expression: facts
 ---
 SyntacticFacts {
@@ -48,6 +47,7 @@ SyntacticFacts {
     calls: [
         CallSite {
             callee: "createSignal",
+            kind: Free,
             byte_range: (
                 209,
                 221,
@@ -55,6 +55,7 @@ SyntacticFacts {
         },
         CallSite {
             callee: "createEffect",
+            kind: Free,
             byte_range: (
                 228,
                 240,
@@ -62,6 +63,7 @@ SyntacticFacts {
         },
         CallSite {
             callee: "log",
+            kind: Method,
             byte_range: (
                 261,
                 264,
@@ -69,6 +71,7 @@ SyntacticFacts {
         },
         CallSite {
             callee: "seconds",
+            kind: Free,
             byte_range: (
                 273,
                 280,
@@ -76,6 +79,7 @@ SyntacticFacts {
         },
         CallSite {
             callee: "seconds",
+            kind: Free,
             byte_range: (
                 372,
                 379,

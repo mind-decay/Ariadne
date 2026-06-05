@@ -1,6 +1,5 @@
 ---
 source: crates/ariadne-parser/tests/facts_java.rs
-assertion_line: 10
 expression: facts
 ---
 SyntacticFacts {
@@ -164,6 +163,7 @@ SyntacticFacts {
     calls: [
         CallSite {
             callee: "add",
+            kind: Method,
             byte_range: (
                 376,
                 379,
@@ -171,6 +171,7 @@ SyntacticFacts {
         },
         CallSite {
             callee: "get",
+            kind: Method,
             byte_range: (
                 410,
                 413,

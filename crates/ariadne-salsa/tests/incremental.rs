@@ -59,6 +59,7 @@ fn two_fn_facts(shift: u32) -> (Vec<u8>, SyntacticFactsRaw) {
         ],
         calls: vec![CallRaw {
             callee: "b".to_owned(),
+            kind_byte: 0,
             byte_range: (shift + 9, shift + 10),
         }],
         ..SyntacticFactsRaw::default()
@@ -179,6 +180,7 @@ fn build_file(i: usize, call: Option<usize>) -> (Vec<u8>, SyntacticFactsRaw, Fil
         src.push_str("();");
         calls.push(CallRaw {
             callee,
+            kind_byte: 0,
             byte_range: (c_start, c_end),
         });
     }

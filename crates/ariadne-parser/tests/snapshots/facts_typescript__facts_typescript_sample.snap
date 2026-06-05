@@ -1,6 +1,5 @@
 ---
 source: crates/ariadne-parser/tests/facts_typescript.rs
-assertion_line: 10
 expression: facts
 ---
 SyntacticFacts {
@@ -215,6 +214,7 @@ SyntacticFacts {
     calls: [
         CallSite {
             callee: "sqrt",
+            kind: Method,
             byte_range: (
                 444,
                 448,
@@ -222,6 +222,7 @@ SyntacticFacts {
         },
         CallSite {
             callee: "join",
+            kind: Free,
             byte_range: (
                 510,
                 514,

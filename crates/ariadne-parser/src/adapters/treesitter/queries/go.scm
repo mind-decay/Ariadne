@@ -15,8 +15,8 @@
   path: (interpreted_string_literal) @import.path) @import
 
 (call_expression
-  function: (identifier) @call.callee)
+  function: (identifier) @call.free)
 
 (call_expression
   function: (selector_expression
-    field: (field_identifier) @call.callee))
+    field: (field_identifier) @call.method))

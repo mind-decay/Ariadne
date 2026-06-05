@@ -18,7 +18,7 @@
 (import (qualified_identifier) @import.path) @import
 (import (identifier) @import.path) @import
 
-(call_expression (expression (identifier) @call.callee))
+(call_expression (expression (identifier) @call.free))
 
 ; tier-04 visibility / attribute captures.
 ;   @visibility  the `modifiers` node — text-scan picks the strongest

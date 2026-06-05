@@ -1,6 +1,5 @@
 ---
 source: crates/ariadne-parser/tests/facts_javascript.rs
-assertion_line: 10
 expression: facts
 ---
 SyntacticFacts {
@@ -123,6 +122,7 @@ SyntacticFacts {
     calls: [
         CallSite {
             callee: "increment",
+            kind: Method,
             byte_range: (
                 290,
                 299,
@@ -130,6 +130,7 @@ SyntacticFacts {
         },
         CallSite {
             callee: "readFile",
+            kind: Free,
             byte_range: (
                 368,
                 376,
@@ -137,6 +138,7 @@ SyntacticFacts {
         },
         CallSite {
             callee: "parse",
+            kind: Method,
             byte_range: (
                 406,
                 411,

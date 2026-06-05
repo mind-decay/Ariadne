@@ -26,11 +26,11 @@
   (identifier) @import.path) @import
 
 (invocation_expression
-  function: (identifier) @call.callee)
+  function: (identifier) @call.free)
 
 (invocation_expression
   function: (member_access_expression
-    name: (identifier) @call.callee))
+    name: (identifier) @call.method))
 
 ; tier-04 visibility / attribute captures.
 ;   @visibility  the `modifier` token inside a decl

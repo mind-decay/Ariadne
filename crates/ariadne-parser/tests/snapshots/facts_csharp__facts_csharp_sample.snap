@@ -1,6 +1,5 @@
 ---
 source: crates/ariadne-parser/tests/facts_csharp.rs
-assertion_line: 10
 expression: facts
 ---
 SyntacticFacts {
@@ -177,6 +176,7 @@ SyntacticFacts {
     calls: [
         CallSite {
             callee: "Add",
+            kind: Method,
             byte_range: (
                 594,
                 597,
@@ -184,6 +184,7 @@ SyntacticFacts {
         },
         CallSite {
             callee: "Read",
+            kind: Method,
             byte_range: (
                 632,
                 636,
