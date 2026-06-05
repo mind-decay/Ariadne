@@ -14,22 +14,21 @@ expression: md
 
 | Crate | Layer | Role |
 | --- | --- | --- |
-| `ariadne-cli` | Interior | _withheld (R1)_ |
-| `ariadne-core` | Domain | _withheld (R1)_ |
-| `ariadne-salsa` | Domain | _withheld (R1)_ |
-| `ariadne-storage` | Adapter | _withheld (R1)_ |
-
-Role withheld — depends on cross-crate edge accuracy (R1).
+| `ariadne-cli` | Interior | Volatile leaf module — depends outward, little depended upon. |
+| `ariadne-core` | Domain | Intermediate module — balanced inbound and outbound coupling. |
+| `ariadne-salsa` | Domain | Stable foundational module — many dependents, few dependencies. |
+| `ariadne-storage` | Adapter | Stable foundational module — many dependents, few dependencies. |
 
 ## Boundary violations
 
-_Withheld — symbol-edge boundary checks depend on cross-crate edge accuracy (R1); re-enabled after the resolver fix._
+- `ariadne-core::core::init` → `ariadne-storage::util::log` — domain → adapter
+- `ariadne-core::core::run` → `ariadne-salsa::types::Config` — core → non-core crate
 
 ## Cycle clusters
 
 1 dependency cluster(s) detected.
 
-- 3 members (`core::run`, `db::query`, `db::connect`) — suggested cut: `core::run` → `db::query`
+- 3 members (`ariadne-core::core::run`, `ariadne-core::db::query`, `ariadne-core::db::connect`) — suggested cut: `ariadne-core::core::run` → `ariadne-core::db::query`
 
 ## Risk hot-spots
 

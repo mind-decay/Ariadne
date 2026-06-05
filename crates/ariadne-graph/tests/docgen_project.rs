@@ -108,10 +108,11 @@ fn cycle_clusters_names_largest_scc_with_cut_edge() {
     .expect("for_project");
 
     // The fixture's only SCC is {core::run, db::query, db::connect}; the
-    // lowest (src id, dst id) member edge is core::run -> db::query.
+    // lowest (src id, dst id) member edge is core::run -> db::query. Members
+    // and the cut render crate-qualified (`crate::name`) post-tier-03.
     assert!(md.contains("3 members"), "missing SCC size, got:\n{md}");
     assert!(
-        md.contains("`core::run`") && md.contains("`db::query`"),
+        md.contains("`ariadne-core::core::run`") && md.contains("`ariadne-core::db::query`"),
         "missing SCC members / cut edge, got:\n{md}"
     );
 }
@@ -204,8 +205,8 @@ fn architecture_svg_is_deterministic_and_well_formed() {
 /// domain-interior crates (core/graph/salsa), an adapter crate, an interior
 /// crate, a `tools/` dir, an out-of-scope test + fixture module, plus a
 /// cross-crate 2-node cycle (`core_a` ⇄ `graph_b`) and an intra-crate 2-node
-/// cycle (`storage_d` ⇄ `storage_d2`). Exercises the scope / layer / withhold
-/// rules in `for_project` end-to-end.
+/// cycle (`storage_d` ⇄ `storage_d2`). Exercises the scope / layer rules and
+/// the re-enabled cross-crate cycle listing in `for_project` end-to-end.
 fn crate_paths_fixture() -> (GraphIndex, support::MemSnapshot, Vec<ModuleSpec>) {
     const FILES: [(u32, &str); 9] = [
         (1, "crates/ariadne-core/src/lib.rs"),
@@ -361,41 +362,196 @@ fn synopsis_crate_count_excludes_tools_dir() {
     );
 }
 
+/// Body of the `## <title>` section, from after its header line up to the
+/// next `## ` header (or end of doc). Lets a test scope its assertions to one
+/// section and count its rows.
+fn section_of<'a>(md: &'a str, title: &str) -> &'a str {
+    let header = format!("## {title}\n");
+    let start = md.find(&header).map(|i| i + header.len()).expect("section");
+    let rest = &md[start..];
+    rest.find("\n## ").map_or(rest, |end| &rest[..end])
+}
+
 #[test]
-fn role_and_boundary_sections_are_withheld() {
-    let md = render_crate_paths();
+fn architecture_role_restored_cli_is_volatile_leaf() {
+    // Re-enabled on reliable edges (tier-03): the Role column is restored and
+    // the withheld markers are gone. The core fixture's `ariadne-cli`
+    // (efferent-only) renders the volatile-leaf shape (instability > 0.7),
+    // never the stable-foundational string the phantom afferent once forced.
+    let fx = support::core_fixture();
+    let md = docgen::for_project(
+        &fx.graph,
+        &fx.snapshot,
+        &fx.modules,
+        &[],
+        &[],
+        &DocScope::default(),
+    )
+    .expect("for_project");
     assert!(
-        md.contains("| _withheld (R1)_ |"),
-        "Architecture Role cell must be withheld, got:\n{md}"
-    );
-    assert!(
-        md.contains("Role withheld — depends on cross-crate edge accuracy (R1)."),
-        "Architecture table must carry the Role-withheld note, got:\n{md}"
+        !md.contains("_withheld (R1)_") && !md.contains("Role withheld"),
+        "Role-withheld markers must be gone, got:\n{md}"
     );
     assert!(
         md.contains(
-            "_Withheld — symbol-edge boundary checks depend on cross-crate edge accuracy (R1)"
+            "| `ariadne-cli` | Interior | Volatile leaf module — \
+depends outward, little depended upon. |"
         ),
-        "Boundary violations must be withheld, got:\n{md}"
+        "ariadne-cli must render a volatile-leaf role, got:\n{md}"
+    );
+    assert!(
+        !md.contains("| `ariadne-cli` | Interior | Stable foundational"),
+        "ariadne-cli must not read as stable-foundational, got:\n{md}"
     );
 }
 
 #[test]
-fn cross_crate_cycle_is_withheld_intra_crate_listed() {
+fn boundary_violations_listed_qualified_and_bounded() {
+    // The core fixture carries exactly two real cross-crate violations: a
+    // domain→adapter edge (`core::init` → `util::log`) and a core→non-core
+    // edge (`core::run` → `types::Config`). Together they exercise the
+    // override-aware layer classification (a flat-`src` domain crate reads
+    // Domain) and the `crate::name` qualifier on both endpoints.
+    let fx = support::core_fixture();
+    let md = docgen::for_project(
+        &fx.graph,
+        &fx.snapshot,
+        &fx.modules,
+        &[],
+        &[],
+        &DocScope::default(),
+    )
+    .expect("for_project");
+    let section = section_of(&md, "Boundary violations");
+    // Un-suppressed: the withheld line is gone.
+    assert!(
+        !section.contains("Withheld"),
+        "boundary section must be un-suppressed, got:\n{section}"
+    );
+    assert!(
+        section.contains(
+            "- `ariadne-core::core::init` → `ariadne-storage::util::log` — domain → adapter"
+        ),
+        "missing qualified domain→adapter row, got:\n{section}"
+    );
+    assert!(
+        section.contains(
+            "- `ariadne-core::core::run` → `ariadne-salsa::types::Config` — core → non-core crate"
+        ),
+        "missing qualified core→non-core row, got:\n{section}"
+    );
+    // Upper bound, not merely non-empty: exactly two rows, no flood tail, and
+    // every row crate-qualified (a `::`), guarding against an R1 regression.
+    let rows: Vec<&str> = section.lines().filter(|l| l.starts_with("- ")).collect();
+    assert_eq!(
+        rows.len(),
+        2,
+        "expected exactly 2 boundary rows, got:\n{section}"
+    );
+    assert!(
+        !section.contains("more."),
+        "no flood tail expected, got:\n{section}"
+    );
+    for row in rows {
+        assert!(
+            row.contains("::"),
+            "boundary row not crate-qualified: {row}"
+        );
+    }
+}
+
+#[test]
+fn cross_crate_cycle_listed_with_qualified_members() {
     let md = render_crate_paths();
-    // Intra-crate storage cluster is still listed with its members.
+    let section = section_of(&md, "Cycle clusters");
+    // Cross-crate {core_a, graph_b} cluster is now LISTED with qualified
+    // members (post-R1 the cross-crate edge set is reliable).
     assert!(
-        md.contains("`storage_d`") && md.contains("`storage_d2`"),
-        "intra-crate cycle must still be listed, got:\n{md}"
+        section.contains("`ariadne-core::core_a`") && section.contains("`ariadne-graph::graph_b`"),
+        "cross-crate cycle must be listed with qualified members, got:\n{section}"
     );
-    // Cross-crate {core_a, graph_b} cluster is withheld, never listed.
+    // Intra-crate storage cluster still listed, also qualified.
     assert!(
-        md.contains("cross-crate dependency cluster(s) depend on cross-crate edge accuracy (R1)"),
-        "cross-crate cycle cluster must be withheld, got:\n{md}"
+        section.contains("`ariadne-storage::storage_d`")
+            && section.contains("`ariadne-storage::storage_d2`"),
+        "intra-crate cycle must still be listed, got:\n{section}"
+    );
+    // No withhold line remains.
+    assert!(
+        !section.contains("depend on cross-crate edge accuracy"),
+        "cross-crate withhold must be gone, got:\n{section}"
+    );
+}
+
+/// Tier-03 fixture isolating the crate-level test-scope artifact: a source
+/// crate `ariadne-x` (`x::run`) whose own test module
+/// `crates/ariadne-x/tests/it.rs` calls `x::run` three times, plus one
+/// outgoing cross-crate source edge `x::run` → `ariadne-dep`'s `dep::helper`
+/// so the crate has efferent coupling. Mirrors the dogfood shape
+/// (`ariadne-e2e/tests/slo.rs` → `src/domain`): counting the intra-crate
+/// test→source edges as crate afferent forces `ariadne-x` stable-foundational;
+/// scoping the coupling membership over all crate modules (D5) drops them.
+fn test_scope_fixture() -> (GraphIndex, support::MemSnapshot, Vec<ModuleSpec>) {
+    const FILES: [(u32, &str); 3] = [
+        (1, "crates/ariadne-x/src/lib.rs"),
+        (2, "crates/ariadne-x/tests/it.rs"),
+        (3, "crates/ariadne-dep/src/lib.rs"),
+    ];
+    const SYMS: [(u64, &str, &str, u32); 5] = [
+        (1, "x::run", "function", 1),
+        (2, "it::drives", "function", 2),
+        (3, "it::checks", "function", 2),
+        (4, "it::verifies", "function", 2),
+        (5, "dep::helper", "function", 3),
+    ];
+
+    let mut graph = GraphIndex::new();
+    for &(id, ..) in &SYMS {
+        graph.add_symbol(support::sid(id));
+    }
+    // Three intra-crate test→source calls (the afferent inflation) plus one
+    // cross-crate source→source edge so `ariadne-x` has Ce > 0.
+    for &(a, b) in &[(2u64, 1u64), (3, 1), (4, 1), (1, 5)] {
+        graph.add_edge(support::sid(a), support::sid(b), EdgeKind::Calls);
+    }
+
+    let module = |name: &str, ids: &[u64]| ModuleSpec {
+        name: name.to_owned(),
+        members: ids.iter().map(|&i| support::sid(i)).collect(),
+        abstract_members: BTreeSet::new(),
+    };
+    let modules = vec![
+        module("crates/ariadne-x/src/lib.rs", &[1]),
+        module("crates/ariadne-x/tests/it.rs", &[2, 3, 4]),
+        module("crates/ariadne-dep/src/lib.rs", &[5]),
+    ];
+
+    (graph, support::snapshot_from(&FILES, &SYMS), modules)
+}
+
+#[test]
+fn architecture_excludes_test_edges_from_crate_afferent() {
+    // RED before D5: `ariadne-x`'s own tests call `x::run` three times; counting
+    // those intra-crate test→source edges as crate afferent (Ca=3, Ce=1 →
+    // I=0.25) forces a stable-foundational role. With the coupling membership
+    // spanning all crate modules they are same-crate and dropped, leaving
+    // Ca=0, Ce=1 → I=1.0 → volatile leaf.
+    let (graph, snap, modules) = test_scope_fixture();
+    let md = docgen::for_project(&graph, &snap, &modules, &[], &[], &DocScope::default())
+        .expect("for_project");
+    let section = section_of(&md, "Architecture");
+    assert!(
+        section.contains(
+            "| `ariadne-x` | Interior | Volatile leaf module — \
+depends outward, little depended upon. |"
+        ),
+        "ariadne-x must render volatile-leaf once test edges leave crate \
+afferent, got:\n{section}"
     );
     assert!(
-        !md.contains("graph_b"),
-        "cross-crate cluster member must not be listed, got:\n{md}"
+        !section.contains("| `ariadne-x` | Interior | Stable foundational"),
+        "ariadne-x must not read stable-foundational (test→source afferent \
+inflation), got:\n{section}"
     );
 }
 

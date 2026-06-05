@@ -313,7 +313,9 @@ pub fn for_project(
     md.push_str(&docgen_insights::synopsis(graph, &scoped, &table, scope));
 
     h2(&mut md, "Architecture");
-    md.push_str(&docgen_insights::architecture_section(&scoped));
+    md.push_str(&docgen_insights::architecture_section(
+        graph, &scoped, modules,
+    ));
 
     h2(&mut md, "Boundary violations");
     md.push_str(&docgen_insights::boundary_violations(graph, &table, scope));
