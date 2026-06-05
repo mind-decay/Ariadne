@@ -81,6 +81,55 @@ fn seed_kinded_caller(db: &mut AriadneDb, file_id: u32, path: &str, callee: &str
     seed_file_with_calls(db, file_id, path, "user", calls);
 }
 
+/// Seed a single same-crate file holding an `enclosing` decl and, defined later
+/// in the SAME file, a `target` decl, with one Method-shaped call from
+/// `enclosing` to `target` nested in the enclosing span. `target` is same-file,
+/// so resolution must bind it regardless of the shape gate — the positive
+/// control that the tier-04 abstention does not over-drop same-file method edges
+/// [src: tier-04 step 3].
+fn seed_same_file_method(
+    db: &mut AriadneDb,
+    file_id: u32,
+    path: &str,
+    enclosing: &str,
+    target: &str,
+) {
+    let enclosing_decl = DeclRaw {
+        kind: "function".to_owned(),
+        name: enclosing.to_owned(),
+        name_byte_range: (3, 9),
+        def_byte_range: (0, 100),
+        visibility_byte: 3,
+        attributes: Vec::new(),
+        complexity: 0,
+    };
+    let target_decl = DeclRaw {
+        kind: "function".to_owned(),
+        name: target.to_owned(),
+        name_byte_range: (123, 129),
+        def_byte_range: (120, 200),
+        visibility_byte: 3,
+        attributes: Vec::new(),
+        complexity: 0,
+    };
+    let facts = SyntacticFactsRaw {
+        decls: vec![enclosing_decl, target_decl],
+        calls: vec![CallRaw {
+            callee: target.to_owned(),
+            kind_byte: 1,
+            byte_range: (16, 24),
+        }],
+        ..SyntacticFactsRaw::default()
+    };
+    let content = vec![b' '; 201];
+    db.seed_file(
+        FileId::new(file_id).expect("nonzero file id"),
+        rust_record(path, content.len() as u64),
+        content,
+        facts,
+    );
+}
+
 /// Materialise one seeded file: a single `fn_name` decl spanning the file and
 /// the given call sites nested inside it.
 fn seed_file_with_calls(
@@ -274,5 +323,75 @@ fn path_shaped_cross_crate_callee_yields_no_edge() {
     assert!(
         reference_targets(&storage, user).is_empty(),
         "path-shaped cross-crate callee `build` must yield no edge (the phantom)",
+    );
+}
+
+/// tier-04 spike — same-crate, DIFFERENT-file Path callee. `T::make()` captures
+/// the bare associated name `make`, defined once in the caller's own crate but
+/// in another file (`other.rs`, not the caller's `run.rs`). With the qualifier
+/// discarded the same-crate bare-name match is a guess — the `X::new()`
+/// domain→adapter phantom shape — so a Path callee with no SAME-FILE definition
+/// must yield NO edge. RED on the committed resolver (the same-crate tier binds
+/// it); green after the D6 gate [src: tier-04 step 3; plan D6].
+#[test]
+fn path_shaped_same_crate_different_file_callee_yields_no_edge() {
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let storage = RedbStorage::open(&tmp.path().join("index.redb")).expect("open redb");
+    let mut db = AriadneDb::new();
+
+    // crate_a's only `make`, in a DIFFERENT file from the caller.
+    seed_fn_with_calls(&mut db, 1, "crates/crate_a/src/other.rs", "make", &[]);
+    // crate_a caller `T::make()` → Path-shaped bare `make`, in `run.rs`.
+    seed_kinded_caller(&mut db, 2, "crates/crate_a/src/run.rs", "make", 2);
+
+    let symbols = commit_and_read(&mut db, &storage);
+    let user = id_in_file(&symbols, "user", 2);
+
+    assert!(
+        reference_targets(&storage, user).is_empty(),
+        "path-shaped same-crate callee `make` with no same-file def must yield no edge",
+    );
+}
+
+/// tier-04 spike — Method twin of the above. `recv.make()` captures the bare
+/// member name `make`; a same-crate-but-different-file definition must not bind
+/// a Method callee either [src: tier-04 step 3; plan D6].
+#[test]
+fn method_shaped_same_crate_different_file_callee_yields_no_edge() {
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let storage = RedbStorage::open(&tmp.path().join("index.redb")).expect("open redb");
+    let mut db = AriadneDb::new();
+
+    seed_fn_with_calls(&mut db, 1, "crates/crate_a/src/other.rs", "make", &[]);
+    seed_kinded_caller(&mut db, 2, "crates/crate_a/src/run.rs", "make", 1);
+
+    let symbols = commit_and_read(&mut db, &storage);
+    let user = id_in_file(&symbols, "user", 2);
+
+    assert!(
+        reference_targets(&storage, user).is_empty(),
+        "method-shaped same-crate callee `make` with no same-file def must yield no edge",
+    );
+}
+
+/// tier-04 recall control — same-FILE Method callee MUST still resolve. A
+/// `recv.make()` whose `make` is defined in the caller's own file is lexically
+/// unambiguous, so the abstention must keep this edge; over-gating it would
+/// shrink legitimate method recall (R7) [src: tier-04 step 3; plan D6].
+#[test]
+fn method_shaped_same_file_callee_still_resolves() {
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let storage = RedbStorage::open(&tmp.path().join("index.redb")).expect("open redb");
+    let mut db = AriadneDb::new();
+
+    seed_same_file_method(&mut db, 1, "crates/crate_a/src/lib.rs", "run", "make");
+
+    let symbols = commit_and_read(&mut db, &storage);
+    let run = id_in_file(&symbols, "run", 1);
+    let make = id_in_file(&symbols, "make", 1);
+
+    assert!(
+        reference_targets(&storage, run).contains(&make),
+        "same-file method callee `make` must still resolve (no over-gating)",
     );
 }

@@ -1,9 +1,10 @@
 # ADR-0024: Scoped Index-Time Call Resolution
 
 <status>
-Accepted
-Date: 2026-06-04
-Decider: claude (docgen-overview-fidelity tier-02, R1)
+Superseded by ADR-0025 (same-crate resolution of non-`Free` Method/Path callees
+only; the `Free`-shape same-file → same-crate → unambiguous-global ladder stands)
+Date: 2026-06-04 (superseding note 2026-06-05)
+Decider: claude (docgen-overview-fidelity tier-02, R1; r1-resolver-completion tier-04)
 </status>
 
 <context>

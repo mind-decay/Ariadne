@@ -238,19 +238,20 @@ pub(crate) fn sort_candidates(
 /// A call site becomes a [`EdgeKind::References`] edge, a render site a
 /// [`EdgeKind::Renders`] edge, a hook site a [`EdgeKind::UsesHook`] edge. For
 /// each, `src` is the innermost declaration whose span contains the site and
-/// `dst` is the named symbol resolved by scope precedence (ADR-0024):
-/// same-file → same-crate → unambiguous-global (the name has exactly one
-/// workspace definition). The cross-crate `unambiguous-global` tier is gated by
-/// call shape: it fires only for `Free` calls. A `Method`/`Path` callee
-/// (`socket.connect()`, `Foo::new()`) captures only the bare member/segment
-/// name, so binding it cross-crate by that bare name is a phantom — the gate
-/// refuses it, yielding no edge unless a same-file/same-crate definition exists
-/// [src: r1-resolver-completion plan D1]. A bare callee with no in-scope
-/// definition that is also ambiguous globally — the std `Vec::new()` shape —
-/// likewise binds to no symbol. Render and hook sites pass the gate
-/// unconditionally (their resolution is unchanged). An unresolved `src` or
-/// `dst`, or a self-loop, drops the edge: the same best-effort policy for all
-/// three kinds [src: ADR-0024; crates/ariadne-cli/src/domain/mod.rs:718-768].
+/// `dst` is the named symbol resolved by scope precedence. A `Free` call (and
+/// every render/hook) resolves same-file → same-crate → unambiguous-global (the
+/// name has exactly one workspace definition); a `Method`/`Path` callee resolves
+/// SAME-FILE ONLY. A `Method`/`Path` site (`socket.connect()`, `Foo::new()`)
+/// captures only the bare member/segment name, so a same-crate *or* cross-crate
+/// bare-name match is a guess — the `ProgressBar::new()` → unrelated same-crate
+/// `new` phantom — so both wider tiers are refused, yielding no edge unless a
+/// same-file definition exists [src: ADR-0025; r1-resolver-completion D1, D6].
+/// A `Free` callee with no in-scope definition that is also ambiguous globally —
+/// the std `Vec::new()` shape — likewise binds to no symbol. Render and hook
+/// sites keep the full ladder (their resolution is unchanged). An unresolved
+/// `src` or `dst`, or a self-loop, drops the edge: the same best-effort policy
+/// for all three kinds [src: ADR-0024; ADR-0025;
+/// crates/ariadne-cli/src/domain/mod.rs:718-768].
 pub(crate) fn resolve_edges(
     facts_by_file: &[FileFacts],
     name_to_symbols: &HashMap<String, Vec<ResolvedCandidate>>,
@@ -260,24 +261,32 @@ pub(crate) fn resolve_edges(
     for facts in facts_by_file {
         let local_ids: HashSet<SymbolId> = facts.symbols.iter().map(|l| l.id).collect();
         let caller_package = facts.package.as_str();
-        let mut resolve = |edge: EdgeKind, name: &str, range: (u32, u32), cross_crate_ok: bool| {
+        let mut resolve = |edge: EdgeKind, name: &str, range: (u32, u32), wide_scope: bool| {
             let Some(src) = enclosing_symbol(&facts.symbols, range) else {
                 return;
             };
             let Some(candidates) = name_to_symbols.get(name) else {
                 return;
             };
-            // Scope precedence: a definition in the caller's own file, else one
-            // in the caller's crate, else — only when `cross_crate_ok` and the
-            // name is unambiguous workspace-wide — its single global definition.
-            // No in-scope match (and ambiguous or gated) ⇒ no edge (the
+            // Scope precedence: a definition in the caller's own file always
+            // binds. Only a `wide_scope` site (a free-identifier call, or any
+            // render/hook) may then fall back to a definition in the caller's
+            // crate, and finally — when the name is unambiguous workspace-wide —
+            // its single global definition. A narrow site (a `Method`/`Path`
+            // callee) resolves same-file only: its bare member/segment name
+            // dropped the qualifier, so a same-crate or global bare-name match is
+            // a guess (the `X::new()` phantom). No in-scope match ⇒ no edge (the
             // candidate lists are already sorted, so each `find`/`first` is
-            // deterministic) [src: ADR-0024; r1-resolver-completion D1].
+            // deterministic) [src: ADR-0024; ADR-0025; r1-resolver-completion D1, D6].
             let same_file = candidates.iter().find(|c| local_ids.contains(&c.id));
             let same_crate = || candidates.iter().find(|c| c.package == caller_package);
             let unambiguous = || (candidates.len() == 1).then(|| &candidates[0]);
-            let in_scope = same_file.or_else(same_crate);
-            let resolved = if cross_crate_ok {
+            let in_scope = if wide_scope {
+                same_file.or_else(same_crate)
+            } else {
+                same_file
+            };
+            let resolved = if wide_scope {
                 in_scope.or_else(unambiguous)
             } else {
                 in_scope
@@ -306,8 +315,9 @@ pub(crate) fn resolve_edges(
             ));
         };
         for (callee, kind, range) in &facts.calls {
-            // Only a free-identifier callee is eligible for the cross-crate
-            // unambiguous-global fallback; a method/path shape is not.
+            // Only a free-identifier callee may resolve beyond its own file (the
+            // same-crate then unambiguous-global tiers); a method/path shape
+            // resolves same-file only [src: ADR-0025].
             resolve(
                 EdgeKind::References,
                 callee,
