@@ -25,6 +25,7 @@ pub use domain::records::{
     CoChangePair, DiffSpec, EdgeKey, EdgeKind, EdgeRecord, FileChurn, FileRecord, LineHunk,
     SymbolChurn, SymbolRecord,
 };
+pub use domain::scip::{ScipFacts, ScipOccurrence};
 pub use domain::types::{EdgeId, FileId, IdEncode, Lang, Span, SymbolId, Visibility};
 pub use domain::watcher::{ContentHash, Invalidation, ReconciliationReport};
 pub use errors::{CoreError, StorageError};

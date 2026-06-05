@@ -16,8 +16,10 @@ use ariadne_core::{
 use salsa::{EventKind, Setter, Storage as SalsaStorage};
 
 use crate::derive::{self, FileFacts, LocalSymbol, SymbolCandidate};
-use crate::derived::{SyntacticFactsRaw, scip_symbols, symbols_for_file, syntactic_facts};
-use crate::inputs::{FileContentInput, ScipDocInput, SyntacticFactsInput, durability_for};
+use crate::derived::{
+    ScipFactsRaw, SyntacticFactsRaw, scip_facts_for_file, symbols_for_file, syntactic_facts,
+};
+use crate::inputs::{FileContentInput, ScipFactsInput, SyntacticFactsInput, durability_for};
 use crate::memory::MemoryReport;
 
 /// Type alias for the event-log channel used by tests and the memory probe.
@@ -37,7 +39,7 @@ struct SeededFile {
     file_id: FileId,
     record: FileRecord,
     content: FileContentInput,
-    scip: ScipDocInput,
+    scip: ScipFactsInput,
     facts: SyntacticFactsInput,
 }
 
@@ -140,10 +142,10 @@ impl AriadneDb {
         let path = record.path.clone();
         let hash = record.blake3;
         let durability = durability_for(&path);
-        let content_input = FileContentInput::builder(path.clone(), content, hash)
+        let content_input = FileContentInput::builder(path, content, hash)
             .durability(durability)
             .new(&*self);
-        let scip = ScipDocInput::builder(path, None)
+        let scip = ScipFactsInput::builder(ScipFactsRaw::default(), [0u8; 32])
             .durability(durability)
             .new(&*self);
         let facts_input = SyntacticFactsInput::builder(facts)
@@ -179,10 +181,10 @@ impl AriadneDb {
                 let path = record.path.clone();
                 let hash = record.blake3;
                 let durability = durability_for(&path);
-                let content = FileContentInput::builder(path.clone(), Vec::new(), hash)
+                let content = FileContentInput::builder(path, Vec::new(), hash)
                     .durability(durability)
                     .new(&*self);
-                let scip = ScipDocInput::builder(path, None)
+                let scip = ScipFactsInput::builder(ScipFactsRaw::default(), [0u8; 32])
                     .durability(durability)
                     .new(&*self);
                 let facts = SyntacticFactsInput::builder(SyntacticFactsRaw::default())
@@ -199,6 +201,31 @@ impl AriadneDb {
             }
         }
         Ok(created)
+    }
+
+    /// Populate a seeded file's SCIP facts (scip-driven-edges tier-01). The
+    /// composition root runs `ariadne-scip` out of band, converts the extracted
+    /// `ariadne_core::ScipFacts` into the salsa mirror, and calls this for each
+    /// covered file; the next [`commit_revision`](Self::commit_revision) then
+    /// emits that file's edges from SCIP instead of the tree-sitter resolver
+    /// while `indexed_hash` still matches the file's content hash (plan D2, D4).
+    /// A path with no seeded file is a no-op (the file was dropped or never
+    /// indexed). The salsa-input handle is `Copy`, so the lookup borrow is
+    /// released before the mutating setter chain runs.
+    pub fn set_scip_facts(&mut self, path: &str, facts: ScipFactsRaw, indexed_hash: [u8; 32]) {
+        let Some(scip) = self
+            .files
+            .iter()
+            .find(|sf| sf.record.path == path)
+            .map(|sf| sf.scip)
+        else {
+            return;
+        };
+        let durability = durability_for(path);
+        scip.set_facts(self).with_durability(durability).to(facts);
+        scip.set_indexed_hash(self)
+            .with_durability(durability)
+            .to(indexed_hash);
     }
 
     /// Derive every seeded file and commit one `Changeset` to a `Storage`
@@ -240,6 +267,9 @@ impl AriadneDb {
         let mut changeset = Changeset::new();
         let mut name_to_symbols: HashMap<String, Vec<SymbolCandidate>> = HashMap::new();
         let mut facts_by_file: Vec<FileFacts> = Vec::with_capacity(self.files.len());
+        // Covered files (current SCIP facts) take the SCIP edge pass; the rest
+        // take the precise tree-sitter resolver (plan D4).
+        let mut scip_facts_by_file: Vec<derive::ScipFileFacts> = Vec::new();
 
         for sf in &self.files {
             let file_id = sf.file_id;
@@ -251,7 +281,7 @@ impl AriadneDb {
             changeset.file_upserts.push((file_id, sf.record.clone()));
 
             // Both queries are salsa-memoized; the second call is a cache hit.
-            let syms = symbols_for_file(self, sf.content, sf.scip, sf.facts);
+            let syms = symbols_for_file(self, sf.content, sf.facts);
             let raw = syntactic_facts(self, sf.content, sf.facts);
 
             // `nth` disambiguates same-`(name, kind)` decls within this file by
@@ -297,41 +327,55 @@ impl AriadneDb {
                 locals.push(LocalSymbol { id, def_range });
             }
 
-            facts_by_file.push(FileFacts {
-                file_id,
-                package,
-                lang: sf.record.lang,
-                symbols: locals,
-                calls: raw
-                    .calls
+            // Coverage gate (plan D4): a file's edges come from SCIP only while
+            // its SCIP facts were indexed at the file's current content hash.
+            // The all-zero default `indexed_hash` means "no SCIP facts", so an
+            // unindexed file — or one edited since SCIP ran (hash drift) — falls
+            // through to the precise tree-sitter resolver below. A covered file
+            // is excluded from `facts_by_file`, so `resolve_edges` is skipped for
+            // it and no stale resolved edge survives a live edit.
+            let facts_hash = sf.scip.indexed_hash(self);
+            let covered = facts_hash != [0u8; 32] && facts_hash == sf.record.blake3;
+            if covered {
+                let scip = scip_facts_for_file(self, sf.scip);
+                let mut occurrences: Vec<(String, (u32, u32), u32)> = scip
+                    .occurrences
                     .iter()
-                    .map(|c| {
-                        (
-                            c.callee.clone(),
-                            derive::CallKind::from_byte(c.kind_byte),
-                            c.byte_range,
-                        )
-                    })
-                    .collect(),
-                renders: raw
-                    .renders
-                    .iter()
-                    .map(|r| (r.component.clone(), r.byte_range))
-                    .collect(),
-                hooks: raw
-                    .hooks
-                    .iter()
-                    .map(|h| (h.callee.clone(), h.byte_range))
-                    .collect(),
-            });
+                    .map(|o| (o.symbol.clone(), o.byte_range, o.roles))
+                    .collect();
+                // Sort by range so the SCIP edge set is independent of
+                // occurrence order (plan determinism constraint).
+                occurrences.sort_by_key(|(_, range, _)| *range);
+                scip_facts_by_file.push(derive::ScipFileFacts {
+                    file_id,
+                    lang: sf.record.lang,
+                    symbols: locals,
+                    occurrences,
+                });
+            } else {
+                facts_by_file.push(derive::file_facts(
+                    file_id,
+                    package,
+                    sf.record.lang,
+                    locals,
+                    &raw,
+                ));
+            }
         }
 
         // Global resolution needs every symbol — sort the per-file facts and
         // the per-name candidates so the output is independent of seeding
-        // order, then resolve over the union.
+        // order, then resolve over the union. Uncovered files resolve through
+        // the precise tree-sitter resolver; covered files through the SCIP edge
+        // pass. A file is in exactly one set, so the two edge sets are disjoint
+        // by `src` (plan D4).
         facts_by_file.sort_by_key(|f| f.file_id);
         let resolved = derive::sort_candidates(name_to_symbols);
         for (key, rec) in derive::resolve_edges(&facts_by_file, &resolved) {
+            changeset.edges_added.push((key, rec));
+        }
+        scip_facts_by_file.sort_by_key(|f| f.file_id);
+        for (key, rec) in derive::resolve_scip_edges(&scip_facts_by_file) {
             changeset.edges_added.push((key, rec));
         }
 
@@ -470,9 +514,10 @@ impl AriadneDb {
     /// query's table. Each call is a salsa cache hit — the derivation already
     /// computed these — so the report reflects resident bytes without
     /// recomputation. `syntactic_facts` and `symbols_for_file` carry the real
-    /// derived data; `scip_symbols` is measured but empty until SCIP ingest
-    /// lands. `edges_for_file` is resolved by the pure driver pass
-    /// (`crate::derive::resolve_edges`), not memoized in its salsa table, and
+    /// derived data; `scip_facts` is empty until a composition root populates
+    /// the SCIP input (scip-driven-edges tier-01). `edges_for_file` is resolved
+    /// by the pure driver pass (`crate::derive::resolve_edges` /
+    /// `resolve_scip_edges`), not memoized in its salsa table, and
     /// `blast_radius` is an on-demand per-symbol query outside the seeding flow;
     /// neither is enumerable in salsa 0.26.2, so both report 0. This is the
     /// mechanism the cold `ariadne mem` command and the daemon warm-graph probe
@@ -488,9 +533,9 @@ impl AriadneDb {
                 syntactic_facts(self, sf.content, sf.facts).as_ref(),
             );
             symbols += crate::memory::symbols_vec_bytes(
-                symbols_for_file(self, sf.content, sf.scip, sf.facts).as_ref(),
+                symbols_for_file(self, sf.content, sf.facts).as_ref(),
             );
-            scip += crate::memory::symbols_vec_bytes(scip_symbols(self, sf.scip).as_ref());
+            scip += crate::memory::scip_facts_bytes(scip_facts_for_file(self, sf.scip).as_ref());
         }
         MemoryReport::from_table_bytes(syntactic, scip, symbols)
     }

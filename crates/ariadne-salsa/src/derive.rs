@@ -233,6 +233,46 @@ pub(crate) fn sort_candidates(
         .collect()
 }
 
+/// Build a [`FileFacts`] from a file's parsed facts: decode each call site's
+/// shape byte and carry the render/hook sites verbatim. Factored out of
+/// [`crate::AriadneDb::commit_revision`]'s per-file loop so the changeset
+/// assembly stays within one screen.
+pub(crate) fn file_facts(
+    file_id: FileId,
+    package: String,
+    lang: Lang,
+    symbols: Vec<LocalSymbol>,
+    raw: &SyntacticFactsRaw,
+) -> FileFacts {
+    FileFacts {
+        file_id,
+        package,
+        lang,
+        symbols,
+        calls: raw
+            .calls
+            .iter()
+            .map(|c| {
+                (
+                    c.callee.clone(),
+                    CallKind::from_byte(c.kind_byte),
+                    c.byte_range,
+                )
+            })
+            .collect(),
+        renders: raw
+            .renders
+            .iter()
+            .map(|r| (r.component.clone(), r.byte_range))
+            .collect(),
+        hooks: raw
+            .hooks
+            .iter()
+            .map(|h| (h.callee.clone(), h.byte_range))
+            .collect(),
+    }
+}
+
 /// Resolve every call / render / hook site to a typed `src -> dst` edge.
 ///
 /// A call site becomes a [`EdgeKind::References`] edge, a render site a
@@ -330,6 +370,114 @@ pub(crate) fn resolve_edges(
         }
         for (callee, range) in &facts.hooks {
             resolve(EdgeKind::UsesHook, callee, *range, true);
+        }
+    }
+    out
+}
+
+/// SCIP `SymbolRole::Definition` bit [src: crates/ariadne-scip/proto/scip.proto:526].
+const SCIP_ROLE_DEFINITION: u32 = 0x1;
+/// SCIP `SymbolRole::Import` bit [src: crates/ariadne-scip/proto/scip.proto:528].
+const SCIP_ROLE_IMPORT: u32 = 0x2;
+/// SCIP `SymbolRole::WriteAccess` bit [src: crates/ariadne-scip/proto/scip.proto:530].
+const SCIP_ROLE_WRITE_ACCESS: u32 = 0x4;
+/// SCIP `SymbolRole::ReadAccess` bit [src: crates/ariadne-scip/proto/scip.proto:532].
+const SCIP_ROLE_READ_ACCESS: u32 = 0x8;
+
+/// One covered file's SCIP occurrences plus its tree-sitter symbols — the input
+/// to [`resolve_scip_edges`]. Occurrence byte ranges and symbol def ranges share
+/// one coordinate system (the file's source bytes), so [`enclosing_symbol`] maps
+/// each occurrence to its innermost enclosing symbol [src: scip-driven-edges D3].
+pub(crate) struct ScipFileFacts {
+    /// File the occurrences live in.
+    pub file_id: FileId,
+    /// Evidence language for resolved edges.
+    pub lang: Lang,
+    /// Tree-sitter symbols defined in this file (for the enclosing-symbol lookup).
+    pub symbols: Vec<LocalSymbol>,
+    /// `(symbol_key, byte_range, roles)` occurrences, sorted by `byte_range` so
+    /// the edge output is independent of occurrence iteration order.
+    pub occurrences: Vec<(String, (u32, u32), u32)>,
+}
+
+/// Resolve SCIP occurrences to typed `src -> dst` edges over the covered files
+/// (scip-driven-edges plan D3). Two passes:
+///
+/// 1. Build the global `scip_symbol -> SymbolId` map from `Definition`-role
+///    (`0x1`) occurrences: each maps to the innermost tree-sitter symbol whose
+///    span encloses it. SCIP symbol strings are globally unique, so the map keys
+///    with zero name collision — this is what recovers the cross-crate calls
+///    ADR-0025 abstained on.
+/// 2. Resolve every non-`Definition` occurrence: `src` is the enclosing
+///    tree-sitter symbol, `dst` the map entry for its symbol key. An
+///    `Import`-role (`0x2`) occurrence becomes an [`EdgeKind::Imports`] edge, a
+///    `WriteAccess` (`0x4`) one an [`EdgeKind::Writes`] edge, a `ReadAccess`
+///    (`0x8`) one an [`EdgeKind::Reads`] edge (write wins when both are set),
+///    and any other a [`EdgeKind::References`] edge. An unmapped `dst`
+///    (std/external), a missing `src`, or a self-loop drops the edge — the same
+///    best-effort policy `resolve_edges` applies [src: ADR-0024;
+///    scip-driven-edges D3, T2].
+///
+/// `facts_by_file` is expected pre-sorted by `file_id` and each file's
+/// occurrences by `byte_range`, so the `(file, range)` order — and thus the
+/// edge set — is deterministic [src: scip-driven-edges `<constraints>`].
+pub(crate) fn resolve_scip_edges(facts_by_file: &[ScipFileFacts]) -> Vec<(EdgeKey, EdgeRecord)> {
+    // Pass 1: Definition occurrences build the global symbol-key map.
+    let mut sym_of_key: HashMap<&str, SymbolId> = HashMap::new();
+    for facts in facts_by_file {
+        for (key, range, roles) in &facts.occurrences {
+            if roles & SCIP_ROLE_DEFINITION == 0 {
+                continue;
+            }
+            if let Some(id) = enclosing_symbol(&facts.symbols, *range) {
+                sym_of_key.entry(key.as_str()).or_insert(id);
+            }
+        }
+    }
+
+    // Pass 2: non-Definition occurrences resolve to edges.
+    let mut seen: HashSet<EdgeKey> = HashSet::new();
+    let mut out = Vec::new();
+    for facts in facts_by_file {
+        for (key, range, roles) in &facts.occurrences {
+            if roles & SCIP_ROLE_DEFINITION != 0 {
+                continue;
+            }
+            let Some(src) = enclosing_symbol(&facts.symbols, *range) else {
+                continue;
+            };
+            let Some(&dst) = sym_of_key.get(key.as_str()) else {
+                continue;
+            };
+            if dst == src {
+                continue;
+            }
+            // Import-role stays `Imports`; otherwise the access bits promote the
+            // occurrence to a dedicated edge, write taking precedence over read
+            // when both are set (`x += 1`), else a plain `References` edge. Each
+            // kind is emitted only on its present bit — no fabrication
+            // [src: scip.proto:526-532; scip-driven-edges T2 step 3].
+            let kind = if roles & SCIP_ROLE_IMPORT != 0 {
+                EdgeKind::Imports
+            } else if roles & SCIP_ROLE_WRITE_ACCESS != 0 {
+                EdgeKind::Writes
+            } else if roles & SCIP_ROLE_READ_ACCESS != 0 {
+                EdgeKind::Reads
+            } else {
+                EdgeKind::References
+            };
+            let edge_key = EdgeKey { src, kind, dst };
+            if !seen.insert(edge_key) {
+                continue;
+            }
+            out.push((
+                edge_key,
+                EdgeRecord {
+                    source_span: span(facts.file_id, *range),
+                    evidence_lang: facts.lang,
+                    weight: 1,
+                },
+            ));
         }
     }
     out

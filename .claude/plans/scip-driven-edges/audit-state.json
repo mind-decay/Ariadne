@@ -1,0 +1,8 @@
+{
+  "slug": "scip-driven-edges",
+  "audited_commit": "6011ea2df1b69d99de2a2db9c806dc98a9d440f1",
+  "tier_id": "tier-02",
+  "verdict": "PASS",
+  "audited_at": "2026-06-05T16:00:59Z",
+  "report": "audit/tier-02-report.md"
+}

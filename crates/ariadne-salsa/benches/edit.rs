@@ -9,8 +9,8 @@
 use std::hint::black_box;
 
 use ariadne_salsa::{
-    AriadneDb, FileContentInput, FileMetadataInput, ProjectConfigInput, ScipDocInput,
-    SyntacticFactsInput, SyntacticFactsRaw, symbols_for_file,
+    AriadneDb, FileContentInput, FileMetadataInput, ProjectConfigInput, SyntacticFactsInput,
+    SyntacticFactsRaw, symbols_for_file,
 };
 use criterion::{Criterion, criterion_group, criterion_main};
 use salsa::{Durability, Setter};
@@ -19,29 +19,21 @@ const FILE_COUNT: usize = 1000;
 
 struct Fixture {
     content: FileContentInput,
-    scip: ScipDocInput,
     facts: SyntacticFactsInput,
 }
 
 fn seed(db: &AriadneDb, i: usize) -> Fixture {
     let path = format!("/repo/src/f{i}.rs");
-    let content = FileContentInput::builder(path.clone(), seed_bytes(i), seed_hash(i))
+    let content = FileContentInput::builder(path, seed_bytes(i), seed_hash(i))
         .durability(Durability::LOW)
         .new(db);
     let _ = FileMetadataInput::builder("rust".into(), 0, 0)
         .durability(Durability::LOW)
         .new(db);
-    let scip = ScipDocInput::builder(path, None)
-        .durability(Durability::LOW)
-        .new(db);
     let facts = SyntacticFactsInput::builder(SyntacticFactsRaw::default())
         .durability(Durability::LOW)
         .new(db);
-    Fixture {
-        content,
-        scip,
-        facts,
-    }
+    Fixture { content, facts }
 }
 
 fn bench_single_file_edit(c: &mut Criterion) {
@@ -56,7 +48,7 @@ fn bench_single_file_edit(c: &mut Criterion) {
 
     // Warm the cache so the unrelated-file lookups become cache hits.
     for f in &fixtures {
-        black_box(symbols_for_file(&db, f.content, f.scip, f.facts));
+        black_box(symbols_for_file(&db, f.content, f.facts));
     }
 
     c.bench_function("edit_target_file_symbols", |b| {
@@ -72,19 +64,14 @@ fn bench_single_file_edit(c: &mut Criterion) {
                 .set_content(&mut db)
                 .with_durability(Durability::LOW)
                 .to(payload);
-            black_box(symbols_for_file(
-                &db,
-                target.content,
-                target.scip,
-                target.facts,
-            ));
+            black_box(symbols_for_file(&db, target.content, target.facts));
         });
     });
 
     c.bench_function("untouched_file_symbols_cache_hit", |b| {
         b.iter(|| {
             for f in fixtures.iter().skip(1).take(8) {
-                black_box(symbols_for_file(&db, f.content, f.scip, f.facts));
+                black_box(symbols_for_file(&db, f.content, f.facts));
             }
         });
     });

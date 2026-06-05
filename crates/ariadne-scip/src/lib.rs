@@ -9,11 +9,13 @@
 
 pub mod domain;
 pub mod errors;
+pub mod facts;
 pub mod indexer;
 pub mod normalize;
 pub mod proto;
 
 pub use errors::ScipError;
+pub use facts::extract_facts;
 pub use indexer::{
     IndexerWarning, IngestPlan, IngestReport, RustAnalyzerIndexer, ScipAstroIndexer,
     ScipClangIndexer, ScipDoc, ScipDotnetIndexer, ScipGoIndexer, ScipIndexer, ScipJavaIndexer,

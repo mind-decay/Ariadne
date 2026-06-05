@@ -129,9 +129,7 @@ fn ariadne_db_sink_pipeline_reflects_edit_within_slo() {
     // in tier-04 surface terms.
     use std::sync::{Arc, Mutex};
 
-    use ariadne_salsa::{
-        AriadneDb, ScipDocInput, SyntacticFactsInput, SyntacticFactsRaw, symbols_for_file,
-    };
+    use ariadne_salsa::{AriadneDb, SyntacticFactsInput, SyntacticFactsRaw, symbols_for_file};
     use ariadne_watcher::AriadneDbSink;
 
     let tmp = tempdir().unwrap();
@@ -184,10 +182,6 @@ fn ariadne_db_sink_pipeline_reflects_edit_within_slo() {
             .or_else(|| s.input_for(&target))
             .expect("FileContentInput recorded for seeded path")
     };
-    let scip_input = {
-        let db = db.lock().unwrap();
-        ScipDocInput::new(&*db, target.to_string_lossy().into_owned(), None)
-    };
     // tier-07a: parsed facts now enter salsa via `SyntacticFactsInput`. The
     // tier-06 sink only drives `FileContentInput`, so this stays default
     // (empty) — `symbols_for_file` yields no symbols, exactly as the tier-04
@@ -201,7 +195,7 @@ fn ariadne_db_sink_pipeline_reflects_edit_within_slo() {
 
     let before = {
         let db = db.lock().unwrap();
-        symbols_for_file(&*db, input, scip_input, facts_input)
+        symbols_for_file(&*db, input, facts_input)
     };
     insta::assert_debug_snapshot!("symbols_before_edit", &*before);
 
@@ -221,7 +215,7 @@ fn ariadne_db_sink_pipeline_reflects_edit_within_slo() {
 
     let after = {
         let db = db.lock().unwrap();
-        symbols_for_file(&*db, input, scip_input, facts_input)
+        symbols_for_file(&*db, input, facts_input)
     };
     insta::assert_debug_snapshot!("symbols_after_edit", &*after);
 

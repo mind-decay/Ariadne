@@ -10,8 +10,8 @@ use std::sync::Arc;
 use std::sync::Mutex;
 
 use ariadne_salsa::{
-    AriadneDb, FileContentInput, FileMetadataInput, ProjectConfigInput, ScipDocInput,
-    SyntacticFactsInput, SyntacticFactsRaw, symbols_for_file,
+    AriadneDb, FileContentInput, FileMetadataInput, ProjectConfigInput, SyntacticFactsInput,
+    SyntacticFactsRaw, symbols_for_file,
 };
 use salsa::{Durability, Setter};
 
@@ -39,9 +39,6 @@ fn unrelated_high_durability_mutation_does_not_recompute_low_query() {
     let _stdlib_meta = FileMetadataInput::builder("rust".into(), 16, 0)
         .durability(Durability::HIGH)
         .new(&db);
-    let _stdlib_scip = ScipDocInput::builder(stdlib_path.into(), None)
-        .durability(Durability::HIGH)
-        .new(&db);
 
     // LOW-durability project input.
     let project_path = "/repo/src/lib.rs";
@@ -52,15 +49,12 @@ fn unrelated_high_durability_mutation_does_not_recompute_low_query() {
     let _project_meta = FileMetadataInput::builder("rust".into(), 13, 0)
         .durability(Durability::LOW)
         .new(&db);
-    let project_scip = ScipDocInput::builder(project_path.into(), None)
-        .durability(Durability::LOW)
-        .new(&db);
     let project_facts = SyntacticFactsInput::builder(SyntacticFactsRaw::default())
         .durability(Durability::LOW)
         .new(&db);
 
     // Warm the LOW project query.
-    let baseline = symbols_for_file(&db, project_content, project_scip, project_facts);
+    let baseline = symbols_for_file(&db, project_content, project_facts);
     log.lock().unwrap().clear();
 
     // Mutate the HIGH-durability stdlib content. The project query is
@@ -71,7 +65,7 @@ fn unrelated_high_durability_mutation_does_not_recompute_low_query() {
         .with_durability(Durability::HIGH)
         .to(b"pub fn core_v2() {}\n".to_vec());
 
-    let after = symbols_for_file(&db, project_content, project_scip, project_facts);
+    let after = symbols_for_file(&db, project_content, project_facts);
     assert_eq!(baseline, after);
 
     let events = log.lock().unwrap().clone();

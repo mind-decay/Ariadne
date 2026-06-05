@@ -154,7 +154,10 @@ pub struct SymbolChurn {
 }
 
 /// Edge kind tag. Definition / reference / import are the syntactic core;
-/// `Renders` and `UsesHook` carry the component graph (ADR-0012).
+/// `Renders` and `UsesHook` carry the component graph (ADR-0012); `Reads` and
+/// `Writes` carry SCIP access roles (scip-driven-edges T2). Tags are append-only
+/// and stable — a widened enum re-derives edges on the next index, so old redb
+/// files (tags 0–4) decode unchanged with no data migration [src: plan D5].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 #[repr(u8)]
 #[non_exhaustive]
@@ -169,6 +172,10 @@ pub enum EdgeKind {
     Renders = 3,
     /// Component → hook / reactive primitive it uses (ADR-0012).
     UsesHook = 4,
+    /// Read access on a binding — SCIP `ReadAccess` role (scip-driven-edges T2).
+    Reads = 5,
+    /// Write access on a binding — SCIP `WriteAccess` role (scip-driven-edges T2).
+    Writes = 6,
 }
 
 impl EdgeKind {
@@ -187,6 +194,8 @@ impl EdgeKind {
             2 => Some(Self::Imports),
             3 => Some(Self::Renders),
             4 => Some(Self::UsesHook),
+            5 => Some(Self::Reads),
+            6 => Some(Self::Writes),
             _ => None,
         }
     }

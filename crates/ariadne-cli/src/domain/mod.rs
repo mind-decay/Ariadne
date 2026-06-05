@@ -18,12 +18,13 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 
 use anyhow::{Context, Result};
-use ariadne_core::{FileId, FileRecord, Lang, ReadSnapshot, Storage};
+use ariadne_core::{FileId, FileRecord, Lang, ReadSnapshot, RevisionId, Storage};
 use ariadne_parser::{CallKind, DeclKind, FactExtractor, ParserRegistry, SyntacticFacts};
 use ariadne_salsa::{
-    AriadneDb, CallRaw, DeclRaw, HookRaw, ImportRaw, RenderRaw, SyntacticFactsRaw,
+    AriadneDb, CallRaw, DeclRaw, HookRaw, ImportRaw, RenderRaw, ScipFactsRaw, ScipOccurrenceRaw,
+    SyntacticFactsRaw,
 };
-use ariadne_scip::IngestPlan;
+use ariadne_scip::{IngestPlan, IngestReport, extract_facts};
 use ariadne_storage::RedbStorage;
 use ignore::{DirEntry, WalkBuilder, WalkState};
 use indicatif::{ProgressBar, ProgressStyle};
@@ -232,13 +233,29 @@ pub fn run_index(
     let resolve_ms = seed_started.elapsed().as_millis();
 
     let commit_started = Instant::now();
-    let revision = db
+    let mut revision = db
         .commit_revision(&storage)
         .context("commit derived changeset")?;
     let commit_ms = commit_started.elapsed().as_millis();
 
-    // Counts come from the committed snapshot — the authoritative persisted
-    // record set the cold byte-parity gate compares against.
+    // Phase 4 — SCIP ingest, off the measured fast path (scip-driven-edges D6).
+    // The fast tree-sitter index has already committed; when `scip` is set the
+    // external indexers run, `extract_facts` reduces their report to per-file
+    // occurrence facts, those are set on the salsa inputs, and a re-commit
+    // replaces covered files' edges with the precise SCIP edges (plan D2, D4).
+    // A missing indexer or a hash that has moved off the index degrades that
+    // file to the tree-sitter resolver (plan D4) — never a failure.
+    let scip_started = Instant::now();
+    let scip_report = if scip {
+        Some(run_scip_ingest(&mut db, root, &storage, &mut revision)?)
+    } else {
+        None
+    };
+    let scip_ms = scip_started.elapsed().as_millis();
+
+    // Counts come from the final committed snapshot — reflecting any SCIP edges
+    // — the authoritative persisted record set the cold byte-parity gate
+    // compares against.
     let snapshot = storage.snapshot().context("snapshot committed index")?;
     let mut symbols = 0usize;
     for chunk in snapshot.iter_symbols(COUNT_CHUNK)? {
@@ -248,15 +265,6 @@ pub fn run_index(
     for chunk in snapshot.iter_edges(COUNT_CHUNK)? {
         edges += chunk.context("count edge chunk")?.len();
     }
-
-    // Phase 4 — opt-in SCIP ingest, off the measured fast path by default.
-    let scip_started = Instant::now();
-    let scip_report = if scip {
-        Some(IngestPlan::with_default_drivers().ingest(root))
-    } else {
-        None
-    };
-    let scip_ms = scip_started.elapsed().as_millis();
 
     let summary = IndexSummary {
         files,
@@ -283,6 +291,45 @@ pub fn run_index(
         scip: scip_ms,
     };
     Ok((summary, timings, probe.snapshot()))
+}
+
+/// Run the out-of-band SCIP ingest and fold its edges into the index
+/// (scip-driven-edges tier-01, plan D6). The external indexers run, then
+/// `extract_facts` reduces the report to per-file occurrence facts; those are
+/// set on the salsa inputs and a re-commit replaces covered files' edges with
+/// the precise SCIP edges (plan D2, D4). `revision` is advanced to the SCIP
+/// commit when any facts were applied. Returns the raw report for the summary's
+/// success/missing language lists. A degraded run (no facts) leaves the fast
+/// index untouched.
+///
+/// # Errors
+/// Propagates storage write failures from the re-commit.
+fn run_scip_ingest(
+    db: &mut AriadneDb,
+    root: &Path,
+    storage: &RedbStorage,
+    revision: &mut RevisionId,
+) -> Result<IngestReport> {
+    let report = IngestPlan::with_default_drivers().ingest(root);
+    let facts = extract_facts(&report);
+    if !facts.is_empty() {
+        for (path, scip_facts) in facts {
+            let occurrences = scip_facts
+                .occurrences
+                .into_iter()
+                .map(|o| ScipOccurrenceRaw {
+                    symbol: o.symbol,
+                    byte_range: o.byte_range,
+                    roles: o.roles,
+                })
+                .collect();
+            db.set_scip_facts(&path, ScipFactsRaw { occurrences }, scip_facts.indexed_hash);
+        }
+        *revision = db
+            .commit_revision(storage)
+            .context("commit scip-derived edges")?;
+    }
+    Ok(report)
 }
 
 /// Build the indexing progress bar.

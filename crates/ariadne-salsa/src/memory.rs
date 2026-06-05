@@ -19,7 +19,8 @@
 use std::collections::BTreeMap;
 
 use crate::derived::{
-    CallRaw, DeclRaw, HookRaw, ImportRaw, RenderRaw, SymbolFactsRaw, SyntacticFactsRaw,
+    CallRaw, DeclRaw, HookRaw, ImportRaw, RenderRaw, ScipFactsRaw, ScipOccurrenceRaw,
+    SymbolFactsRaw, SyntacticFactsRaw,
 };
 
 /// 256MB. Tier-04 plan `exit_criteria` + R1 risk mitigation.
@@ -54,7 +55,7 @@ impl MemoryReport {
     // `report_lists_every_tracked_table` test guards that.
     pub(crate) fn from_table_bytes(
         syntactic_facts: u64,
-        scip_symbols: u64,
+        scip_facts: u64,
         symbols_for_file: u64,
     ) -> Self {
         // Build over the canonical table set so the report always lists every
@@ -64,7 +65,7 @@ impl MemoryReport {
             .map(|&name| {
                 let bytes = match name {
                     "syntactic_facts" => syntactic_facts,
-                    "scip_symbols" => scip_symbols,
+                    "scip_facts" => scip_facts,
                     "symbols_for_file" => symbols_for_file,
                     _ => 0,
                 };
@@ -83,7 +84,7 @@ impl MemoryReport {
 /// enumeration API.
 pub(crate) const TRACKED_TABLES: &[&str] = &[
     "syntactic_facts",
-    "scip_symbols",
+    "scip_facts",
     "symbols_for_file",
     "edges_for_file",
     "blast_radius",
@@ -110,6 +111,18 @@ pub(crate) fn syntactic_facts_bytes(f: &SyntacticFactsRaw) -> u64 {
     let hooks = vec_buf::<HookRaw>(f.hooks.len())
         + f.hooks.iter().map(|h| str_heap(&h.callee)).sum::<u64>();
     base + decls + imports + calls + renders + hooks
+}
+
+/// Deep heap size of one file's [`ScipFactsRaw`]: the struct itself plus the
+/// occurrence buffer and the `String` symbol key each occurrence owns.
+pub(crate) fn scip_facts_bytes(f: &ScipFactsRaw) -> u64 {
+    let base = std::mem::size_of::<ScipFactsRaw>() as u64;
+    let occ = vec_buf::<ScipOccurrenceRaw>(f.occurrences.len())
+        + f.occurrences
+            .iter()
+            .map(|o| str_heap(&o.symbol))
+            .sum::<u64>();
+    base + occ
 }
 
 /// Deep heap size of one file's merged `symbols_for_file` output.

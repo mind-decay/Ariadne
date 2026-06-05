@@ -17,7 +17,7 @@
 
 use std::sync::Arc;
 
-use crate::inputs::{FileContentInput, ScipDocInput, SyntacticFactsInput};
+use crate::inputs::{FileContentInput, ScipFactsInput, SyntacticFactsInput};
 
 /// Syntactic facts pulled from a parsed file. Mirrors
 /// `ariadne_parser::SyntacticFacts` but uses only `Update`-friendly types
@@ -108,6 +108,33 @@ pub struct HookRaw {
     pub byte_range: (u32, u32),
 }
 
+/// One SCIP occurrence (salsa-internal mirror of `ariadne_core::ScipOccurrence`).
+/// The composition root extracts these with `ariadne-scip` and feeds them in via
+/// [`ScipFactsInput`]; `ariadne-salsa` may not depend on `ariadne-scip`
+/// [src: tests/architecture.rs lines 30-43], so this `Update`-safe mirror exists
+/// for the salsa boundary, exactly as [`SyntacticFactsRaw`] mirrors the parser's
+/// facts (scip-driven-edges plan D2).
+#[derive(Debug, Clone, PartialEq, Eq, Hash, salsa::Update)]
+pub struct ScipOccurrenceRaw {
+    /// Normalized SCIP symbol key (canonical-symbol id hex).
+    pub symbol: String,
+    /// `(byte_start, byte_end)` of the occurrence in the file's source bytes.
+    pub byte_range: (u32, u32),
+    /// SCIP `SymbolRole` bitset (`Definition = 0x1`, `Import = 0x2`, …).
+    pub roles: u32,
+}
+
+/// All SCIP occurrences for one file (salsa-internal mirror of
+/// `ariadne_core::ScipFacts`'s occurrence list). The file's indexed content hash
+/// rides alongside on [`ScipFactsInput`] rather than in this struct so the
+/// coverage gate can read it without deep-cloning the occurrence vector
+/// (scip-driven-edges plan D2, D4).
+#[derive(Debug, Default, Clone, PartialEq, Eq, Hash, salsa::Update)]
+pub struct ScipFactsRaw {
+    /// Occurrences in extraction order.
+    pub occurrences: Vec<ScipOccurrenceRaw>,
+}
+
 /// Symbol record. The salsa-internal mirror of `ariadne_core::SymbolRecord`,
 /// using only `Update`-friendly fields.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, salsa::Update)]
@@ -168,54 +195,48 @@ pub fn syntactic_facts(
     Arc::new(facts.facts(db))
 }
 
-/// SCIP-derived symbols for a file. Tier-04 stub returns empty until tier-05
-/// wires the scip ingest pipeline.
+/// SCIP facts for a file. The composition root decodes the SCIP protobuf with
+/// `ariadne-scip` and feeds the occurrences in through [`ScipFactsInput`] —
+/// `ariadne-salsa` may not depend on `ariadne-scip` [src: tests/architecture.rs
+/// lines 30-43], so extraction cannot live in salsa, mirroring how
+/// [`syntactic_facts`] takes parsed facts. Empty until a root populates it;
+/// [`crate::AriadneDb::commit_revision`] reads it (and [`ScipFactsInput::indexed_hash`])
+/// for the covered-file SCIP edge pass (scip-driven-edges plan D2, D4). Symbols
+/// stay tree-sitter — SCIP feeds edges only (plan D1) — so this drives no
+/// `symbols_for_file` merge.
 #[salsa::tracked]
-pub fn scip_symbols(db: &dyn salsa::Database, scip: ScipDocInput) -> Arc<Vec<SymbolFactsRaw>> {
-    let _ = scip.raw_proto(db);
-    let _ = scip.path(db);
-    Arc::new(Vec::new())
+pub fn scip_facts_for_file(db: &dyn salsa::Database, scip: ScipFactsInput) -> Arc<ScipFactsRaw> {
+    Arc::new(scip.facts(db))
 }
 
-/// Merged symbols for a file: the parsed facts' decls become symbols (plus a
-/// synthesized SFC `Component` symbol) via `crate::derive::build_symbols`,
-/// then SCIP records take precedence per `canonical_name`. This is the
+/// Per-file symbols: the parsed facts' decls become symbols (plus a synthesized
+/// SFC `Component` symbol) via `crate::derive::build_symbols`. This is the
 /// memoized per-file step the driver collects in
-/// [`crate::AriadneDb::commit_revision`]; SCIP ingest is still stubbed
-/// (empty) so the cold-path output is byte-identical to the pre-refactor CLI
-/// committer [src: post-v1-roadmap plan.md RD11].
+/// [`crate::AriadneDb::commit_revision`]. SCIP drives edges only (plan D1), so
+/// symbols are tree-sitter-authoritative and this query does not depend on the
+/// SCIP input [src: post-v1-roadmap plan.md RD11; scip-driven-edges plan D1].
 #[salsa::tracked]
 pub fn symbols_for_file(
     db: &dyn salsa::Database,
     file: FileContentInput,
-    scip: ScipDocInput,
     facts: SyntacticFactsInput,
 ) -> Arc<Vec<SymbolFactsRaw>> {
     let raw = syntactic_facts(db, file, facts);
     let rel_path = file.path(db);
     let file_len = u32::try_from(file.content(db).len()).unwrap_or(u32::MAX);
-    let mut out = crate::derive::build_symbols(&rel_path, file_len, &raw);
-    let scip_syms = scip_symbols(db, scip);
-    // SCIP precedence per canonical_name.
-    for s in scip_syms.iter() {
-        if let Some(slot) = out
-            .iter_mut()
-            .find(|o| o.canonical_name == s.canonical_name)
-        {
-            *slot = s.clone();
-        } else {
-            out.push(s.clone());
-        }
-    }
-    Arc::new(out)
+    Arc::new(crate::derive::build_symbols(&rel_path, file_len, &raw))
 }
 
-/// Per-file edges. Tier-04 stub returns empty.
+/// Per-file edges. Tier-04 stub returns empty; the real per-file edge signal is
+/// resolved by the global driver pass in [`crate::AriadneDb::commit_revision`]
+/// (tree-sitter `resolve_edges` and SCIP `resolve_scip_edges`), not memoized
+/// here. Retained so the per-table memory probe lists the `edges_for_file`
+/// table.
 #[salsa::tracked]
 pub fn edges_for_file(
     db: &dyn salsa::Database,
     file: FileContentInput,
-    _scip: ScipDocInput,
+    _scip: ScipFactsInput,
 ) -> Arc<Vec<EdgeFactsRaw>> {
     let _ = file.content(db).len();
     Arc::new(Vec::new())

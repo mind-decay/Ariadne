@@ -7,12 +7,16 @@
 //! order-insensitive — analytics outputs do not depend on the insertion
 //! sequence of nodes and edges.
 
-#![allow(clippy::many_single_char_names, clippy::unreadable_literal)]
+#![allow(
+    clippy::many_single_char_names,
+    clippy::similar_names,
+    clippy::unreadable_literal
+)]
 
 use std::collections::{BTreeSet, HashSet};
 
-use ariadne_core::SymbolId;
-use ariadne_graph::{EdgeKind, EdgeKindSet, GraphIndex};
+use ariadne_core::{EdgeKind as CoreEdgeKind, SymbolId};
+use ariadne_graph::{BlastRadius, EdgeKind, EdgeKindSet, GraphIndex};
 use proptest::prelude::*;
 
 fn sid(n: u64) -> SymbolId {
@@ -89,6 +93,76 @@ fn edge_kind_filter_excludes_other_kinds() {
         .blast_radius(b, 10, EdgeKindSet::IMPORTS)
         .expect("b present");
     assert_eq!(br_imports.must_touch.len() + br_imports.may_touch.len(), 1);
+}
+
+#[test]
+fn blast_radius_filters_reads_and_writes_independently() {
+    // SCIP access roles cross into the graph alphabet through `from_core`
+    // (scip-driven-edges T2): `Reads`/`Writes` are dedicated kinds, so a
+    // `blast_radius` query can isolate readers from writers of a binding.
+    assert_eq!(
+        EdgeKind::from_core(CoreEdgeKind::Reads),
+        EdgeKind::Reads,
+        "core Reads must map to graph Reads, not collapse to Calls",
+    );
+    assert_eq!(
+        EdgeKind::from_core(CoreEdgeKind::Writes),
+        EdgeKind::Writes,
+        "core Writes must map to graph Writes, not collapse to Calls",
+    );
+
+    let reach = |br: &BlastRadius| -> BTreeSet<SymbolId> {
+        br.must_touch
+            .iter()
+            .chain(br.may_touch.iter())
+            .copied()
+            .collect()
+    };
+
+    let mut g = GraphIndex::new();
+    let (field, reader, writer) = (sid(1), sid(2), sid(3));
+    for s in [field, reader, writer] {
+        g.add_symbol(s);
+    }
+    // `reader` reads `field`; `writer` writes `field`. Build through `from_core`
+    // so the storage→graph access-role mapping is exercised end-to-end here.
+    g.add_edge(reader, field, EdgeKind::from_core(CoreEdgeKind::Reads));
+    g.add_edge(writer, field, EdgeKind::from_core(CoreEdgeKind::Writes));
+
+    let reads = g
+        .blast_radius(field, 10, EdgeKindSet::READS)
+        .expect("field present");
+    assert_eq!(
+        reach(&reads),
+        BTreeSet::from([reader]),
+        "a READS filter reaches only the read-edge source",
+    );
+
+    let writes = g
+        .blast_radius(field, 10, EdgeKindSet::WRITES)
+        .expect("field present");
+    assert_eq!(
+        reach(&writes),
+        BTreeSet::from([writer]),
+        "a WRITES filter reaches only the write-edge source",
+    );
+
+    let both = g
+        .blast_radius(field, 10, EdgeKindSet::READS | EdgeKindSet::WRITES)
+        .expect("field present");
+    assert_eq!(
+        reach(&both),
+        BTreeSet::from([reader, writer]),
+        "READS|WRITES reaches both access sources",
+    );
+
+    let calls = g
+        .blast_radius(field, 10, EdgeKindSet::CALLS)
+        .expect("field present");
+    assert!(
+        reach(&calls).is_empty(),
+        "neither access edge is reachable under a Calls-only filter",
+    );
 }
 
 proptest! {

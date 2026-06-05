@@ -12,9 +12,10 @@
 mod support;
 
 use ariadne_core::{
-    Changeset, EdgeKey, EdgeRecord, FileId, FileRecord, IdEncode, ReadSnapshot, Storage, SymbolId,
-    SymbolRecord, WriteTxn,
+    Changeset, EdgeKey, EdgeKind, EdgeRecord, FileId, FileRecord, IdEncode, Lang, ReadSnapshot,
+    Span, Storage, SymbolId, SymbolRecord, WriteTxn,
 };
+use ariadne_storage::RedbStorage;
 use proptest::prelude::*;
 
 use support::{
@@ -130,4 +131,64 @@ proptest! {
             snap.edges_in_file(rec.source_span.file).expect("in_file");
         prop_assert_eq!(in_file, vec![key]);
     }
+}
+
+/// An "old" redb file — written before `Reads`/`Writes` existed, holding only
+/// edge-kind tags 0–4 — must still open and decode unchanged after the enum
+/// widened (tier-02, plan D5: append-only tags, no data migration). Persist one
+/// edge per pre-existing kind, drop the storage to close the file, reopen the
+/// same path with the widened enum in scope, and assert every edge decodes to
+/// the exact kind it was written with.
+#[test]
+fn pre_reads_writes_db_reopens_with_old_tags_intact() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let path = dir.path().join("old.redb");
+
+    let src = SymbolId::new(1).expect("nonzero");
+    let span = Span {
+        file: FileId::new(1).expect("nonzero"),
+        byte_start: 0,
+        byte_end: 1,
+    };
+    let old_kinds = [
+        EdgeKind::Defines,
+        EdgeKind::References,
+        EdgeKind::Imports,
+        EdgeKind::Renders,
+        EdgeKind::UsesHook,
+    ];
+
+    let mut cs = Changeset::new();
+    let mut expected: Vec<(EdgeKey, EdgeRecord)> = Vec::new();
+    for (i, &kind) in old_kinds.iter().enumerate() {
+        let dst = SymbolId::new(100 + i as u64).expect("nonzero");
+        let key = EdgeKey { src, kind, dst };
+        let rec = EdgeRecord {
+            source_span: span,
+            evidence_lang: Lang::Rust,
+            weight: 1,
+        };
+        cs = cs.add_edge(key, rec.clone());
+        expected.push((key, rec));
+    }
+    expected.sort_by_key(|(k, _)| k.kind.to_byte());
+
+    {
+        let storage = RedbStorage::open(&path).expect("open redb");
+        let txn = storage.begin_write().expect("begin write");
+        txn.apply(&cs).expect("apply");
+    } // storage dropped → on-disk file closed with the old tags committed
+
+    // Reopen the on-disk file now that `EdgeKind` carries tags 5/6: the old
+    // file never wrote them, so it must open with no migration and decode every
+    // tag 0–4 to the kind it was written with.
+    let storage = RedbStorage::open(&path).expect("old DB must reopen unchanged");
+    let snap = storage.snapshot().expect("snapshot");
+    let mut got = snap.outgoing_edges(src).expect("outgoing edges");
+    got.sort_by_key(|(k, _)| k.kind.to_byte());
+
+    assert_eq!(
+        got, expected,
+        "every pre-Reads/Writes edge must decode unchanged after the enum widened",
+    );
 }

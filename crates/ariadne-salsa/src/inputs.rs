@@ -19,7 +19,7 @@ use std::path::PathBuf;
 
 use salsa::Durability;
 
-use crate::derived::SyntacticFactsRaw;
+use crate::derived::{ScipFactsRaw, SyntacticFactsRaw};
 
 /// Per-file byte content. Tier-04 step 3 input #1.
 #[salsa::input]
@@ -47,14 +47,23 @@ pub struct FileMetadataInput {
     pub mtime_ns: u64,
 }
 
-/// SCIP document blob for a file. Tier-05 fills `raw_proto`; tier-04 ships
-/// the input shape so the salsa query graph is in place.
+/// SCIP facts for a file (scip-driven-edges tier-01, plan D2). Replaces the
+/// tier-04 `ScipDocInput { raw_proto }` blob: the composition root decodes the
+/// SCIP protobuf with `ariadne-scip` and feeds in the pure occurrence facts,
+/// so `ariadne-salsa` never sees prost — the [`SyntacticFactsInput`] pattern.
+/// [`crate::scip_facts_for_file`] reads `facts`; the covered-file edge gate in
+/// [`crate::AriadneDb::commit_revision`] reads `indexed_hash` (plan D4).
 #[salsa::input]
-pub struct ScipDocInput {
-    /// Project-root-relative path of the file the SCIP doc describes.
-    pub path: String,
-    /// Raw SCIP protobuf blob, if the language has a SCIP indexer wired.
-    pub raw_proto: Option<Vec<u8>>,
+pub struct ScipFactsInput {
+    /// The file's SCIP occurrences — the `Update`-safe mirror of
+    /// `ariadne_core::ScipFacts`'s occurrence list. Empty until a composition
+    /// root populates it.
+    pub facts: ScipFactsRaw,
+    /// blake3 of the file content the SCIP indexer saw. A file is "covered"
+    /// (its edges come from SCIP) only while this still matches the file's
+    /// current content hash; the all-zero default means "no SCIP facts yet"
+    /// (plan D4).
+    pub indexed_hash: [u8; 32],
 }
 
 /// Parsed syntactic facts for a file (tier-07a, RD11). The composition root

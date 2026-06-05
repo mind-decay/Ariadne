@@ -62,18 +62,20 @@ impl EdgeKind {
         }
     }
 
-    /// Map the storage `EdgeKind` (3 variants) into the graph alphabet.
-    /// `References` lands on `Calls` because that is the dominant
-    /// reference category until tier-08+ SCIP refinement; finer
-    /// classification arrives when storage adds subkinds.
+    /// Map the storage `EdgeKind` into the graph alphabet. `References` lands
+    /// on `Calls` because that is the dominant reference category; SCIP access
+    /// roles map to the dedicated `Reads`/`Writes` kinds the in-RAM filter
+    /// already advertises [src: scip-driven-edges T2, plan D5].
     #[must_use]
     pub fn from_core(kind: CoreEdgeKind) -> Self {
         match kind {
             CoreEdgeKind::Defines => Self::Defines,
             CoreEdgeKind::Imports => Self::Imports,
-            // `CoreEdgeKind` is `#[non_exhaustive]`; `References` plus
-            // any future variant collapses to `Calls` until the graph
-            // alphabet extends.
+            CoreEdgeKind::Reads => Self::Reads,
+            CoreEdgeKind::Writes => Self::Writes,
+            // `CoreEdgeKind` is `#[non_exhaustive]`; `References` plus any
+            // future variant collapses to `Calls` until the graph alphabet
+            // extends.
             _ => Self::Calls,
         }
     }
