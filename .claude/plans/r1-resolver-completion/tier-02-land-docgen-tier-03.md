@@ -9,7 +9,8 @@ exit_criteria:
   - "`ariadne doc` (or `ariadne-cli -- doc`) run twice → docs/codebase-overview.{md,svg} byte-identical; the committed overview reflects the reliable edges"
   - "docgen-overview-fidelity/tier-03 frontmatter status flipped blocked→completed; audit-state updated"
   - "cargo nextest run -p ariadne-graph -p ariadne-daemon -p ariadne-mcp, architecture, clippy, fmt all green"
-status: blocked
+status: completed
+completed: 2026-06-05
 ---
 
 <context>
@@ -130,5 +131,21 @@ flood). `deps` updated to `[tier-01, tier-03, tier-04]` so the gate enforces
 ordering; spec-build refuses this tier until both are `completed`. On entry, confirm
 both landed, then re-run the verification below — the role + boundary gates now pass
 because their causes are fixed, not because the assertions were weakened.
+
+LANDED (2026-06-05). All three deps `completed`. The held rendering changes were
+already committed as WIP (`02d26ce`) with the snapshot re-accepted; the stale
+`stash@{0}` was dropped. Re-ran `<verification>` on a fresh daemon-stopped re-index
+of the committed binary (2064 edges): graph 70/70 (tier-03 upper-bound, leaf-role,
+qualified-render assertions green), daemon+mcp 104/104 (warm==cold, memory probe),
+architecture + clippy(`-D warnings`) + fmt clean, `ariadne doc` twice byte-identical.
+Role: `ariadne-cli` → "Volatile leaf"; the false "Stable foundational" mislabel is
+gone for every leaf crate (fail-loud gate did NOT fire). `ariadne-e2e` → "Isolated"
+(Ca=0, Ce=0) rather than literal "volatile-leaf" — its cross-crate calls are
+method/path shape abstained by D6 and nothing depends on a test crate; the documented
+recall/precision boundary (SCIP recovers it). User accepted e2e=Isolated as honoring
+the "never falsely foundational" intent. Boundary near-zero (4 qualified
+intra-`ariadne-storage` domain→adapter rows; `→ *::new` flood gone), cycles qualified.
+The regenerated overview + both status flips committed; docgen tier-03 flipped to
+`completed`.
 </blockers>
 </content>

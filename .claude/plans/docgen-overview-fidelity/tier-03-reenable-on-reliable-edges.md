@@ -8,7 +8,8 @@ exit_criteria:
   - "Architecture Role column restored; `ariadne-cli` and `ariadne-e2e` render a volatile-leaf role (instability > 0.7), never `Stable foundational … many dependents`"
   - "Cross-crate cycle clusters un-suppressed and listed with qualified member names"
   - "`ariadne doc` twice → byte-identical; clippy/fmt/architecture/warm==cold green"
-status: blocked
+status: completed
+completed: 2026-06-05
 ---
 
 <context>
@@ -120,4 +121,22 @@ Unblock: complete the R1 resolver fix (drop cross-crate resolution for callees
 with no in-scope definition; leave them edge-less) under a dedicated plan, then
 re-run this tier's `<verification>` — cli/e2e must read volatile-leaf and the
 cross-crate boundary set near-zero before `status: completed`.
+
+RESOLVED (2026-06-05) — R1 shipped under the `r1-resolver-completion` plan:
+tier-01 (call-shape-gated cross-crate fallback) + tier-04 (same-crate Method/Path
+abstention) killed the phantom afferent, and tier-03-crate-role-test-scope (D5)
+scoped crate-coupling membership over all crate modules so test→source edges are
+same-crate. This tier's held rendering changes were landed and verified on the
+now-reliable edges by `r1-resolver-completion` tier-02. Regenerated dogfood
+overview (fresh daemon-stopped re-index, 2064 edges): `ariadne-cli` reads
+"Volatile leaf"; the phantom-afferent "Stable foundational" mislabel is gone for
+every leaf crate (fail-loud gate clears). `ariadne-e2e` reads "Isolated" (crate
+Ca=0, Ce=0) rather than "volatile-leaf": its source has no provable outbound
+cross-crate edges (method/path shape, abstained by D6) and nothing depends on a
+test crate — the documented recall/precision boundary (SCIP recovers it later).
+User accepted e2e=Isolated as honoring exit criterion #3's intent ("never falsely
+foundational"). Boundary set near-zero (4 qualified intra-`ariadne-storage`
+domain→adapter rows; the `→ *::new` flood is gone), cycle clusters qualified, doc
+twice byte-identical. Fixture + graph + daemon/mcp + architecture + clippy + fmt
+all green.
 </blockers>
