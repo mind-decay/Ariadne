@@ -64,8 +64,10 @@ impl EdgeKind {
 
     /// Map the storage `EdgeKind` into the graph alphabet. `References` lands
     /// on `Calls` because that is the dominant reference category; SCIP access
-    /// roles map to the dedicated `Reads`/`Writes` kinds the in-RAM filter
-    /// already advertises [src: scip-driven-edges T2, plan D5].
+    /// roles map to the dedicated `Reads`/`Writes` kinds, and SCIP relationships
+    /// to `Overrides` (`Implements` — SCIP conflates impl/override/inheritance,
+    /// plan D5) and `TypeOf` — the kinds the in-RAM filter already advertises
+    /// [src: scip-driven-edges T2/T3, plan D5].
     #[must_use]
     pub fn from_core(kind: CoreEdgeKind) -> Self {
         match kind {
@@ -73,6 +75,8 @@ impl EdgeKind {
             CoreEdgeKind::Imports => Self::Imports,
             CoreEdgeKind::Reads => Self::Reads,
             CoreEdgeKind::Writes => Self::Writes,
+            CoreEdgeKind::Implements => Self::Overrides,
+            CoreEdgeKind::TypeOf => Self::TypeOf,
             // `CoreEdgeKind` is `#[non_exhaustive]`; `References` plus any
             // future variant collapses to `Calls` until the graph alphabet
             // extends.

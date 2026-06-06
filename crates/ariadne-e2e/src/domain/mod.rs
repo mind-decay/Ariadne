@@ -269,6 +269,12 @@ pub fn run_index(root: &Path) -> Result<IndexReport> {
 /// kbytes — the result is normalised to bytes either way
 /// [src: .claude/plans/ariadne-core/tier-12-parallel-cold-index.md step 6].
 ///
+/// `--no-scip` pins the measurement to the FAST cold-index path: SCIP is
+/// default-on but runs OUT OF BAND after the fast index commits, so it is
+/// deliberately off the wall-clock the cold<60s SLO governs (scip-driven-edges
+/// D6, R9). The combined SLO release gate therefore measures the same fast path
+/// before and after default-on [src: docs/adr/0026-default-on-out-of-band-scip.md].
+///
 /// # Errors
 /// Fails when the binary exits non-zero, prints no JSON summary, or the
 /// `/usr/bin/time` output carries no recognisable peak-RSS line.
@@ -282,6 +288,7 @@ pub fn run_index_measured(root: &Path) -> Result<IndexReport> {
         .arg(time_flag)
         .arg(ariadne_binary())
         .arg("index")
+        .arg("--no-scip")
         .arg(root)
         .output()
         .context("spawn `/usr/bin/time ariadne index`")?;

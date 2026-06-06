@@ -17,5 +17,5 @@ pub use adapters::ipc::{
 pub use domain::dump::CatalogDump;
 pub use domain::index_lock::IndexLock;
 pub use domain::lifecycle::{DaemonPaths, DaemonStatus, Pid, ReclaimDecision, reclaim_decision};
-pub use domain::live::LiveEngine;
+pub use domain::live::{LiveEngine, ScipFactsBatch};
 pub use errors::DaemonError;

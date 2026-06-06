@@ -155,9 +155,11 @@ pub struct SymbolChurn {
 
 /// Edge kind tag. Definition / reference / import are the syntactic core;
 /// `Renders` and `UsesHook` carry the component graph (ADR-0012); `Reads` and
-/// `Writes` carry SCIP access roles (scip-driven-edges T2). Tags are append-only
-/// and stable — a widened enum re-derives edges on the next index, so old redb
-/// files (tags 0–4) decode unchanged with no data migration [src: plan D5].
+/// `Writes` carry SCIP access roles (scip-driven-edges T2); `Implements` and
+/// `TypeOf` carry SCIP relationships (scip-driven-edges T3). Tags are
+/// append-only and stable — a widened enum re-derives edges on the next index,
+/// so old redb files (tags 0–6) decode unchanged with no data migration
+/// [src: plan D5].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 #[repr(u8)]
 #[non_exhaustive]
@@ -176,6 +178,14 @@ pub enum EdgeKind {
     Reads = 5,
     /// Write access on a binding — SCIP `WriteAccess` role (scip-driven-edges T2).
     Writes = 6,
+    /// Implementation / override / inheritance — SCIP `is_implementation`
+    /// relationship (scip-driven-edges T3). SCIP conflates interface-impl,
+    /// method-override, and inheritance under one flag, so all three map here
+    /// (→ graph `Overrides`) with no false precision [src: plan D5].
+    Implements = 7,
+    /// Type-of — SCIP `is_type_definition` relationship: a binding → its type
+    /// symbol (scip-driven-edges T3) [src: scip.proto:498-499].
+    TypeOf = 8,
 }
 
 impl EdgeKind {
@@ -196,6 +206,8 @@ impl EdgeKind {
             4 => Some(Self::UsesHook),
             5 => Some(Self::Reads),
             6 => Some(Self::Writes),
+            7 => Some(Self::Implements),
+            8 => Some(Self::TypeOf),
             _ => None,
         }
     }

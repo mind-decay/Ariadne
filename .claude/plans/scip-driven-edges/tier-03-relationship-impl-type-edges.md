@@ -7,7 +7,8 @@ exit_criteria:
   - "The derivation `EdgeKind` gains `Implements` and `TypeOf` with stable byte tags; `to_byte`/`from_byte` round-trip; `from_core` maps them to graph `Overrides`/`TypeOf`; old redb files still open"
   - "Every `EdgeKindFilter` variant maps to a PRODUCIBLE `EdgeKind` — asserted by a total-mapping test over the daemon filter, `EdgeKindSet`, and `from_core`; the 5 previously-empty filters (TypeOf/Overrides/Reads/Writes/Inherits) now resolve to real edges"
   - "`blast_radius` filtered to `Implements` answers 'who implements X'; cold==warm and incremental==fresh parity green; same input → identical edge set; `cargo test --test architecture` green"
-status: pending
+status: completed
+completed: 2026-06-05
 ---
 
 <context>
@@ -32,23 +33,47 @@ precision (plan D5, R3).
 </context>
 
 <files>
-- crates/ariadne-core/src/domain/records.rs — add `Implements` and `TypeOf` to the
-  derivation `EdgeKind`; extend `to_byte`/`from_byte` [src: records.rs:161-172].
-- crates/ariadne-graph/src/build.rs — extend `from_core`: derivation `Implements`→
-  graph `Overrides`, `TypeOf`→graph `TypeOf` (and `Inherits` aliasing `Overrides`)
-  so `EdgeKindSet`/`from_core` become total over producible kinds [src: build.rs:30-95].
-- crates/ariadne-core/src/domain/daemon/query.rs — assert/reconcile `EdgeKindFilter`
-  → graph `EdgeKind`: each variant maps to a producible kind; delete or explicitly
-  alias any that SCIP cannot supply [src: query.rs:14-31].
-- crates/ariadne-scip/src/** + crates/ariadne-core/** — extend `ScipFactsRaw` with
-  relationships `{ from: String, to: String, is_implementation, is_type_definition }`;
-  `extract_facts` populates them from `documents[].symbols[].relationships`.
-- crates/ariadne-salsa/src/derive.rs — in `resolve_scip_edges`, after occurrence
-  edges, map each relationship's `from`/`to` SCIP symbols through the same
-  `scip_symbol → SymbolId` map to `Implements` / `TypeOf` edges; drop unmapped.
-- crates/ariadne-storage/src/adapters/redb/** — round-trip the new tags.
-- crates/ariadne-salsa/tests/scip_edges.rs (+ fixtures) — impl + type-of repro; a
-  filter→`EdgeKind` total-mapping test.
+Reconciled to the actual 16-file change set per audit F1: the planned
+`daemon/query.rs` and `storage/redb/**` were NOT the touch sites — the real
+reconciliation lives in `daemon/queries/impact.rs::filter_to_set`, and the new
+byte tags flow through the generic redb codec (no per-tech edit), exercised
+end-to-end by `scip_edges.rs` [src: audit/tier-03-report.md F1].
+
+Domain interior:
+- crates/ariadne-core/src/domain/records.rs — add `Implements`/`TypeOf` to the
+  derivation `EdgeKind`; extend `to_byte`/`from_byte` (append-only tags 7/8).
+- crates/ariadne-core/src/domain/scip.rs — extend the SCIP facts type with
+  relationships `{ from, to, is_implementation, is_type_definition }`.
+- crates/ariadne-core/src/lib.rs — façade re-export of the new relationship type.
+- crates/ariadne-graph/src/build.rs — extend `from_core` (`Implements`→graph
+  `Overrides`, `TypeOf`→`TypeOf`) and `to_flag` so `EdgeKindSet`/`from_core` are
+  total over producible kinds.
+- crates/ariadne-salsa/src/derive.rs — `resolve_scip_edges` pass 3 maps each
+  relationship's `from`/`to` SCIP symbols through the same `scip_symbol →
+  SymbolId` map to `Implements`/`TypeOf` edges; drop unmapped/self-loop.
+- crates/ariadne-salsa/src/derived.rs — salsa-local `ScipRelationshipRaw` mirror
+  (no `ariadne-scip` import) + facts plumbing.
+- crates/ariadne-salsa/src/db.rs — relationships input + coverage gate + sort.
+- crates/ariadne-salsa/src/lib.rs — relationships input wiring / re-export.
+- crates/ariadne-salsa/src/memory.rs — account the relationship table (R7 probe).
+
+Adapters / composition:
+- crates/ariadne-daemon/src/domain/queries/impact.rs — `filter_to_set` reconciles
+  `EdgeKindFilter`→`EdgeKindSet` (alias `Overrides`/`Inherits`→`Implements`, wire
+  `TypeOf`/`Reads`/`Writes`); `blast_radius` filtering.
+- crates/ariadne-scip/src/facts.rs — `document_relationships`: `extract_facts`
+  populates relationships from `documents[].symbols[].relationships`, normalizing
+  both endpoints to the occurrence keys.
+- crates/ariadne-cli/src/domain/mod.rs — `run_scip_ingest` sets the relationships
+  input on the salsa DB (composition root).
+
+Tests / fixtures:
+- crates/ariadne-core/tests/tags.rs — byte round-trip for tags 7/8; `from_byte(9)
+  == None`; old tags 0–6 stable.
+- crates/ariadne-graph/tests/synthetic.rs — pin `Implements`→graph `Overrides`.
+- crates/ariadne-scip/tests/extract_facts.rs — relationship-extraction repro.
+- crates/ariadne-salsa/tests/scip_edges.rs (inline fixtures) — impl + type-of
+  repros; filter→`EdgeKind` total-mapping test; `blast_radius` who-implements.
 </files>
 
 <steps>

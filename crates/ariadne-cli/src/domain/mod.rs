@@ -18,11 +18,11 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 
 use anyhow::{Context, Result};
-use ariadne_core::{FileId, FileRecord, Lang, ReadSnapshot, RevisionId, Storage};
+use ariadne_core::{FileId, FileRecord, Lang, ReadSnapshot, RevisionId, ScipFacts, Storage};
 use ariadne_parser::{CallKind, DeclKind, FactExtractor, ParserRegistry, SyntacticFacts};
 use ariadne_salsa::{
     AriadneDb, CallRaw, DeclRaw, HookRaw, ImportRaw, RenderRaw, ScipFactsRaw, ScipOccurrenceRaw,
-    SyntacticFactsRaw,
+    ScipRelationshipRaw, SyntacticFactsRaw,
 };
 use ariadne_scip::{IngestPlan, IngestReport, extract_facts};
 use ariadne_storage::RedbStorage;
@@ -153,9 +153,12 @@ struct ParsedFile {
 
 /// Run the full cold-index pipeline against `root` and commit to redb.
 ///
-/// External SCIP indexers run only when `scip` is set; they are deliberately
-/// off the default measured path because they perform full language builds
-/// [src: docs/adr/0009-parallel-cold-index.md].
+/// External SCIP indexers run when `scip` is set — default-on via the
+/// `--no-scip` opt-out (scip-driven-edges D6). They run OUT OF BAND in Phase 4,
+/// after the fast tree-sitter index has already committed, so the full language
+/// builds they perform never count against the measured cold-index wall-clock
+/// (R9) [src: docs/adr/0026-default-on-out-of-band-scip.md;
+/// docs/adr/0009-parallel-cold-index.md].
 ///
 /// # Errors
 /// Propagates filesystem and storage failures.
@@ -293,6 +296,21 @@ pub fn run_index(
     Ok((summary, timings, probe.snapshot()))
 }
 
+/// Run the external SCIP indexers against `root` and reduce their report to
+/// per-file facts (scip-driven-edges D2, D6). The composition root calls this
+/// OFF the synchronous path — the cold index folds the result inline in Phase 4
+/// via [`run_scip_ingest`]; the daemon runs it on a background thread and ships
+/// the facts to the live pump (`ariadne_daemon::ScipFactsBatch`). A degraded run
+/// — every indexer binary absent — yields an empty batch, never a failure
+/// (plan R1); covered files then keep the precise tree-sitter resolver (D4).
+///
+/// Returns `(relative_path, ScipFacts)` pairs ready for `set_scip_facts`.
+#[must_use]
+pub fn scip_facts(root: &Path) -> Vec<(String, ScipFacts)> {
+    let report = IngestPlan::with_default_drivers().ingest(root);
+    extract_facts(&report)
+}
+
 /// Run the out-of-band SCIP ingest and fold its edges into the index
 /// (scip-driven-edges tier-01, plan D6). The external indexers run, then
 /// `extract_facts` reduces the report to per-file occurrence facts; those are
@@ -323,7 +341,24 @@ fn run_scip_ingest(
                     roles: o.roles,
                 })
                 .collect();
-            db.set_scip_facts(&path, ScipFactsRaw { occurrences }, scip_facts.indexed_hash);
+            let relationships = scip_facts
+                .relationships
+                .into_iter()
+                .map(|r| ScipRelationshipRaw {
+                    from: r.from,
+                    to: r.to,
+                    is_implementation: r.is_implementation,
+                    is_type_definition: r.is_type_definition,
+                })
+                .collect();
+            db.set_scip_facts(
+                &path,
+                ScipFactsRaw {
+                    occurrences,
+                    relationships,
+                },
+                scip_facts.indexed_hash,
+            );
         }
         *revision = db
             .commit_revision(storage)

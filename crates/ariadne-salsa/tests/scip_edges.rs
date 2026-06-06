@@ -12,7 +12,8 @@
 
 use ariadne_core::{EdgeKind, FileId, FileRecord, Lang, ReadSnapshot, Storage, SymbolId};
 use ariadne_salsa::{
-    AriadneDb, CallRaw, DeclRaw, ScipFactsRaw, ScipOccurrenceRaw, SyntacticFactsRaw,
+    AriadneDb, CallRaw, DeclRaw, ScipFactsRaw, ScipOccurrenceRaw, ScipRelationshipRaw,
+    SyntacticFactsRaw,
 };
 use ariadne_storage::RedbStorage;
 
@@ -91,9 +92,34 @@ fn occ(symbol: &str, range: (u32, u32), roles: u32) -> ScipOccurrenceRaw {
     }
 }
 
-/// Set a file's SCIP facts with the given coverage hash.
+/// Set a file's SCIP facts (occurrences only) with the given coverage hash.
 fn set_facts(db: &mut AriadneDb, path: &str, occs: Vec<ScipOccurrenceRaw>, indexed_hash: [u8; 32]) {
-    db.set_scip_facts(path, ScipFactsRaw { occurrences: occs }, indexed_hash);
+    db.set_scip_facts(
+        path,
+        ScipFactsRaw {
+            occurrences: occs,
+            relationships: Vec::new(),
+        },
+        indexed_hash,
+    );
+}
+
+/// Set a file's SCIP facts including relationships, with the given coverage hash.
+fn set_facts_rel(
+    db: &mut AriadneDb,
+    path: &str,
+    occs: Vec<ScipOccurrenceRaw>,
+    rels: Vec<ScipRelationshipRaw>,
+    indexed_hash: [u8; 32],
+) {
+    db.set_scip_facts(
+        path,
+        ScipFactsRaw {
+            occurrences: occs,
+            relationships: rels,
+        },
+        indexed_hash,
+    );
 }
 
 fn commit_and_read(db: &mut AriadneDb, storage: &RedbStorage) -> Vec<(SymbolId, FileId, String)> {
@@ -400,5 +426,125 @@ fn write_access_takes_precedence_over_read_access() {
     assert!(
         targets_of_kind(&storage, bump, EdgeKind::Reads).is_empty(),
         "a read+write occurrence must not also emit a `Reads` edge",
+    );
+}
+
+/// One SCIP relationship: from/to normalized keys plus the two edge flags.
+fn rel(from: &str, to: &str, is_impl: bool, is_type: bool) -> ScipRelationshipRaw {
+    ScipRelationshipRaw {
+        from: from.to_owned(),
+        to: to.to_owned(),
+        is_implementation: is_impl,
+        is_type_definition: is_type,
+    }
+}
+
+/// tier-03 headline (plan T3): a trait-impl relationship yields an `Implements`
+/// edge from the impl symbol to the trait symbol (graph `Overrides`). Crate
+/// `dog`'s `Dog` implements crate `animal`'s `Animal`; SCIP records both
+/// definitions under global keys plus an `is_implementation` relationship on
+/// `Dog`. With both files covered, the relationship resolves the `Dog -> Animal`
+/// edge no syntactic pass can produce.
+#[test]
+fn implementation_relationship_yields_implements_edge() {
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let storage = RedbStorage::open(&tmp.path().join("index.redb")).expect("open redb");
+    let mut db = AriadneDb::new();
+
+    seed(&mut db, 1, "crates/animal/src/lib.rs", "Animal", Vec::new());
+    seed(&mut db, 2, "crates/dog/src/lib.rs", "Dog", Vec::new());
+
+    // `Animal` is defined in file 1; `Dog` in file 2, with a relationship
+    // declaring `Dog` implements `Animal`. Both def occurrences sit inside their
+    // symbol's span and key the global map; both files carry their content hash.
+    set_facts(
+        &mut db,
+        "crates/animal/src/lib.rs",
+        vec![occ("scip:Animal", (3, 10), SCIP_DEFINITION)],
+        file_hash(1),
+    );
+    set_facts_rel(
+        &mut db,
+        "crates/dog/src/lib.rs",
+        vec![occ("scip:Dog", (3, 10), SCIP_DEFINITION)],
+        vec![rel("scip:Dog", "scip:Animal", true, false)],
+        file_hash(2),
+    );
+
+    let symbols = commit_and_read(&mut db, &storage);
+    let dog = id_in_file(&symbols, "Dog", 2);
+    let animal = id_in_file(&symbols, "Animal", 1);
+
+    assert_eq!(
+        targets_of_kind(&storage, dog, EdgeKind::Implements),
+        vec![animal],
+        "is_implementation must yield a single `Implements` edge `Dog -> Animal`",
+    );
+}
+
+/// A type-definition relationship yields a `TypeOf` edge from the binding to its
+/// type symbol (plan T3). `app`'s `binding` is typed by `types`'s `Animal`; SCIP
+/// records an `is_type_definition` relationship on `binding`, resolving the
+/// `binding -> Animal` edge.
+#[test]
+fn type_definition_relationship_yields_typeof_edge() {
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let storage = RedbStorage::open(&tmp.path().join("index.redb")).expect("open redb");
+    let mut db = AriadneDb::new();
+
+    seed(&mut db, 1, "crates/types/src/lib.rs", "Animal", Vec::new());
+    seed(&mut db, 2, "crates/app/src/lib.rs", "binding", Vec::new());
+
+    set_facts(
+        &mut db,
+        "crates/types/src/lib.rs",
+        vec![occ("scip:Animal", (3, 10), SCIP_DEFINITION)],
+        file_hash(1),
+    );
+    set_facts_rel(
+        &mut db,
+        "crates/app/src/lib.rs",
+        vec![occ("scip:binding", (3, 10), SCIP_DEFINITION)],
+        vec![rel("scip:binding", "scip:Animal", false, true)],
+        file_hash(2),
+    );
+
+    let symbols = commit_and_read(&mut db, &storage);
+    let binding = id_in_file(&symbols, "binding", 2);
+    let animal = id_in_file(&symbols, "Animal", 1);
+
+    assert_eq!(
+        targets_of_kind(&storage, binding, EdgeKind::TypeOf),
+        vec![animal],
+        "is_type_definition must yield a single `TypeOf` edge `binding -> Animal`",
+    );
+}
+
+/// A relationship to a symbol with no indexed definition — an external supertype
+/// — maps to no `SymbolId`, so it drops (plan D3/T3: an unmapped endpoint drops
+/// the edge), exactly as a std-callee occurrence does.
+#[test]
+fn relationship_to_unindexed_symbol_drops_edge() {
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let storage = RedbStorage::open(&tmp.path().join("index.redb")).expect("open redb");
+    let mut db = AriadneDb::new();
+
+    seed(&mut db, 1, "crates/dog/src/lib.rs", "Dog", Vec::new());
+    // `Dog` implements an external trait the workspace never defines, so the
+    // global key map has no entry for `to`.
+    set_facts_rel(
+        &mut db,
+        "crates/dog/src/lib.rs",
+        vec![occ("scip:Dog", (3, 10), SCIP_DEFINITION)],
+        vec![rel("scip:Dog", "scip:external::Trait", true, false)],
+        file_hash(1),
+    );
+
+    let symbols = commit_and_read(&mut db, &storage);
+    let dog = id_in_file(&symbols, "Dog", 1);
+
+    assert!(
+        targets_of_kind(&storage, dog, EdgeKind::Implements).is_empty(),
+        "a relationship whose target has no indexed definition must yield no edge",
     );
 }

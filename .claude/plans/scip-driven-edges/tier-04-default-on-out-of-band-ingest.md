@@ -7,7 +7,8 @@ exit_criteria:
   - "SCIP runs OUT-OF-BAND: the fast tree-sitter index commits first, then a separate SCIP pass re-commits covered edges; a committed measurement shows cold full-index <60s and incremental p95 <500ms UNCHANGED vs the pre-tier baseline (SCIP not on either synchronous path, R9)"
   - "The daemon runs SCIP as a background/idle pass (not on the synchronous query or incremental-commit path); a query during an in-flight SCIP pass returns the current (precise-resolver or last-covered) edges, never blocks"
   - "Fresh re-index of the committed binary twice → identical edge set; the dogfood/MCP overview rides SCIP edges where an indexer is present and the precise resolver elsewhere; ADR-0026 records the scheduling + SLO-preservation decision; cold==warm and incremental==fresh parity green"
-status: pending
+status: completed
+completed: 2026-06-05
 ---
 
 <context>

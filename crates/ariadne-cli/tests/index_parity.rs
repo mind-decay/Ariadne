@@ -158,7 +158,11 @@ fn check_family(family: &str) {
     copy_tree(&Path::new(FIXTURES).join(family), root);
 
     run_ok(&["init", root.to_str().expect("utf8 root")]);
-    run_ok(&["index", root.to_str().expect("utf8 root")]);
+    // `--no-scip` pins the syntactic-only derivation: SCIP is default-on
+    // (scip-driven-edges D6), so the goldens — which capture the tree-sitter
+    // resolver output — must opt out to stay stable regardless of which external
+    // indexers are installed [src: docs/adr/0026-default-on-out-of-band-scip.md].
+    run_ok(&["index", "--no-scip", root.to_str().expect("utf8 root")]);
 
     let actual = dump_index(&root.join(".ariadne").join("index.redb"));
     let golden_path = PathBuf::from(GOLDENS).join(format!("parity_{family}.txt"));
@@ -205,8 +209,8 @@ fn parity_react() {
 // The 7 single-language fixtures (the exit criterion's "7-language" half): each
 // is a callee + caller pair whose derivation exercises decls + a cross-file call
 // edge on the plain (non-SFC) path. Goldens are the syntactic-only cold index
-// (`index` without `--scip`), so they are stable regardless of which external
-// SCIP indexers happen to be installed [src: crates/ariadne-cli/src/main.rs:147].
+// (`index --no-scip`), so they are stable regardless of which external SCIP
+// indexers happen to be installed [src: docs/adr/0026-default-on-out-of-band-scip.md].
 
 #[test]
 fn parity_rust() {

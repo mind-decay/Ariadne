@@ -19,6 +19,13 @@ const TOP_DEPS: usize = 5;
 /// Free-form kind tag carried by component symbols (ADR-0012).
 const COMPONENT_KIND: &str = "component";
 
+/// Map a request edge-kind filter to the in-RAM graph's [`EdgeKindSet`]. Every
+/// variant resolves to a PRODUCIBLE graph kind (one `from_core` emits), so no
+/// advertised filter returns empty (scip-driven-edges D5, T3). `Overrides` and
+/// `Inherits` both alias to `OVERRIDES`: SCIP's `is_implementation` conflates
+/// interface-impl, method-override, and inheritance under one signal, so both
+/// honestly select the `Implements`→`Overrides` edges rather than a never-
+/// produced `INHERITS` flag [src: scip-driven-edges D5; scip.proto:489-497].
 fn filter_to_set(filter: &[EdgeKindFilter]) -> EdgeKindSet {
     if filter.is_empty() {
         return EdgeKindSet::ALL;
@@ -30,10 +37,9 @@ fn filter_to_set(filter: &[EdgeKindFilter]) -> EdgeKindSet {
             EdgeKindFilter::Imports => EdgeKindSet::IMPORTS,
             EdgeKindFilter::TypeOf => EdgeKindSet::TYPE_OF,
             EdgeKindFilter::Defines => EdgeKindSet::DEFINES,
-            EdgeKindFilter::Overrides => EdgeKindSet::OVERRIDES,
+            EdgeKindFilter::Overrides | EdgeKindFilter::Inherits => EdgeKindSet::OVERRIDES,
             EdgeKindFilter::Reads => EdgeKindSet::READS,
             EdgeKindFilter::Writes => EdgeKindSet::WRITES,
-            EdgeKindFilter::Inherits => EdgeKindSet::INHERITS,
         };
     }
     set
@@ -295,4 +301,117 @@ fn collect_span_sources(
         });
     }
     Ok(sources)
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashSet;
+
+    use ariadne_graph::EdgeKind as GraphEdgeKind;
+
+    use super::*;
+
+    /// Every derivation `EdgeKind` a tier can emit — the domain over which
+    /// `from_core`'s image (the set of PRODUCIBLE graph kinds) is computed.
+    const DERIVATION_KINDS: [EdgeKind; 9] = [
+        EdgeKind::Defines,
+        EdgeKind::References,
+        EdgeKind::Imports,
+        EdgeKind::Renders,
+        EdgeKind::UsesHook,
+        EdgeKind::Reads,
+        EdgeKind::Writes,
+        EdgeKind::Implements,
+        EdgeKind::TypeOf,
+    ];
+
+    /// All eight in-RAM graph kinds, for inverting a single-flag `EdgeKindSet`.
+    const GRAPH_KINDS: [GraphEdgeKind; 8] = [
+        GraphEdgeKind::Calls,
+        GraphEdgeKind::Imports,
+        GraphEdgeKind::TypeOf,
+        GraphEdgeKind::Defines,
+        GraphEdgeKind::Overrides,
+        GraphEdgeKind::Reads,
+        GraphEdgeKind::Writes,
+        GraphEdgeKind::Inherits,
+    ];
+
+    /// All eight request filter variants.
+    const FILTERS: [EdgeKindFilter; 8] = [
+        EdgeKindFilter::Calls,
+        EdgeKindFilter::Imports,
+        EdgeKindFilter::TypeOf,
+        EdgeKindFilter::Defines,
+        EdgeKindFilter::Overrides,
+        EdgeKindFilter::Reads,
+        EdgeKindFilter::Writes,
+        EdgeKindFilter::Inherits,
+    ];
+
+    /// Graph kinds reachable from the derivation alphabet through `from_core` —
+    /// the only path stored edges take into the warm graph.
+    fn producible() -> HashSet<GraphEdgeKind> {
+        DERIVATION_KINDS
+            .into_iter()
+            .map(GraphEdgeKind::from_core)
+            .collect()
+    }
+
+    /// The single graph kind a one-element filter's `EdgeKindSet` selects.
+    fn resolved_kind(filter: EdgeKindFilter) -> GraphEdgeKind {
+        let set = filter_to_set(&[filter]);
+        GRAPH_KINDS
+            .into_iter()
+            .find(|k| k.to_flag() == set)
+            .unwrap_or_else(|| panic!("filter {filter:?} maps to no single graph EdgeKind"))
+    }
+
+    /// The total-mapping honesty check (scip-driven-edges D5, T3): every
+    /// `EdgeKindFilter` variant resolves, through `filter_to_set` →
+    /// `EdgeKindSet` → graph kind, to a kind `from_core` actually produces. A
+    /// filter that mapped to a never-produced kind would silently return empty.
+    #[test]
+    fn every_filter_maps_to_a_producible_edge_kind() {
+        let producible = producible();
+        for filter in FILTERS {
+            let kind = resolved_kind(filter);
+            assert!(
+                producible.contains(&kind),
+                "filter {filter:?} resolves to graph {kind:?}, which `from_core` never produces \
+                 — the daemon must advertise no edge-kind it cannot produce",
+            );
+        }
+    }
+
+    /// The 5 filters that returned empty before tiers 02–03 (`TypeOf`,
+    /// `Overrides`, `Reads`, `Writes`, `Inherits`) now each resolve to a real,
+    /// producible edge kind — the headline honesty fix (plan D5).
+    #[test]
+    fn previously_empty_filters_now_resolve_to_real_edges() {
+        let producible = producible();
+        for filter in [
+            EdgeKindFilter::TypeOf,
+            EdgeKindFilter::Overrides,
+            EdgeKindFilter::Reads,
+            EdgeKindFilter::Writes,
+            EdgeKindFilter::Inherits,
+        ] {
+            assert!(
+                producible.contains(&resolved_kind(filter)),
+                "{filter:?} must now resolve to a producible edge kind",
+            );
+        }
+        // `is_implementation` conflation: both `Overrides` and `Inherits` select
+        // the `Implements`→`Overrides` edges (plan D5), and `TypeOf` its own.
+        assert_eq!(
+            resolved_kind(EdgeKindFilter::Overrides),
+            GraphEdgeKind::Overrides
+        );
+        assert_eq!(
+            resolved_kind(EdgeKindFilter::Inherits),
+            GraphEdgeKind::Overrides
+        );
+        assert_eq!(resolved_kind(EdgeKindFilter::TypeOf), GraphEdgeKind::TypeOf);
+    }
 }

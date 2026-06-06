@@ -22,9 +22,11 @@ use std::sync::{Arc, RwLock};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
-use ariadne_core::{FileId, FileRecord, Invalidation, Lang};
+use ariadne_core::{FileId, FileRecord, Invalidation, Lang, ScipFacts};
 use ariadne_parser::{FactExtractor, ParserRegistry};
-use ariadne_salsa::{AriadneDb, FileDerivation};
+use ariadne_salsa::{
+    AriadneDb, FileDerivation, ScipFactsRaw, ScipOccurrenceRaw, ScipRelationshipRaw,
+};
 use ariadne_storage::RedbStorage;
 
 use crate::domain::catalog::{WarmCatalog, index_path};
@@ -35,6 +37,14 @@ use crate::errors::DaemonError;
 /// How long the update pump blocks on the channel before re-checking its stop
 /// flag, so `serve_live` can join it promptly on shutdown.
 const PUMP_TICK: Duration = Duration::from_millis(100);
+
+/// One out-of-band SCIP pass's per-file facts: `(relative_path, ScipFacts)`
+/// pairs the composition root extracts from a completed indexer run and ships to
+/// the live pump (scip-driven-edges D6). `ScipFacts` is the pure `ariadne-core`
+/// boundary type — the daemon never links `ariadne-scip`; the CLI runs the
+/// indexers and converts, exactly as it pre-computes Git hunks for the daemon
+/// (RD7) [src: docs/adr/0026-default-on-out-of-band-scip.md].
+pub type ScipFactsBatch = Vec<(String, ScipFacts)>;
 
 /// Drives incremental warm-graph updates from filesystem invalidations.
 pub struct LiveEngine {
@@ -168,6 +178,42 @@ impl LiveEngine {
         Ok(())
     }
 
+    /// Apply one out-of-band SCIP pass: set the salsa SCIP inputs for the
+    /// covered files, re-commit so the derivation replaces their tree-sitter
+    /// resolver edges with the precise SCIP edges (plan D4), then rebuild the
+    /// warm catalog from the committed redb. Runs on the pump thread, off the
+    /// synchronous query path; the only lock held is the brief warm-catalog
+    /// write around the re-commit + rebuild, so a query already in flight while
+    /// the external indexers were building never blocked — it read the current
+    /// resolver / last-covered edges [src: docs/adr/0026-default-on-out-of-band-scip.md].
+    ///
+    /// A file whose content hash has drifted off its indexed hash, or that is no
+    /// longer tracked, degrades to the precise resolver inside `commit_revision`
+    /// — never a stale edge (plan D4). An empty batch is a no-op. The redb open
+    /// is serialized under the warm-catalog write lock, matching the pump's edit
+    /// commit and the accept loop's staleness rebuild (single-open per process,
+    /// tier-08 I1).
+    ///
+    /// # Errors
+    /// Propagates storage read/write failures from the re-commit or rebuild.
+    pub(crate) fn apply_scip_facts(&mut self, batch: ScipFactsBatch) -> Result<(), DaemonError> {
+        if batch.is_empty() {
+            return Ok(());
+        }
+        let mut cat = self.catalog.write().expect("warm-catalog write lock");
+        let storage = RedbStorage::open(&index_path(&self.root))?;
+        for (path, facts) in batch {
+            let indexed_hash = facts.indexed_hash;
+            self.db
+                .set_scip_facts(&path, scip_facts_raw(facts), indexed_hash);
+        }
+        self.db.commit_revision(&storage)?;
+        let fresh = WarmCatalog::build(&storage, self.root.display().to_string())?;
+        drop(storage);
+        *cat = fresh;
+        Ok(())
+    }
+
     /// Stable file id for `rel`: the existing id when tracked, else a fresh one.
     fn assign_id(&mut self, rel: &str) -> FileId {
         if let Some(id) = self.path_to_id.get(rel) {
@@ -214,6 +260,7 @@ impl LiveEngine {
     pub(crate) fn spawn_pump(
         mut self,
         events: Receiver<Invalidation>,
+        scip_events: Receiver<ScipFactsBatch>,
         stop: Arc<AtomicBool>,
     ) -> JoinHandle<()> {
         thread::Builder::new()
@@ -229,6 +276,13 @@ impl LiveEngine {
                         }
                         Err(RecvTimeoutError::Timeout) => {}
                         Err(RecvTimeoutError::Disconnected) => break,
+                    }
+                    // Drain any out-of-band SCIP batches the composition root
+                    // pushed. Folding runs on this one thread so the salsa db
+                    // stays single-owner; a failed fold is dropped (keep-running
+                    // policy), the next pass re-establishes coverage.
+                    while let Ok(batch) = scip_events.try_recv() {
+                        let _ = self.apply_scip_facts(batch);
                     }
                 }
             })
@@ -265,5 +319,35 @@ fn build_record(rel: &str, lang: Lang, abs: &Path, content: &[u8]) -> FileRecord
         size,
         blake3: hash,
         mtime_ns,
+    }
+}
+
+/// Convert a pure-core [`ScipFacts`] into the `Update`-safe salsa mirror the
+/// SCIP input carries. The composition-root boundary conversion, mirroring
+/// `crate::domain::facts`'s parser-fact conversion — `ariadne-salsa` may not
+/// depend on `ariadne-scip`, and the daemon never links it, so the core type is
+/// mapped to `ScipFactsRaw` here [src: crates/ariadne-salsa/src/derived.rs
+/// `ScipFactsRaw`; docs/adr/0026-default-on-out-of-band-scip.md].
+fn scip_facts_raw(facts: ScipFacts) -> ScipFactsRaw {
+    ScipFactsRaw {
+        occurrences: facts
+            .occurrences
+            .into_iter()
+            .map(|o| ScipOccurrenceRaw {
+                symbol: o.symbol,
+                byte_range: o.byte_range,
+                roles: o.roles,
+            })
+            .collect(),
+        relationships: facts
+            .relationships
+            .into_iter()
+            .map(|r| ScipRelationshipRaw {
+                from: r.from,
+                to: r.to,
+                is_implementation: r.is_implementation,
+                is_type_definition: r.is_type_definition,
+            })
+            .collect(),
     }
 }

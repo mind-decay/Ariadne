@@ -165,6 +165,64 @@ fn blast_radius_filters_reads_and_writes_independently() {
     );
 }
 
+#[test]
+fn blast_radius_answers_who_implements_and_typeof() {
+    // SCIP relationships cross into the graph alphabet through `from_core`
+    // (scip-driven-edges T3): `Implements` maps to `Overrides` (SCIP conflates
+    // impl/override/inheritance, plan D5) and `TypeOf` to `TypeOf`, so a
+    // reverse `blast_radius` filtered to those kinds answers "who implements X"
+    // and "what is typed as T".
+    assert_eq!(
+        EdgeKind::from_core(CoreEdgeKind::Implements),
+        EdgeKind::Overrides,
+        "core Implements must map to graph Overrides",
+    );
+    assert_eq!(
+        EdgeKind::from_core(CoreEdgeKind::TypeOf),
+        EdgeKind::TypeOf,
+        "core TypeOf must map to graph TypeOf",
+    );
+
+    let reach = |br: &BlastRadius| -> BTreeSet<SymbolId> {
+        br.must_touch
+            .iter()
+            .chain(br.may_touch.iter())
+            .copied()
+            .collect()
+    };
+
+    let mut g = GraphIndex::new();
+    let (animal, dog, binding) = (sid(1), sid(2), sid(3));
+    for s in [animal, dog, binding] {
+        g.add_symbol(s);
+    }
+    // `dog` implements `animal`; `binding` is typed as `animal`. Build through
+    // `from_core` so the storage→graph relationship mapping is exercised here.
+    g.add_edge(dog, animal, EdgeKind::from_core(CoreEdgeKind::Implements));
+    g.add_edge(binding, animal, EdgeKind::from_core(CoreEdgeKind::TypeOf));
+
+    // "Who implements `animal`?" — reverse reachability filtered to Overrides
+    // returns the implementor, not the typed binding.
+    let implementors = g
+        .blast_radius(animal, 10, EdgeKindSet::OVERRIDES)
+        .expect("animal present");
+    assert_eq!(
+        reach(&implementors),
+        BTreeSet::from([dog]),
+        "an OVERRIDES filter reaches only the impl edge source",
+    );
+
+    // The TypeOf filter isolates the typed binding.
+    let typed = g
+        .blast_radius(animal, 10, EdgeKindSet::TYPE_OF)
+        .expect("animal present");
+    assert_eq!(
+        reach(&typed),
+        BTreeSet::from([binding]),
+        "a TYPE_OF filter reaches only the type-of edge source",
+    );
+}
+
 proptest! {
     /// Build the same graph in two different insertion orders; assert
     /// SCC + cycle outputs agree. Covers the order-insensitive property

@@ -26,7 +26,7 @@
 
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::mpsc::Receiver;
+use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, RwLock};
 use std::time::{Duration, Instant};
 
@@ -41,7 +41,7 @@ use crate::domain::catalog::{WarmCatalog, index_path};
 use crate::domain::dispatch;
 use crate::domain::index_lock::IndexLock;
 use crate::domain::lifecycle::{DaemonPaths, DaemonStatus, Pid, ReclaimDecision, reclaim_decision};
-use crate::domain::live::LiveEngine;
+use crate::domain::live::{LiveEngine, ScipFactsBatch};
 use crate::errors::DaemonError;
 
 /// Poll cadence while waiting for the daemon to come up or go down.
@@ -252,17 +252,22 @@ pub fn serve(project_root: &Path) -> Result<(), DaemonError> {
 /// ADR-0007].
 ///
 /// `on_ready` is invoked once, after the warm engine is built and before the
-/// accept loop blocks, with an [`IndexLock`] over the daemon's redb-open
-/// serialization point. The composition root uses it to schedule background
-/// work (the tier-11a Git-history re-walk) whose transient redb opens must not
-/// race the pump or accept-loop opens [src: tier-11a audit I1].
+/// accept loop blocks, with two hand-backs: an [`IndexLock`] over the daemon's
+/// redb-open serialization point, and a [`Sender<ScipFactsBatch>`] feeding the
+/// live pump. The composition root uses the lock to schedule the tier-11a
+/// Git-history re-walk (whose transient redb opens must not race the pump or
+/// accept-loop opens, audit I1), and the sender to ship out-of-band SCIP facts
+/// it extracted from the external indexers — the daemon never links
+/// `ariadne-scip`, exactly as it never links `ariadne-git` (RD7); only
+/// pre-computed pure-core facts cross the boundary
+/// [src: docs/adr/0026-default-on-out-of-band-scip.md; ADR-0023].
 ///
 /// # Errors
 /// Same failure modes as [`serve`], plus warm-engine seeding failures.
 pub fn serve_live(
     project_root: &Path,
     events: Receiver<Invalidation>,
-    on_ready: impl FnOnce(IndexLock),
+    on_ready: impl FnOnce(IndexLock, Sender<ScipFactsBatch>),
 ) -> Result<(), DaemonError> {
     let paths = DaemonPaths::new(project_root);
     let Some(own) = claim_lifecycle(&paths)? else {
@@ -281,12 +286,16 @@ pub fn serve_live(
     };
     let catalog = engine.catalog_arc();
     let stop = Arc::new(AtomicBool::new(false));
-    let pump = engine.spawn_pump(events, Arc::clone(&stop));
+    // The out-of-band SCIP channel: the composition root pushes extracted facts;
+    // the pump folds them on its own thread (single-owner salsa db).
+    let (scip_tx, scip_rx) = mpsc::channel::<ScipFactsBatch>();
+    let pump = engine.spawn_pump(events, scip_rx, Arc::clone(&stop));
 
-    // Hand the composition root the redb-open serialization lock so its
+    // Hand the composition root the redb-open serialization lock (so its
     // background re-walk opens redb under the same lock as the pump and accept
-    // loop (single-open per process, tier-11a I1).
-    on_ready(IndexLock::new(Arc::clone(&catalog)));
+    // loop, single-open per process, tier-11a I1) and the SCIP sender (so it can
+    // ship out-of-band facts without the daemon linking `ariadne-scip`).
+    on_ready(IndexLock::new(Arc::clone(&catalog)), scip_tx);
 
     let result = serve_loop(&catalog, &paths, project_root, own);
 

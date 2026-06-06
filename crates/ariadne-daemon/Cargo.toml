@@ -45,6 +45,10 @@ postcard = { version = "=1.1.3", features = ["use-std"] }
 
 [dev-dependencies]
 tempfile = { workspace = true }
+# blake3 is already a normal dep (file-record hashing); the scip-pass test reuses
+# it to compute the D4 coverage hash for synthetic `ScipFacts`, so the warm graph
+# accepts them as covered (scip-driven-edges tier-04). Not a new external dep.
+blake3 = { workspace = true }
 # Random edit-sequence generator for the warm-graph divergence-0 proptest
 # (tier-08 step 6) [src: post-v1-roadmap plan.md `<verification>`].
 proptest = { workspace = true }

@@ -27,8 +27,8 @@ mod domain;
 pub use db::{AriadneDb, EventLog, FileDerivation};
 pub use derived::{
     CallRaw, DeclRaw, EdgeFactsRaw, HookRaw, ImportRaw, RenderRaw, ScipFactsRaw, ScipOccurrenceRaw,
-    SymbolFactsRaw, SyntacticFactsRaw, blast_radius, edges_for_file, scip_facts_for_file,
-    symbols_for_file, syntactic_facts,
+    ScipRelationshipRaw, SymbolFactsRaw, SyntacticFactsRaw, blast_radius, edges_for_file,
+    scip_facts_for_file, symbols_for_file, syntactic_facts,
 };
 pub use errors::SalsaError;
 pub use inputs::{

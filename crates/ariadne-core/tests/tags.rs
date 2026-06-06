@@ -89,10 +89,18 @@ fn edge_key_carries_component_edge_kinds() {
 #[test]
 fn edge_kind_all_variants_round_trip_with_stable_tags() {
     // SCIP access roles take the next stable tags after the component kinds
-    // (tier-02, plan D5): `Reads = 5`, `Writes = 6`. Pin the byte values so a
-    // reorder that would silently break old redb files is caught here.
+    // (tier-02, plan D5): `Reads = 5`, `Writes = 6`. SCIP relationships extend
+    // them (tier-03, plan D5): `Implements = 7`, `TypeOf = 8`. Pin the byte
+    // values so a reorder that would silently break old redb files is caught
+    // here — old DBs hold tags 0–6 and must decode unchanged (no migration).
     assert_eq!(EdgeKind::Reads.to_byte(), 5, "Reads keeps its stable tag");
     assert_eq!(EdgeKind::Writes.to_byte(), 6, "Writes keeps its stable tag");
+    assert_eq!(
+        EdgeKind::Implements.to_byte(),
+        7,
+        "Implements keeps its stable tag",
+    );
+    assert_eq!(EdgeKind::TypeOf.to_byte(), 8, "TypeOf keeps its stable tag");
 
     // Every variant round-trips through both the single-byte tag and the
     // composite `EdgeKey` encoding the `EDGES` table persists.
@@ -106,6 +114,8 @@ fn edge_kind_all_variants_round_trip_with_stable_tags() {
         EdgeKind::UsesHook,
         EdgeKind::Reads,
         EdgeKind::Writes,
+        EdgeKind::Implements,
+        EdgeKind::TypeOf,
     ] {
         assert_eq!(
             EdgeKind::from_byte(kind.to_byte()),
@@ -120,7 +130,7 @@ fn edge_kind_all_variants_round_trip_with_stable_tags() {
         );
     }
 
-    // 7 is the next free tag — never written by an older DB. An unknown tag
+    // 9 is the next free tag — never written by an older DB. An unknown tag
     // decodes to `None` rather than aliasing a real kind.
-    assert_eq!(EdgeKind::from_byte(7), None, "unknown tag decodes to None");
+    assert_eq!(EdgeKind::from_byte(9), None, "unknown tag decodes to None");
 }

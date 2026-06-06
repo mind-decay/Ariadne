@@ -33,6 +33,27 @@ pub struct ScipOccurrence {
     pub roles: u32,
 }
 
+/// One SCIP `SymbolInformation.relationships` entry reduced to the edge signal:
+/// the two normalized symbol keys it relates and which relationship flags are
+/// set. `from` is the owning symbol (`SymbolInformation.symbol`), `to` the
+/// related symbol (`Relationship.symbol`); both are run through
+/// `normalize_scip_symbol` so they key the same global `scip_symbol → SymbolId`
+/// map the occurrences build [src: crates/ariadne-scip/proto/scip.proto:462-499;
+/// plan D3, T3]. Only the two edge-bearing flags are kept: `is_implementation`
+/// (Find implementations, → graph `Overrides`) and `is_type_definition` (Go to
+/// type definition, → graph `TypeOf`) [src: scip.proto:489-499].
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct ScipRelationship {
+    /// Normalized key of the owning symbol (the relationship's `from` endpoint).
+    pub from: String,
+    /// Normalized key of the related symbol (the relationship's `to` endpoint).
+    pub to: String,
+    /// SCIP `is_implementation`: `from` implements / overrides / inherits `to`.
+    pub is_implementation: bool,
+    /// SCIP `is_type_definition`: `from`'s type is `to`.
+    pub is_type_definition: bool,
+}
+
 /// All SCIP occurrences extracted for one file, plus the content hash the facts
 /// were indexed at. The hash is the D4 coverage key: a file is "covered" — its
 /// edges come from SCIP, not the tree-sitter resolver — only while its current
@@ -42,6 +63,8 @@ pub struct ScipOccurrence {
 pub struct ScipFacts {
     /// Occurrences in this file, in extraction order.
     pub occurrences: Vec<ScipOccurrence>,
+    /// Relationships declared on this file's symbols (scip-driven-edges T3).
+    pub relationships: Vec<ScipRelationship>,
     /// blake3 of the file content the SCIP indexer saw, matching
     /// `FileRecord::blake3` while the file is unedited.
     pub indexed_hash: [u8; 32],

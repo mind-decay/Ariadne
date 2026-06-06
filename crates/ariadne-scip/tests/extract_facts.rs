@@ -122,6 +122,87 @@ fn reads_source_from_disk_when_text_is_absent() {
     );
 }
 
+const IMPL_SYMBOL: &str = "scip-rust cargo demo 1.0 lib/Dog#";
+const TRAIT_SYMBOL: &str = "scip-rust cargo demo 1.0 lib/Animal#";
+
+/// A one-document index whose single `SymbolInformation` declares an
+/// `is_implementation` relationship to the trait symbol — the SCIP shape a
+/// trait/interface impl emits [src: scip.proto:474-475].
+fn impl_relationship_index() -> proto::Index {
+    proto::Index {
+        metadata: Some(proto::Metadata {
+            version: proto::ProtocolVersion::UnspecifiedProtocolVersion as i32,
+            tool_info: None,
+            project_root: "file:///synth".to_owned(),
+            text_document_encoding: proto::TextEncoding::Utf8 as i32,
+        }),
+        documents: vec![proto::Document {
+            language: "Rust".to_owned(),
+            relative_path: "src/lib.rs".to_owned(),
+            occurrences: Vec::new(),
+            symbols: vec![proto::SymbolInformation {
+                symbol: IMPL_SYMBOL.to_owned(),
+                relationships: vec![proto::Relationship {
+                    symbol: TRAIT_SYMBOL.to_owned(),
+                    is_implementation: true,
+                    ..Default::default()
+                }],
+                ..Default::default()
+            }],
+            text: SOURCE.to_owned(),
+            position_encoding: proto::PositionEncoding::Utf8CodeUnitOffsetFromLineStart as i32,
+        }],
+        external_symbols: Vec::new(),
+    }
+}
+
+#[test]
+fn extracts_implementation_relationship_with_normalized_keys() {
+    let report = report_for(impl_relationship_index());
+    let facts = extract_facts(&report);
+
+    assert_eq!(facts.len(), 1, "one document => one facts entry");
+    let (_, scip) = &facts[0];
+    assert_eq!(scip.relationships.len(), 1, "one impl relationship kept");
+
+    let rel = &scip.relationships[0];
+    // `from` is the owning symbol (the impl), `to` the related trait — both
+    // normalized to the same global keys the occurrences would use.
+    assert_eq!(
+        rel.from,
+        normalize_scip_symbol(IMPL_SYMBOL).unwrap().id().to_hex()
+    );
+    assert_eq!(
+        rel.to,
+        normalize_scip_symbol(TRAIT_SYMBOL).unwrap().id().to_hex()
+    );
+    assert!(rel.is_implementation, "the is_implementation flag is kept");
+    assert!(
+        !rel.is_type_definition,
+        "an impl-only relationship is not a type-of",
+    );
+}
+
+#[test]
+fn relationship_without_edge_flag_is_dropped() {
+    // A relationship carrying only `is_reference` bears no edge signal (plan
+    // T3 keeps impl / type-of only) and must be dropped — no fabrication.
+    let mut index = impl_relationship_index();
+    index.documents[0].symbols[0].relationships = vec![proto::Relationship {
+        symbol: TRAIT_SYMBOL.to_owned(),
+        is_reference: true,
+        ..Default::default()
+    }];
+    let report = report_for(index);
+    let facts = extract_facts(&report);
+
+    assert_eq!(facts.len(), 1);
+    assert!(
+        facts[0].1.relationships.is_empty(),
+        "a reference-only relationship carries no edge and is dropped",
+    );
+}
+
 #[test]
 fn document_with_no_resolvable_text_is_skipped() {
     // No embedded text and a project_root that does not exist on disk: the

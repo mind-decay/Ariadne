@@ -124,15 +124,34 @@ pub struct ScipOccurrenceRaw {
     pub roles: u32,
 }
 
-/// All SCIP occurrences for one file (salsa-internal mirror of
-/// `ariadne_core::ScipFacts`'s occurrence list). The file's indexed content hash
-/// rides alongside on [`ScipFactsInput`] rather than in this struct so the
-/// coverage gate can read it without deep-cloning the occurrence vector
-/// (scip-driven-edges plan D2, D4).
+/// One SCIP relationship (salsa-internal mirror of
+/// `ariadne_core::ScipRelationship`). `from`/`to` are normalized symbol keys the
+/// composition root resolves through the same global map as the occurrences;
+/// the two flags select the edge kind in `resolve_scip_edges`
+/// (scip-driven-edges plan D2, T3).
+#[derive(Debug, Clone, PartialEq, Eq, Hash, salsa::Update)]
+pub struct ScipRelationshipRaw {
+    /// Normalized key of the owning symbol (the `from` endpoint).
+    pub from: String,
+    /// Normalized key of the related symbol (the `to` endpoint).
+    pub to: String,
+    /// SCIP `is_implementation` (→ `EdgeKind::Implements`).
+    pub is_implementation: bool,
+    /// SCIP `is_type_definition` (→ `EdgeKind::TypeOf`).
+    pub is_type_definition: bool,
+}
+
+/// All SCIP facts for one file (salsa-internal mirror of
+/// `ariadne_core::ScipFacts`'s occurrence + relationship lists). The file's
+/// indexed content hash rides alongside on [`ScipFactsInput`] rather than in
+/// this struct so the coverage gate can read it without deep-cloning the
+/// occurrence vector (scip-driven-edges plan D2, D4).
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash, salsa::Update)]
 pub struct ScipFactsRaw {
     /// Occurrences in extraction order.
     pub occurrences: Vec<ScipOccurrenceRaw>,
+    /// Relationships declared on this file's symbols (scip-driven-edges T3).
+    pub relationships: Vec<ScipRelationshipRaw>,
 }
 
 /// Symbol record. The salsa-internal mirror of `ariadne_core::SymbolRecord`,

@@ -52,11 +52,13 @@ enum Cmd {
         /// Discard any existing index before re-indexing.
         #[arg(long)]
         fresh: bool,
-        /// Also run the external SCIP indexers. Off by default — they
-        /// perform full language builds and are not part of the measured
-        /// cold-index wall-clock [src: docs/adr/0009-parallel-cold-index.md].
-        #[arg(long)]
-        scip: bool,
+        /// Skip the external SCIP indexers. SCIP runs by DEFAULT, out of band:
+        /// the fast tree-sitter index commits first, then a separate SCIP pass
+        /// re-commits the precise edges, so cold-index wall-clock is unchanged
+        /// (R9). Pass this to index on the tree-sitter resolver only
+        /// [src: docs/adr/0026-default-on-out-of-band-scip.md].
+        #[arg(long = "no-scip")]
+        no_scip: bool,
     },
     /// Watch the repository and log invalidations until Ctrl-C.
     Watch {
@@ -170,7 +172,11 @@ fn run(cmd: Cmd) -> anyhow::Result<bool> {
     match cmd {
         Cmd::Init { root } => commands::init::run(&root).map(|()| true),
         Cmd::Setup { root } => commands::setup::run(&root).map(|()| true),
-        Cmd::Index { root, fresh, scip } => commands::index::run(&root, fresh, scip).map(|()| true),
+        Cmd::Index {
+            root,
+            fresh,
+            no_scip,
+        } => commands::index::run(&root, fresh, !no_scip).map(|()| true),
         Cmd::Watch { root } => commands::watch::run(&root).map(|()| true),
         Cmd::Serve { root, watch } => commands::serve::run(&root, watch).map(|()| true),
         Cmd::Query {

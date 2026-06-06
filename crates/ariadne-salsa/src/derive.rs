@@ -398,6 +398,10 @@ pub(crate) struct ScipFileFacts {
     /// `(symbol_key, byte_range, roles)` occurrences, sorted by `byte_range` so
     /// the edge output is independent of occurrence iteration order.
     pub occurrences: Vec<(String, (u32, u32), u32)>,
+    /// `(from_key, to_key, is_implementation, is_type_definition)` relationships
+    /// declared on this file's symbols, sorted so the edge output is independent
+    /// of relationship iteration order (scip-driven-edges T3).
+    pub relationships: Vec<(String, String, bool, bool)>,
 }
 
 /// Resolve SCIP occurrences to typed `src -> dst` edges over the covered files
@@ -418,12 +422,25 @@ pub(crate) struct ScipFileFacts {
 ///    best-effort policy `resolve_edges` applies [src: ADR-0024;
 ///    scip-driven-edges D3, T2].
 ///
+/// 3. Resolve every relationship: `src` is the map entry for its `from` key,
+///    `dst` the entry for its `to` key. An `is_implementation` relationship
+///    becomes an [`EdgeKind::Implements`] edge (impl/override/inheritance →
+///    graph `Overrides`), an `is_type_definition` one an [`EdgeKind::TypeOf`]
+///    edge (binding → its type). An unmapped `from`/`to` (e.g. an external
+///    supertype) or a self-loop drops the edge — the same best-effort policy
+///    [src: scip.proto:489-499; scip-driven-edges D5, T3].
+///
 /// `facts_by_file` is expected pre-sorted by `file_id` and each file's
-/// occurrences by `byte_range`, so the `(file, range)` order — and thus the
-/// edge set — is deterministic [src: scip-driven-edges `<constraints>`].
+/// occurrences by `byte_range` (and relationships sorted), so the `(file,
+/// range)` order — and thus the edge set — is deterministic
+/// [src: scip-driven-edges `<constraints>`].
 pub(crate) fn resolve_scip_edges(facts_by_file: &[ScipFileFacts]) -> Vec<(EdgeKey, EdgeRecord)> {
-    // Pass 1: Definition occurrences build the global symbol-key map.
+    // Pass 1: Definition occurrences build the global symbol-key map plus each
+    // key's def file and byte range (the evidence span for relationship edges,
+    // which carry no range of their own — the span pairs the def's own file
+    // with that range, not the relationship-declaring document).
     let mut sym_of_key: HashMap<&str, SymbolId> = HashMap::new();
+    let mut def_range_of_key: HashMap<&str, (FileId, (u32, u32))> = HashMap::new();
     for facts in facts_by_file {
         for (key, range, roles) in &facts.occurrences {
             if roles & SCIP_ROLE_DEFINITION == 0 {
@@ -431,6 +448,9 @@ pub(crate) fn resolve_scip_edges(facts_by_file: &[ScipFileFacts]) -> Vec<(EdgeKe
             }
             if let Some(id) = enclosing_symbol(&facts.symbols, *range) {
                 sym_of_key.entry(key.as_str()).or_insert(id);
+                def_range_of_key
+                    .entry(key.as_str())
+                    .or_insert((facts.file_id, *range));
             }
         }
     }
@@ -478,6 +498,54 @@ pub(crate) fn resolve_scip_edges(facts_by_file: &[ScipFileFacts]) -> Vec<(EdgeKe
                     weight: 1,
                 },
             ));
+        }
+    }
+
+    // Pass 3: relationships resolve to typed edges through the same key map. A
+    // relationship carries no byte range, so the evidence span is the `from`
+    // symbol's def file and range, captured in pass 1 — normally the same
+    // document that declares the relationship, but tracking the def's own file
+    // keeps the span honest if an indexer emits a relationship on a non-defining
+    // doc. An unmapped endpoint (external supertype) or a self-loop drops the
+    // edge [src: scip-driven-edges D5, T3].
+    for facts in facts_by_file {
+        for (from, to, is_impl, is_type) in &facts.relationships {
+            let Some(&src) = sym_of_key.get(from.as_str()) else {
+                continue;
+            };
+            let Some(&dst) = sym_of_key.get(to.as_str()) else {
+                continue;
+            };
+            if dst == src {
+                continue;
+            }
+            // Each flag emits its own edge (a relationship may be both), keyed
+            // by kind so the two never collide in `seen` — no fabrication, the
+            // edge appears only when its flag is set [src: scip-driven-edges D5].
+            let (def_file, range) = def_range_of_key
+                .get(from.as_str())
+                .copied()
+                .unwrap_or((facts.file_id, (0, 0)));
+            for (flag, kind) in [
+                (*is_impl, EdgeKind::Implements),
+                (*is_type, EdgeKind::TypeOf),
+            ] {
+                if !flag {
+                    continue;
+                }
+                let edge_key = EdgeKey { src, kind, dst };
+                if !seen.insert(edge_key) {
+                    continue;
+                }
+                out.push((
+                    edge_key,
+                    EdgeRecord {
+                        source_span: span(def_file, range),
+                        evidence_lang: facts.lang,
+                        weight: 1,
+                    },
+                ));
+            }
         }
     }
     out

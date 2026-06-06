@@ -19,8 +19,9 @@ const CHURN_SCAN_CHUNK: usize = 65_536;
 
 /// Load the project config, run the full cold pipeline, print the per-phase
 /// timing breakdown + parse sub-phase breakdown on stderr, and the JSON-line
-/// summary on stdout. `scip` gates the external SCIP indexers
-/// [src: tier-12 steps 1-2; tier-13 step 1].
+/// summary on stdout. `scip` gates the external SCIP indexers — default-on, run
+/// out of band after the fast index commits, with `--no-scip` the opt-out
+/// [src: tier-12 steps 1-2; tier-13 step 1; docs/adr/0026-default-on-out-of-band-scip.md].
 ///
 /// # Errors
 /// Propagates config-load, walk, parse, and storage failures.

@@ -13,7 +13,7 @@
 
 use std::path::Path;
 
-use ariadne_core::{ScipFacts, ScipOccurrence};
+use ariadne_core::{ScipFacts, ScipOccurrence, ScipRelationship};
 
 use crate::indexer::IngestReport;
 use crate::normalize::normalize_scip_symbol;
@@ -23,9 +23,11 @@ use crate::proto;
 /// document of every successful SCIP doc: resolve the source text, hash it for
 /// the D4 gate, then convert each occurrence's line/character range to bytes,
 /// normalize its symbol to a stable key (so equivalent encodings key equal,
-/// plan D3), and keep its `symbol_roles`. Returns `(relative_path, ScipFacts)`
-/// pairs. A document whose text cannot be resolved is skipped — degraded, never
-/// wrong: its files keep the precise tree-sitter resolver (plan D4).
+/// plan D3), and keep its `symbol_roles`; then reduce each document symbol's
+/// `relationships` to the impl/type-of edge signal (plan T3). Returns
+/// `(relative_path, ScipFacts)` pairs. A document whose text cannot be resolved
+/// is skipped — degraded, never wrong: its files keep the precise tree-sitter
+/// resolver (plan D4).
 #[must_use]
 pub fn extract_facts(report: &IngestReport) -> Vec<(String, ScipFacts)> {
     let mut out = Vec::new();
@@ -63,9 +65,41 @@ pub fn extract_facts(report: &IngestReport) -> Vec<(String, ScipFacts)> {
                 document.relative_path.clone(),
                 ScipFacts {
                     occurrences,
+                    relationships: document_relationships(document),
                     indexed_hash,
                 },
             ));
+        }
+    }
+    out
+}
+
+/// Reduce a document's `symbols[].relationships` to the edge-bearing signal
+/// (plan T3): for each [`proto::SymbolInformation`] with an edge relationship,
+/// normalize its own symbol (`from`) and the related symbol (`to`) to the same
+/// stable keys the occurrences use, keeping only `is_implementation` /
+/// `is_type_definition` relationships. A relationship carrying neither flag, or
+/// either symbol failing to normalize, is dropped — never a fabricated edge
+/// [src: crates/ariadne-scip/proto/scip.proto:462-499; plan D5, T3].
+fn document_relationships(document: &proto::Document) -> Vec<ScipRelationship> {
+    let mut out = Vec::new();
+    for info in &document.symbols {
+        let Ok(from) = normalize_scip_symbol(&info.symbol) else {
+            continue;
+        };
+        for rel in &info.relationships {
+            if !rel.is_implementation && !rel.is_type_definition {
+                continue;
+            }
+            let Ok(to) = normalize_scip_symbol(&rel.symbol) else {
+                continue;
+            };
+            out.push(ScipRelationship {
+                from: from.id().to_hex(),
+                to: to.id().to_hex(),
+                is_implementation: rel.is_implementation,
+                is_type_definition: rel.is_type_definition,
+            });
         }
     }
     out

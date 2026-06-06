@@ -20,7 +20,7 @@ use std::collections::BTreeMap;
 
 use crate::derived::{
     CallRaw, DeclRaw, HookRaw, ImportRaw, RenderRaw, ScipFactsRaw, ScipOccurrenceRaw,
-    SymbolFactsRaw, SyntacticFactsRaw,
+    ScipRelationshipRaw, SymbolFactsRaw, SyntacticFactsRaw,
 };
 
 /// 256MB. Tier-04 plan `exit_criteria` + R1 risk mitigation.
@@ -114,7 +114,8 @@ pub(crate) fn syntactic_facts_bytes(f: &SyntacticFactsRaw) -> u64 {
 }
 
 /// Deep heap size of one file's [`ScipFactsRaw`]: the struct itself plus the
-/// occurrence buffer and the `String` symbol key each occurrence owns.
+/// occurrence buffer and the `String` symbol key each occurrence owns, plus the
+/// relationship buffer and the two `String` keys each relationship owns.
 pub(crate) fn scip_facts_bytes(f: &ScipFactsRaw) -> u64 {
     let base = std::mem::size_of::<ScipFactsRaw>() as u64;
     let occ = vec_buf::<ScipOccurrenceRaw>(f.occurrences.len())
@@ -122,7 +123,12 @@ pub(crate) fn scip_facts_bytes(f: &ScipFactsRaw) -> u64 {
             .iter()
             .map(|o| str_heap(&o.symbol))
             .sum::<u64>();
-    base + occ
+    let rels = vec_buf::<ScipRelationshipRaw>(f.relationships.len())
+        + f.relationships
+            .iter()
+            .map(|r| str_heap(&r.from) + str_heap(&r.to))
+            .sum::<u64>();
+    base + occ + rels
 }
 
 /// Deep heap size of one file's merged `symbols_for_file` output.

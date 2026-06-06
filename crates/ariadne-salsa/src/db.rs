@@ -346,11 +346,27 @@ impl AriadneDb {
                 // Sort by range so the SCIP edge set is independent of
                 // occurrence order (plan determinism constraint).
                 occurrences.sort_by_key(|(_, range, _)| *range);
+                let mut relationships: Vec<(String, String, bool, bool)> = scip
+                    .relationships
+                    .iter()
+                    .map(|r| {
+                        (
+                            r.from.clone(),
+                            r.to.clone(),
+                            r.is_implementation,
+                            r.is_type_definition,
+                        )
+                    })
+                    .collect();
+                // Sort relationships so the relationship edge set is independent
+                // of iteration order (plan determinism constraint).
+                relationships.sort();
                 scip_facts_by_file.push(derive::ScipFileFacts {
                     file_id,
                     lang: sf.record.lang,
                     symbols: locals,
                     occurrences,
+                    relationships,
                 });
             } else {
                 facts_by_file.push(derive::file_facts(

@@ -40,13 +40,30 @@ pub fn run(root: &Path) -> Result<()> {
     Ok(())
 }
 
-/// Print one row per SCIP indexer: language, binary, resolved path or
-/// `MISSING`.
+/// Print the SCIP posture: default-on + out-of-band, then one row per indexer
+/// (language, binary, resolved path or `MISSING`), and a degraded-mode summary.
+/// SCIP runs by default after the fast index commits; any missing indexer
+/// degrades its languages to the precise tree-sitter resolver — a warning, never
+/// a failure (plan D6, R1) [src: docs/adr/0026-default-on-out-of-band-scip.md].
 fn print_indexer_matrix() {
+    println!("scip:     default-on, out-of-band (pass `--no-scip` to disable)");
     println!("indexers:");
+    let mut missing = Vec::new();
     for (lang, binary) in INDEXER_BINARIES {
-        let location = resolve_on_path(binary)
-            .map_or_else(|| "MISSING".to_owned(), |p| p.display().to_string());
+        let location = if let Some(p) = resolve_on_path(binary) {
+            p.display().to_string()
+        } else {
+            missing.push(*lang);
+            "MISSING".to_owned()
+        };
         println!("  {lang:<10} {binary:<16} {location}");
+    }
+    if missing.is_empty() {
+        println!("  all indexers present — precise SCIP edges available for every language");
+    } else {
+        println!(
+            "  degraded: {} missing — those languages index on the precise resolver (never a failure)",
+            missing.join(", "),
+        );
     }
 }
