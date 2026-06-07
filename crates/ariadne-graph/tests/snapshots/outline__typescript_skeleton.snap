@@ -1,0 +1,13 @@
+---
+source: crates/ariadne-graph/tests/outline.rs
+expression: out.skeleton
+---
+/**
+ * A documented exported function.
+ * Adds two numbers.
+ */
+export function add(a: number, b: number): number { … 3 lines }
+
+
+/** A small exported constant. */
+export const TWO = 2;

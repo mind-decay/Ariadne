@@ -234,11 +234,11 @@ fn advisor_names_search_code_for_symbol_shaped_grep() {
 }
 
 #[test]
-fn advisor_nudges_read_symbol_for_source_file_read() {
-    // Tier-09: a whole-file `Read` of a source file is what `read_symbol`
-    // replaces (it returns a symbol's source straight from disk). The advisor
-    // must `allow` and name `read_symbol`, across the languages Ariadne indexes
-    // [src: tier-09 step 2; plan.md D9].
+fn advisor_nudges_read_outline_for_whole_file_read() {
+    // Tier-04 step 1(a): a *whole-file* `Read` of a source file (no `offset`/
+    // `limit` — no symbol target) is what `read_outline` answers (a token-cheap
+    // folded skeleton first). The advisor must `allow` and name `read_outline`,
+    // across the languages Ariadne indexes [src: tier-04 <steps> 1/2; plan.md D6].
     let (_tmp, script) = install_advisor();
     for path in [
         "crates/ariadne-cli/src/commands/setup.rs",
@@ -252,14 +252,46 @@ fn advisor_nudges_read_symbol_for_source_file_read() {
         let hso = &v["hookSpecificOutput"];
         assert_eq!(
             hso["permissionDecision"], "allow",
-            "a source-file Read of `{path}` must nudge, got: {out}",
+            "a whole-file source Read of `{path}` must nudge, got: {out}",
+        );
+        let ctx = hso["additionalContext"]
+            .as_str()
+            .expect("a nudge must carry additionalContext");
+        assert!(
+            ctx.contains("read_outline"),
+            "additionalContext must name `read_outline` for a whole-file source Read, got: {ctx}",
+        );
+    }
+}
+
+#[test]
+fn advisor_nudges_read_symbol_for_ranged_read() {
+    // Tier-04 step 1(b): a `Read` carrying an `offset`/`limit` targets one
+    // region (a known symbol's body), not the whole file — the advisor keeps
+    // naming `read_symbol` and must NOT route it to the whole-file `read_outline`
+    // branch [src: tier-04 <steps> 1/2; plan.md D6].
+    let (_tmp, script) = install_advisor();
+    for payload in [
+        r#"{"tool_name":"Read","tool_input":{"file_path":"crates/ariadne-cli/src/commands/setup.rs","offset":210,"limit":20}}"#,
+        r#"{"tool_name":"Read","tool_input":{"file_path":"src/index.ts","limit":40}}"#,
+    ] {
+        let out = run_advisor(&script, payload);
+        let v: Value = serde_json::from_str(out.trim()).expect("advisor emits valid JSON");
+        let hso = &v["hookSpecificOutput"];
+        assert_eq!(
+            hso["permissionDecision"], "allow",
+            "a ranged source Read must nudge, got: {out}",
         );
         let ctx = hso["additionalContext"]
             .as_str()
             .expect("a nudge must carry additionalContext");
         assert!(
             ctx.contains("read_symbol"),
-            "additionalContext must name `read_symbol` for a source-file Read, got: {ctx}",
+            "a ranged source Read must name `read_symbol`, got: {ctx}",
+        );
+        assert!(
+            !ctx.contains("read_outline"),
+            "a ranged source Read must NOT route to the whole-file read_outline branch, got: {ctx}",
         );
     }
 }
@@ -287,7 +319,9 @@ fn advisor_defers_quoted_grep_and_doc_read_without_new_tools() {
             "a deferred call must carry no additionalContext, got: {out}",
         );
         assert!(
-            !out.contains("search_code") && !out.contains("read_symbol"),
+            !out.contains("search_code")
+                && !out.contains("read_symbol")
+                && !out.contains("read_outline"),
             "a deferred call must not name the search/read tools, got: {out}",
         );
     }

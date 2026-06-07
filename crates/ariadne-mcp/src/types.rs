@@ -168,6 +168,69 @@ pub struct SourceSlice {
     pub alternatives: Vec<String>,
 }
 
+/// Input to `read_outline`. Names the file to project into a folded code
+/// skeleton (signatures + doc comments kept, bodies elided to a marker) plus a
+/// symbol index, so a consumer expands only the bodies it needs via
+/// `read_symbol` [src: context-efficient-read plan.md D1/D2].
+#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
+pub struct ReadOutlineInput {
+    /// Project-root-relative path of the file to outline.
+    pub path: String,
+    /// Keep non-public symbols (and their folded bodies). Defaults to `true`;
+    /// `false` drops everything below `Public` from both skeleton and index.
+    #[serde(default)]
+    pub include_private: Option<bool>,
+}
+
+/// One symbol-index row in a [`SourceOutline`] (mirrors
+/// `ariadne_graph::OutlineEntry`): the source a consumer can expand on demand
+/// via `read_symbol`.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct OutlineEntry {
+    /// Declared identifier name.
+    pub name: String,
+    /// Free-form kind tag carried from the indexed symbol.
+    pub kind: String,
+    /// 1-based first source line of the symbol.
+    pub line_start: u32,
+    /// 1-based last source line of the symbol.
+    pub line_end: u32,
+    /// Source lines spanned by the (folded or kept) body.
+    pub body_lines: u32,
+    /// Whether the symbol has a body beyond its signature line.
+    pub has_body: bool,
+}
+
+/// Output of `read_outline` — a token-cheap folded code skeleton of a whole
+/// file built from the live bytes + the indexed symbol spans, plus a compact
+/// symbol index. `kept_lines + elided_lines` accounts for every source line;
+/// `stale` is `true` when a recorded span ran past the current file length (the
+/// skeleton is then clamped, never fabricated, R5). A file with no indexed
+/// symbols returns an empty skeleton and a `note` instead of dumping the source
+/// [src: context-efficient-read tier-02; tier-01 outline use case].
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct SourceOutline {
+    /// File path echoed back (project-root-relative).
+    pub path: String,
+    /// Catalog revision the spans were resolved against.
+    pub revision: u64,
+    /// `true` when a recorded span exceeded the current file length, so the
+    /// skeleton was clamped.
+    pub stale: bool,
+    /// The rendered folded source.
+    pub skeleton: String,
+    /// Retained symbols in source order, advertising `read_symbol` expansion.
+    pub symbols: Vec<OutlineEntry>,
+    /// Source lines kept verbatim in the skeleton.
+    pub kept_lines: u32,
+    /// Source lines folded away (bodies + hidden symbols + elided gaps).
+    pub elided_lines: u32,
+    /// Present only when the file has no indexed symbols: a line-count note
+    /// advising a native `Read`, never a source dump.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub note: Option<String>,
+}
+
 /// Input to `find_definition` / `find_references` / `doc_for`.
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
 pub struct SymbolQuery {
@@ -694,6 +757,54 @@ pub struct ApiSymbolRow {
     pub kind: String,
     /// Whitespace-normalized declaration-header text.
     pub signature: String,
+}
+
+/// Input to `fitness_report` (block A, A3). The tool takes no parameters: it
+/// reads the repo's `ariadne-fitness.toml` (ADR-0028) and runs the engine over
+/// the indexed graph, so callers pass an empty `{}`.
+#[derive(Debug, Clone, Default, Deserialize, Serialize, JsonSchema)]
+pub struct FitnessReportInput {}
+
+/// One architecture-fitness violation (mirrors `ariadne_graph::Violation`, with
+/// `FileId`s resolved to project-root-relative paths and cycle members to
+/// canonical symbol names). Externally tagged like [`DiffSpecInput`], so each
+/// variant serializes under its `snake_case` name.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum FitnessViolation {
+    /// An inter-file dependency crossed a forbidden layer boundary.
+    ForbiddenDependency {
+        /// Resolved layer of the depending (source) file.
+        from_layer: String,
+        /// Resolved layer of the depended-on (target) file.
+        to_layer: String,
+        /// Depending (source) file path.
+        from_file: String,
+        /// Depended-on (target) file path.
+        to_file: String,
+    },
+    /// A dependency cycle present when the cycle count exceeds `max_cycles`.
+    Cycle {
+        /// Canonical names of the symbols participating in the cycle, sorted.
+        members: Vec<String>,
+    },
+    /// A file whose instability `I = Ce / (Ca + Ce)` exceeded the ceiling.
+    Instability {
+        /// The over-coupled file path.
+        module: String,
+        /// The file's measured instability.
+        instability: f32,
+    },
+}
+
+/// Output of `fitness_report` (block A, A3): the architecture-fitness verdict.
+/// `ok` is `true` exactly when `violations` is empty.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub struct FitnessOutput {
+    /// `true` when the architecture passes every rule (no violations).
+    pub ok: bool,
+    /// Every violation found, sorted deterministically.
+    pub violations: Vec<FitnessViolation>,
 }
 
 /// One signature-changed row in an `api_surface_diff` `changed` list (mirrors

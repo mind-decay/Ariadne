@@ -61,6 +61,12 @@ postcard = { version = "=1.1.3", features = ["use-std"] }
 # https://docs.rs/glob/0.3.3/glob/struct.Pattern.html].
 regex = "1.12.3"
 glob = "0.3.3"
+# `ariadne-fitness.toml` parse for the `fitness_report` tool (block A, A3 /
+# ADR-0028). The CLI `fitness check` command calls the same shared handle, so
+# rule parse + glob → layer resolution live here once [src:
+# .claude/plans/intelligence-platform/block-a/tier-04-fitness.md;
+# https://docs.rs/toml/0.9].
+toml = "0.9"
 
 [dev-dependencies]
 ariadne-core = { workspace = true }

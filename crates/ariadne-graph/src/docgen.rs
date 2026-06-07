@@ -217,7 +217,7 @@ fn neighbour_histograms(
 ///
 /// Neighbour nodes are path-scope-filtered through [`DocScope`] exactly like
 /// the [`for_module`] coupling tables (resolved via the snapshot's
-/// [`SymbolTable`]), so a fixture/test neighbour the table omits never appears
+/// `SymbolTable`), so a fixture/test neighbour the table omits never appears
 /// in the diagram either (D3). Nodes are labelled by [`SymbolId`] (`#<id>`) —
 /// the emitter draws identity, not names. An out-of-scope module (`scope`
 /// rejects its name) renders an empty diagram.

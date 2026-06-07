@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
-# Ariadne PreToolUse advisor — for a symbol-shaped Grep/Glob pattern, or a
-# whole-file Read of a source file, returns permissionDecision:"allow" plus
+# Ariadne PreToolUse advisor — for a symbol-shaped Grep/Glob pattern, a whole-file
+# source Read (-> read_outline skeleton), or a ranged source Read with an
+# offset/limit (-> read_symbol), returns permissionDecision:"allow" plus
 # additionalContext naming the Ariadne tool that answers it in one call; every
 # other call defers untouched. Installed by `ariadne setup`; do not edit by hand.
 # Advisory by construction: it emits only "allow" or "defer", NEVER "deny"/"ask",
@@ -34,16 +35,19 @@ PAYLOAD=$(cat 2>/dev/null) || defer
 # cleanly leaves TOOL empty and defers below.
 TOOL=$(printf '%s' "$PAYLOAD" | sed -n 's/.*"tool_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
 
-# Three factual messages, all quote- and backslash-free so they interpolate
+# Four factual messages, all quote- and backslash-free so they interpolate
 # without jq. The two Grep/Glob messages differ only in lead tool by shape (audit
 # F1): a definition-shaped query (a `::`-path or a CamelCase type) leads with
 # find_definition; a snake_case query leads with find_references. Both name
 # search_code — the symbol-pattern search D8 adds — alongside the nav tools. The
-# Read message names read_symbol — the source-read primitive D9 adds [src: plan.md
-# D5, D8, D9].
+# two Read messages split by shape (context-efficient-read tier-04 D6): a
+# whole-file Read (no offset/limit) names read_outline — a token-cheap folded
+# skeleton first; a ranged Read (offset/limit targets one symbol's body) keeps
+# read_symbol [src: plan.md D5, D8, D9; context-efficient-read tier-04 D6].
 SEARCH_DEF_CTX="Ariadne's read-only semantic graph can resolve this symbol in one call: find_definition jumps straight to where it is defined, find_references then lists every call site across files, search_code finds symbols by name pattern or kind, and list_symbols searches symbol names by substring. The graph captures cross-file edges a text grep misses; consider the Ariadne MCP tools before scanning text."
 SEARCH_REF_CTX="Ariadne's read-only semantic graph can resolve this symbol in one call: find_references lists every call site across files, search_code finds symbols by name pattern or kind, and list_symbols searches symbol names by substring, while find_definition locates the definition. The graph captures cross-file edges a text grep misses; consider the Ariadne MCP tools before scanning text."
 READ_CTX="Ariadne's read-only semantic graph can return a symbol's source without reading the whole file: read_symbol returns a symbol's signature, full body, or body with surrounding context straight from the live file, and find_definition locates the symbol first. Consider the Ariadne MCP tools before reading the whole file."
+OUTLINE_CTX="Ariadne's read-only semantic graph can fold a whole file to a token-cheap skeleton instead of reading every byte: read_outline returns the file as folded source — imports, doc comments, and signatures kept, each body elided to a marker plus a symbol index — so you can then expand only the bodies you need with read_symbol or a ranged Read. Consider read_outline before reading the whole file."
 
 # Branch by tool. Grep/Glob carry a search pattern to classify; Read carries a
 # file path to classify by extension; any other tool defers.
@@ -79,15 +83,23 @@ case "$TOOL" in
     fi
     ;;
   Read)
-    # Extract the file path. A whole-file Read of a source file is what
-    # read_symbol replaces; classify by extension against the canonical
-    # extension table the indexer recognises (ariadne-core Lang::from_extension),
-    # so a Read of a non-source file (.md, .toml, Makefile, /etc/hosts) defers.
+    # Extract the file path. A Read of a source file is what the source-read
+    # tools replace; classify by extension against the canonical extension table
+    # the indexer recognises (ariadne-core Lang::from_extension), so a Read of a
+    # non-source file (.md, .toml, Makefile, /etc/hosts) defers.
     FILE=$(printf '%s' "$PAYLOAD" | sed -n 's/.*"file_path"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
     [ -n "$FILE" ] || defer
     case "$FILE" in
       *.rs|*.ts|*.mts|*.cts|*.tsx|*.js|*.jsx|*.mjs|*.cjs|*.vue|*.svelte|*.astro|*.py|*.pyi|*.go|*.java|*.kt|*.kts|*.cs|*.c|*.h|*.cpp|*.cc|*.cxx|*.c++|*.hpp|*.hh|*.hxx)
-        nudge "$READ_CTX" ;;
+        # Split by shape (tier-04 D6): a Read carrying an offset/limit targets
+        # one region (a known symbol's body) — keep read_symbol. A whole-file
+        # Read (neither field) names read_outline — a token-cheap skeleton first.
+        if printf '%s' "$PAYLOAD" | grep -Eq '"(offset|limit)"[[:space:]]*:'; then
+          nudge "$READ_CTX"
+        else
+          nudge "$OUTLINE_CTX"
+        fi
+        ;;
     esac
     ;;
   *) defer ;;

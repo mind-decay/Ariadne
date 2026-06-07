@@ -1,0 +1,91 @@
+# Ariadne architecture-fitness rules (block A, A3 / ADR-0028).
+#
+# Productises tests/architecture.rs as config-driven fitness functions: the
+# hexagonal layers as path globs, the forbidden dependency directions that
+# encode the boundary invariants, and a cycle ceiling. `ariadne fitness check`
+# exits non-zero on any violation, so CI can gate on it.
+#
+# Reach (edge-based): the forbidden-dependency check fires on the graph's
+# resolved symbol->symbol edges that cross a layer boundary. Cross-crate uses
+# that leave no such edge (type/struct/import-only references) are not caught
+# here, so this gate is a narrower signal than tests/architecture.rs, which
+# stays the authority on declared Cargo crate deps. The clean pass is truthful
+# for edge-bearing dependencies; a future tier may source these rules from
+# import/Cargo edges for full parity (ADR-0028).
+#
+# Layers (interior → outward):
+#   core             — domain interior, zero in-workspace deps
+#   use-case         — analytics over core (+ read-only storage port)
+#   driven           — outbound adapters (storage / parser / scip / git)
+#   driving          — inbound adapters (mcp / watcher / daemon)
+#   composition-root — wires everything (cli / e2e)
+
+[[layer]]
+name = "core"
+paths = ["crates/ariadne-core/**"]
+
+[[layer]]
+name = "use-case"
+paths = ["crates/ariadne-graph/**", "crates/ariadne-salsa/**"]
+
+[[layer]]
+name = "driven"
+paths = [
+    "crates/ariadne-storage/**",
+    "crates/ariadne-parser/**",
+    "crates/ariadne-scip/**",
+    "crates/ariadne-git/**",
+]
+
+[[layer]]
+name = "driving"
+paths = [
+    "crates/ariadne-mcp/**",
+    "crates/ariadne-watcher/**",
+    "crates/ariadne-daemon/**",
+]
+
+[[layer]]
+name = "composition-root"
+paths = ["crates/ariadne-cli/**", "crates/ariadne-e2e/**"]
+
+# core is hermetic: it depends on nothing above it.
+[[rule]]
+forbid = { from = "core", to = "use-case" }
+[[rule]]
+forbid = { from = "core", to = "driven" }
+[[rule]]
+forbid = { from = "core", to = "driving" }
+[[rule]]
+forbid = { from = "core", to = "composition-root" }
+
+# use-cases read core (+ the storage port); they never reach the outer adapters
+# or the composition root.
+[[rule]]
+forbid = { from = "use-case", to = "driving" }
+[[rule]]
+forbid = { from = "use-case", to = "composition-root" }
+
+# driven adapters depend only on core: never on a use-case, a driving adapter,
+# or the composition root.
+[[rule]]
+forbid = { from = "driven", to = "use-case" }
+[[rule]]
+forbid = { from = "driven", to = "driving" }
+[[rule]]
+forbid = { from = "driven", to = "composition-root" }
+
+# driving adapters are wired only by the composition root; they never reach back
+# into it.
+[[rule]]
+forbid = { from = "driving", to = "composition-root" }
+
+[thresholds]
+# The call graph carries a small floor of spurious SCCs from tree-sitter
+# name-resolution collisions (e.g. add_edge ↔ add_edge_weighted), the known
+# limitation ADR-0024/0025 describe; set with headroom over that noise so the
+# layer rules are the primary signal. A real module-cycle regression pushes
+# well past this.
+max_cycles = 8
+# max_instability is intentionally unset for the repo gate (the coupling check is
+# proven by the engine unit tests); set it to a ceiling in [0, 1] to enable.

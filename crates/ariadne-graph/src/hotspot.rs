@@ -127,7 +127,7 @@ pub fn file_hotspots(
 /// either path (parity) [src: plan.md tier-05 D6].
 ///
 /// Scores the one queried file directly — max-normalizing churn and complexity
-/// over the churn set exactly as [`file_hotspots`] / [`rank`] do — instead of
+/// over the churn set exactly as [`file_hotspots`] / `rank` do — instead of
 /// ranking and sorting every file then searching for one row. The returned
 /// score is byte-identical to `file_hotspots(..).find(file_path).score`; the
 /// difference is only the dropped O(files·log files) sort and report

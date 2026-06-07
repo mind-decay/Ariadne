@@ -24,10 +24,15 @@ toml = "0.9"
 [dev-dependencies]
 tempfile = { workspace = true }
 pretty_assertions = { workspace = true }
-# tier-06 search/read spike (throwaway harness). `ariadne-storage` is a driven
-# adapter — a dev-edge from `ariadne-e2e` is architecture-legal; `ariadne-mcp`
-# (driving) is never linked [src: tests/architecture.rs:40-45,126-139].
+# tier-06 search/read spike + context-efficient-read tier-04 token-delta harness
+# (throwaway/`#[ignore]`d). `ariadne-storage` is a driven adapter and
+# `ariadne-graph` is a use-case crate — dev-edges from `ariadne-e2e` are
+# architecture-legal; only the driving adapter `ariadne-mcp` is barred
+# [src: tests/architecture.rs:31-56,126-139].
 ariadne-storage = { workspace = true }
+# Pure outline assembler reused by the token-delta harness (the same use case the
+# MCP `read_outline` tool calls) [src: crates/ariadne-graph/src/outline.rs].
+ariadne-graph = { workspace = true }
 # Symbol-name regex search arm; already in Cargo.lock via `ignore`
 # [src: Cargo.lock regex 1.12.3].
 regex = "1.12.3"

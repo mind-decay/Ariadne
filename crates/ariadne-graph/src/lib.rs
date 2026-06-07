@@ -21,8 +21,10 @@ pub mod doc_model;
 pub mod docgen;
 mod docgen_insights;
 pub mod errors;
+mod fitness;
 mod heuristics;
 mod hotspot;
+pub mod outline;
 mod plan_assist;
 pub mod refactor;
 pub mod roots;
@@ -42,9 +44,11 @@ pub use diff_blast::{DiffBlastReport, DiffSeed};
 pub use doc_model::{DocKind, DocScope, LayerHint, crate_of, symbol_role};
 pub use docgen::{architecture_svg, module_svg};
 pub use errors::GraphError;
+pub use fitness::{FitnessReport, FitnessRules, Violation};
 pub use hotspot::{
     HotspotEntry, HotspotGrain, HotspotReport, file_hotspots, file_risk, symbol_hotspots,
 };
+pub use outline::{Outline, OutlineEntry, OutlineOptions, OutlineRequest, OutlineSymbol, assemble};
 pub use plan_assist::{PlanAssist, PlanFile};
 pub use refactor::{CycleBreakProposal, GodModuleFinding, MisplacedSymbol};
 pub use span_lines::{FileSpanSource, FileSymbolSpans, line_starts, spans_from};

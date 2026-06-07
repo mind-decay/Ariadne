@@ -163,7 +163,7 @@ impl LayerHint {
 /// hexagonal layer (and crate, when under `crates/`) of its defining `file`.
 /// Derived purely from `kind` + the path's coupling shape, so the cold and
 /// warm `doc_for` paths compute the identical string (parity)
-/// [src: plan.md tier-05; CLAUDE.md `<architecture>`].
+/// \[src: plan.md tier-05; CLAUDE.md `<architecture>`\].
 #[must_use]
 pub fn symbol_role(kind: &str, file: &str) -> String {
     let layer = LayerHint::of(file).word();

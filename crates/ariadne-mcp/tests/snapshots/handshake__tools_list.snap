@@ -561,6 +561,12 @@ expression: golden
     "title": "SymbolQuery",
     "type": "object"
   },
+  "fitness_report": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Input to `fitness_report` (block A, A3). The tool takes no parameters: it\nreads the repo's `ariadne-fitness.toml` (ADR-0028) and runs the engine over\nthe indexed graph, so callers pass an empty `{}`.",
+    "title": "FitnessReportInput",
+    "type": "object"
+  },
   "hotspots": {
     "$defs": {
       "Grain": {
@@ -657,6 +663,29 @@ expression: golden
   },
   "project_status": {
     "properties": {},
+    "type": "object"
+  },
+  "read_outline": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Input to `read_outline`. Names the file to project into a folded code\nskeleton (signatures + doc comments kept, bodies elided to a marker) plus a\nsymbol index, so a consumer expands only the bodies it needs via\n`read_symbol` [src: context-efficient-read plan.md D1/D2].",
+    "properties": {
+      "include_private": {
+        "default": null,
+        "description": "Keep non-public symbols (and their folded bodies). Defaults to `true`;\n`false` drops everything below `Public` from both skeleton and index.",
+        "type": [
+          "boolean",
+          "null"
+        ]
+      },
+      "path": {
+        "description": "Project-root-relative path of the file to outline.",
+        "type": "string"
+      }
+    },
+    "required": [
+      "path"
+    ],
+    "title": "ReadOutlineInput",
     "type": "object"
   },
   "read_symbol": {

@@ -108,6 +108,30 @@ enum Cmd {
         #[arg(long, default_value = ".")]
         root: PathBuf,
     },
+    /// Check the project against its `ariadne-fitness.toml` architecture rules
+    /// (Block A, A3); non-zero exit on any violation.
+    Fitness {
+        #[command(subcommand)]
+        action: FitnessAction,
+    },
+    /// Print a token-cheap folded code skeleton of a whole file: imports + doc
+    /// comments + signatures kept, every body folded to a marker carrying its
+    /// elided-line count, plus a symbol index. Expand a body you need with
+    /// `read_symbol` (MCP) or the native `Read` — far fewer tokens than reading
+    /// the whole file. Resolves the index against the current directory.
+    Outline {
+        /// File to outline (project-root-relative or absolute).
+        path: PathBuf,
+        /// Keep non-public symbols and their folded bodies. Hidden by default;
+        /// the `read_outline` MCP tool keeps them by default, so pass this flag
+        /// to reproduce its identical skeleton (both share one assembler).
+        #[arg(long)]
+        include_private: bool,
+        /// Emit the full outline (skeleton + symbol index + line counts) as
+        /// JSON instead of the folded source.
+        #[arg(long)]
+        json: bool,
+    },
     /// Print a compact, agent-shaped project digest (revision + counts, top
     /// coupled modules, a question→tool cheat-sheet) for session bootstrap.
     Digest {
@@ -148,6 +172,17 @@ enum Cmd {
     Daemon {
         #[command(subcommand)]
         action: DaemonAction,
+    },
+}
+
+/// `ariadne fitness` subcommands (Block A, A3).
+#[derive(Debug, Subcommand)]
+enum FitnessAction {
+    /// Run the architecture-fitness check; exits non-zero on any violation.
+    Check {
+        /// Project root.
+        #[arg(long, default_value = ".")]
+        root: PathBuf,
     },
 }
 
@@ -209,6 +244,14 @@ fn run(cmd: Cmd) -> anyhow::Result<bool> {
             commands::affected_tests::run(&root, &spec).map(|()| true)
         }
         Cmd::ApiDiff { spec, root } => commands::api_diff::run(&root, &spec).map(|()| true),
+        Cmd::Fitness { action } => match action {
+            FitnessAction::Check { root } => commands::fitness::run(&root),
+        },
+        Cmd::Outline {
+            path,
+            include_private,
+            json,
+        } => commands::outline::run(&path, include_private, json).map(|()| true),
         Cmd::Digest { root } => {
             commands::digest::run(&root);
             Ok(true)

@@ -1,0 +1,10 @@
+---
+source: crates/ariadne-graph/tests/outline.rs
+expression: out.skeleton
+---
+// A plain exported helper.
+// Doubles its argument.
+export function double(n) { … 3 lines }
+
+
+export const NAME = "ariadne";

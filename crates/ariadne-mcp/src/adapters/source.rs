@@ -102,6 +102,21 @@ pub fn read_span(
     })
 }
 
+/// Read the whole file at `root/rel_path`, returning its bytes. Unlike
+/// [`read_span`] this returns the entire file: the outline assembler folds it
+/// down to signatures, and the handler computes `stale` by comparing the
+/// recorded symbol spans against the returned length (against EOF). Isolating
+/// `std::fs` here keeps the IO-under-`src/adapters/` convention
+/// [src: context-efficient-read tier-02; CLAUDE.md conventions].
+///
+/// # Errors
+/// Returns [`McpError::NotFound`] when the file cannot be read (missing or
+/// unreadable).
+pub fn read_file(root: &Path, rel_path: &str) -> Result<Vec<u8>, McpError> {
+    let path = root.join(rel_path);
+    std::fs::read(&path).map_err(|e| McpError::NotFound(format!("read {}: {e}", path.display())))
+}
+
 /// End offset of the signature: the first line of the declaration, stopped at
 /// the body-opening `{` if it sits on that line, or with a trailing Python-
 /// style `:` dropped. Keeps the declaration without its body.

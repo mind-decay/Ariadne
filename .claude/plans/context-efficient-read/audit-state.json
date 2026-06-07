@@ -1,8 +1,8 @@
 {
-  "slug": "intelligence-platform/block-a",
+  "slug": "context-efficient-read",
   "audited_commit": "0af641eb20fe515e34782d60fa539ff1169b7c58",
   "tier_id": "tier-04",
   "verdict": "PASS",
-  "audited_at": "2026-06-07T14:55:58Z",
+  "audited_at": "2026-06-07T00:00:00Z",
   "report": "audit/tier-04-report.md"
 }

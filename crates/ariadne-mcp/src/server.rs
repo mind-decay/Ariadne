@@ -47,8 +47,9 @@ use crate::errors::McpError;
 use crate::tools;
 use crate::types::{
     AffectedTestsInput, ApiSurfaceDiffInput, BlastRadiusInput, CoChangeInput, DiffBlastInput,
-    DiffSpecInput, EdgeKindFilter, FileQuery, Grain, GrainScopeInput, ListSymbolsInput,
-    PlanAssistInput, ReadSymbolInput, ScopeInput, SearchCodeInput, SymbolQuery,
+    DiffSpecInput, EdgeKindFilter, FileQuery, FitnessReportInput, Grain, GrainScopeInput,
+    ListSymbolsInput, PlanAssistInput, ReadOutlineInput, ReadSymbolInput, ScopeInput,
+    SearchCodeInput, SymbolQuery,
 };
 
 /// MCP server backing the Ariadne analytics tools. Clone-friendly so the
@@ -245,6 +246,27 @@ the body of X\", \"what does X look like\".",
         // lazily on first use like every other cold-path arm.
         let catalog = self.catalog().await?;
         let out = tools::read_symbol::handle(&catalog, &input).map_err(McpError::into_rmcp)?;
+        wire(&out)
+    }
+
+    #[tool(
+        description = "Read a whole file as a token-cheap code skeleton — imports + doc \
+comments + signatures kept, each body folded to a marker with its elided line count, plus a \
+symbol index listing what to expand. Expand any folded body with `read_symbol`. Use when you \
+need to understand a whole file's shape cheaply, instead of reading every byte with Read; \
+triggers: \"outline this file\", \"what's in this file\", \"show the skeleton of\".",
+        meta = always_load_meta(),
+    )]
+    async fn read_outline(
+        &self,
+        Parameters(input): Parameters<ReadOutlineInput>,
+    ) -> Result<CallToolResult, ErrorData> {
+        // Reads the live file under the catalog root and projects it through the
+        // pure `ariadne_graph::outline` use case: no daemon query variant
+        // exists, so it always answers from the cold catalog, built lazily on
+        // first use like every other cold-path arm.
+        let catalog = self.catalog().await?;
+        let out = tools::read_outline::handle(&catalog, &input).map_err(McpError::into_rmcp)?;
         wire(&out)
     }
 
@@ -690,6 +712,28 @@ breaking\", \"semver bump between these refs\", \"what public API changed betwee
             .map_err(McpError::into_rmcp)?;
         wire(&out)
     }
+
+    #[tool(
+        description = "Check the project's architecture against its `ariadne-fitness.toml` \
+rules (layers as path globs, forbidden dependency directions, cycle/instability thresholds) and \
+return the violations, with `ok` true when the architecture passes. Use when verifying layering \
+or dependency-direction rules still hold, or gating a change on architecture fitness; triggers: \
+\"check architecture fitness\", \"are the layering rules violated\", \"does this break the \
+architecture\".",
+        meta = always_load_meta(),
+    )]
+    async fn fitness_report(
+        &self,
+        Parameters(_input): Parameters<FitnessReportInput>,
+    ) -> Result<CallToolResult, ErrorData> {
+        // A3 runs in-process over the cold catalog; the warm daemon leg is
+        // deferred (tier-04 step 5), so this always answers from the cold
+        // catalog, built lazily on first use like every other cold-path arm.
+        let catalog = self.catalog().await?;
+        let out =
+            tools::fitness_report::handle(&catalog, &self.root).map_err(McpError::into_rmcp)?;
+        wire(&out)
+    }
 }
 
 #[tool_handler]
@@ -705,8 +749,9 @@ graph answers in one call where text search needs many and misses cross-file edg
 Ariadne is a read-only semantic graph of the local project (symbols, references, and \
 dependency edges), kept current with the code. Navigate with list_symbols, \
 find_definition, find_references, and file_summary. Search symbols by name pattern with \
-search_code, and read a symbol's source straight from disk with read_symbol instead of \
-grepping or reading whole files. Scope impact with blast_radius, \
+search_code, read a symbol's source straight from disk with read_symbol, and fold a whole \
+file to a token-cheap skeleton with read_outline instead of grepping or reading whole \
+files. Scope impact with blast_radius, \
 plan_assist, and diff_blast_radius. Assess architecture health with coupling_report, \
 weak_spots, and refactor_suggestions. Triage risk from Git history with hotspots, \
 complexity, and co_change. Read generated docs with doc_for, doc_for_module, and \

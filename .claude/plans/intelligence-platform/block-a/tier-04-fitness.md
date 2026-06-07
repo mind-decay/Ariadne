@@ -8,7 +8,8 @@ exit_criteria:
   - "e2e: `ariadne fitness check` against a committed ariadne-fitness.toml encoding this repo's hexagonal layers exits 0 on the clean self-index"
   - "e2e: a seeded forbidden dependency makes `ariadne fitness check` exit non-zero and list the violation; re-run byte-identical"
   - "MCP `fitness_report` returns the same violations for the same rules; `cargo test --test architecture`, `cargo clippy ... -D warnings`, `cargo fmt --all --check` green; ADR-0028 committed"
-status: pending
+status: completed
+completed: 2026-06-07
 ---
 
 <context>
