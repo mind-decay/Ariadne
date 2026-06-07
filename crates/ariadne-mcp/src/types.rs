@@ -625,3 +625,30 @@ pub struct DiffBlastOutput {
     /// Changed paths that resolved to no symbol seed, sorted.
     pub unresolved: Vec<String>,
 }
+
+/// Input to `affected_tests` — mirrors `diff_blast_radius` (the same changeset
+/// `spec` + reverse-reach `depth`/`kinds`), since A1 reuses the diff→seed→
+/// reverse-reach machinery (block-a plan.md D1).
+#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema, Default)]
+pub struct AffectedTestsInput {
+    /// Which changeset to scope. Defaults to the uncommitted working tree.
+    #[serde(default)]
+    pub spec: DiffSpecInput,
+    /// Reverse-BFS hop limit per changed seed. Defaults to 3.
+    #[serde(default)]
+    pub depth: Option<u8>,
+    /// Edge-kind filter set. Empty / missing = all kinds.
+    #[serde(default)]
+    pub kinds: Option<Vec<EdgeKindFilter>>,
+}
+
+/// Output of `affected_tests` (mirrors `ariadne_core::AffectedTestsReport`).
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct AffectedTestsOutput {
+    /// Affected test symbols, sorted by symbol id.
+    pub tests: Vec<SymbolSummary>,
+    /// Changed-symbol seeds, sorted by symbol id.
+    pub seeds: Vec<SymbolSummary>,
+    /// Changed paths that resolved to no symbol seed, sorted.
+    pub unresolved: Vec<String>,
+}

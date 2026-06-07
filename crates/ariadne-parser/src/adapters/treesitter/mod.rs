@@ -11,6 +11,7 @@ pub mod cache;
 pub mod facts;
 pub mod incremental;
 pub mod registry;
+pub mod surface;
 
 pub(crate) mod complexity;
 pub(crate) mod injection;

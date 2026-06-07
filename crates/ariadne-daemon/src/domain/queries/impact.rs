@@ -4,9 +4,9 @@ use std::collections::BTreeMap;
 use std::path::Path;
 
 use ariadne_core::{
-    BlastRadiusReport, ComponentRow, DaemonResponse, DependencyRow, DiffBlastReport, DiffSeed,
-    EdgeKind, EdgeKindFilter, FileId, FileSummaryReport, LineHunk, PlanAssistReport, PlanFileRow,
-    ReadSnapshot, StorageError, SymbolId,
+    AffectedTestsReport, BlastRadiusReport, ComponentRow, DaemonResponse, DependencyRow,
+    DiffBlastReport, DiffSeed, EdgeKind, EdgeKindFilter, FileId, FileSummaryReport, LineHunk,
+    PlanAssistReport, PlanFileRow, ReadSnapshot, StorageError, SymbolId,
 };
 use ariadne_graph::{EdgeKindSet, FileSpanSource, spans_from};
 
@@ -241,6 +241,45 @@ pub(crate) fn diff_blast(
             .may_touch
             .into_iter()
             .map(|x| summarize(cat, x))
+            .collect(),
+        unresolved: report.unresolved,
+    })
+}
+
+/// Static test-impact reachability of a changeset (Block A, A1). Same warm
+/// shape as [`diff_blast`]: the client computed the `hunks` + `changed_paths`
+/// (the daemon never links `ariadne-git`, RD7); this builds the per-file symbol
+/// spans from the warm symbols + the changed files' bytes, then intersects the
+/// reverse-reachable closure with the precomputed `test_roots` projection and
+/// projects each `SymbolId` via the shared `summarize`.
+pub(crate) fn affected_tests(
+    cat: &WarmCatalog,
+    hunks: &[LineHunk],
+    changed_paths: &[String],
+    depth: Option<u8>,
+    kinds: Option<&[EdgeKindFilter]>,
+) -> DaemonResponse {
+    let depth = depth.unwrap_or(DEFAULT_DEPTH).max(1);
+    let set = filter_to_set(kinds.unwrap_or(&[]));
+    let sources = match collect_span_sources(cat, changed_paths) {
+        Ok(sources) => sources,
+        Err(err) => return DaemonResponse::Error(err.to_string()),
+    };
+    let spans = spans_from(sources);
+    let report =
+        cat.graph
+            .affected_tests(&spans, hunks, changed_paths, &cat.test_roots, depth, set);
+
+    DaemonResponse::AffectedTests(AffectedTestsReport {
+        tests: report
+            .tests
+            .into_iter()
+            .map(|s| summarize(cat, s))
+            .collect(),
+        seeds: report
+            .seeds
+            .into_iter()
+            .map(|s| summarize(cat, s))
             .collect(),
         unresolved: report.unresolved,
     })

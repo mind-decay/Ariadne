@@ -2,6 +2,7 @@
 //! dispatches one of these; each module owns exactly one subcommand
 //! (src: .claude/plans/ariadne-core/tier-10-cli-e2e.md `<files>`).
 
+pub mod affected_tests;
 pub mod daemon;
 pub mod digest;
 pub mod doc;

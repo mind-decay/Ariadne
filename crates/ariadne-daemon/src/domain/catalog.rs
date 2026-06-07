@@ -9,14 +9,14 @@
 //! [src: .claude/plans/post-v1-roadmap/tier-07-daemon-warm-graph.md step 4;
 //!  crates/ariadne-mcp/src/catalog.rs].
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
 use ariadne_core::{
     Changeset, CoChangePair, FileChurn, FileId, Lang, ReadSnapshot, Storage, SymbolChurn, SymbolId,
     SymbolRecord, Visibility,
 };
-use ariadne_graph::{EdgeDelta, EdgeKind, GraphIndex};
+use ariadne_graph::{EdgeDelta, EdgeKind, GraphIndex, TestRootInput, classify_test_symbols};
 
 use crate::domain::snapshot::WarmSnapshot;
 use crate::errors::DaemonError;
@@ -89,6 +89,11 @@ pub(crate) struct WarmCatalog {
     pub(crate) symbols: BTreeMap<SymbolId, SymbolMeta>,
     /// Canonical name → all [`SymbolId`]s carrying it.
     pub(crate) by_name: BTreeMap<String, Vec<SymbolId>>,
+    /// Test-root projection: the symbols classified as tests (Block A, A1),
+    /// precomputed once at build and maintained on `apply_changeset` so the
+    /// `affected_tests` query stays a pure graph walk with no per-query
+    /// re-classification [src: block-a plan.md D2].
+    pub(crate) test_roots: BTreeSet<SymbolId>,
     /// Per-file Git-history churn, sorted by `path`. Loaded wholesale from the
     /// `Storage` port (tier-15a D1/D3) so the Block-C hotspot queries read it
     /// from RAM.
@@ -151,6 +156,17 @@ impl WarmCatalog {
         let mut symbol_churn = storage.all_symbol_churn()?;
         symbol_churn.sort_by_key(|c| c.symbol);
 
+        // Test-root projection: classify every symbol once (D2) so the
+        // `affected_tests` query never re-classifies at query time.
+        let test_roots = classify_test_symbols(symbols.iter().map(|(id, m)| TestRootInput {
+            id: *id,
+            lang: m.lang,
+            path: paths.get(&m.file).map_or("", String::as_str),
+            kind: &m.kind,
+            name: &m.name,
+            attributes: &m.attributes,
+        }));
+
         let revision = storage.revision().0;
         Ok(Self {
             snap,
@@ -159,6 +175,7 @@ impl WarmCatalog {
             path_to_id,
             symbols,
             by_name,
+            test_roots,
             churn,
             co_change,
             symbol_churn,
@@ -228,6 +245,34 @@ impl WarmCatalog {
             }
             self.symbols
                 .insert(*sid, SymbolMeta::from_record(rec, lang));
+        }
+
+        // Maintain the test-root projection in lock-step with the symbol churn:
+        // a deleted symbol leaves the set; an upserted symbol is re-classified
+        // from its new metadata (re-derive on `apply_changeset`, D2). Read first,
+        // then mutate, so the immutable `self.symbols`/`self.paths` borrows are
+        // released before the `self.test_roots` write.
+        for sid in &cs.symbol_deletes {
+            self.test_roots.remove(sid);
+        }
+        for (sid, _) in &cs.symbol_upserts {
+            let is_test = self.symbols.get(sid).is_some_and(|meta| {
+                let path = self.paths.get(&meta.file).map_or("", String::as_str);
+                !classify_test_symbols(std::iter::once(TestRootInput {
+                    id: *sid,
+                    lang: meta.lang,
+                    path,
+                    kind: &meta.kind,
+                    name: &meta.name,
+                    attributes: &meta.attributes,
+                }))
+                .is_empty()
+            });
+            if is_test {
+                self.test_roots.insert(*sid);
+            } else {
+                self.test_roots.remove(sid);
+            }
         }
 
         let added: Vec<SymbolId> = cs.symbol_upserts.iter().map(|(id, _)| *id).collect();
@@ -426,6 +471,61 @@ mod tests {
                     commits: 2,
                 },
             ],
+        );
+    }
+
+    /// The warm build projects the test-root set (D2): a `#[test]`-attributed
+    /// Rust symbol lands in `test_roots`; a plain symbol does not.
+    #[test]
+    fn build_projects_test_roots() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let root = dir.path().to_path_buf();
+        let storage =
+            RedbStorage::open(&root.join(".ariadne").join("index.redb")).expect("open redb");
+
+        let mut cs = Changeset::new();
+        cs = cs.upsert_file(
+            fid_t(1),
+            FileRecord {
+                path: "src/lib.rs".into(),
+                lang: Lang::Rust,
+                size: 64,
+                blake3: [1u8; 32],
+                mtime_ns: 1,
+            },
+        );
+        for (id, name, attributes) in [
+            (1u64, "crate::checks", vec!["test".to_owned()]),
+            (2u64, "crate::subject", Vec::new()),
+        ] {
+            cs = cs.upsert_symbol(
+                sid_t(id),
+                SymbolRecord {
+                    canonical_name: name.into(),
+                    kind: "function".into(),
+                    defining_file: fid_t(1),
+                    defining_span: Span {
+                        file: fid_t(1),
+                        byte_start: 0,
+                        byte_end: 16,
+                    },
+                    visibility: Visibility::Unknown,
+                    attributes,
+                    complexity: 1,
+                },
+            );
+        }
+        storage
+            .begin_write()
+            .expect("begin")
+            .apply(&cs)
+            .expect("apply changeset");
+
+        let cat = WarmCatalog::build(&storage, root.display().to_string()).expect("build");
+        assert_eq!(
+            cat.test_roots,
+            BTreeSet::from([sid_t(1)]),
+            "the #[test] fn is a test root; the plain fn is not",
         );
     }
 }

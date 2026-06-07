@@ -27,6 +27,7 @@ pub mod refactor;
 pub mod roots;
 mod span_lines;
 mod symbol_churn;
+mod test_impact;
 
 pub use blast::BlastRadius;
 pub use build::{EdgeDelta, EdgeKind, EdgeKindSet, EdgeMeta, GraphIndex};
@@ -46,3 +47,4 @@ pub use plan_assist::{PlanAssist, PlanFile};
 pub use refactor::{CycleBreakProposal, GodModuleFinding, MisplacedSymbol};
 pub use span_lines::{FileSpanSource, FileSymbolSpans, line_starts, spans_from};
 pub use symbol_churn::attribute_symbol_churn;
+pub use test_impact::{AffectedTestsReport, TestRootInput, classify_test_symbols};

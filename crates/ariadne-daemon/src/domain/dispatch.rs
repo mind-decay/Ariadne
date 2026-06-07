@@ -62,6 +62,12 @@ pub(crate) fn dispatch(catalog: &WarmCatalog, query: DaemonQuery) -> DaemonRespo
             depth,
             kinds,
         } => impact::diff_blast(catalog, &hunks, &changed_paths, depth, kinds.as_deref()),
+        DaemonQuery::AffectedTests {
+            hunks,
+            changed_paths,
+            depth,
+            kinds,
+        } => impact::affected_tests(catalog, &hunks, &changed_paths, depth, kinds.as_deref()),
     }
 }
 

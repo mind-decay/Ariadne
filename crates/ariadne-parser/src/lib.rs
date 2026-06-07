@@ -14,5 +14,6 @@ pub use adapters::treesitter::facts::{
     SyntacticFacts, extract_syntactic_facts,
 };
 pub use adapters::treesitter::registry::ParserRegistry;
+pub use adapters::treesitter::surface::public_surface;
 pub use adapters::treesitter::{ParsedFile, Tree, TreeSitterParser, parse_file};
 pub use errors::ParserError;

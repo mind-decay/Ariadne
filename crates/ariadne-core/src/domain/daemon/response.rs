@@ -173,6 +173,19 @@ pub struct DiffBlastReport {
     pub unresolved: Vec<String>,
 }
 
+/// `affected_tests` report — the tests a change reaches, the changed-symbol
+/// seeds, and the changed paths that resolved to no symbol (Block A, A1).
+/// Mirrors `ariadne_graph::AffectedTestsReport` projected to wire rows.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AffectedTestsReport {
+    /// Affected test symbols, sorted by `SymbolId`.
+    pub tests: Vec<SymbolSummary>,
+    /// Changed-symbol seeds, sorted by `SymbolId`.
+    pub seeds: Vec<SymbolSummary>,
+    /// Changed paths that resolved to no symbol seed, sorted.
+    pub unresolved: Vec<String>,
+}
+
 /// The daemon's reply to a [`super::DaemonRequest`]. Matched exhaustively
 /// by the transport adapter — see [`super::DaemonQuery`].
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -211,6 +224,8 @@ pub enum DaemonResponse {
     CoChange(CoChangeReport),
     /// `diff_blast_radius` report (tier-15c).
     DiffBlast(DiffBlastReport),
+    /// `affected_tests` report (Block A, A1).
+    AffectedTests(AffectedTestsReport),
     /// A query-level failure (symbol / file / module not found, …). Mirrors
     /// the v1 MCP `NotFound` outcome without leaking an adapter error type.
     Error(String),

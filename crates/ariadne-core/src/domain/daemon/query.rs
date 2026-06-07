@@ -170,4 +170,20 @@ pub enum DaemonQuery {
         /// Edge-kind filter; empty / missing = all kinds.
         kinds: Option<Vec<EdgeKindFilter>>,
     },
+    /// Static test-impact reachability of a changeset (Block A, A1). Same
+    /// client/daemon split as [`DaemonQuery::DiffBlast`]: the querying process
+    /// computes the diff (the daemon never links `ariadne-git` — RD7 / ADR-0023)
+    /// and sends the new-side line `hunks` plus the full `changed_paths` list;
+    /// the daemon resolves the seeds against its warm symbols and intersects the
+    /// reverse-reachable closure with its precomputed test-root projection.
+    AffectedTests {
+        /// New-side changed line ranges across the changeset.
+        hunks: Vec<LineHunk>,
+        /// Full changed-path list (a path owning no seed surfaces as unresolved).
+        changed_paths: Vec<String>,
+        /// Reverse-BFS hop limit per seed; the daemon defaults to 3.
+        depth: Option<u8>,
+        /// Edge-kind filter; empty / missing = all kinds.
+        kinds: Option<Vec<EdgeKindFilter>>,
+    },
 }

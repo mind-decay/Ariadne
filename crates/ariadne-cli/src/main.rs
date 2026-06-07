@@ -87,6 +87,17 @@ enum Cmd {
         #[arg(long, default_value = ".")]
         root: PathBuf,
     },
+    /// List the tests a change reaches: the test symbols transitively
+    /// reachable from every symbol a changeset touches (Block A, A1).
+    AffectedTests {
+        /// Changeset spec: `working_tree` (default), a commit-ish, or
+        /// `<from>..<to>` ref range.
+        #[arg(default_value = "working_tree")]
+        spec: String,
+        /// Project root.
+        #[arg(long, default_value = ".")]
+        root: PathBuf,
+    },
     /// Print a compact, agent-shaped project digest (revision + counts, top
     /// coupled modules, a question→tool cheat-sheet) for session bootstrap.
     Digest {
@@ -184,6 +195,9 @@ fn run(cmd: Cmd) -> anyhow::Result<bool> {
             args_json,
             root,
         } => commands::query::run(&root, &tool, &args_json).map(|()| true),
+        Cmd::AffectedTests { spec, root } => {
+            commands::affected_tests::run(&root, &spec).map(|()| true)
+        }
         Cmd::Digest { root } => {
             commands::digest::run(&root);
             Ok(true)

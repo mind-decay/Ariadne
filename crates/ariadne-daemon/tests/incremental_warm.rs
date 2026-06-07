@@ -24,13 +24,19 @@ const SLOTS: usize = 3;
 
 /// Content variants for a slot. They differ in symbol set and call edges so a
 /// transition between variants drives symbol churn and edge re-resolution. A
-/// callee defined in another slot exercises cross-file edge resolution.
+/// callee defined in another slot exercises cross-file edge resolution. One
+/// variant defines a `#[test]` fn so the warm `test_roots` projection churns
+/// too, putting the `apply_changeset` test-root maintenance under the
+/// divergence-0 guard (block-a A1, audit F1).
 fn content_for(slot: usize, variant: u8) -> String {
-    match variant % 4 {
+    match variant % 5 {
         0 => format!("fn a{slot}() {{}}\n"),
         1 => format!("fn a{slot}() {{}}\nfn b{slot}() {{ a{slot}(); }}\n"),
         2 => format!("fn b{slot}() {{ a{slot}(); shared(); }}\n"),
-        _ => format!("fn shared() {{}}\nfn a{slot}() {{ shared(); }}\n"),
+        3 => format!("fn shared() {{}}\nfn a{slot}() {{ shared(); }}\n"),
+        // `t{slot}` is a Rust test root (the `#[test]` attribute); entering or
+        // leaving this variant inserts/removes it from `test_roots`.
+        _ => format!("#[test]\nfn t{slot}() {{ a{slot}(); }}\nfn a{slot}() {{}}\n"),
     }
 }
 

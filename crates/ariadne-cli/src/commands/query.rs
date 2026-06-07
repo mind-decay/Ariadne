@@ -56,6 +56,13 @@ pub fn run(root: &Path, tool: &str, args_json: &str) -> Result<()> {
 /// query-level error, or — on the cold path — the index is missing or the tool
 /// name is unknown.
 pub fn run_tool(root: &Path, tool: &str, args_json: &str) -> Result<String> {
+    // `affected_tests` needs the git diff for its changeset, which runs at the
+    // composition root (the daemon never links git, RD7), so it routes through
+    // the dedicated command rather than the generic daemon/cold dispatch below.
+    if tool == "affected_tests" {
+        return crate::commands::affected_tests::run_query(root, args_json);
+    }
+
     if let Some(json) = try_daemon(root, tool, args_json)? {
         return Ok(json);
     }
@@ -209,6 +216,10 @@ fn project(resp: DaemonResponse) -> Result<String> {
         // request; the arm keeps the projection exhaustive against the shared
         // protocol enum.
         DaemonResponse::DiffBlast(report) => json(&report),
+        // `query affected_tests` routes through `commands::affected_tests`, which
+        // projects the response itself; this generic path never sees it, but the
+        // arm keeps the projection exhaustive against the shared protocol enum.
+        DaemonResponse::AffectedTests(report) => json(&report),
         DaemonResponse::Error(msg) => bail!("{msg}"),
         DaemonResponse::Pong => bail!("daemon answered Pong to a tool query"),
     }

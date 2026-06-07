@@ -18,10 +18,12 @@ use gix::traverse::commit::simple::CommitTimeOrder;
 
 use crate::errors::GitError;
 
+mod blobs;
 mod diff;
 mod incremental;
 mod line_hunks;
 
+pub use blobs::read_blobs_at;
 pub use diff::diff;
 pub use incremental::{IncrementalWalk, walk_since};
 pub use line_hunks::walk_line_hunks;

@@ -17,9 +17,9 @@ use serde::{Deserialize, Serialize};
 
 pub use query::{DaemonQuery, EdgeKindFilter, Grain};
 pub use response::{
-    BlastRadiusReport, CoChangeReport, ComplexityReport, CouplingReport, DaemonResponse,
-    DiffBlastReport, DocForReport, DocReport, FileSummaryReport, HotspotReport, PlanAssistReport,
-    ProjectStatusReport, RefactorReport, WeakSpotsReport,
+    AffectedTestsReport, BlastRadiusReport, CoChangeReport, ComplexityReport, CouplingReport,
+    DaemonResponse, DiffBlastReport, DocForReport, DocReport, FileSummaryReport, HotspotReport,
+    PlanAssistReport, ProjectStatusReport, RefactorReport, WeakSpotsReport,
 };
 pub use rows::{
     CoChangeEdge, ComplexityRow, ComponentRow, CouplingRow, CycleBreakRow, CycleRow, DependencyRow,

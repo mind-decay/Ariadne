@@ -46,9 +46,9 @@ use crate::catalog::Catalog;
 use crate::errors::McpError;
 use crate::tools;
 use crate::types::{
-    BlastRadiusInput, CoChangeInput, DiffBlastInput, DiffSpecInput, EdgeKindFilter, FileQuery,
-    Grain, GrainScopeInput, ListSymbolsInput, PlanAssistInput, ReadSymbolInput, ScopeInput,
-    SearchCodeInput, SymbolQuery,
+    AffectedTestsInput, BlastRadiusInput, CoChangeInput, DiffBlastInput, DiffSpecInput,
+    EdgeKindFilter, FileQuery, Grain, GrainScopeInput, ListSymbolsInput, PlanAssistInput,
+    ReadSymbolInput, ScopeInput, SearchCodeInput, SymbolQuery,
 };
 
 /// MCP server backing the Ariadne analytics tools. Clone-friendly so the
@@ -624,6 +624,50 @@ of this commit\", \"what does this PR touch\".",
         .map_err(McpError::into_rmcp)?;
         wire(&out)
     }
+
+    #[tool(
+        description = "List the tests a code change reaches: the test symbols transitively \
+reachable from every symbol a diff touches (uncommitted working-tree changes by default, or a \
+commit / ref range). Use when scoping which tests to run for a change before committing or in \
+review; triggers: \"which tests does this change affect\", \"what tests cover my diff\", \
+\"test impact of this commit\".",
+        meta = always_load_meta(),
+    )]
+    async fn affected_tests(
+        &self,
+        Parameters(input): Parameters<AffectedTestsInput>,
+    ) -> Result<CallToolResult, ErrorData> {
+        // Run the git diff first — both the daemon and cold paths need its hunks
+        // + changed paths, and it must run here in the MCP process where
+        // `ariadne-git` is linked; the daemon never links git (RD7 / ADR-0023),
+        // so only the pre-computed hunks travel over the wire.
+        let spec = to_core_spec(&input.spec);
+        let (hunks, changed_paths) = ariadne_git::diff(&self.root, &spec)
+            .map_err(|e| McpError::Other(format!("git diff failed: {e}")).into_rmcp())?;
+
+        let query = DaemonQuery::AffectedTests {
+            hunks: hunks.clone(),
+            changed_paths: changed_paths.clone(),
+            depth: input.depth,
+            kinds: to_core_kinds(input.kinds.as_deref()),
+        };
+        if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
+            return project_daemon(resp);
+        }
+        let catalog = self.catalog().await?;
+        let storage = self.open_storage()?;
+        let out = tools::affected_tests::handle(
+            &catalog,
+            &storage,
+            &self.root,
+            &hunks,
+            &changed_paths,
+            input.depth,
+            input.kinds.as_deref(),
+        )
+        .map_err(McpError::into_rmcp)?;
+        wire(&out)
+    }
 }
 
 #[tool_handler]
@@ -674,6 +718,7 @@ fn project_daemon(resp: DaemonResponse) -> Result<CallToolResult, ErrorData> {
         DaemonResponse::Complexity(report) => wire(&report),
         DaemonResponse::CoChange(report) => wire(&report),
         DaemonResponse::DiffBlast(report) => wire(&report),
+        DaemonResponse::AffectedTests(report) => wire(&report),
         DaemonResponse::Error(msg) => Err(ErrorData::internal_error(msg, None)),
         DaemonResponse::Pong => Err(ErrorData::internal_error(
             "daemon answered Pong to a tool query",
@@ -1210,6 +1255,23 @@ mod tests {
             unresolved: vec!["src/new.rs".into()],
         };
         assert_parity("diff_blast_radius", DaemonResponse::DiffBlast(c), &t);
+    }
+
+    #[test]
+    fn affected_tests_arm_matches_cold_output() {
+        // A test plus a seed plus an unresolved changed path exercises every
+        // field of the mirrored report families.
+        let c = ariadne_core::AffectedTestsReport {
+            tests: vec![c_sym(2, "checks")],
+            seeds: vec![c_sym(1, "subject")],
+            unresolved: vec!["src/new.rs".into()],
+        };
+        let t = crate::types::AffectedTestsOutput {
+            tests: vec![t_sym(2, "checks")],
+            seeds: vec![t_sym(1, "subject")],
+            unresolved: vec!["src/new.rs".into()],
+        };
+        assert_parity("affected_tests", DaemonResponse::AffectedTests(c), &t);
     }
 
     #[test]

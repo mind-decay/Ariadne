@@ -3,6 +3,7 @@ source: crates/ariadne-mcp/tests/handshake.rs
 expression: golden
 ---
 {
+  "affected_tests": "List the tests a code change reaches: the test symbols transitively reachable from every symbol a diff touches (uncommitted working-tree changes by default, or a commit / ref range). Use when scoping which tests to run for a change before committing or in review; triggers: \"which tests does this change affect\", \"what tests cover my diff\", \"test impact of this commit\".",
   "blast_radius": "Compute the blast radius (must-touch + may-touch) of a symbol. Use when assessing what a change to a symbol could break; triggers: \"what breaks if I change X\", \"impact of changing\", \"is it safe to edit\".",
   "co_change": "List file pairs that change together in Git history (logical coupling) above the configured thresholds. Use when finding hidden dependencies that move together despite no static edge; triggers: \"what changes together with\", \"co-change coupling\", \"which files are logically coupled\".",
   "complexity": "Rank files (Σ) or symbols by McCabe cyclomatic complexity, descending. Use when finding the most complex code to simplify or add tests to; triggers: \"what is the most complex code\", \"cyclomatic complexity of\", \"which functions are hardest to follow\".",

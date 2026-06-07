@@ -5,11 +5,12 @@
 //! from the committed storage. A direct `WarmCatalog` comparison is awkward
 //! (`GraphIndex` is not `PartialEq`), so both sides project into this owned,
 //! order-stable value: the full snapshot record sets, the derived
-//! path/name/metadata indices, and the petgraph symbol/edge counts. Equality
+//! path/name/metadata indices, the test-root projection, and the petgraph
+//! symbol/edge counts. Equality
 //! of two dumps is the divergence-0 invariant for the warm layer
 //! [src: .claude/plans/post-v1-roadmap/tier-08-daemon-watcher-live.md step 6].
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
 use ariadne_core::{
@@ -65,6 +66,7 @@ pub struct CatalogDump {
     path_to_id: BTreeMap<String, FileId>,
     metas: BTreeMap<SymbolId, MetaRow>,
     by_name: BTreeMap<String, Vec<SymbolId>>,
+    test_roots: BTreeSet<SymbolId>,
     churn: Vec<FileChurn>,
     co_change: Vec<CoChangePair>,
     symbol_churn: Vec<SymbolChurn>,
@@ -87,6 +89,7 @@ impl CatalogDump {
                 .map(|(id, m)| (*id, MetaRow::of(m)))
                 .collect(),
             by_name: cat.by_name.clone(),
+            test_roots: cat.test_roots.clone(),
             churn: cat.churn.clone(),
             co_change: cat.co_change.clone(),
             symbol_churn: cat.symbol_churn.clone(),

@@ -4,6 +4,7 @@
 //! `AriadneServer` delegate one-line so the macro-expanded router stays
 //! small.
 
+pub mod affected_tests;
 pub mod blast_radius;
 pub mod co_change;
 pub mod complexity;

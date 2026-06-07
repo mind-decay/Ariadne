@@ -3,6 +3,138 @@ source: crates/ariadne-mcp/tests/handshake.rs
 expression: golden
 ---
 {
+  "affected_tests": {
+    "$defs": {
+      "DiffSpecInput": {
+        "description": "Which changeset a `diff_blast_radius` query scopes (tier-15c D4). Mirrors\n`ariadne_core::DiffSpec` behind a `JsonSchema`-deriving input the MCP layer\nowns; the handler maps it to the core type (core stays a wire/domain type\nthat need not derive `schemars`). Defaults to the uncommitted working tree.",
+        "oneOf": [
+          {
+            "const": "working_tree",
+            "description": "Uncommitted index + worktree changes against `HEAD` (the default).",
+            "type": "string"
+          },
+          {
+            "additionalProperties": false,
+            "description": "A single commit against its first parent; the string is a revspec\n(commit-ish) the git adapter resolves.",
+            "properties": {
+              "commit": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "commit"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "The diff between two resolved revisions, `from` (old) → `to` (new); both\nstrings are revspecs the git adapter resolves.",
+            "properties": {
+              "ref_range": {
+                "properties": {
+                  "from": {
+                    "description": "Old-side revspec.",
+                    "type": "string"
+                  },
+                  "to": {
+                    "description": "New-side revspec.",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "from",
+                  "to"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "ref_range"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "EdgeKindFilter": {
+        "description": "Edge-kind filter exposed to clients. Subset of the in-RAM graph\nalphabet — clients pick which edge classes the analytic walks.",
+        "oneOf": [
+          {
+            "const": "calls",
+            "description": "Call edges.",
+            "type": "string"
+          },
+          {
+            "const": "imports",
+            "description": "Import edges.",
+            "type": "string"
+          },
+          {
+            "const": "type_of",
+            "description": "Type-of edges.",
+            "type": "string"
+          },
+          {
+            "const": "defines",
+            "description": "Definition edges.",
+            "type": "string"
+          },
+          {
+            "const": "overrides",
+            "description": "Override edges.",
+            "type": "string"
+          },
+          {
+            "const": "reads",
+            "description": "Read edges.",
+            "type": "string"
+          },
+          {
+            "const": "writes",
+            "description": "Write edges.",
+            "type": "string"
+          },
+          {
+            "const": "inherits",
+            "description": "Inheritance edges.",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Input to `affected_tests` — mirrors `diff_blast_radius` (the same changeset\n`spec` + reverse-reach `depth`/`kinds`), since A1 reuses the diff→seed→\nreverse-reach machinery (block-a plan.md D1).",
+    "properties": {
+      "depth": {
+        "default": null,
+        "description": "Reverse-BFS hop limit per changed seed. Defaults to 3.",
+        "format": "uint8",
+        "maximum": 255,
+        "minimum": 0,
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
+      "kinds": {
+        "default": null,
+        "description": "Edge-kind filter set. Empty / missing = all kinds.",
+        "items": {
+          "$ref": "#/$defs/EdgeKindFilter"
+        },
+        "type": [
+          "array",
+          "null"
+        ]
+      },
+      "spec": {
+        "$ref": "#/$defs/DiffSpecInput",
+        "default": "working_tree",
+        "description": "Which changeset to scope. Defaults to the uncommitted working tree."
+      }
+    },
+    "title": "AffectedTestsInput",
+    "type": "object"
+  },
   "blast_radius": {
     "$defs": {
       "EdgeKindFilter": {
