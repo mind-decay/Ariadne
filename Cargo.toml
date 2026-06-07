@@ -34,6 +34,9 @@ ariadne-graph = { path = "crates/ariadne-graph" }
 # Git-history driven adapter (RD7). The MCP server links it to compute the live
 # diff for `diff_blast_radius`; the daemon must not (ADR-0023).
 ariadne-git = { path = "crates/ariadne-git" }
+# Parser driven adapter. The MCP server links it to run `public_surface`
+# in-process for `api_surface_diff` (block A, A2); the daemon must not (ADR-0027).
+ariadne-parser = { path = "crates/ariadne-parser" }
 
 # Runtime
 thiserror = "2"

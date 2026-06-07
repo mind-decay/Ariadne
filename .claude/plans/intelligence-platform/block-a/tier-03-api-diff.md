@@ -9,7 +9,8 @@ exit_criteria:
   - "real run `ariadne api-diff HEAD~1..HEAD` on this repo prints a verdict + lists; MCP `api_surface_diff` returns the same for the same refs"
   - "`cargo test --test architecture` green: `ariadne-daemon` still does NOT link `ariadne-git`; `ariadne-mcp → ariadne-parser` is accepted (driving→driven)"
   - "`cargo clippy ... -D warnings`, `cargo fmt --all --check` green; ADR-0027 committed"
-status: pending
+status: completed
+completed: 2026-06-07
 ---
 
 <context>

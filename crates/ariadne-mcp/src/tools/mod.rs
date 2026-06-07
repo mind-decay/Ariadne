@@ -5,6 +5,7 @@
 //! small.
 
 pub mod affected_tests;
+pub mod api_surface_diff;
 pub mod blast_radius;
 pub mod co_change;
 pub mod complexity;

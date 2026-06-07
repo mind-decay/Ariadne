@@ -18,8 +18,8 @@ use std::collections::BTreeMap;
 /// `co_change`), taking the catalog to 16; tier-15c adds `diff_blast_radius`,
 /// taking it to 17; tier-07 adds `search_code`, taking it to 18; tier-08 adds
 /// `read_symbol`, taking it to 19; block-a tier-01 adds `affected_tests`,
-/// taking it to 20.
-const EXPECTED_TOOLS: usize = 20;
+/// taking it to 20; block-a tier-03 adds `api_surface_diff`, taking it to 21.
+const EXPECTED_TOOLS: usize = 21;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn handshake_lists_expected_tools() {

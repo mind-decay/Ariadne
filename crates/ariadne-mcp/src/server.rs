@@ -1,4 +1,4 @@
-//! `AriadneServer` — rmcp `#[tool_router]` host wiring the 19 Ariadne
+//! `AriadneServer` — rmcp `#[tool_router]` host wiring the 21 Ariadne
 //! analytics into MCP. Each `#[tool]` method routes its query to the warm
 //! daemon over IPC (RD6) and projects the [`DaemonResponse`] into the v1 tool
 //! output shape; when no daemon is reachable it falls back to the per-tool
@@ -46,9 +46,9 @@ use crate::catalog::Catalog;
 use crate::errors::McpError;
 use crate::tools;
 use crate::types::{
-    AffectedTestsInput, BlastRadiusInput, CoChangeInput, DiffBlastInput, DiffSpecInput,
-    EdgeKindFilter, FileQuery, Grain, GrainScopeInput, ListSymbolsInput, PlanAssistInput,
-    ReadSymbolInput, ScopeInput, SearchCodeInput, SymbolQuery,
+    AffectedTestsInput, ApiSurfaceDiffInput, BlastRadiusInput, CoChangeInput, DiffBlastInput,
+    DiffSpecInput, EdgeKindFilter, FileQuery, Grain, GrainScopeInput, ListSymbolsInput,
+    PlanAssistInput, ReadSymbolInput, ScopeInput, SearchCodeInput, SymbolQuery,
 };
 
 /// MCP server backing the Ariadne analytics tools. Clone-friendly so the
@@ -666,6 +666,28 @@ review; triggers: \"which tests does this change affect\", \"what tests cover my
             input.kinds.as_deref(),
         )
         .map_err(McpError::into_rmcp)?;
+        wire(&out)
+    }
+
+    #[tool(
+        description = "Classify the public-API surface delta between two git refs as a SemVer \
+bump (none / patch / minor / major): a removed or signature-changed public item is a major \
+(breaking) change, an added one is a minor change. Use when checking whether a change between \
+two refs is API-breaking before tagging a release or in review; triggers: \"is this change \
+breaking\", \"semver bump between these refs\", \"what public API changed between\".",
+        meta = always_load_meta(),
+    )]
+    async fn api_surface_diff(
+        &self,
+        Parameters(input): Parameters<ApiSurfaceDiffInput>,
+    ) -> Result<CallToolResult, ErrorData> {
+        // A2 runs entirely in this process — git diff + base/head blob reads +
+        // parser surface extraction + pure classify — with no daemon leg (D6 /
+        // ADR-0027), so the daemon stays git- and parser-free. The MCP and CLI
+        // surfaces call the same `handle`, so their output is parity by
+        // construction.
+        let out = tools::api_surface_diff::handle(&self.root, &input.base, &input.head)
+            .map_err(McpError::into_rmcp)?;
         wire(&out)
     }
 }

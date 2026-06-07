@@ -652,3 +652,74 @@ pub struct AffectedTestsOutput {
     /// Changed paths that resolved to no symbol seed, sorted.
     pub unresolved: Vec<String>,
 }
+
+/// Input to `api_surface_diff` (block A, A2): the two revspecs whose
+/// public-surface delta is classified. A2 runs entirely in the querying process
+/// — git diff + base/head blob reads + parser surface extraction + pure
+/// classify — with no daemon leg (D6 / ADR-0027).
+#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
+pub struct ApiSurfaceDiffInput {
+    /// Base (old) revspec the surface is compared *from*.
+    pub base: String,
+    /// Head (new) revspec the surface is compared *to*.
+    pub head: String,
+}
+
+/// `SemVer` bump verdict (mirrors `ariadne_graph::SemverBump`), serialized as a
+/// lowercase tag (`none` / `patch` / `minor` / `major`). `patch` is part of the
+/// taxonomy but never emitted: the surface model classifies only additions,
+/// removals, and signature changes [src:
+/// <https://doc.rust-lang.org/cargo/reference/semver.html>].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum SemverBumpWire {
+    /// No public-surface change.
+    None,
+    /// Backward-compatible non-surface change (never emitted here).
+    Patch,
+    /// Backward-compatible addition.
+    Minor,
+    /// Breaking change.
+    Major,
+}
+
+/// One public symbol row in an `api_surface_diff` `added` / `removed` list
+/// (mirrors the identifying fields of `ariadne_core::PublicSymbol`; every entry
+/// is public by construction, so visibility is omitted).
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct ApiSymbolRow {
+    /// Declared identifier name.
+    pub name: String,
+    /// Free-form kind tag (e.g. `function`, `struct`).
+    pub kind: String,
+    /// Whitespace-normalized declaration-header text.
+    pub signature: String,
+}
+
+/// One signature-changed row in an `api_surface_diff` `changed` list (mirrors
+/// `ariadne_graph::SignatureChange`): same identity, differing header.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct ApiChangeRow {
+    /// Declared identifier name (the changed item's identity, with `kind`).
+    pub name: String,
+    /// Free-form kind tag (the changed item's identity, with `name`).
+    pub kind: String,
+    /// Declaration header on the base ref.
+    pub base_signature: String,
+    /// Declaration header on the head ref.
+    pub head_signature: String,
+}
+
+/// Output of `api_surface_diff` (mirrors `ariadne_graph::ApiDiffReport`). Lists
+/// are sorted by `(name, kind)`; `verdict` is the maximum bump over every delta.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct ApiSurfaceDiffOutput {
+    /// Overall verdict: the maximum bump implied by any delta.
+    pub verdict: SemverBumpWire,
+    /// Public items present on head but not base (each a minor bump).
+    pub added: Vec<ApiSymbolRow>,
+    /// Public items present on base but not head (each a major bump).
+    pub removed: Vec<ApiSymbolRow>,
+    /// Public items present on both refs whose signature changed (each major).
+    pub changed: Vec<ApiChangeRow>,
+}

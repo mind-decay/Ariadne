@@ -98,6 +98,16 @@ enum Cmd {
         #[arg(long, default_value = ".")]
         root: PathBuf,
     },
+    /// Classify the public-API surface delta between two refs as a `SemVer` bump
+    /// (none/patch/minor/major): removed or signature-changed = major, added =
+    /// minor (Block A, A2).
+    ApiDiff {
+        /// Ref range `<base>..<head>` whose public-surface delta is classified.
+        spec: String,
+        /// Project root.
+        #[arg(long, default_value = ".")]
+        root: PathBuf,
+    },
     /// Print a compact, agent-shaped project digest (revision + counts, top
     /// coupled modules, a question→tool cheat-sheet) for session bootstrap.
     Digest {
@@ -198,6 +208,7 @@ fn run(cmd: Cmd) -> anyhow::Result<bool> {
         Cmd::AffectedTests { spec, root } => {
             commands::affected_tests::run(&root, &spec).map(|()| true)
         }
+        Cmd::ApiDiff { spec, root } => commands::api_diff::run(&root, &spec).map(|()| true),
         Cmd::Digest { root } => {
             commands::digest::run(&root);
             Ok(true)

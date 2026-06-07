@@ -8,6 +8,7 @@
 
 #![deny(missing_docs)]
 
+mod api_surface;
 mod blast;
 mod build;
 mod co_change;
@@ -29,6 +30,7 @@ mod span_lines;
 mod symbol_churn;
 mod test_impact;
 
+pub use api_surface::{ApiDiffReport, SemverBump, SignatureChange, api_surface_diff};
 pub use blast::BlastRadius;
 pub use build::{EdgeDelta, EdgeKind, EdgeKindSet, EdgeMeta, GraphIndex};
 pub use co_change::{CoChangeConfig, CoChangeEdge, CoChangeReport, co_change_report};

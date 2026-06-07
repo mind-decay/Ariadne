@@ -3,6 +3,7 @@
 //! (src: .claude/plans/ariadne-core/tier-10-cli-e2e.md `<files>`).
 
 pub mod affected_tests;
+pub mod api_diff;
 pub mod daemon;
 pub mod digest;
 pub mod doc;

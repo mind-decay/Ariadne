@@ -135,6 +135,26 @@ expression: golden
     "title": "AffectedTestsInput",
     "type": "object"
   },
+  "api_surface_diff": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Input to `api_surface_diff` (block A, A2): the two revspecs whose\npublic-surface delta is classified. A2 runs entirely in the querying process\n— git diff + base/head blob reads + parser surface extraction + pure\nclassify — with no daemon leg (D6 / ADR-0027).",
+    "properties": {
+      "base": {
+        "description": "Base (old) revspec the surface is compared *from*.",
+        "type": "string"
+      },
+      "head": {
+        "description": "Head (new) revspec the surface is compared *to*.",
+        "type": "string"
+      }
+    },
+    "required": [
+      "base",
+      "head"
+    ],
+    "title": "ApiSurfaceDiffInput",
+    "type": "object"
+  },
   "blast_radius": {
     "$defs": {
       "EdgeKindFilter": {

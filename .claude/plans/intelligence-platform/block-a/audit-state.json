@@ -1,8 +1,8 @@
 {
   "slug": "intelligence-platform/block-a",
-  "audited_commit": "ad59c2f6f3ec78c92ad3a402d00e62c46979b239",
-  "tier_id": "tier-02",
+  "audited_commit": "d6daae8fb3bf94ba24ecdcd903910d2514ee815f",
+  "tier_id": "tier-03",
   "verdict": "PASS",
-  "audited_at": "2026-06-07T15:40:00+03:00",
-  "report": "audit/tier-02-report.md"
+  "audited_at": "2026-06-07T13:56:19Z",
+  "report": "audit/tier-03-report.md"
 }
