@@ -69,8 +69,7 @@ impl ScipIndexer for RustAnalyzerIndexer {
         // directory; setting CWD to `out.parent()` gives us a known
         // destination, and we rename to `out` after the run.
         let out_dir = ensure_parent(out)?;
-        let mut cmd = Command::new(binary);
-        cmd.arg("scip").arg(root).current_dir(&out_dir);
+        let mut cmd = build_command(binary, root, &out_dir)?;
         run_indexer(
             &binary.display().to_string(),
             Self::install_hint(),
@@ -93,5 +92,61 @@ impl ScipIndexer for RustAnalyzerIndexer {
             lang: self.lang(),
             index,
         })
+    }
+}
+
+/// Build `rust-analyzer scip <root>` with CWD set to `out_dir`.
+///
+/// The project path is canonicalized to an absolute path before it is
+/// passed as the `scip` argument. CWD is moved off the project (to
+/// `out_dir`, where rust-analyzer drops `index.scip`), so a relative
+/// `root` — e.g. the CLI's default `.` — would otherwise be re-resolved
+/// against `out_dir`, where there is no `Cargo.toml`, and rust-analyzer
+/// aborts with `Error: no projects`
+/// [src: `project_model::ProjectManifest::discover_single`].
+fn build_command(binary: &Path, root: &Path, out_dir: &Path) -> Result<Command, ScipError> {
+    let abs_root = root.canonicalize().map_err(|source| ScipError::Io {
+        path: root.to_path_buf(),
+        source,
+    })?;
+    let mut cmd = Command::new(binary);
+    cmd.arg("scip").arg(abs_root).current_dir(out_dir);
+    Ok(cmd)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Regression: a relative `root` combined with `current_dir(out_dir)`
+    /// made rust-analyzer resolve the project path against the temp out-dir
+    /// and abort with `Error: no projects`. The path handed to the indexer
+    /// must be absolute regardless of the caller's (relative) root.
+    #[test]
+    fn passes_absolute_root_even_when_cwd_moves_to_out_dir() {
+        let out_dir = std::env::temp_dir();
+        let cmd = build_command(Path::new("rust-analyzer"), Path::new("."), &out_dir)
+            .expect("the process working directory must be canonicalizable");
+
+        let args: Vec<_> = cmd.get_args().collect();
+        assert_eq!(args[0], "scip", "first arg is the scip subcommand");
+
+        let root_arg = Path::new(args[1]);
+        assert!(
+            root_arg.is_absolute(),
+            "project path handed to rust-analyzer must be absolute, got {root_arg:?}",
+        );
+        assert_eq!(
+            root_arg,
+            Path::new(".")
+                .canonicalize()
+                .expect("the process working directory must be canonicalizable"),
+            "relative `.` must be resolved against the process CWD, not out_dir",
+        );
+        assert_eq!(
+            cmd.get_current_dir(),
+            Some(out_dir.as_path()),
+            "CWD must be the out-dir so rust-analyzer drops index.scip there",
+        );
     }
 }
