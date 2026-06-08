@@ -169,13 +169,24 @@ fn gather_bounded(root: &Path, timeout: Duration) -> Option<DigestData> {
 
 /// Fetch the three composed reports through the shared daemon/cold query path.
 ///
+/// `coupling_report` is fetched with `verbosity:detailed` and an explicit
+/// `limit` covering every module (one per file): the digest re-ranks the FULL
+/// coupling set by total coupling (Ca + Ce), so the Block-1 tier-02 default page
+/// cap would silently truncate its input and drop a high-(Ca+Ce) module that
+/// ranks below the cap by Ca alone. Pinning detailed + the full limit preserves
+/// the digest's existing whole-set contract (no silent truncation).
+///
 /// # Errors
 /// Propagates the first [`fetch`] failure (bad index, daemon error, or
 /// unparseable output), which [`gather_bounded`] maps to the fallback.
 fn gather(root: &Path) -> Result<DigestData> {
+    let status = fetch(root, "project_status")?;
+    let file_count = u64_field(&status, "file_count");
+    let coupling_args = format!("{{\"verbosity\":\"detailed\",\"limit\":{file_count}}}");
+    let coupling = fetch_args(root, "coupling_report", &coupling_args)?;
     Ok(DigestData {
-        status: fetch(root, "project_status")?,
-        coupling: fetch(root, "coupling_report")?,
+        status,
+        coupling,
         overview: fetch(root, "doc_for_project")?,
     })
 }
@@ -189,7 +200,16 @@ fn gather(root: &Path) -> Result<DigestData> {
 /// # Errors
 /// Propagates a `run_tool` failure or a JSON parse error.
 fn fetch(root: &Path, tool: &str) -> Result<Value> {
-    let json = run_tool(root, tool, "{}")?;
+    fetch_args(root, tool, "{}")
+}
+
+/// Like [`fetch`] but with explicit JSON `args` (used to pin `coupling_report`
+/// to detailed + the full module limit so the digest re-rank sees every row).
+///
+/// # Errors
+/// Propagates a `run_tool` failure or a JSON parse error.
+fn fetch_args(root: &Path, tool: &str, args: &str) -> Result<Value> {
+    let json = run_tool(root, tool, args)?;
     serde_json::from_str(&json).context("parse tool output JSON")
 }
 

@@ -31,38 +31,135 @@ pub enum EdgeKindFilter {
     Inherits,
 }
 
-/// One symbol row returned by list/find/blast/plan tools.
+/// One symbol row returned by list/find/blast/plan tools. The cryptic fields
+/// (`id`, `byte_start`, `byte_end`) are `Option` with `skip_serializing_if` so
+/// a concise-verbosity projection omits them from the JSON while detailed emits
+/// the lossless superset (Block 1, tier-02 D3, mirroring [`ReferenceSite`]).
+/// Tools that always emit detailed populate `Some`, so their JSON is unchanged.
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 pub struct SymbolSummary {
-    /// Numeric symbol id (`SymbolId::get()`).
-    pub id: u64,
+    /// Numeric symbol id (`SymbolId::get()`); omitted in concise verbosity.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<u64>,
     /// Canonical name.
     pub name: String,
     /// Free-form kind tag.
     pub kind: String,
     /// Defining file path (project-root-relative).
     pub file: String,
-    /// 1-based line approximation (`byte_start` mapped to a line via the
-    /// stored span). Tier-08 leaves line resolution coarse — `byte_start`
-    /// is exposed as the canonical anchor.
-    pub byte_start: u32,
-    /// `byte_end` paired with `byte_start`.
-    pub byte_end: u32,
+    /// Defining-span byte start (the canonical anchor); omitted in concise
+    /// verbosity.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub byte_start: Option<u32>,
+    /// `byte_end` paired with `byte_start`; omitted in concise verbosity.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub byte_end: Option<u32>,
 }
 
-/// Reference / call site surfaced by `find_references`.
+impl From<ariadne_core::SymbolSummary> for SymbolSummary {
+    fn from(s: ariadne_core::SymbolSummary) -> Self {
+        Self {
+            id: s.id,
+            name: s.name,
+            kind: s.kind,
+            file: s.file,
+            byte_start: s.byte_start,
+            byte_end: s.byte_end,
+        }
+    }
+}
+
+/// Field verbosity for a growable tool's rows (Block 1, tier-01 D3). Concise
+/// (the default) omits the cryptic id/offset fields the LLM reasons about
+/// worse; `detailed` is a lossless superset. Mirrors
+/// `ariadne_graph::economy::Verbosity` / `ariadne_core::Verbosity`; the server
+/// maps between them (as it does for [`Grain`]).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum Verbosity {
+    /// Omit cryptic id/offset fields (the default).
+    #[default]
+    Concise,
+    /// Emit every field — the lossless superset.
+    Detailed,
+}
+
+/// Reference / call site surfaced by `find_references`. The cryptic fields
+/// (`caller` id, `byte_start`, `byte_end`) are `Option` so concise verbosity
+/// omits them while detailed emits the lossless superset (tier-01 D3).
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 pub struct ReferenceSite {
-    /// Caller symbol id.
-    pub caller: u64,
+    /// Caller symbol id; omitted in concise verbosity.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub caller: Option<u64>,
     /// Caller canonical name.
     pub caller_name: String,
     /// Evidence file path.
     pub file: String,
-    /// Evidence span `byte_start`.
-    pub byte_start: u32,
-    /// Evidence span `byte_end`.
-    pub byte_end: u32,
+    /// Evidence span `byte_start`; omitted in concise verbosity.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub byte_start: Option<u32>,
+    /// Evidence span `byte_end`; omitted in concise verbosity.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub byte_end: Option<u32>,
+}
+
+/// Input to `find_references` — a dedicated type (not the shared
+/// [`SymbolQuery`]) so adding `limit`/`cursor`/`verbosity` here leaves
+/// `find_definition`/`doc_for` untouched (tier-01).
+#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
+pub struct FindReferencesInput {
+    /// Canonical name of the referenced symbol.
+    pub symbol: String,
+    /// Maximum rows in the page; defaults to the economy page size (50).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<u32>,
+    /// Opaque pagination cursor from a prior page; absent = first page.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
+    /// Field verbosity; defaults to concise.
+    #[serde(default)]
+    pub verbosity: Verbosity,
+}
+
+/// Output of `find_references` — one page of reference sites plus the
+/// pagination cursor and a human steer (tier-01 D5). This is the JSON wire
+/// type: it carries `skip_serializing_if` so concise rows omit their unset
+/// fields. The warm daemon path decodes the postcard-framed
+/// `ariadne_core::ReferencesReport` and `From`-projects it here, so both paths
+/// serialize to byte-identical JSON (parity).
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct FindReferencesOutput {
+    /// Reference sites in this page, in stable order.
+    pub references: Vec<ReferenceSite>,
+    /// Opaque cursor for the next page; absent when this is the last page.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub next_cursor: Option<String>,
+    /// Human steer emitted only when the result was truncated.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub note: Option<String>,
+}
+
+impl From<ariadne_core::ReferenceSite> for ReferenceSite {
+    fn from(r: ariadne_core::ReferenceSite) -> Self {
+        Self {
+            caller: r.caller,
+            caller_name: r.caller_name,
+            file: r.file,
+            byte_start: r.byte_start,
+            byte_end: r.byte_end,
+        }
+    }
+}
+
+impl From<ariadne_core::ReferencesReport> for FindReferencesOutput {
+    fn from(r: ariadne_core::ReferencesReport) -> Self {
+        Self {
+            references: r.references.into_iter().map(ReferenceSite::from).collect(),
+            next_cursor: r.next_cursor,
+            note: r.note,
+        }
+    }
 }
 
 /// Input to `list_symbols`.
@@ -354,11 +451,62 @@ pub struct ScopeInput {
     pub prefix: Option<String>,
 }
 
-/// Output of `coupling_report`.
+/// Input to `coupling_report` — a dedicated type (not the shared
+/// [`ScopeInput`]) so adding `limit`/`cursor`/`verbosity` here leaves
+/// `weak_spots`/`doc_for_project`/`refactor_suggestions` (which keep
+/// [`ScopeInput`]) untouched (Block 1, tier-02).
+#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema, Default)]
+pub struct CouplingInput {
+    /// Optional path-prefix filter (project-root-relative). Empty = all files.
+    #[serde(default)]
+    pub prefix: Option<String>,
+    /// Maximum rows in the page; defaults to the economy page size (50).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<u32>,
+    /// Opaque pagination cursor from a prior page; absent = first page.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
+    /// Field verbosity; defaults to concise (a no-op — metric-only rows carry
+    /// no cryptic fields, so concise == detailed).
+    #[serde(default)]
+    pub verbosity: Verbosity,
+}
+
+/// Output of `coupling_report` — one page of module rows plus the pagination
+/// cursor and a human steer (tier-02 D5).
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct CouplingOutput {
-    /// One row per file-as-module.
+    /// One row per file-as-module, in stable (Ca desc, module asc) order.
     pub rows: Vec<CouplingRow>,
+    /// Opaque cursor for the next page; absent when this is the last page.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub next_cursor: Option<String>,
+    /// Human steer emitted only when the result was truncated.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub note: Option<String>,
+}
+
+impl From<ariadne_core::CouplingRow> for CouplingRow {
+    fn from(r: ariadne_core::CouplingRow) -> Self {
+        Self {
+            module: r.module,
+            afferent: r.afferent,
+            efferent: r.efferent,
+            instability: r.instability,
+            abstractness: r.abstractness,
+            distance: r.distance,
+        }
+    }
+}
+
+impl From<ariadne_core::CouplingReport> for CouplingOutput {
+    fn from(r: ariadne_core::CouplingReport) -> Self {
+        Self {
+            rows: r.rows.into_iter().map(CouplingRow::from).collect(),
+            next_cursor: r.next_cursor,
+            note: r.note,
+        }
+    }
 }
 
 /// One module row of `coupling_report`.
@@ -533,7 +681,8 @@ pub enum Grain {
     Symbol,
 }
 
-/// Input to `hotspots` and `complexity` — a path-prefix scope and a grain.
+/// Input to `hotspots` and `complexity` — a path-prefix scope, a grain, and the
+/// economy page controls (Block 1, tier-02).
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema, Default)]
 pub struct GrainScopeInput {
     /// Optional path-prefix filter (project-root-relative). Empty = all files.
@@ -542,6 +691,16 @@ pub struct GrainScopeInput {
     /// File (default) or symbol grain.
     #[serde(default)]
     pub grain: Grain,
+    /// Maximum rows in the page; defaults to the economy page size (50).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<u32>,
+    /// Opaque pagination cursor from a prior page; absent = first page.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
+    /// Field verbosity; defaults to concise (drops the embedded symbol's
+    /// cryptic id/offset fields on symbol-grain rows).
+    #[serde(default)]
+    pub verbosity: Verbosity,
 }
 
 /// One ranked hotspot row. Exactly one of `file` / `symbol` is populated,
@@ -560,11 +719,40 @@ pub struct HotspotRow {
     pub score: f32,
 }
 
-/// Output of `hotspots`.
+/// Output of `hotspots` — one page of ranked rows plus the pagination cursor
+/// and a human steer (tier-02 D5).
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct HotspotOutput {
-    /// Ranked hotspot rows; the first is the strongest hotspot.
+    /// Ranked hotspot rows in this page; the first is the strongest hotspot.
     pub rows: Vec<HotspotRow>,
+    /// Opaque cursor for the next page; absent when this is the last page.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub next_cursor: Option<String>,
+    /// Human steer emitted only when the result was truncated.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub note: Option<String>,
+}
+
+impl From<ariadne_core::HotspotRow> for HotspotRow {
+    fn from(r: ariadne_core::HotspotRow) -> Self {
+        Self {
+            file: r.file,
+            symbol: r.symbol.map(SymbolSummary::from),
+            churn: r.churn,
+            complexity: r.complexity,
+            score: r.score,
+        }
+    }
+}
+
+impl From<ariadne_core::HotspotReport> for HotspotOutput {
+    fn from(r: ariadne_core::HotspotReport) -> Self {
+        Self {
+            rows: r.rows.into_iter().map(HotspotRow::from).collect(),
+            next_cursor: r.next_cursor,
+            note: r.note,
+        }
+    }
 }
 
 /// One ranked complexity row (mirrors `ariadne_core::ComplexityRow`).
@@ -578,11 +766,38 @@ pub struct ComplexityRow {
     pub complexity: u32,
 }
 
-/// Output of `complexity`.
+/// Output of `complexity` — one page of ranked rows plus the pagination cursor
+/// and a human steer (tier-02 D5).
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct ComplexityOutput {
-    /// Ranked complexity rows; the first is the most complex unit.
+    /// Ranked complexity rows in this page; the first is the most complex unit.
     pub rows: Vec<ComplexityRow>,
+    /// Opaque cursor for the next page; absent when this is the last page.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub next_cursor: Option<String>,
+    /// Human steer emitted only when the result was truncated.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub note: Option<String>,
+}
+
+impl From<ariadne_core::ComplexityRow> for ComplexityRow {
+    fn from(r: ariadne_core::ComplexityRow) -> Self {
+        Self {
+            file: r.file,
+            symbol: r.symbol.map(SymbolSummary::from),
+            complexity: r.complexity,
+        }
+    }
+}
+
+impl From<ariadne_core::ComplexityReport> for ComplexityOutput {
+    fn from(r: ariadne_core::ComplexityReport) -> Self {
+        Self {
+            rows: r.rows.into_iter().map(ComplexityRow::from).collect(),
+            next_cursor: r.next_cursor,
+            note: r.note,
+        }
+    }
 }
 
 /// Input to `co_change`. The three optional thresholds default to code-maat's
@@ -603,6 +818,16 @@ pub struct CoChangeInput {
     /// Minimum coupling degree ∈ [0, 1]. Defaults to 0.30.
     #[serde(default)]
     pub min_degree: Option<f32>,
+    /// Maximum edges in the page; defaults to the economy page size (50).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<u32>,
+    /// Opaque pagination cursor from a prior page; absent = first page.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
+    /// Field verbosity; defaults to concise (a no-op — edges carry no cryptic
+    /// fields, so concise == detailed).
+    #[serde(default)]
+    pub verbosity: Verbosity,
 }
 
 /// One logical-coupling edge (mirrors `ariadne_core::CoChangeEdge`).
@@ -618,11 +843,39 @@ pub struct CoChangeEdge {
     pub degree: f32,
 }
 
-/// Output of `co_change`.
+/// Output of `co_change` — one page of coupling edges plus the pagination
+/// cursor and a human steer (tier-02 D5).
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct CoChangeOutput {
-    /// Coupling edges that cleared the filters, degree-descending.
+    /// Coupling edges in this page that cleared the filters, degree-descending.
     pub edges: Vec<CoChangeEdge>,
+    /// Opaque cursor for the next page; absent when this is the last page.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub next_cursor: Option<String>,
+    /// Human steer emitted only when the result was truncated.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub note: Option<String>,
+}
+
+impl From<ariadne_core::CoChangeEdge> for CoChangeEdge {
+    fn from(e: ariadne_core::CoChangeEdge) -> Self {
+        Self {
+            a: e.a,
+            b: e.b,
+            shared_commits: e.shared_commits,
+            degree: e.degree,
+        }
+    }
+}
+
+impl From<ariadne_core::CoChangeReport> for CoChangeOutput {
+    fn from(r: ariadne_core::CoChangeReport) -> Self {
+        Self {
+            edges: r.edges.into_iter().map(CoChangeEdge::from).collect(),
+            next_cursor: r.next_cursor,
+            note: r.note,
+        }
+    }
 }
 
 /// Which changeset a `diff_blast_radius` query scopes (tier-15c D4). Mirrors

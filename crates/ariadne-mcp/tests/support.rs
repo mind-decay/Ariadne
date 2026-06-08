@@ -191,6 +191,91 @@ pub fn seed_analytics_project() -> (PathBuf, TempDir) {
     (project_root, dir)
 }
 
+/// Seed a project with three files and two co-change pairs of distinct
+/// degree, so `co_change` (under lowered thresholds) returns ≥2 edges — enough
+/// to drive the Block-1 tier-02 cursor round-trip (a single-pair fixture cannot
+/// page). The pairs are `(a,b)` shared 2 (degree 1.0) and `(a,c)` shared 1
+/// (degree 0.5), each file with 2 revisions, so the stable sort is
+/// degree-descending: `(a,b)` then `(a,c)`.
+#[must_use]
+pub fn seed_cochange_pairs_project() -> (PathBuf, TempDir) {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let project_root = dir.path().to_path_buf();
+    let storage_path = project_root.join(".ariadne").join("index.redb");
+    let storage = RedbStorage::open(&storage_path).expect("open redb");
+    let mut cs = Changeset::new();
+    for (id, path) in [(1u32, "src/a.rs"), (2, "src/b.rs"), (3, "src/c.rs")] {
+        cs = cs.upsert_file(
+            fid(id),
+            FileRecord {
+                path: path.into(),
+                lang: Lang::Rust,
+                size: 128,
+                blake3: [u8::try_from(id).expect("file id fits u8"); 32],
+                mtime_ns: i128::from(id),
+            },
+        );
+    }
+    for (id, name, file) in [
+        (1u64, "crate::a", 1u32),
+        (2, "crate::b", 2),
+        (3, "crate::c", 3),
+    ] {
+        cs = cs.upsert_symbol(
+            sid(id),
+            SymbolRecord {
+                canonical_name: name.into(),
+                kind: "function".into(),
+                defining_file: fid(file),
+                defining_span: span(file, 0, 64),
+                visibility: Visibility::Unknown,
+                attributes: Vec::new(),
+                complexity: 1,
+            },
+        );
+    }
+    let txn = storage.begin_write().expect("begin");
+    txn.apply(&cs).expect("apply changeset");
+    storage
+        .replace_history(
+            &[
+                FileChurn {
+                    path: "src/a.rs".into(),
+                    commits: 2,
+                    author_keys: vec![[1u8; 8]],
+                    last_changed_ns: 100,
+                },
+                FileChurn {
+                    path: "src/b.rs".into(),
+                    commits: 2,
+                    author_keys: vec![[1u8; 8]],
+                    last_changed_ns: 200,
+                },
+                FileChurn {
+                    path: "src/c.rs".into(),
+                    commits: 2,
+                    author_keys: vec![[1u8; 8]],
+                    last_changed_ns: 300,
+                },
+            ],
+            &[
+                CoChangePair {
+                    a: "src/a.rs".into(),
+                    b: "src/b.rs".into(),
+                    count: 2,
+                },
+                CoChangePair {
+                    a: "src/a.rs".into(),
+                    b: "src/c.rs".into(),
+                    count: 1,
+                },
+            ],
+        )
+        .expect("replace history");
+    drop(storage);
+    (project_root, dir)
+}
+
 fn analytics_changeset() -> Changeset {
     let mut cs = Changeset::new();
     for (id, path) in [(1u32, "src/alpha.rs"), (2, "src/beta.rs")] {

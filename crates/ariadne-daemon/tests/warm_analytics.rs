@@ -9,7 +9,7 @@ mod support;
 use ariadne_core::{
     Changeset, CouplingReport, CouplingRow, CycleRow, DaemonQuery, DaemonRequest, DaemonResponse,
     DocForReport, DocReport, FileId, FileRecord, Lang, PlanAssistReport, PlanFileRow,
-    ProjectStatusReport, Span, SymbolId, SymbolRecord, SymbolSummary, Visibility,
+    ProjectStatusReport, Span, SymbolId, SymbolRecord, SymbolSummary, Verbosity, Visibility,
 };
 
 use support::{
@@ -78,7 +78,7 @@ fn coupling_report_matches_cold() {
     let reference = cold(&root);
 
     let modules = reference.modules(None);
-    let expect: Vec<CouplingRow> = reference
+    let mut expect: Vec<CouplingRow> = reference
         .graph
         .coupling_report(&modules)
         .rows
@@ -92,19 +92,36 @@ fn coupling_report_matches_cold() {
             distance: m.distance,
         })
         .collect();
+    // Block 1 tier-02: the handler now caps + sorts by the stable key
+    // (Ca desc, then module asc), so mirror that ordering on the expectation.
+    expect.sort_by(|a, b| {
+        b.afferent
+            .cmp(&a.afferent)
+            .then_with(|| a.module.cmp(&b.module))
+    });
     assert_eq!(expect.len(), 4, "one module per source file");
 
     let handle = spawn(&root);
     let response = query(
         &root,
         revision,
-        DaemonQuery::CouplingReport { prefix: None },
+        DaemonQuery::CouplingReport {
+            prefix: None,
+            limit: None,
+            cursor: None,
+            verbosity: Verbosity::Concise,
+        },
     );
     shutdown(&root, handle);
 
+    // Four modules < the default page (50), so the page carries no cursor/steer.
     assert_eq!(
         response,
-        DaemonResponse::Coupling(CouplingReport { rows: expect })
+        DaemonResponse::Coupling(CouplingReport {
+            rows: expect,
+            next_cursor: None,
+            note: None,
+        })
     );
 }
 
@@ -258,12 +275,12 @@ fn stale_revision_triggers_refresh() {
     assert_eq!(
         after,
         DaemonResponse::Definition(SymbolSummary {
-            id: 99,
+            id: Some(99),
             name: "crate::added_later".to_owned(),
             kind: "function".to_owned(),
             file: "src/lib.rs".to_owned(),
-            byte_start: 0,
-            byte_end: 32,
+            byte_start: Some(0),
+            byte_end: Some(32),
         }),
     );
 }

@@ -15,11 +15,11 @@ mod rows;
 
 use serde::{Deserialize, Serialize};
 
-pub use query::{DaemonQuery, EdgeKindFilter, Grain};
+pub use query::{DaemonQuery, EdgeKindFilter, Grain, Verbosity};
 pub use response::{
     AffectedTestsReport, BlastRadiusReport, CoChangeReport, ComplexityReport, CouplingReport,
     DaemonResponse, DiffBlastReport, DocForReport, DocReport, FileSummaryReport, HotspotReport,
-    PlanAssistReport, ProjectStatusReport, RefactorReport, WeakSpotsReport,
+    PlanAssistReport, ProjectStatusReport, RefactorReport, ReferencesReport, WeakSpotsReport,
 };
 pub use rows::{
     CoChangeEdge, ComplexityRow, ComponentRow, CouplingRow, CycleBreakRow, CycleRow, DependencyRow,

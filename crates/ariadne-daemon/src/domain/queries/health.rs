@@ -1,10 +1,13 @@
 //! Architecture-health queries: `coupling_report`, `weak_spots`.
 
+use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 
 use ariadne_core::{
-    CouplingReport, CouplingRow, CycleRow, DaemonResponse, FileId, SymbolId, WeakSpotsReport,
+    CouplingReport, CouplingRow, CycleRow, DaemonResponse, FileId, SymbolId, Verbosity,
+    WeakSpotsReport,
 };
+use ariadne_graph::economy::{self, Budget, Verbosity as EconVerbosity};
 use ariadne_graph::{CouplingMetrics, DeadCodeConfig, ModuleSpec, roots::is_root};
 
 use crate::domain::catalog::WarmCatalog;
@@ -52,13 +55,60 @@ fn to_row(m: &CouplingMetrics) -> CouplingRow {
     }
 }
 
-/// Per-file Martin coupling metrics filtered by `prefix`.
-pub(crate) fn coupling_report(cat: &WarmCatalog, prefix: Option<&str>) -> DaemonResponse {
+/// Per-file Martin coupling metrics filtered by `prefix`, capped to one page in
+/// stable (Ca desc, module asc) order — the warm twin of the cold
+/// `tools::coupling_report` handler, so their JSON is byte-identical (parity).
+/// A malformed / stale cursor surfaces as a typed `DaemonResponse::Error`.
+pub(crate) fn coupling_report(
+    cat: &WarmCatalog,
+    prefix: Option<&str>,
+    limit: Option<u32>,
+    cursor: Option<&str>,
+    verbosity: Verbosity,
+) -> DaemonResponse {
     let modules = build_modules(cat, prefix);
     let report = cat.graph.coupling_report(&modules);
+    let rows: Vec<CouplingRow> = report.rows.iter().map(to_row).collect();
+    let revision = u32::try_from(cat.revision).unwrap_or(u32::MAX);
+    let decoded = match cursor
+        .map(|c| economy::Cursor::decode(c, revision))
+        .transpose()
+    {
+        Ok(c) => c,
+        Err(err) => return DaemonResponse::Error(err.to_string()),
+    };
+    let budget = Budget {
+        limit: limit.map_or(economy::DEFAULT_PAGE, |l| l as usize),
+        cursor: decoded,
+        verbosity: to_economy(verbosity),
+    };
+    let total = rows.len();
+    let paged = economy::paginate(rows, cmp_row, &budget, revision, 0);
+    let note = paged
+        .next_cursor
+        .as_ref()
+        .map(|_| economy::truncation_note(paged.rows.len(), total, "modules"));
     DaemonResponse::Coupling(CouplingReport {
-        rows: report.rows.iter().map(to_row).collect(),
+        rows: paged.rows,
+        next_cursor: paged.next_cursor,
+        note,
     })
+}
+
+/// Map the protocol verbosity onto the economy use case's verbosity.
+fn to_economy(v: Verbosity) -> EconVerbosity {
+    match v {
+        Verbosity::Concise => EconVerbosity::Concise,
+        Verbosity::Detailed => EconVerbosity::Detailed,
+    }
+}
+
+/// Stable order for a coupling page (identical to the cold handler — keeps the
+/// paths byte-identical, D4): afferent desc, then module path ascending.
+fn cmp_row(a: &CouplingRow, b: &CouplingRow) -> Ordering {
+    b.afferent
+        .cmp(&a.afferent)
+        .then_with(|| a.module.cmp(&b.module))
 }
 
 /// Whether `path` names a Cargo *library* compilation target — not an

@@ -59,12 +59,12 @@ async fn reachable_daemon_answers_without_building_catalog() {
     let (root, _guard) = support::seed_empty_project();
     let _stub = support::spawn_stub_daemon(&root, |q| match q {
         DaemonQuery::ListSymbols { .. } => DaemonResponse::Symbols(vec![SymbolSummary {
-            id: 42,
+            id: Some(42),
             name: "crate::from_daemon".to_owned(),
             kind: "function".to_owned(),
             file: "src/x.rs".to_owned(),
-            byte_start: 0,
-            byte_end: 8,
+            byte_start: Some(0),
+            byte_end: Some(8),
         }]),
         _ => DaemonResponse::Error("unexpected query".to_owned()),
     });

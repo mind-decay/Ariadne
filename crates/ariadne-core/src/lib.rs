@@ -16,7 +16,7 @@ pub use domain::daemon::{
     DaemonRequest, DaemonResponse, DependencyRow, DiffBlastReport, DiffSeed, DocForReport,
     DocReport, EdgeKindFilter, FileSummaryReport, GodModuleRow, Grain, HotspotReport, HotspotRow,
     MisplacedRow, OutboundRow, PlanAssistReport, PlanFileRow, ProjectStatusReport, RefactorReport,
-    ReferenceSite, SymbolSummary, WeakSpotsReport,
+    ReferenceSite, ReferencesReport, SymbolSummary, Verbosity, WeakSpotsReport,
 };
 pub use domain::ports::{
     ChunkStream, Indexer, Parser, ReadSnapshot, Storage, WatcherSink, WriteTxn,

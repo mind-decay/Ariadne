@@ -10,10 +10,7 @@ expression: golden
       "file": "",
       "score": 1.0,
       "symbol": {
-        "byte_end": 64,
-        "byte_start": 0,
         "file": "src/alpha.rs",
-        "id": 1,
         "kind": "function",
         "name": "crate::alpha"
       }
@@ -24,10 +21,7 @@ expression: golden
       "file": "",
       "score": 0.17142858,
       "symbol": {
-        "byte_end": 64,
-        "byte_start": 0,
         "file": "src/beta.rs",
-        "id": 2,
         "kind": "function",
         "name": "crate::beta"
       }

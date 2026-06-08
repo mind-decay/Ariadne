@@ -271,12 +271,12 @@ pub fn cold(root: &Path) -> Cold {
             summary.insert(
                 id,
                 SymbolSummary {
-                    id: id.get(),
+                    id: Some(id.get()),
                     name: rec.canonical_name.clone(),
                     kind: rec.kind.clone(),
                     file: paths.get(&rec.defining_file).cloned().unwrap_or_default(),
-                    byte_start: rec.defining_span.byte_start,
-                    byte_end: rec.defining_span.byte_end,
+                    byte_start: Some(rec.defining_span.byte_start),
+                    byte_end: Some(rec.defining_span.byte_end),
                 },
             );
         }

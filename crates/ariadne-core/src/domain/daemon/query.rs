@@ -30,6 +30,20 @@ pub enum EdgeKindFilter {
     Inherits,
 }
 
+/// Field verbosity for a growable tool's rows (Block 1, tier-01 D3). Concise
+/// (the default) omits the cryptic fields the LLM reasons about worse — raw
+/// symbol ids and byte offsets — keeping the semantic name/file; `Detailed` is
+/// a lossless superset. Mirrors `ariadne_graph::economy::Verbosity`; the
+/// adapter maps between the two (as it does for [`Grain`]).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub enum Verbosity {
+    /// Omit cryptic id/offset fields (the default).
+    #[default]
+    Concise,
+    /// Emit every field — the lossless superset.
+    Detailed,
+}
+
 /// Grain a [`DaemonQuery::Hotspots`] / [`DaemonQuery::Complexity`] ranks at:
 /// per-file (Σ over the file's symbols) or per-symbol. Mirrors the MCP
 /// `Grain`; the daemon maps it to the matching graph use case (tier-15b D2).
@@ -68,10 +82,18 @@ pub enum DaemonQuery {
         /// Canonical name to resolve.
         symbol: String,
     },
-    /// Reference sites whose target is the named symbol.
+    /// Reference sites whose target is the named symbol (Block 1, tier-01:
+    /// capped + cursored + verbosity-projected via `ariadne_graph::economy`).
     FindReferences {
         /// Canonical name of the referenced symbol.
         symbol: String,
+        /// Maximum rows in the page; the handler defaults to the economy page
+        /// size (50) when absent.
+        limit: Option<u32>,
+        /// Opaque pagination cursor from a prior page; `None` = first page.
+        cursor: Option<String>,
+        /// Field verbosity; defaults to concise.
+        verbosity: Verbosity,
     },
     /// Reverse-reachability blast radius of a symbol.
     BlastRadius {
@@ -94,10 +116,19 @@ pub enum DaemonQuery {
         /// Maximum file rows; the daemon defaults to 16.
         max_files: Option<u32>,
     },
-    /// Per-file Martin coupling metrics.
+    /// Per-file Martin coupling metrics (Block 1, tier-02: capped + cursored +
+    /// verbosity-projected via `ariadne_graph::economy`).
     CouplingReport {
         /// Optional path-prefix scope (project-root-relative).
         prefix: Option<String>,
+        /// Maximum rows in the page; the handler defaults to the economy page
+        /// size (50) when absent.
+        limit: Option<u32>,
+        /// Opaque pagination cursor from a prior page; `None` = first page.
+        cursor: Option<String>,
+        /// Field verbosity; defaults to concise (a no-op here — metric-only
+        /// rows carry no cryptic fields, so concise == detailed).
+        verbosity: Verbosity,
     },
     /// Cycles ∪ god modules ∪ dead-code candidates.
     WeakSpots {
@@ -126,23 +157,43 @@ pub enum DaemonQuery {
         /// Optional path-prefix scope (project-root-relative).
         prefix: Option<String>,
     },
-    /// Churn × complexity hotspots at the requested grain (tier-15b).
+    /// Churn × complexity hotspots at the requested grain (tier-15b; Block 1
+    /// tier-02: capped + cursored + verbosity-projected via `economy`).
     Hotspots {
         /// Optional path-prefix scope (project-root-relative).
         prefix: Option<String>,
         /// File or symbol grain.
         grain: Grain,
+        /// Maximum rows in the page; the handler defaults to the economy page
+        /// size (50) when absent.
+        limit: Option<u32>,
+        /// Opaque pagination cursor from a prior page; `None` = first page.
+        cursor: Option<String>,
+        /// Field verbosity; defaults to concise (drops the embedded symbol's
+        /// cryptic id/offset fields on symbol-grain rows).
+        verbosity: Verbosity,
     },
-    /// `McCabe` cyclomatic complexity ranking at the requested grain (tier-15b).
+    /// `McCabe` cyclomatic complexity ranking at the requested grain (tier-15b;
+    /// Block 1 tier-02: capped + cursored + verbosity-projected via `economy`).
     Complexity {
         /// Optional path-prefix scope (project-root-relative).
         prefix: Option<String>,
         /// File (Σ over the file's symbols) or symbol grain.
         grain: Grain,
+        /// Maximum rows in the page; the handler defaults to the economy page
+        /// size (50) when absent.
+        limit: Option<u32>,
+        /// Opaque pagination cursor from a prior page; `None` = first page.
+        cursor: Option<String>,
+        /// Field verbosity; defaults to concise (drops the embedded symbol's
+        /// cryptic id/offset fields on symbol-grain rows).
+        verbosity: Verbosity,
     },
     /// Logical-coupling (change-coupling) edges honoring the code-maat filters
     /// (tier-15b). Each threshold is optional; an absent one falls back to the
-    /// `CoChangeConfig` default at the handler.
+    /// `CoChangeConfig` default at the handler. Block 1 tier-02 adds the
+    /// economy page cap + cursor (verbosity is a no-op — edges carry no cryptic
+    /// fields).
     CoChange {
         /// Optional path-prefix scope: keeps an edge when either endpoint
         /// path is in scope (project-root-relative).
@@ -153,6 +204,14 @@ pub enum DaemonQuery {
         min_shared_commits: Option<u32>,
         /// Minimum coupling degree ∈ [0, 1]; `None` = default.
         min_degree: Option<f32>,
+        /// Maximum edges in the page; the handler defaults to the economy page
+        /// size (50) when absent.
+        limit: Option<u32>,
+        /// Opaque pagination cursor from a prior page; `None` = first page.
+        cursor: Option<String>,
+        /// Field verbosity; defaults to concise (a no-op here — edges carry no
+        /// cryptic fields, so concise == detailed).
+        verbosity: Verbosity,
     },
     /// Diff-aware blast radius of a changeset (tier-15c). The client (the MCP
     /// composition root, which links `ariadne-git`; the daemon never does —

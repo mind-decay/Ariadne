@@ -16,12 +16,12 @@ use rmcp::object;
 /// seeded empty, so any non-empty answer proves the daemon served it.
 fn daemon_symbol(name: &str) -> SymbolSummary {
     SymbolSummary {
-        id: 42,
+        id: Some(42),
         name: name.to_owned(),
         kind: "function".to_owned(),
         file: "src/util.rs".to_owned(),
-        byte_start: 0,
-        byte_end: 32,
+        byte_start: Some(0),
+        byte_end: Some(32),
     }
 }
 
@@ -46,7 +46,7 @@ fn daemon_client_round_trips_a_query_over_ipc() {
     match resp {
         DaemonResponse::Definition(s) => {
             assert_eq!(s.name, "crate::util::helper");
-            assert_eq!(s.id, 42);
+            assert_eq!(s.id, Some(42));
             assert_eq!(s.file, "src/util.rs");
         }
         other => panic!("expected Definition, got {other:?}"),

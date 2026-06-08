@@ -10,6 +10,22 @@ use super::rows::{
     DiffSeed, GodModuleRow, HotspotRow, MisplacedRow, PlanFileRow, ReferenceSite, SymbolSummary,
 };
 
+/// `find_references` report — one page of reference sites plus the pagination
+/// cursor and a human steer (Block 1, tier-01 D5). When the result fits in a
+/// single page, `next_cursor` and `note` are both `None`. No
+/// `skip_serializing_if`: this is a postcard-framed daemon-IPC type (see
+/// [`ReferenceSite`]); the JSON-level omission lives on the MCP wire type.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ReferencesReport {
+    /// Reference sites in this page, in stable `(file, byte_start, caller_name)`
+    /// order.
+    pub references: Vec<ReferenceSite>,
+    /// Opaque cursor for the next page; `None` when this is the last page.
+    pub next_cursor: Option<String>,
+    /// Human steer emitted only when the result was truncated.
+    pub note: Option<String>,
+}
+
 /// `blast_radius` report — the resolved target plus must / may dependents.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct BlastRadiusReport {
@@ -48,11 +64,19 @@ pub struct PlanAssistReport {
     pub files: Vec<PlanFileRow>,
 }
 
-/// `coupling_report` — one row per file-as-module.
+/// `coupling_report` — one page of file-as-module rows plus the pagination
+/// cursor and a human steer (Block 1, tier-02 D5). When the result fits one
+/// page, `next_cursor` and `note` are both `None`. No `skip_serializing_if`:
+/// this is a postcard-framed daemon-IPC type (see [`ReferencesReport`]); the
+/// JSON-level omission lives on the MCP wire type.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct CouplingReport {
-    /// Per-module metrics.
+    /// Per-module metrics in this page, in stable (Ca desc, module asc) order.
     pub rows: Vec<CouplingRow>,
+    /// Opaque cursor for the next page; `None` when this is the last page.
+    pub next_cursor: Option<String>,
+    /// Human steer emitted only when the result was truncated.
+    pub note: Option<String>,
 }
 
 /// `weak_spots` report — cycles ∪ god modules ∪ dead code.
@@ -135,27 +159,48 @@ pub struct RefactorReport {
     pub misplaced_symbols: Vec<MisplacedRow>,
 }
 
-/// `hotspots` report — churn × complexity rows ranked strongest-first
-/// (tier-15b). Mirrors `ariadne_graph::HotspotReport` projected to wire rows.
+/// `hotspots` report — one page of churn × complexity rows plus the pagination
+/// cursor and a human steer (tier-15b; Block 1 tier-02 D5). Mirrors
+/// `ariadne_graph::HotspotReport` projected to wire rows. No
+/// `skip_serializing_if`: postcard-framed daemon-IPC type (see
+/// [`ReferencesReport`]); the JSON omission lives on the MCP wire type.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct HotspotReport {
-    /// Ranked hotspot rows; the first is the strongest hotspot.
+    /// Ranked hotspot rows in this page; the first is the strongest hotspot.
     pub rows: Vec<HotspotRow>,
+    /// Opaque cursor for the next page; `None` when this is the last page.
+    pub next_cursor: Option<String>,
+    /// Human steer emitted only when the result was truncated.
+    pub note: Option<String>,
 }
 
-/// `complexity` report — `McCabe` rows ranked complexity-descending (tier-15b).
+/// `complexity` report — one page of `McCabe` rows plus the pagination cursor
+/// and a human steer (tier-15b; Block 1 tier-02 D5). No `skip_serializing_if`:
+/// postcard-framed daemon-IPC type (see [`ReferencesReport`]); the JSON
+/// omission lives on the MCP wire type.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ComplexityReport {
-    /// Ranked complexity rows; the first is the most complex unit.
+    /// Ranked complexity rows in this page; the first is the most complex unit.
     pub rows: Vec<ComplexityRow>,
+    /// Opaque cursor for the next page; `None` when this is the last page.
+    pub next_cursor: Option<String>,
+    /// Human steer emitted only when the result was truncated.
+    pub note: Option<String>,
 }
 
-/// `co_change` report — logical-coupling edges (tier-15b). Mirrors
-/// `ariadne_graph::CoChangeReport` projected to wire edges.
+/// `co_change` report — one page of logical-coupling edges plus the pagination
+/// cursor and a human steer (tier-15b; Block 1 tier-02 D5). Mirrors
+/// `ariadne_graph::CoChangeReport` projected to wire edges. No
+/// `skip_serializing_if`: postcard-framed daemon-IPC type (see
+/// [`ReferencesReport`]); the JSON omission lives on the MCP wire type.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct CoChangeReport {
-    /// Coupling edges that cleared the filters, degree-descending.
+    /// Coupling edges in this page that cleared the filters, degree-descending.
     pub edges: Vec<CoChangeEdge>,
+    /// Opaque cursor for the next page; `None` when this is the last page.
+    pub next_cursor: Option<String>,
+    /// Human steer emitted only when the result was truncated.
+    pub note: Option<String>,
 }
 
 /// `diff_blast_radius` report — per-seed radii plus the deduped must / may
@@ -196,8 +241,8 @@ pub enum DaemonResponse {
     Symbols(Vec<SymbolSummary>),
     /// `find_definition` result.
     Definition(SymbolSummary),
-    /// `find_references` rows.
-    References(Vec<ReferenceSite>),
+    /// `find_references` report — capped page + cursor + steer (tier-01).
+    References(ReferencesReport),
     /// `blast_radius` report.
     BlastRadius(BlastRadiusReport),
     /// `file_summary` report.

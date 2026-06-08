@@ -9,12 +9,14 @@
 //! handlers, so daemon-served and cold JSON match
 //! [src: crates/ariadne-graph/src/hotspot.rs:102-150; co_change.rs:74-95].
 
+use std::cmp::Ordering;
 use std::collections::BTreeMap;
 
 use ariadne_core::{
     CoChangeEdge, CoChangeReport, ComplexityReport, ComplexityRow, DaemonResponse, Grain,
-    HotspotReport, HotspotRow, SymbolId,
+    HotspotReport, HotspotRow, SymbolId, Verbosity,
 };
+use ariadne_graph::economy::{self, Budget, Verbosity as EconVerbosity};
 use ariadne_graph::{
     CoChangeConfig, HotspotGrain, HotspotReport as GraphHotspots, co_change_report, file_hotspots,
     symbol_hotspots,
@@ -28,8 +30,30 @@ fn in_scope(path: &str, prefix: Option<&str>) -> bool {
     prefix.is_none_or(|p| path.starts_with(p))
 }
 
-/// Churn × complexity hotspots at `grain`, filtered by `prefix`.
-pub(crate) fn hotspots(cat: &WarmCatalog, prefix: Option<&str>, grain: Grain) -> DaemonResponse {
+/// Map the protocol verbosity onto the economy use case's verbosity.
+fn to_economy(v: Verbosity) -> EconVerbosity {
+    match v {
+        Verbosity::Concise => EconVerbosity::Concise,
+        Verbosity::Detailed => EconVerbosity::Detailed,
+    }
+}
+
+/// Churn × complexity hotspots at `grain`, filtered by `prefix`, capped to one
+/// page in stable (score desc, then file / symbol-id asc) order and projected
+/// at `verbosity` — the warm twin of the cold `tools::hotspots` handler, so
+/// their JSON is byte-identical (parity). A malformed / stale cursor surfaces
+/// as a typed `DaemonResponse::Error`.
+// Mirrors the `DaemonQuery::Hotspots` variant fields 1:1 (the dispatcher
+// destructures and forwards them); bundling would just add indirection.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn hotspots(
+    cat: &WarmCatalog,
+    prefix: Option<&str>,
+    grain: Grain,
+    limit: Option<u32>,
+    cursor: Option<&str>,
+    verbosity: Verbosity,
+) -> DaemonResponse {
     let report = match grain {
         Grain::File => {
             let mut file_complexity: BTreeMap<String, u32> = BTreeMap::new();
@@ -49,9 +73,67 @@ pub(crate) fn hotspots(cat: &WarmCatalog, prefix: Option<&str>, grain: Grain) ->
             symbol_hotspots(&cat.symbol_churn, &symbol_complexity)
         }
     };
+    let rows = project_hotspots(cat, report, prefix);
+    let econ = to_economy(verbosity);
+    let revision = u32::try_from(cat.revision).unwrap_or(u32::MAX);
+    let decoded = match cursor
+        .map(|c| economy::Cursor::decode(c, revision))
+        .transpose()
+    {
+        Ok(c) => c,
+        Err(err) => return DaemonResponse::Error(err.to_string()),
+    };
+    let budget = Budget {
+        limit: limit.map_or(economy::DEFAULT_PAGE, |l| l as usize),
+        cursor: decoded,
+        verbosity: econ,
+    };
+    let total = rows.len();
+    let paged = economy::paginate(rows, cmp_hotspot, &budget, revision, 0);
+    let rows: Vec<HotspotRow> = paged
+        .rows
+        .into_iter()
+        .map(|r| project_hotspot_row(r, econ))
+        .collect();
+    let note = paged
+        .next_cursor
+        .as_ref()
+        .map(|_| economy::truncation_note(rows.len(), total, "hotspots"));
     DaemonResponse::Hotspots(HotspotReport {
-        rows: project_hotspots(cat, report, prefix),
+        rows,
+        next_cursor: paged.next_cursor,
+        note,
     })
+}
+
+/// Stable order for a hotspot page (identical to the cold handler, D4): score
+/// desc, then file path / symbol id ascending. Score is an `f32`; `total_cmp`
+/// gives a total order.
+fn cmp_hotspot(a: &HotspotRow, b: &HotspotRow) -> Ordering {
+    b.score
+        .total_cmp(&a.score)
+        .then_with(|| a.file.cmp(&b.file))
+        .then_with(|| hotspot_sym_id(a).cmp(&hotspot_sym_id(b)))
+}
+
+/// The embedded symbol id used as the symbol-grain tie-break (0 for a file-grain
+/// row). Read before any concise projection nulls the field, so it is `Some`.
+fn hotspot_sym_id(row: &HotspotRow) -> u64 {
+    row.symbol.as_ref().and_then(|s| s.id).unwrap_or(0)
+}
+
+/// Drop the embedded symbol's cryptic id/offset fields in concise verbosity (D3),
+/// matching the cold handler. File-grain rows carry no symbol (concise ==
+/// detailed for them).
+fn project_hotspot_row(mut row: HotspotRow, verbosity: EconVerbosity) -> HotspotRow {
+    if matches!(verbosity, EconVerbosity::Concise) {
+        if let Some(sym) = row.symbol.as_mut() {
+            sym.id = None;
+            sym.byte_start = None;
+            sym.byte_end = None;
+        }
+    }
+    row
 }
 
 /// Project a graph hotspot report into wire rows, dropping out-of-scope units.
@@ -88,9 +170,21 @@ fn project_hotspots(
 /// `McCabe` complexity ranking at `grain`, filtered by `prefix`. File grain sums
 /// each file's symbol complexity (tier-13 D2 defers this fold to the root);
 /// symbol grain carries each symbol's own value. Both rank complexity
-/// descending, ties broken by key ascending.
-pub(crate) fn complexity(cat: &WarmCatalog, prefix: Option<&str>, grain: Grain) -> DaemonResponse {
-    let mut rows = match grain {
+/// descending, ties broken by key ascending, capped to one page and projected
+/// at `verbosity` — the warm twin of the cold `tools::complexity` handler, so
+/// their JSON is byte-identical (parity). A malformed / stale cursor surfaces as
+/// a typed `DaemonResponse::Error`.
+// Mirrors the `DaemonQuery::Complexity` variant fields 1:1 (see `hotspots`).
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn complexity(
+    cat: &WarmCatalog,
+    prefix: Option<&str>,
+    grain: Grain,
+    limit: Option<u32>,
+    cursor: Option<&str>,
+    verbosity: Verbosity,
+) -> DaemonResponse {
+    let rows = match grain {
         Grain::File => {
             let mut by_file: BTreeMap<String, u32> = BTreeMap::new();
             for meta in cat.symbols.values() {
@@ -121,32 +215,90 @@ pub(crate) fn complexity(cat: &WarmCatalog, prefix: Option<&str>, grain: Grain) 
             })
             .collect::<Vec<_>>(),
     };
-    rows.sort_by(|a, b| {
-        b.complexity
-            .cmp(&a.complexity)
-            .then_with(|| key(a).cmp(&key(b)))
-    });
-    DaemonResponse::Complexity(ComplexityReport { rows })
+    let econ = to_economy(verbosity);
+    let revision = u32::try_from(cat.revision).unwrap_or(u32::MAX);
+    let decoded = match cursor
+        .map(|c| economy::Cursor::decode(c, revision))
+        .transpose()
+    {
+        Ok(c) => c,
+        Err(err) => return DaemonResponse::Error(err.to_string()),
+    };
+    let budget = Budget {
+        limit: limit.map_or(economy::DEFAULT_PAGE, |l| l as usize),
+        cursor: decoded,
+        verbosity: econ,
+    };
+    let total = rows.len();
+    let paged = economy::paginate(rows, cmp_complexity, &budget, revision, 0);
+    let rows: Vec<ComplexityRow> = paged
+        .rows
+        .into_iter()
+        .map(|r| project_complexity_row(r, econ))
+        .collect();
+    let note = paged
+        .next_cursor
+        .as_ref()
+        .map(|_| economy::truncation_note(rows.len(), total, "complexity rows"));
+    DaemonResponse::Complexity(ComplexityReport {
+        rows,
+        next_cursor: paged.next_cursor,
+        note,
+    })
+}
+
+/// Stable order for a complexity page (identical to the cold handler, D4):
+/// complexity desc, then key (file path, then symbol id) ascending.
+fn cmp_complexity(a: &ComplexityRow, b: &ComplexityRow) -> Ordering {
+    b.complexity
+        .cmp(&a.complexity)
+        .then_with(|| key(a).cmp(&key(b)))
 }
 
 /// Sort key for a complexity row: the file path (file grain) or the symbol id
-/// rendered as a key (symbol grain). Ties after complexity break ascending.
-fn key(row: &ComplexityRow) -> (String, u64) {
-    (row.file.clone(), row.symbol.as_ref().map_or(0, |s| s.id))
+/// (symbol grain). Read before any concise projection nulls the id, so the
+/// embedded `id` is `Some`.
+fn key(row: &ComplexityRow) -> (&str, u64) {
+    (
+        row.file.as_str(),
+        row.symbol.as_ref().and_then(|s| s.id).unwrap_or(0),
+    )
 }
 
-/// Logical-coupling edges honoring the code-maat filters, filtered by
-/// `prefix` (an edge is kept when either endpoint is in scope).
+/// Drop the embedded symbol's cryptic id/offset fields in concise verbosity (D3),
+/// matching the cold handler. File-grain rows carry no symbol.
+fn project_complexity_row(mut row: ComplexityRow, verbosity: EconVerbosity) -> ComplexityRow {
+    if matches!(verbosity, EconVerbosity::Concise) {
+        if let Some(sym) = row.symbol.as_mut() {
+            sym.id = None;
+            sym.byte_start = None;
+            sym.byte_end = None;
+        }
+    }
+    row
+}
+
+/// Logical-coupling edges honoring the code-maat filters, filtered by `prefix`
+/// (an edge is kept when either endpoint is in scope), capped to one page in
+/// stable (degree desc, then `(a, b)` asc) order — the warm twin of the cold
+/// `tools::co_change` handler, so their JSON is byte-identical (parity). Edges
+/// carry no cryptic fields, so `verbosity` is a no-op. A malformed / stale
+/// cursor surfaces as a typed `DaemonResponse::Error`.
+// Mirrors the `DaemonQuery::CoChange` variant fields 1:1 (see `hotspots`).
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn co_change(
     cat: &WarmCatalog,
     prefix: Option<&str>,
     min_revs: Option<u32>,
     min_shared_commits: Option<u32>,
     min_degree: Option<f32>,
+    limit: Option<u32>,
+    cursor: Option<&str>,
+    verbosity: Verbosity,
 ) -> DaemonResponse {
     let cfg = resolve_cfg(min_revs, min_shared_commits, min_degree);
     let report = co_change_report(&cat.churn, &cat.co_change, &cfg);
-    let edges = report
+    let edges: Vec<CoChangeEdge> = report
         .edges
         .into_iter()
         .filter(|e| in_scope(&e.a, prefix) || in_scope(&e.b, prefix))
@@ -157,7 +309,39 @@ pub(crate) fn co_change(
             degree: e.degree,
         })
         .collect();
-    DaemonResponse::CoChange(CoChangeReport { edges })
+    let revision = u32::try_from(cat.revision).unwrap_or(u32::MAX);
+    let decoded = match cursor
+        .map(|c| economy::Cursor::decode(c, revision))
+        .transpose()
+    {
+        Ok(c) => c,
+        Err(err) => return DaemonResponse::Error(err.to_string()),
+    };
+    let budget = Budget {
+        limit: limit.map_or(economy::DEFAULT_PAGE, |l| l as usize),
+        cursor: decoded,
+        verbosity: to_economy(verbosity),
+    };
+    let total = edges.len();
+    let paged = economy::paginate(edges, cmp_edge, &budget, revision, 0);
+    let note = paged
+        .next_cursor
+        .as_ref()
+        .map(|_| economy::truncation_note(paged.rows.len(), total, "co-change pairs"));
+    DaemonResponse::CoChange(CoChangeReport {
+        edges: paged.rows,
+        next_cursor: paged.next_cursor,
+        note,
+    })
+}
+
+/// Stable order for a co-change page (identical to the cold handler, D4): degree
+/// desc, then the `(a, b)` path pair ascending. Degree is an `f32`; `total_cmp`
+/// gives a total order.
+fn cmp_edge(x: &CoChangeEdge, y: &CoChangeEdge) -> Ordering {
+    y.degree
+        .total_cmp(&x.degree)
+        .then_with(|| (&x.a, &x.b).cmp(&(&y.a, &y.b)))
 }
 
 /// Resolve the three optional thresholds against `CoChangeConfig::default()`.
@@ -277,7 +461,9 @@ mod tests {
     /// above beta, reading churn + per-symbol complexity from the warm catalog.
     #[test]
     fn hotspots_file_grain_ranks_alpha_first() {
-        let DaemonResponse::Hotspots(report) = hotspots(&warm(), None, Grain::File) else {
+        let DaemonResponse::Hotspots(report) =
+            hotspots(&warm(), None, Grain::File, None, None, Verbosity::Concise)
+        else {
             panic!("expected Hotspots");
         };
         assert_eq!(report.rows[0].file, "src/alpha.rs");
@@ -288,7 +474,14 @@ mod tests {
     /// Symbol-grain complexity ranks each symbol's own `McCabe`, descending.
     #[test]
     fn complexity_symbol_grain_ranks_descending() {
-        let DaemonResponse::Complexity(report) = complexity(&warm(), None, Grain::Symbol) else {
+        let DaemonResponse::Complexity(report) = complexity(
+            &warm(),
+            None,
+            Grain::Symbol,
+            None,
+            None,
+            Verbosity::Detailed,
+        ) else {
             panic!("expected Complexity");
         };
         let names: Vec<(&str, u32)> = report
@@ -310,13 +503,23 @@ mod tests {
     #[test]
     fn co_change_honors_thresholds() {
         let cat = warm();
-        let DaemonResponse::CoChange(empty) = co_change(&cat, None, None, None, None) else {
+        let DaemonResponse::CoChange(empty) =
+            co_change(&cat, None, None, None, None, None, None, Verbosity::Concise)
+        else {
             panic!("expected CoChange");
         };
         assert!(empty.edges.is_empty(), "defaults exclude the fixture pair");
 
-        let DaemonResponse::CoChange(report) = co_change(&cat, None, Some(1), Some(1), Some(0.0))
-        else {
+        let DaemonResponse::CoChange(report) = co_change(
+            &cat,
+            None,
+            Some(1),
+            Some(1),
+            Some(0.0),
+            None,
+            None,
+            Verbosity::Concise,
+        ) else {
             panic!("expected CoChange");
         };
         assert_eq!(report.edges.len(), 1);

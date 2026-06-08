@@ -12,12 +12,15 @@ use std::path::Path;
 use anyhow::{Context, Result, bail};
 use ariadne_core::{
     DaemonQuery, DaemonResponse, EdgeKindFilter as CoreEdgeKind, Grain as CoreGrain,
+    Verbosity as CoreVerbosity,
 };
 use ariadne_mcp::Catalog;
 use ariadne_mcp::tools;
 use ariadne_mcp::types::{
-    BlastRadiusInput, CoChangeInput, EdgeKindFilter, FileQuery, Grain, GrainScopeInput,
-    ListSymbolsInput, PlanAssistInput, ScopeInput, SymbolQuery,
+    BlastRadiusInput, CoChangeInput, CoChangeOutput, ComplexityOutput, CouplingInput,
+    CouplingOutput, EdgeKindFilter, FileQuery, FindReferencesInput, FindReferencesOutput, Grain,
+    GrainScopeInput, HotspotOutput, ListSymbolsInput, PlanAssistInput, ScopeInput, SymbolQuery,
+    Verbosity,
 };
 use ariadne_storage::RedbStorage;
 use serde::Serialize;
@@ -117,9 +120,15 @@ fn build_query(tool: &str, args: &str) -> Result<Option<DaemonQuery>> {
         "find_definition" => DaemonQuery::FindDefinition {
             symbol: parse::<SymbolQuery>(args)?.symbol,
         },
-        "find_references" => DaemonQuery::FindReferences {
-            symbol: parse::<SymbolQuery>(args)?.symbol,
-        },
+        "find_references" => {
+            let i = parse::<FindReferencesInput>(args)?;
+            DaemonQuery::FindReferences {
+                symbol: i.symbol,
+                limit: i.limit,
+                cursor: i.cursor,
+                verbosity: to_core_verbosity(i.verbosity),
+            }
+        }
         "blast_radius" => {
             let i = parse::<BlastRadiusInput>(args)?;
             DaemonQuery::BlastRadius {
@@ -138,9 +147,15 @@ fn build_query(tool: &str, args: &str) -> Result<Option<DaemonQuery>> {
                 max_files: i.max_files,
             }
         }
-        "coupling_report" => DaemonQuery::CouplingReport {
-            prefix: parse::<ScopeInput>(args)?.prefix,
-        },
+        "coupling_report" => {
+            let i = parse::<CouplingInput>(args)?;
+            DaemonQuery::CouplingReport {
+                prefix: i.prefix,
+                limit: i.limit,
+                cursor: i.cursor,
+                verbosity: to_core_verbosity(i.verbosity),
+            }
+        }
         "weak_spots" => DaemonQuery::WeakSpots {
             prefix: parse::<ScopeInput>(args)?.prefix,
         },
@@ -162,6 +177,9 @@ fn build_query(tool: &str, args: &str) -> Result<Option<DaemonQuery>> {
             DaemonQuery::Hotspots {
                 prefix: i.prefix,
                 grain: to_core_grain(i.grain),
+                limit: i.limit,
+                cursor: i.cursor,
+                verbosity: to_core_verbosity(i.verbosity),
             }
         }
         "complexity" => {
@@ -169,6 +187,9 @@ fn build_query(tool: &str, args: &str) -> Result<Option<DaemonQuery>> {
             DaemonQuery::Complexity {
                 prefix: i.prefix,
                 grain: to_core_grain(i.grain),
+                limit: i.limit,
+                cursor: i.cursor,
+                verbosity: to_core_verbosity(i.verbosity),
             }
         }
         "co_change" => {
@@ -178,6 +199,9 @@ fn build_query(tool: &str, args: &str) -> Result<Option<DaemonQuery>> {
                 min_revs: i.min_revs,
                 min_shared_commits: i.min_shared_commits,
                 min_degree: i.min_degree,
+                limit: i.limit,
+                cursor: i.cursor,
+                verbosity: to_core_verbosity(i.verbosity),
             }
         }
         _ => return Ok(None),
@@ -198,19 +222,23 @@ fn project(resp: DaemonResponse) -> Result<String> {
     match resp {
         DaemonResponse::Symbols(rows) => json(&rows),
         DaemonResponse::Definition(sym) => json(&sym),
-        DaemonResponse::References(rows) => json(&rows),
+        DaemonResponse::References(report) => json(&FindReferencesOutput::from(report)),
         DaemonResponse::BlastRadius(report) => json(&report),
         DaemonResponse::FileSummary(report) => json(&report),
         DaemonResponse::PlanAssist(report) => json(&report),
-        DaemonResponse::Coupling(report) => json(&report),
+        // The four Block-1 tier-02 tools `From`-project the postcard-framed core
+        // report into the MCP wire output so the JSON-level concise omission +
+        // `next_cursor`/`note` shape match the cold path byte-for-byte (parity),
+        // exactly as the `References` arm does (tier-01).
+        DaemonResponse::Coupling(report) => json(&CouplingOutput::from(report)),
         DaemonResponse::WeakSpots(report) => json(&report),
         DaemonResponse::DocFor(report) => json(&report),
         DaemonResponse::Doc(report) => json(&report),
         DaemonResponse::ProjectStatus(report) => json(&report),
         DaemonResponse::Refactor(report) => json(&report),
-        DaemonResponse::Hotspots(report) => json(&report),
-        DaemonResponse::Complexity(report) => json(&report),
-        DaemonResponse::CoChange(report) => json(&report),
+        DaemonResponse::Hotspots(report) => json(&HotspotOutput::from(report)),
+        DaemonResponse::Complexity(report) => json(&ComplexityOutput::from(report)),
+        DaemonResponse::CoChange(report) => json(&CoChangeOutput::from(report)),
         // The CLI `query` subcommand does not expose `diff_blast_radius` (it is
         // an MCP tool — tier-15c), so the daemon never returns this for a CLI
         // request; the arm keeps the projection exhaustive against the shared
@@ -231,6 +259,15 @@ fn to_core_grain(grain: Grain) -> CoreGrain {
     match grain {
         Grain::File => CoreGrain::File,
         Grain::Symbol => CoreGrain::Symbol,
+    }
+}
+
+/// Map the MCP-facing verbosity onto the daemon protocol's verbosity (mirrors
+/// `crate::server::to_core_verbosity` in `ariadne-mcp`).
+fn to_core_verbosity(verbosity: Verbosity) -> CoreVerbosity {
+    match verbosity {
+        Verbosity::Concise => CoreVerbosity::Concise,
+        Verbosity::Detailed => CoreVerbosity::Detailed,
     }
 }
 
@@ -267,7 +304,7 @@ fn dispatch(cat: &Catalog, storage: &RedbStorage, tool: &str, args: &str) -> Res
         "find_references" => json(&tools::find_references::handle(
             cat,
             storage,
-            &parse::<SymbolQuery>(args)?,
+            &parse::<FindReferencesInput>(args)?,
         )?),
         "blast_radius" => json(&tools::blast_radius::handle(
             cat,
@@ -284,8 +321,8 @@ fn dispatch(cat: &Catalog, storage: &RedbStorage, tool: &str, args: &str) -> Res
         )?),
         "coupling_report" => json(&tools::coupling_report::handle(
             cat,
-            &parse::<ScopeInput>(args)?,
-        )),
+            &parse::<CouplingInput>(args)?,
+        )?),
         "weak_spots" => json(&tools::weak_spots::handle(cat, &parse::<ScopeInput>(args)?)),
         "doc_for" => json(&tools::doc_for::handle(cat, &parse::<SymbolQuery>(args)?)?),
         "project_status" => json(&tools::project_status::handle(cat)),
@@ -307,15 +344,15 @@ fn dispatch(cat: &Catalog, storage: &RedbStorage, tool: &str, args: &str) -> Res
         "hotspots" => json(&tools::hotspots::handle(
             cat,
             &parse::<GrainScopeInput>(args)?,
-        )),
+        )?),
         "complexity" => json(&tools::complexity::handle(
             cat,
             &parse::<GrainScopeInput>(args)?,
-        )),
+        )?),
         "co_change" => json(&tools::co_change::handle(
             cat,
             &parse::<CoChangeInput>(args)?,
-        )),
+        )?),
         other => bail!("unknown tool `{other}`; see `ariadne query --help`"),
     }
 }

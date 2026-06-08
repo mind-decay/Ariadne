@@ -4,36 +4,49 @@
 
 use serde::{Deserialize, Serialize};
 
-/// One symbol row (list / find / blast / doc).
+/// One symbol row (list / find / blast / doc). The cryptic fields (`id`,
+/// `byte_start`, `byte_end`) are `Option` so a concise-verbosity projection can
+/// drop them while detailed keeps the lossless superset (Block 1, tier-02 D3,
+/// mirroring [`ReferenceSite`]). No `skip_serializing_if` here: this is a
+/// postcard-framed daemon-IPC type (the codec underflows the decoder if a field
+/// is omitted), so the daemon path carries the dropped fields as `None` and the
+/// MCP wire type `From`-projects the JSON-level omission at the serving boundary
+/// [src: crates/ariadne-daemon/src/adapters/codec.rs].
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SymbolSummary {
-    /// Numeric symbol id (`SymbolId::get()`).
-    pub id: u64,
+    /// Numeric symbol id (`SymbolId::get()`); unset in concise verbosity.
+    pub id: Option<u64>,
     /// Canonical name.
     pub name: String,
     /// Free-form kind tag.
     pub kind: String,
     /// Defining file path (project-root-relative).
     pub file: String,
-    /// Defining-span byte start.
-    pub byte_start: u32,
-    /// Defining-span byte end.
-    pub byte_end: u32,
+    /// Defining-span byte start; unset in concise verbosity.
+    pub byte_start: Option<u32>,
+    /// Defining-span byte end; unset in concise verbosity.
+    pub byte_end: Option<u32>,
 }
 
-/// One reference site surfaced by `find_references`.
+/// One reference site surfaced by `find_references`. The cryptic fields
+/// (`caller` id, `byte_start`, `byte_end`) are `Option` so concise verbosity
+/// leaves them unset while detailed populates the lossless superset (Block 1,
+/// tier-01 D3). No `skip_serializing_if` here: this is a daemon-IPC type and
+/// the codec is postcard (non-self-describing), which underflows the decoder
+/// if a field is omitted — the JSON-level omission lives on the MCP wire type
+/// `From`-projected at the serving boundary [src: crates/ariadne-daemon/src/adapters/codec.rs].
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ReferenceSite {
-    /// Caller symbol id.
-    pub caller: u64,
+    /// Caller symbol id; unset in concise verbosity.
+    pub caller: Option<u64>,
     /// Caller canonical name.
     pub caller_name: String,
     /// Evidence file path.
     pub file: String,
-    /// Evidence span byte start.
-    pub byte_start: u32,
-    /// Evidence span byte end.
-    pub byte_end: u32,
+    /// Evidence span byte start; unset in concise verbosity.
+    pub byte_start: Option<u32>,
+    /// Evidence span byte end; unset in concise verbosity.
+    pub byte_end: Option<u32>,
 }
 
 /// One dependency row inside a file summary.

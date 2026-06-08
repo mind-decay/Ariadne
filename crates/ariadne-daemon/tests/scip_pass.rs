@@ -61,12 +61,19 @@ fn references(root: &Path, symbol: &str) -> Vec<String> {
             revision: 0,
             query: DaemonQuery::FindReferences {
                 symbol: symbol.to_owned(),
+                limit: None,
+                cursor: None,
+                verbosity: ariadne_core::Verbosity::Concise,
             },
         },
     )
     .expect("query");
     match resp {
-        DaemonResponse::References(sites) => sites.into_iter().map(|s| s.caller_name).collect(),
+        DaemonResponse::References(report) => report
+            .references
+            .into_iter()
+            .map(|s| s.caller_name)
+            .collect(),
         _ => Vec::new(),
     }
 }

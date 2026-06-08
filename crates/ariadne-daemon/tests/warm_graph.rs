@@ -8,7 +8,7 @@ mod support;
 use ariadne_core::{
     BlastRadiusReport, Changeset, ComponentRow, DaemonQuery, DaemonRequest, DaemonResponse,
     DiffBlastReport, DiffSeed, EdgeKey, EdgeKind, EdgeRecord, FileRecord, FileSummaryReport, Lang,
-    LineHunk, ReferenceSite, Span, SymbolRecord, Visibility,
+    LineHunk, ReferenceSite, ReferencesReport, Span, SymbolRecord, Verbosity, Visibility,
 };
 use ariadne_graph::EdgeKindSet;
 
@@ -103,32 +103,41 @@ fn navigation_queries_match_cold() {
         DaemonResponse::Definition(reference.summ("crate::run"))
     );
 
-    // find_references: the two callers of crate::util::helper, by caller id.
+    // find_references (detailed): the two callers of crate::util::helper, now
+    // ordered by the stable (file, byte_start, caller_name) key — src/helper.rs
+    // sorts before src/lib.rs — and wrapped in a single-page report.
     let refs = query(
         &root,
         revision,
         DaemonQuery::FindReferences {
             symbol: "crate::util::helper".to_owned(),
+            limit: None,
+            cursor: None,
+            verbosity: Verbosity::Detailed,
         },
     );
     assert_eq!(
         refs,
-        DaemonResponse::References(vec![
-            ReferenceSite {
-                caller: 2,
-                caller_name: "crate::run".to_owned(),
-                file: "src/lib.rs".to_owned(),
-                byte_start: 64,
-                byte_end: 96,
-            },
-            ReferenceSite {
-                caller: 5,
-                caller_name: "crate::helper::extra".to_owned(),
-                file: "src/helper.rs".to_owned(),
-                byte_start: 64,
-                byte_end: 96,
-            },
-        ]),
+        DaemonResponse::References(ReferencesReport {
+            references: vec![
+                ReferenceSite {
+                    caller: Some(5),
+                    caller_name: "crate::helper::extra".to_owned(),
+                    file: "src/helper.rs".to_owned(),
+                    byte_start: Some(64),
+                    byte_end: Some(96),
+                },
+                ReferenceSite {
+                    caller: Some(2),
+                    caller_name: "crate::run".to_owned(),
+                    file: "src/lib.rs".to_owned(),
+                    byte_start: Some(64),
+                    byte_end: Some(96),
+                },
+            ],
+            next_cursor: None,
+            note: None,
+        }),
     );
 
     // Unknown symbol is a query-level error, not a panic.

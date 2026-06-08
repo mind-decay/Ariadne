@@ -17,7 +17,12 @@ pub(crate) fn dispatch(catalog: &WarmCatalog, query: DaemonQuery) -> DaemonRespo
             navigate::list_symbols(catalog, &query, kind.as_deref(), limit)
         }
         DaemonQuery::FindDefinition { symbol } => navigate::find_definition(catalog, &symbol),
-        DaemonQuery::FindReferences { symbol } => navigate::find_references(catalog, &symbol),
+        DaemonQuery::FindReferences {
+            symbol,
+            limit,
+            cursor,
+            verbosity,
+        } => navigate::find_references(catalog, &symbol, limit, cursor.as_deref(), verbosity),
         DaemonQuery::BlastRadius {
             symbol,
             depth,
@@ -27,9 +32,18 @@ pub(crate) fn dispatch(catalog: &WarmCatalog, query: DaemonQuery) -> DaemonRespo
         DaemonQuery::PlanAssist { symbol, max_files } => {
             impact::plan_assist(catalog, &symbol, max_files)
         }
-        DaemonQuery::CouplingReport { prefix } => {
-            health::coupling_report(catalog, prefix.as_deref())
-        }
+        DaemonQuery::CouplingReport {
+            prefix,
+            limit,
+            cursor,
+            verbosity,
+        } => health::coupling_report(
+            catalog,
+            prefix.as_deref(),
+            limit,
+            cursor.as_deref(),
+            verbosity,
+        ),
         DaemonQuery::WeakSpots { prefix } => health::weak_spots(catalog, prefix.as_deref()),
         DaemonQuery::DocFor { symbol } => docs::doc_for(catalog, &symbol),
         DaemonQuery::DocForModule { path } => docs::doc_for_module(catalog, &path),
@@ -38,23 +52,51 @@ pub(crate) fn dispatch(catalog: &WarmCatalog, query: DaemonQuery) -> DaemonRespo
         DaemonQuery::RefactorSuggestions { prefix } => {
             refactor::refactor_suggestions(catalog, prefix.as_deref())
         }
-        DaemonQuery::Hotspots { prefix, grain } => {
-            analytics::hotspots(catalog, prefix.as_deref(), grain)
-        }
-        DaemonQuery::Complexity { prefix, grain } => {
-            analytics::complexity(catalog, prefix.as_deref(), grain)
-        }
+        DaemonQuery::Hotspots {
+            prefix,
+            grain,
+            limit,
+            cursor,
+            verbosity,
+        } => analytics::hotspots(
+            catalog,
+            prefix.as_deref(),
+            grain,
+            limit,
+            cursor.as_deref(),
+            verbosity,
+        ),
+        DaemonQuery::Complexity {
+            prefix,
+            grain,
+            limit,
+            cursor,
+            verbosity,
+        } => analytics::complexity(
+            catalog,
+            prefix.as_deref(),
+            grain,
+            limit,
+            cursor.as_deref(),
+            verbosity,
+        ),
         DaemonQuery::CoChange {
             prefix,
             min_revs,
             min_shared_commits,
             min_degree,
+            limit,
+            cursor,
+            verbosity,
         } => analytics::co_change(
             catalog,
             prefix.as_deref(),
             min_revs,
             min_shared_commits,
             min_degree,
+            limit,
+            cursor.as_deref(),
+            verbosity,
         ),
         DaemonQuery::DiffBlast {
             hunks,
@@ -72,24 +114,26 @@ pub(crate) fn dispatch(catalog: &WarmCatalog, query: DaemonQuery) -> DaemonRespo
 }
 
 /// Project a [`SymbolId`] into the wire [`SymbolSummary`]. Unknown ids
-/// collapse into an `<unknown>` placeholder, matching the v1 MCP projector.
+/// collapse into an `<unknown>` placeholder, matching the v1 MCP projector. The
+/// cryptic fields are populated (`Some`) — the lossless superset; a concise
+/// projection drops them later (Block 1, tier-02 D3).
 pub(crate) fn summarize(catalog: &WarmCatalog, id: SymbolId) -> SymbolSummary {
     match catalog.meta_of(id) {
         Some(m) => SymbolSummary {
-            id: id.get(),
+            id: Some(id.get()),
             name: m.name.clone(),
             kind: m.kind.clone(),
             file: catalog.path_of(m.file).unwrap_or("").to_owned(),
-            byte_start: m.byte_start,
-            byte_end: m.byte_end,
+            byte_start: Some(m.byte_start),
+            byte_end: Some(m.byte_end),
         },
         None => SymbolSummary {
-            id: id.get(),
+            id: Some(id.get()),
             name: String::from("<unknown>"),
             kind: String::new(),
             file: String::new(),
-            byte_start: 0,
-            byte_end: 0,
+            byte_start: Some(0),
+            byte_end: Some(0),
         },
     }
 }

@@ -240,9 +240,42 @@ expression: golden
     "type": "object"
   },
   "co_change": {
+    "$defs": {
+      "Verbosity": {
+        "description": "Field verbosity for a growable tool's rows (Block 1, tier-01 D3). Concise\n(the default) omits the cryptic id/offset fields the LLM reasons about\nworse; `detailed` is a lossless superset. Mirrors\n`ariadne_graph::economy::Verbosity` / `ariadne_core::Verbosity`; the server\nmaps between them (as it does for [`Grain`]).",
+        "oneOf": [
+          {
+            "const": "concise",
+            "description": "Omit cryptic id/offset fields (the default).",
+            "type": "string"
+          },
+          {
+            "const": "detailed",
+            "description": "Emit every field — the lossless superset.",
+            "type": "string"
+          }
+        ]
+      }
+    },
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "description": "Input to `co_change`. The three optional thresholds default to code-maat's\npublished values (`min_revs = 5`, `min_shared_commits = 5`,\n`min_degree = 0.30`) when omitted.",
     "properties": {
+      "cursor": {
+        "description": "Opaque pagination cursor from a prior page; absent = first page.",
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "limit": {
+        "description": "Maximum edges in the page; defaults to the economy page size (50).",
+        "format": "uint32",
+        "minimum": 0,
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
       "min_degree": {
         "default": null,
         "description": "Minimum coupling degree ∈ [0, 1]. Defaults to 0.30.",
@@ -279,6 +312,11 @@ expression: golden
           "string",
           "null"
         ]
+      },
+      "verbosity": {
+        "$ref": "#/$defs/Verbosity",
+        "default": "concise",
+        "description": "Field verbosity; defaults to concise (a no-op — edges carry no cryptic\nfields, so concise == detailed)."
       }
     },
     "title": "CoChangeInput",
@@ -300,15 +338,46 @@ expression: golden
             "type": "string"
           }
         ]
+      },
+      "Verbosity": {
+        "description": "Field verbosity for a growable tool's rows (Block 1, tier-01 D3). Concise\n(the default) omits the cryptic id/offset fields the LLM reasons about\nworse; `detailed` is a lossless superset. Mirrors\n`ariadne_graph::economy::Verbosity` / `ariadne_core::Verbosity`; the server\nmaps between them (as it does for [`Grain`]).",
+        "oneOf": [
+          {
+            "const": "concise",
+            "description": "Omit cryptic id/offset fields (the default).",
+            "type": "string"
+          },
+          {
+            "const": "detailed",
+            "description": "Emit every field — the lossless superset.",
+            "type": "string"
+          }
+        ]
       }
     },
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "description": "Input to `hotspots` and `complexity` — a path-prefix scope and a grain.",
+    "description": "Input to `hotspots` and `complexity` — a path-prefix scope, a grain, and the\neconomy page controls (Block 1, tier-02).",
     "properties": {
+      "cursor": {
+        "description": "Opaque pagination cursor from a prior page; absent = first page.",
+        "type": [
+          "string",
+          "null"
+        ]
+      },
       "grain": {
         "$ref": "#/$defs/Grain",
         "default": "file",
         "description": "File (default) or symbol grain."
+      },
+      "limit": {
+        "description": "Maximum rows in the page; defaults to the economy page size (50).",
+        "format": "uint32",
+        "minimum": 0,
+        "type": [
+          "integer",
+          "null"
+        ]
       },
       "prefix": {
         "default": null,
@@ -317,25 +386,68 @@ expression: golden
           "string",
           "null"
         ]
+      },
+      "verbosity": {
+        "$ref": "#/$defs/Verbosity",
+        "default": "concise",
+        "description": "Field verbosity; defaults to concise (drops the embedded symbol's\ncryptic id/offset fields on symbol-grain rows)."
       }
     },
     "title": "GrainScopeInput",
     "type": "object"
   },
   "coupling_report": {
+    "$defs": {
+      "Verbosity": {
+        "description": "Field verbosity for a growable tool's rows (Block 1, tier-01 D3). Concise\n(the default) omits the cryptic id/offset fields the LLM reasons about\nworse; `detailed` is a lossless superset. Mirrors\n`ariadne_graph::economy::Verbosity` / `ariadne_core::Verbosity`; the server\nmaps between them (as it does for [`Grain`]).",
+        "oneOf": [
+          {
+            "const": "concise",
+            "description": "Omit cryptic id/offset fields (the default).",
+            "type": "string"
+          },
+          {
+            "const": "detailed",
+            "description": "Emit every field — the lossless superset.",
+            "type": "string"
+          }
+        ]
+      }
+    },
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "description": "Path-prefix scope shared by `coupling_report`, `weak_spots`,\n`doc_for_project`, and `refactor_suggestions`. Empty = all files.",
+    "description": "Input to `coupling_report` — a dedicated type (not the shared\n[`ScopeInput`]) so adding `limit`/`cursor`/`verbosity` here leaves\n`weak_spots`/`doc_for_project`/`refactor_suggestions` (which keep\n[`ScopeInput`]) untouched (Block 1, tier-02).",
     "properties": {
-      "prefix": {
-        "default": null,
-        "description": "Optional path-prefix filter (project-root-relative).",
+      "cursor": {
+        "description": "Opaque pagination cursor from a prior page; absent = first page.",
         "type": [
           "string",
           "null"
         ]
+      },
+      "limit": {
+        "description": "Maximum rows in the page; defaults to the economy page size (50).",
+        "format": "uint32",
+        "minimum": 0,
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
+      "prefix": {
+        "default": null,
+        "description": "Optional path-prefix filter (project-root-relative). Empty = all files.",
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "verbosity": {
+        "$ref": "#/$defs/Verbosity",
+        "default": "concise",
+        "description": "Field verbosity; defaults to concise (a no-op — metric-only rows carry\nno cryptic fields, so concise == detailed)."
       }
     },
-    "title": "ScopeInput",
+    "title": "CouplingInput",
     "type": "object"
   },
   "diff_blast_radius": {
@@ -547,18 +659,56 @@ expression: golden
     "type": "object"
   },
   "find_references": {
+    "$defs": {
+      "Verbosity": {
+        "description": "Field verbosity for a growable tool's rows (Block 1, tier-01 D3). Concise\n(the default) omits the cryptic id/offset fields the LLM reasons about\nworse; `detailed` is a lossless superset. Mirrors\n`ariadne_graph::economy::Verbosity` / `ariadne_core::Verbosity`; the server\nmaps between them (as it does for [`Grain`]).",
+        "oneOf": [
+          {
+            "const": "concise",
+            "description": "Omit cryptic id/offset fields (the default).",
+            "type": "string"
+          },
+          {
+            "const": "detailed",
+            "description": "Emit every field — the lossless superset.",
+            "type": "string"
+          }
+        ]
+      }
+    },
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "description": "Input to `find_definition` / `find_references` / `doc_for`.",
+    "description": "Input to `find_references` — a dedicated type (not the shared\n[`SymbolQuery`]) so adding `limit`/`cursor`/`verbosity` here leaves\n`find_definition`/`doc_for` untouched (tier-01).",
     "properties": {
+      "cursor": {
+        "description": "Opaque pagination cursor from a prior page; absent = first page.",
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "limit": {
+        "description": "Maximum rows in the page; defaults to the economy page size (50).",
+        "format": "uint32",
+        "minimum": 0,
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
       "symbol": {
-        "description": "Canonical name of the queried symbol.",
+        "description": "Canonical name of the referenced symbol.",
         "type": "string"
+      },
+      "verbosity": {
+        "$ref": "#/$defs/Verbosity",
+        "default": "concise",
+        "description": "Field verbosity; defaults to concise."
       }
     },
     "required": [
       "symbol"
     ],
-    "title": "SymbolQuery",
+    "title": "FindReferencesInput",
     "type": "object"
   },
   "fitness_report": {
@@ -583,15 +733,46 @@ expression: golden
             "type": "string"
           }
         ]
+      },
+      "Verbosity": {
+        "description": "Field verbosity for a growable tool's rows (Block 1, tier-01 D3). Concise\n(the default) omits the cryptic id/offset fields the LLM reasons about\nworse; `detailed` is a lossless superset. Mirrors\n`ariadne_graph::economy::Verbosity` / `ariadne_core::Verbosity`; the server\nmaps between them (as it does for [`Grain`]).",
+        "oneOf": [
+          {
+            "const": "concise",
+            "description": "Omit cryptic id/offset fields (the default).",
+            "type": "string"
+          },
+          {
+            "const": "detailed",
+            "description": "Emit every field — the lossless superset.",
+            "type": "string"
+          }
+        ]
       }
     },
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "description": "Input to `hotspots` and `complexity` — a path-prefix scope and a grain.",
+    "description": "Input to `hotspots` and `complexity` — a path-prefix scope, a grain, and the\neconomy page controls (Block 1, tier-02).",
     "properties": {
+      "cursor": {
+        "description": "Opaque pagination cursor from a prior page; absent = first page.",
+        "type": [
+          "string",
+          "null"
+        ]
+      },
       "grain": {
         "$ref": "#/$defs/Grain",
         "default": "file",
         "description": "File (default) or symbol grain."
+      },
+      "limit": {
+        "description": "Maximum rows in the page; defaults to the economy page size (50).",
+        "format": "uint32",
+        "minimum": 0,
+        "type": [
+          "integer",
+          "null"
+        ]
       },
       "prefix": {
         "default": null,
@@ -600,6 +781,11 @@ expression: golden
           "string",
           "null"
         ]
+      },
+      "verbosity": {
+        "$ref": "#/$defs/Verbosity",
+        "default": "concise",
+        "description": "Field verbosity; defaults to concise (drops the embedded symbol's\ncryptic id/offset fields on symbol-grain rows)."
       }
     },
     "title": "GrainScopeInput",

@@ -31,6 +31,7 @@ use std::sync::Arc;
 
 use ariadne_core::{
     DaemonQuery, DaemonResponse, EdgeKindFilter as CoreEdgeKind, Grain as CoreGrain,
+    Verbosity as CoreVerbosity,
 };
 use ariadne_storage::RedbStorage;
 use rmcp::handler::server::router::tool::ToolRouter;
@@ -46,10 +47,10 @@ use crate::catalog::Catalog;
 use crate::errors::McpError;
 use crate::tools;
 use crate::types::{
-    AffectedTestsInput, ApiSurfaceDiffInput, BlastRadiusInput, CoChangeInput, DiffBlastInput,
-    DiffSpecInput, EdgeKindFilter, FileQuery, FitnessReportInput, Grain, GrainScopeInput,
-    ListSymbolsInput, PlanAssistInput, ReadOutlineInput, ReadSymbolInput, ScopeInput,
-    SearchCodeInput, SymbolQuery,
+    AffectedTestsInput, ApiSurfaceDiffInput, BlastRadiusInput, CoChangeInput, CouplingInput,
+    DiffBlastInput, DiffSpecInput, EdgeKindFilter, FileQuery, FindReferencesInput,
+    FitnessReportInput, Grain, GrainScopeInput, ListSymbolsInput, PlanAssistInput,
+    ReadOutlineInput, ReadSymbolInput, ScopeInput, SearchCodeInput, SymbolQuery, Verbosity,
 };
 
 /// MCP server backing the Ariadne analytics tools. Clone-friendly so the
@@ -299,10 +300,13 @@ of\".",
     )]
     async fn find_references(
         &self,
-        Parameters(input): Parameters<SymbolQuery>,
+        Parameters(input): Parameters<FindReferencesInput>,
     ) -> Result<CallToolResult, ErrorData> {
         let query = DaemonQuery::FindReferences {
             symbol: input.symbol.clone(),
+            limit: input.limit,
+            cursor: input.cursor.clone(),
+            verbosity: to_core_verbosity(input.verbosity),
         };
         if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
             return project_daemon(resp);
@@ -390,16 +394,19 @@ assessing module dependency or architecture health; triggers: \"how coupled is\"
     )]
     async fn coupling_report(
         &self,
-        Parameters(input): Parameters<ScopeInput>,
+        Parameters(input): Parameters<CouplingInput>,
     ) -> Result<CallToolResult, ErrorData> {
         let query = DaemonQuery::CouplingReport {
             prefix: input.prefix.clone(),
+            limit: input.limit,
+            cursor: input.cursor.clone(),
+            verbosity: to_core_verbosity(input.verbosity),
         };
         if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
             return project_daemon(resp);
         }
         let catalog = self.catalog().await?;
-        let out = tools::coupling_report::handle(&catalog, &input);
+        let out = tools::coupling_report::handle(&catalog, &input).map_err(McpError::into_rmcp)?;
         wire(&out)
     }
 
@@ -547,12 +554,15 @@ triggers: \"what are the hotspots\", \"which files change most and are most comp
         let query = DaemonQuery::Hotspots {
             prefix: input.prefix.clone(),
             grain: to_core_grain(input.grain),
+            limit: input.limit,
+            cursor: input.cursor.clone(),
+            verbosity: to_core_verbosity(input.verbosity),
         };
         if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
             return project_daemon(resp);
         }
         let catalog = self.catalog().await?;
-        let out = tools::hotspots::handle(&catalog, &input);
+        let out = tools::hotspots::handle(&catalog, &input).map_err(McpError::into_rmcp)?;
         wire(&out)
     }
 
@@ -569,12 +579,15 @@ most complex code\", \"cyclomatic complexity of\", \"which functions are hardest
         let query = DaemonQuery::Complexity {
             prefix: input.prefix.clone(),
             grain: to_core_grain(input.grain),
+            limit: input.limit,
+            cursor: input.cursor.clone(),
+            verbosity: to_core_verbosity(input.verbosity),
         };
         if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
             return project_daemon(resp);
         }
         let catalog = self.catalog().await?;
-        let out = tools::complexity::handle(&catalog, &input);
+        let out = tools::complexity::handle(&catalog, &input).map_err(McpError::into_rmcp)?;
         wire(&out)
     }
 
@@ -594,12 +607,15 @@ despite no static edge; triggers: \"what changes together with\", \"co-change co
             min_revs: input.min_revs,
             min_shared_commits: input.min_shared_commits,
             min_degree: input.min_degree,
+            limit: input.limit,
+            cursor: input.cursor.clone(),
+            verbosity: to_core_verbosity(input.verbosity),
         };
         if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
             return project_daemon(resp);
         }
         let catalog = self.catalog().await?;
-        let out = tools::co_change::handle(&catalog, &input);
+        let out = tools::co_change::handle(&catalog, &input).map_err(McpError::into_rmcp)?;
         wire(&out)
     }
 
@@ -771,19 +787,26 @@ fn project_daemon(resp: DaemonResponse) -> Result<CallToolResult, ErrorData> {
     match resp {
         DaemonResponse::Symbols(rows) => wire(&rows),
         DaemonResponse::Definition(sym) => wire(&sym),
-        DaemonResponse::References(rows) => wire(&rows),
+        DaemonResponse::References(report) => {
+            wire(&crate::types::FindReferencesOutput::from(report))
+        }
         DaemonResponse::BlastRadius(report) => wire(&report),
         DaemonResponse::FileSummary(report) => wire(&report),
         DaemonResponse::PlanAssist(report) => wire(&report),
-        DaemonResponse::Coupling(report) => wire(&report),
+        // The four Block-1 tier-02 tools `From`-project the postcard-framed
+        // core report into the MCP wire output so the JSON-level concise
+        // omission (skip_serializing_if) + the `next_cursor`/`note` shape take
+        // effect — byte-identical to the cold path (parity), exactly as the
+        // `References` arm does (tier-01).
+        DaemonResponse::Coupling(report) => wire(&crate::types::CouplingOutput::from(report)),
         DaemonResponse::WeakSpots(report) => wire(&report),
         DaemonResponse::DocFor(report) => wire(&report),
         DaemonResponse::Doc(report) => wire(&report),
         DaemonResponse::ProjectStatus(report) => wire(&report),
         DaemonResponse::Refactor(report) => wire(&report),
-        DaemonResponse::Hotspots(report) => wire(&report),
-        DaemonResponse::Complexity(report) => wire(&report),
-        DaemonResponse::CoChange(report) => wire(&report),
+        DaemonResponse::Hotspots(report) => wire(&crate::types::HotspotOutput::from(report)),
+        DaemonResponse::Complexity(report) => wire(&crate::types::ComplexityOutput::from(report)),
+        DaemonResponse::CoChange(report) => wire(&crate::types::CoChangeOutput::from(report)),
         DaemonResponse::DiffBlast(report) => wire(&report),
         DaemonResponse::AffectedTests(report) => wire(&report),
         DaemonResponse::Error(msg) => Err(ErrorData::internal_error(msg, None)),
@@ -813,6 +836,14 @@ fn to_core_grain(grain: Grain) -> CoreGrain {
     match grain {
         Grain::File => CoreGrain::File,
         Grain::Symbol => CoreGrain::Symbol,
+    }
+}
+
+/// Map the MCP-facing verbosity onto the daemon protocol's verbosity (tier-01).
+fn to_core_verbosity(verbosity: Verbosity) -> CoreVerbosity {
+    match verbosity {
+        Verbosity::Concise => CoreVerbosity::Concise,
+        Verbosity::Detailed => CoreVerbosity::Detailed,
     }
 }
 
@@ -873,27 +904,27 @@ mod tests {
 
     use super::*;
 
-    /// Daemon-side symbol row.
+    /// Daemon-side symbol row (detailed — cryptic fields populated).
     fn c_sym(id: u64, name: &str) -> ariadne_core::SymbolSummary {
         ariadne_core::SymbolSummary {
-            id,
+            id: Some(id),
             name: name.into(),
             kind: "function".into(),
             file: "src/x.rs".into(),
-            byte_start: 1,
-            byte_end: 9,
+            byte_start: Some(1),
+            byte_end: Some(9),
         }
     }
 
     /// Cold-side symbol row carrying field-identical data.
     fn t_sym(id: u64, name: &str) -> crate::types::SymbolSummary {
         crate::types::SymbolSummary {
-            id,
+            id: Some(id),
             name: name.into(),
             kind: "function".into(),
             file: "src/x.rs".into(),
-            byte_start: 1,
-            byte_end: 9,
+            byte_start: Some(1),
+            byte_end: Some(9),
         }
     }
 
@@ -935,26 +966,34 @@ mod tests {
 
     #[test]
     fn references_arm_matches_cold_find_references() {
+        // A truncated, detailed page: the report carries a cursor + steer, and
+        // the warm `ReferencesReport` must serialize byte-for-byte like the cold
+        // `FindReferencesOutput`.
         let c = ariadne_core::ReferenceSite {
-            caller: 3,
+            caller: Some(3),
             caller_name: "crate::caller".into(),
             file: "src/y.rs".into(),
-            byte_start: 4,
-            byte_end: 12,
+            byte_start: Some(4),
+            byte_end: Some(12),
         };
         let t = crate::types::ReferenceSite {
-            caller: 3,
+            caller: Some(3),
             caller_name: "crate::caller".into(),
             file: "src/y.rs".into(),
-            byte_start: 4,
-            byte_end: 12,
+            byte_start: Some(4),
+            byte_end: Some(12),
         };
-        let cold: Vec<crate::types::ReferenceSite> = vec![t];
-        assert_parity(
-            "find_references",
-            DaemonResponse::References(vec![c]),
-            &cold,
-        );
+        let cold = crate::types::FindReferencesOutput {
+            references: vec![t],
+            next_cursor: Some("deadbeef".into()),
+            note: Some("Showing 1 of 2 references".into()),
+        };
+        let report = ariadne_core::ReferencesReport {
+            references: vec![c],
+            next_cursor: Some("deadbeef".into()),
+            note: Some("Showing 1 of 2 references".into()),
+        };
+        assert_parity("find_references", DaemonResponse::References(report), &cold);
     }
 
     #[test]
@@ -1039,6 +1078,8 @@ mod tests {
                 abstractness: 0.0,
                 distance: 0.25,
             }],
+            next_cursor: Some("deadbeef".into()),
+            note: Some("Showing 1 of 2 modules".into()),
         };
         let t = crate::types::CouplingOutput {
             rows: vec![crate::types::CouplingRow {
@@ -1049,6 +1090,8 @@ mod tests {
                 abstractness: 0.0,
                 distance: 0.25,
             }],
+            next_cursor: Some("deadbeef".into()),
+            note: Some("Showing 1 of 2 modules".into()),
         };
         assert_parity("coupling_report", DaemonResponse::Coupling(c), &t);
     }
@@ -1219,6 +1262,8 @@ mod tests {
                     score: 0.5,
                 },
             ],
+            next_cursor: Some("deadbeef".into()),
+            note: Some("Showing 2 of 3 hotspots".into()),
         };
         let t = crate::types::HotspotOutput {
             rows: vec![
@@ -1237,8 +1282,54 @@ mod tests {
                     score: 0.5,
                 },
             ],
+            next_cursor: Some("deadbeef".into()),
+            note: Some("Showing 2 of 3 hotspots".into()),
         };
         assert_parity("hotspots", DaemonResponse::Hotspots(c), &t);
+    }
+
+    /// The warm path projects a concise symbol-grain row (core `SymbolSummary`
+    /// with `None` cryptic fields) through `From` so the JSON omits `id` /
+    /// `byte_start` / `byte_end` — byte-identical to a cold concise page. Proves
+    /// the daemon concise projection survives the postcard → wire boundary.
+    #[test]
+    fn hotspots_concise_symbol_omits_cryptic_fields_through_daemon() {
+        let concise_sym = ariadne_core::SymbolSummary {
+            id: None,
+            name: "crate::f".into(),
+            kind: "function".into(),
+            file: "src/x.rs".into(),
+            byte_start: None,
+            byte_end: None,
+        };
+        let c = ariadne_core::HotspotReport {
+            rows: vec![ariadne_core::HotspotRow {
+                file: String::new(),
+                symbol: Some(concise_sym),
+                churn: 5,
+                complexity: 7,
+                score: 0.5,
+            }],
+            next_cursor: None,
+            note: None,
+        };
+        let json = projected_text(DaemonResponse::Hotspots(c));
+        assert!(
+            json.contains("\"name\":\"crate::f\""),
+            "concise keeps the name: {json}"
+        );
+        assert!(
+            !json.contains("\"id\""),
+            "concise omits the symbol id: {json}"
+        );
+        assert!(
+            !json.contains("byte_start"),
+            "concise omits byte_start: {json}"
+        );
+        assert!(
+            !json.contains("next_cursor"),
+            "single page omits next_cursor: {json}"
+        );
     }
 
     #[test]
@@ -1256,6 +1347,8 @@ mod tests {
                     complexity: 4,
                 },
             ],
+            next_cursor: Some("deadbeef".into()),
+            note: Some("Showing 2 of 3 complexity rows".into()),
         };
         let t = crate::types::ComplexityOutput {
             rows: vec![
@@ -1270,6 +1363,8 @@ mod tests {
                     complexity: 4,
                 },
             ],
+            next_cursor: Some("deadbeef".into()),
+            note: Some("Showing 2 of 3 complexity rows".into()),
         };
         assert_parity("complexity", DaemonResponse::Complexity(c), &t);
     }
@@ -1283,6 +1378,8 @@ mod tests {
                 shared_commits: 3,
                 degree: 0.461_538_46,
             }],
+            next_cursor: Some("deadbeef".into()),
+            note: Some("Showing 1 of 2 co-change pairs".into()),
         };
         let t = crate::types::CoChangeOutput {
             edges: vec![crate::types::CoChangeEdge {
@@ -1291,6 +1388,8 @@ mod tests {
                 shared_commits: 3,
                 degree: 0.461_538_46,
             }],
+            next_cursor: Some("deadbeef".into()),
+            note: Some("Showing 1 of 2 co-change pairs".into()),
         };
         assert_parity("co_change", DaemonResponse::CoChange(c), &t);
     }

@@ -35,7 +35,9 @@ use crate::types::SymbolSummary;
 
 /// Convert a raw [`SymbolId`] into the wire [`SymbolSummary`]. Unknown
 /// ids (possible only when a tool synthesises an id outside the catalog)
-/// collapse into an "unknown" placeholder.
+/// collapse into an "unknown" placeholder. The cryptic fields are populated
+/// (`Some`) — the lossless superset; a concise projection drops them later
+/// (Block 1, tier-02 D3).
 #[must_use]
 pub fn summarize(cat: &Catalog, id: SymbolId) -> SymbolSummary {
     let meta = cat.meta_of(id);
@@ -59,11 +61,11 @@ pub fn summarize(cat: &Catalog, id: SymbolId) -> SymbolSummary {
         ),
     };
     SymbolSummary {
-        id: id.get(),
+        id: Some(id.get()),
         name,
         kind,
         file,
-        byte_start,
-        byte_end,
+        byte_start: Some(byte_start),
+        byte_end: Some(byte_end),
     }
 }
