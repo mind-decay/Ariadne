@@ -95,7 +95,9 @@ pub enum DaemonQuery {
         /// Field verbosity; defaults to concise.
         verbosity: Verbosity,
     },
-    /// Reverse-reachability blast radius of a symbol.
+    /// Reverse-reachability blast radius of a symbol (Block 1, tier-03: each of
+    /// `must_touch` / `may_touch` capped + cursored + verbosity-projected via
+    /// `ariadne_graph::economy`, sharing one multi-list cursor).
     BlastRadius {
         /// Target symbol canonical name.
         symbol: String,
@@ -103,6 +105,15 @@ pub enum DaemonQuery {
         depth: Option<u8>,
         /// Edge-kind filter; empty / missing = all kinds.
         kinds: Option<Vec<EdgeKindFilter>>,
+        /// Maximum rows per sublist in the page; the handler defaults to the
+        /// economy page size (50) when absent.
+        limit: Option<u32>,
+        /// Opaque multi-list pagination cursor from a prior page; `None` = first
+        /// page.
+        cursor: Option<String>,
+        /// Field verbosity; defaults to concise (drops the embedded symbols'
+        /// cryptic id/offset fields).
+        verbosity: Verbosity,
     },
     /// Per-file roll-up: symbols, fan-in/out, top deps, components.
     FileSummary {
@@ -130,10 +141,22 @@ pub enum DaemonQuery {
         /// rows carry no cryptic fields, so concise == detailed).
         verbosity: Verbosity,
     },
-    /// Cycles ∪ god modules ∪ dead-code candidates.
+    /// Cycles ∪ god modules ∪ dead-code candidates (Block 1, tier-03: each
+    /// sublist capped + cursored via `ariadne_graph::economy` sharing one
+    /// multi-list cursor; the ad-hoc `MAX_DEAD` cap is superseded by it).
     WeakSpots {
         /// Optional path-prefix scope (project-root-relative).
         prefix: Option<String>,
+        /// Maximum rows per sublist in the page; the handler defaults to the
+        /// economy page size (50) when absent.
+        limit: Option<u32>,
+        /// Opaque multi-list pagination cursor from a prior page; `None` = first
+        /// page.
+        cursor: Option<String>,
+        /// Field verbosity; defaults to concise (drops the embedded
+        /// dead-symbol rows' cryptic id/offset fields; the cycle / god-module
+        /// rows carry none, so concise == detailed for them).
+        verbosity: Verbosity,
     },
     /// Structured doc summary for one symbol.
     DocFor {
@@ -152,10 +175,22 @@ pub enum DaemonQuery {
     },
     /// Coarse counts + persisted revision of the indexed project.
     ProjectStatus,
-    /// God modules ∪ cycle breaks ∪ misplaced symbols — refactor hints.
+    /// God modules ∪ cycle breaks ∪ misplaced symbols — refactor hints (Block 1,
+    /// tier-03: each sublist capped + cursored via `ariadne_graph::economy`
+    /// sharing one multi-list cursor; verbosity is a no-op — the rows are
+    /// name/metric only, so concise == detailed).
     RefactorSuggestions {
         /// Optional path-prefix scope (project-root-relative).
         prefix: Option<String>,
+        /// Maximum rows per sublist in the page; the handler defaults to the
+        /// economy page size (50) when absent.
+        limit: Option<u32>,
+        /// Opaque multi-list pagination cursor from a prior page; `None` = first
+        /// page.
+        cursor: Option<String>,
+        /// Field verbosity; defaults to concise (a no-op — every refactor row is
+        /// name/metric only, so concise == detailed).
+        verbosity: Verbosity,
     },
     /// Churn × complexity hotspots at the requested grain (tier-15b; Block 1
     /// tier-02: capped + cursored + verbosity-projected via `economy`).

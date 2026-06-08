@@ -45,7 +45,8 @@ pub use diff_blast::{DiffBlastReport, DiffSeed};
 pub use doc_model::{DocKind, DocScope, LayerHint, crate_of, symbol_role};
 pub use docgen::{architecture_svg, module_svg};
 pub use economy::{
-    Budget, Cursor, CursorError, DEFAULT_PAGE, Page, Verbosity, paginate, truncation_note,
+    Budget, Cursor, CursorError, DEFAULT_PAGE, Page, SubListPage, Verbosity, multi_cursor,
+    multi_truncation_note, paginate, paginate_sublist, truncation_note,
 };
 pub use errors::GraphError;
 pub use fitness::{FitnessReport, FitnessRules, Violation};

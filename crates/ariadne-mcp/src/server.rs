@@ -50,7 +50,8 @@ use crate::types::{
     AffectedTestsInput, ApiSurfaceDiffInput, BlastRadiusInput, CoChangeInput, CouplingInput,
     DiffBlastInput, DiffSpecInput, EdgeKindFilter, FileQuery, FindReferencesInput,
     FitnessReportInput, Grain, GrainScopeInput, ListSymbolsInput, PlanAssistInput,
-    ReadOutlineInput, ReadSymbolInput, ScopeInput, SearchCodeInput, SymbolQuery, Verbosity,
+    ReadOutlineInput, ReadSymbolInput, RefactorInput, ScopeInput, SearchCodeInput, SymbolQuery,
+    Verbosity, WeakSpotsInput,
 };
 
 /// MCP server backing the Ariadne analytics tools. Clone-friendly so the
@@ -332,6 +333,9 @@ change X\", \"impact of changing\", \"is it safe to edit\".",
             symbol: input.symbol.clone(),
             depth: input.depth,
             kinds: to_core_kinds(input.kinds.as_deref()),
+            limit: input.limit,
+            cursor: input.cursor.clone(),
+            verbosity: to_core_verbosity(input.verbosity),
         };
         if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
             return project_daemon(resp);
@@ -418,16 +422,19 @@ codebase\", \"find tech debt\", \"any cycles\".",
     )]
     async fn weak_spots(
         &self,
-        Parameters(input): Parameters<ScopeInput>,
+        Parameters(input): Parameters<WeakSpotsInput>,
     ) -> Result<CallToolResult, ErrorData> {
         let query = DaemonQuery::WeakSpots {
             prefix: input.prefix.clone(),
+            limit: input.limit,
+            cursor: input.cursor.clone(),
+            verbosity: to_core_verbosity(input.verbosity),
         };
         if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
             return project_daemon(resp);
         }
         let catalog = self.catalog().await?;
-        let out = tools::weak_spots::handle(&catalog, &input);
+        let out = tools::weak_spots::handle(&catalog, &input).map_err(McpError::into_rmcp)?;
         wire(&out)
     }
 
@@ -525,10 +532,13 @@ I refactor\", \"cleanup suggestions for\".",
     )]
     async fn refactor_suggestions(
         &self,
-        Parameters(input): Parameters<ScopeInput>,
+        Parameters(input): Parameters<RefactorInput>,
     ) -> Result<CallToolResult, ErrorData> {
         let query = DaemonQuery::RefactorSuggestions {
             prefix: input.prefix.clone(),
+            limit: input.limit,
+            cursor: input.cursor.clone(),
+            verbosity: to_core_verbosity(input.verbosity),
         };
         if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
             return project_daemon(resp);
@@ -790,20 +800,23 @@ fn project_daemon(resp: DaemonResponse) -> Result<CallToolResult, ErrorData> {
         DaemonResponse::References(report) => {
             wire(&crate::types::FindReferencesOutput::from(report))
         }
-        DaemonResponse::BlastRadius(report) => wire(&report),
+        // The Block-1 multi-list tools (tier-03) `From`-project like the
+        // single-list ones: the embedded `SymbolSummary` concise omission +
+        // `next_cursor`/`note` shape take effect on the wire type.
+        DaemonResponse::BlastRadius(report) => wire(&crate::types::BlastRadiusOutput::from(report)),
         DaemonResponse::FileSummary(report) => wire(&report),
         DaemonResponse::PlanAssist(report) => wire(&report),
-        // The four Block-1 tier-02 tools `From`-project the postcard-framed
+        // The Block-1 tier-02 single-list tools `From`-project the postcard-framed
         // core report into the MCP wire output so the JSON-level concise
         // omission (skip_serializing_if) + the `next_cursor`/`note` shape take
         // effect — byte-identical to the cold path (parity), exactly as the
         // `References` arm does (tier-01).
         DaemonResponse::Coupling(report) => wire(&crate::types::CouplingOutput::from(report)),
-        DaemonResponse::WeakSpots(report) => wire(&report),
+        DaemonResponse::WeakSpots(report) => wire(&crate::types::WeakSpotsOutput::from(report)),
         DaemonResponse::DocFor(report) => wire(&report),
         DaemonResponse::Doc(report) => wire(&report),
         DaemonResponse::ProjectStatus(report) => wire(&report),
-        DaemonResponse::Refactor(report) => wire(&report),
+        DaemonResponse::Refactor(report) => wire(&crate::types::RefactorOutput::from(report)),
         DaemonResponse::Hotspots(report) => wire(&crate::types::HotspotOutput::from(report)),
         DaemonResponse::Complexity(report) => wire(&crate::types::ComplexityOutput::from(report)),
         DaemonResponse::CoChange(report) => wire(&crate::types::CoChangeOutput::from(report)),
@@ -1003,12 +1016,20 @@ mod tests {
             must_touch: vec![c_sym(2, "m")],
             may_touch: vec![c_sym(3, "y")],
             depth_used: 2,
+            next_cursor: Some("deadbeef".into()),
+            note: Some(
+                "Showing 1 of 2 must_touch — call again with next_cursor for the next page.".into(),
+            ),
         };
         let t = crate::types::BlastRadiusOutput {
             symbol: t_sym(1, "t"),
             must_touch: vec![t_sym(2, "m")],
             may_touch: vec![t_sym(3, "y")],
             depth_used: 2,
+            next_cursor: Some("deadbeef".into()),
+            note: Some(
+                "Showing 1 of 2 must_touch — call again with next_cursor for the next page.".into(),
+            ),
         };
         assert_parity("blast_radius", DaemonResponse::BlastRadius(c), &t);
     }
@@ -1111,6 +1132,11 @@ mod tests {
                 distance: 0.0,
             }],
             dead_symbols: vec![c_sym(9, "dead")],
+            next_cursor: Some("deadbeef".into()),
+            note: Some(
+                "Showing 1 of 2 dead_symbols — call again with next_cursor for the next page."
+                    .into(),
+            ),
         };
         let t = crate::types::WeakSpotsOutput {
             cycles: vec![crate::types::CycleRow {
@@ -1125,6 +1151,11 @@ mod tests {
                 distance: 0.0,
             }],
             dead_symbols: vec![t_sym(9, "dead")],
+            next_cursor: Some("deadbeef".into()),
+            note: Some(
+                "Showing 1 of 2 dead_symbols — call again with next_cursor for the next page."
+                    .into(),
+            ),
         };
         assert_parity("weak_spots", DaemonResponse::WeakSpots(c), &t);
     }
@@ -1213,6 +1244,11 @@ mod tests {
                 target_module: "src/b.rs".into(),
                 ratio: 0.75,
             }],
+            next_cursor: Some("deadbeef".into()),
+            note: Some(
+                "Showing 1 of 2 god_modules — call again with next_cursor for the next page."
+                    .into(),
+            ),
         };
         let t = crate::types::RefactorOutput {
             god_modules: vec![crate::types::GodModuleRow {
@@ -1237,6 +1273,11 @@ mod tests {
                 target_module: "src/b.rs".into(),
                 ratio: 0.75,
             }],
+            next_cursor: Some("deadbeef".into()),
+            note: Some(
+                "Showing 1 of 2 god_modules — call again with next_cursor for the next page."
+                    .into(),
+            ),
         };
         assert_parity("refactor_suggestions", DaemonResponse::Refactor(c), &t);
     }

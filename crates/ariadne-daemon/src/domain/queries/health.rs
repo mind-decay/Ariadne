@@ -4,8 +4,8 @@ use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 
 use ariadne_core::{
-    CouplingReport, CouplingRow, CycleRow, DaemonResponse, FileId, SymbolId, Verbosity,
-    WeakSpotsReport,
+    CouplingReport, CouplingRow, CycleRow, DaemonResponse, FileId, SymbolId, SymbolSummary,
+    Verbosity, WeakSpotsReport,
 };
 use ariadne_graph::economy::{self, Budget, Verbosity as EconVerbosity};
 use ariadne_graph::{CouplingMetrics, DeadCodeConfig, ModuleSpec, roots::is_root};
@@ -16,7 +16,6 @@ use crate::domain::dispatch::summarize;
 /// Efferent-coupling threshold above which a library file is a god module
 /// (matches the v1 MCP tuning) [src: tier-14 step 8 dogfood].
 const GOD_THRESHOLD: u32 = 15;
-const MAX_DEAD: usize = 16;
 
 /// Project catalog symbols into one [`ModuleSpec`] per file, gated by an
 /// optional path prefix.
@@ -123,13 +122,29 @@ fn is_library_target(path: &str) -> bool {
         .any(|c| matches!(c, "tests" | "benches" | "examples"))
 }
 
-/// Cycles ∪ god modules ∪ dead-code candidates, filtered by `prefix`. The
-/// dead-code pass excludes the per-language root set so `main`, exported
-/// API, and test functions do not surface (tier-05 RD4).
-pub(crate) fn weak_spots(cat: &WarmCatalog, prefix: Option<&str>) -> DaemonResponse {
+/// Cycles ∪ god modules ∪ dead-code candidates, filtered by `prefix`, each list
+/// capped to one page sharing a single multi-list cursor and the dead rows
+/// projected at `verbosity` — the warm twin of the cold `tools::weak_spots`
+/// handler, so their JSON is byte-identical (parity). The economy cap + cursor
+/// supersede the ad-hoc `MAX_DEAD` cap, so the dead-code remainder is reachable.
+/// The dead-code pass excludes the per-language root set so `main`, exported
+/// API, and test functions do not surface (tier-05 RD4). A malformed / stale
+/// cursor surfaces as a typed `DaemonResponse::Error`.
+// A linear handler: build the three lists, decode the cursor, paginate each, and
+// assemble the report. The per-sublist sort/cap/note carries it over the line
+// lint; the cold twin (`tools::weak_spots`) splits a `page` helper out, but the
+// warm path returns `DaemonResponse` throughout, so an inline body reads clearer.
+#[allow(clippy::too_many_lines)]
+pub(crate) fn weak_spots(
+    cat: &WarmCatalog,
+    prefix: Option<&str>,
+    limit: Option<u32>,
+    cursor: Option<&str>,
+    verbosity: Verbosity,
+) -> DaemonResponse {
     let modules = build_modules(cat, prefix);
     let coupling = cat.graph.coupling_report(&modules);
-    let god_modules = coupling
+    let god_modules: Vec<CouplingRow> = coupling
         .rows
         .into_iter()
         .filter(|m| is_library_target(&m.name) && m.efferent > GOD_THRESHOLD)
@@ -143,7 +158,7 @@ pub(crate) fn weak_spots(cat: &WarmCatalog, prefix: Option<&str>) -> DaemonRespo
         })
         .collect();
 
-    let cycles = cat
+    let cycles: Vec<CycleRow> = cat
         .graph
         .cycle_report()
         .cycles
@@ -175,18 +190,100 @@ pub(crate) fn weak_spots(cat: &WarmCatalog, prefix: Option<&str>) -> DaemonRespo
         roots,
         ..Default::default()
     };
-    let dead_symbols = cat
+    let dead_symbols: Vec<SymbolSummary> = cat
         .graph
         .dead_code(&cfg)
         .symbols
         .into_iter()
-        .take(MAX_DEAD)
         .map(|d| summarize(cat, d.id))
         .collect();
 
+    let revision = u32::try_from(cat.revision).unwrap_or(u32::MAX);
+    let decoded = match cursor
+        .map(|c| economy::Cursor::decode(c, revision))
+        .transpose()
+    {
+        Ok(c) => c,
+        Err(err) => return DaemonResponse::Error(err.to_string()),
+    };
+    let econ = to_economy(verbosity);
+    let budget = Budget {
+        limit: limit.map_or(economy::DEFAULT_PAGE, |l| l as usize),
+        cursor: decoded,
+        verbosity: econ,
+    };
+    let total_cycles = cycles.len();
+    let total_gods = god_modules.len();
+    let total_dead = dead_symbols.len();
+    let cycles_page = economy::paginate_sublist(cycles, cmp_cycle, &budget, 0);
+    let gods_page = economy::paginate_sublist(god_modules, cmp_god, &budget, 1);
+    let dead_page = economy::paginate_sublist(dead_symbols, cmp_dead, &budget, 2);
+    let next_cursor = economy::multi_cursor(
+        &[
+            (cycles_page.next_offset, cycles_page.remainder),
+            (gods_page.next_offset, gods_page.remainder),
+            (dead_page.next_offset, dead_page.remainder),
+        ],
+        revision,
+    );
+    let mut truncated = Vec::new();
+    if cycles_page.remainder {
+        truncated.push((cycles_page.rows.len(), total_cycles, "cycles"));
+    }
+    if gods_page.remainder {
+        truncated.push((gods_page.rows.len(), total_gods, "god_modules"));
+    }
+    if dead_page.remainder {
+        truncated.push((dead_page.rows.len(), total_dead, "dead_symbols"));
+    }
+    let note = next_cursor
+        .as_ref()
+        .map(|_| economy::multi_truncation_note(&truncated));
     DaemonResponse::WeakSpots(WeakSpotsReport {
-        cycles,
-        god_modules,
-        dead_symbols,
+        cycles: cycles_page.rows,
+        god_modules: gods_page.rows,
+        dead_symbols: dead_page
+            .rows
+            .into_iter()
+            .map(|s| project_dead(s, econ))
+            .collect(),
+        next_cursor,
+        note,
     })
+}
+
+/// Stable order for the cycle page (identical to the cold handler, D4): by
+/// first member, then cycle size.
+fn cmp_cycle(a: &CycleRow, b: &CycleRow) -> Ordering {
+    a.members
+        .first()
+        .cmp(&b.members.first())
+        .then(a.members.len().cmp(&b.members.len()))
+}
+
+/// Stable order for the god-module page (identical to the cold handler, D4):
+/// most-efferent first, then module path ascending.
+fn cmp_god(a: &CouplingRow, b: &CouplingRow) -> Ordering {
+    b.efferent.cmp(&a.efferent).then(a.module.cmp(&b.module))
+}
+
+/// Stable order for the dead-symbol page (identical to the cold handler, D4): by
+/// file, then byte offset, then name. Read before any concise projection nulls
+/// `byte_start`.
+fn cmp_dead(a: &SymbolSummary, b: &SymbolSummary) -> Ordering {
+    a.file
+        .cmp(&b.file)
+        .then(a.byte_start.cmp(&b.byte_start))
+        .then(a.name.cmp(&b.name))
+}
+
+/// Drop a dead-symbol row's cryptic id/offset fields in concise verbosity (D3),
+/// matching the cold handler.
+fn project_dead(mut sym: SymbolSummary, verbosity: EconVerbosity) -> SymbolSummary {
+    if matches!(verbosity, EconVerbosity::Concise) {
+        sym.id = None;
+        sym.byte_start = None;
+        sym.byte_end = None;
+    }
+    sym
 }

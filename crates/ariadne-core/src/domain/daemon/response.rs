@@ -26,18 +26,29 @@ pub struct ReferencesReport {
     pub note: Option<String>,
 }
 
-/// `blast_radius` report — the resolved target plus must / may dependents.
+/// `blast_radius` report — the resolved target plus must / may dependents, each
+/// list capped to one page sharing a single multi-list cursor + steer (Block 1,
+/// tier-03 D2/D5). When both lists fit one page, `next_cursor` and `note` are
+/// both `None`. No `skip_serializing_if`: postcard-framed daemon-IPC type (see
+/// [`ReferencesReport`]); the JSON-level omission lives on the MCP wire type.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct BlastRadiusReport {
     /// Resolved target symbol, echoed so an empty radius reads as
     /// "resolved, no dependents" rather than "not found".
     pub symbol: SymbolSummary,
-    /// First-hop callers (immediate dominators of the queried symbol).
+    /// First-hop callers (immediate dominators of the queried symbol), one page
+    /// in stable `(file, byte_start, name)` order.
     pub must_touch: Vec<SymbolSummary>,
-    /// Transitive callers beyond the first hop.
+    /// Transitive callers beyond the first hop, one page in stable
+    /// `(file, byte_start, name)` order.
     pub may_touch: Vec<SymbolSummary>,
     /// Deepest hop level any returned row sits at.
     pub depth_used: u8,
+    /// Opaque multi-list cursor for the next page; `None` when both lists are
+    /// exhausted.
+    pub next_cursor: Option<String>,
+    /// Human steer naming which lists were truncated; `None` when neither was.
+    pub note: Option<String>,
 }
 
 /// `file_summary` report — symbols, fan totals, deps, and components.
@@ -79,15 +90,28 @@ pub struct CouplingReport {
     pub note: Option<String>,
 }
 
-/// `weak_spots` report — cycles ∪ god modules ∪ dead code.
+/// `weak_spots` report — cycles ∪ god modules ∪ dead code, each list capped to
+/// one page sharing a single multi-list cursor + steer (Block 1, tier-03
+/// D2/D5; the cursor supersedes the ad-hoc `MAX_DEAD` cap). When every list
+/// fits one page, `next_cursor` and `note` are both `None`. No
+/// `skip_serializing_if`: postcard-framed daemon-IPC type (see
+/// [`ReferencesReport`]); the JSON-level omission lives on the MCP wire type.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct WeakSpotsReport {
-    /// Strongly-connected components of size ≥ 2.
+    /// Strongly-connected components of size ≥ 2, one page in stable
+    /// (first member, then size) order.
     pub cycles: Vec<CycleRow>,
-    /// God modules — efferent coupling above the threshold.
+    /// God modules — efferent coupling above the threshold, one page in stable
+    /// (efferent desc, module asc) order.
     pub god_modules: Vec<CouplingRow>,
-    /// Dead symbols (fan-in 0, not a root), capped.
+    /// Dead symbols (fan-in 0, not a root), one page in stable
+    /// `(file, byte_start, name)` order.
     pub dead_symbols: Vec<SymbolSummary>,
+    /// Opaque multi-list cursor for the next page; `None` when every list is
+    /// exhausted.
+    pub next_cursor: Option<String>,
+    /// Human steer naming which lists were truncated; `None` when none were.
+    pub note: Option<String>,
 }
 
 /// `doc_for` report — structured single-symbol summary.
@@ -147,16 +171,28 @@ pub struct ProjectStatusReport {
 }
 
 /// `refactor_suggestions` report — god modules ∪ cycle breaks ∪ misplaced
-/// symbols. Every entry is a *hint* for review, never an authoritative
-/// command.
+/// symbols, each list capped to one page sharing a single multi-list cursor +
+/// steer (Block 1, tier-03 D2/D5). Every entry is a *hint* for review, never an
+/// authoritative command. When every list fits one page, `next_cursor` and
+/// `note` are both `None`. No `skip_serializing_if`: postcard-framed
+/// daemon-IPC type (see [`ReferencesReport`]); the JSON-level omission lives on
+/// the MCP wire type.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RefactorReport {
-    /// God-module split candidates.
+    /// God-module split candidates, one page in stable (efferent desc, module
+    /// asc) order.
     pub god_modules: Vec<GodModuleRow>,
-    /// Cycle-break edge candidates.
+    /// Cycle-break edge candidates, one page in stable (score desc, then
+    /// `(from, to)`) order.
     pub cycle_breaks: Vec<CycleBreakRow>,
-    /// Symbols whose callers live mostly in another module.
+    /// Symbols whose callers live mostly in another module, one page in stable
+    /// (ratio desc, then symbol) order.
     pub misplaced_symbols: Vec<MisplacedRow>,
+    /// Opaque multi-list cursor for the next page; `None` when every list is
+    /// exhausted.
+    pub next_cursor: Option<String>,
+    /// Human steer naming which lists were truncated; `None` when none were.
+    pub note: Option<String>,
 }
 
 /// `hotspots` report — one page of churn × complexity rows plus the pagination

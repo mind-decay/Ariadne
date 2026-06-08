@@ -73,6 +73,9 @@ async fn run() -> ExitCode {
                     symbol: format!("sym_{target:06}"),
                     depth: Some(2),
                     kinds: None,
+                    limit: None,
+                    cursor: None,
+                    verbosity: ariadne_mcp::types::Verbosity::Concise,
                 };
                 let t0 = Instant::now();
                 let _ = br::handle(&cat, &br_input);

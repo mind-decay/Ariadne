@@ -10,6 +10,10 @@ use crate::domain::catalog::WarmCatalog;
 use crate::domain::queries::{analytics, docs, health, impact, meta, navigate, refactor};
 
 /// Run `query` against the warm `catalog`, returning the wire response.
+// One arm per protocol variant: a pure forwarding match. The multi-list arms
+// (tier-03) destructure several economy fields each, which carries the body
+// over the line lint, but splitting a dispatcher only fragments it.
+#[allow(clippy::too_many_lines)]
 pub(crate) fn dispatch(catalog: &WarmCatalog, query: DaemonQuery) -> DaemonResponse {
     match query {
         DaemonQuery::Ping => DaemonResponse::Pong,
@@ -27,7 +31,18 @@ pub(crate) fn dispatch(catalog: &WarmCatalog, query: DaemonQuery) -> DaemonRespo
             symbol,
             depth,
             kinds,
-        } => impact::blast_radius(catalog, &symbol, depth, kinds.as_deref()),
+            limit,
+            cursor,
+            verbosity,
+        } => impact::blast_radius(
+            catalog,
+            &symbol,
+            depth,
+            kinds.as_deref(),
+            limit,
+            cursor.as_deref(),
+            verbosity,
+        ),
         DaemonQuery::FileSummary { path } => impact::file_summary(catalog, &path),
         DaemonQuery::PlanAssist { symbol, max_files } => {
             impact::plan_assist(catalog, &symbol, max_files)
@@ -44,14 +59,34 @@ pub(crate) fn dispatch(catalog: &WarmCatalog, query: DaemonQuery) -> DaemonRespo
             cursor.as_deref(),
             verbosity,
         ),
-        DaemonQuery::WeakSpots { prefix } => health::weak_spots(catalog, prefix.as_deref()),
+        DaemonQuery::WeakSpots {
+            prefix,
+            limit,
+            cursor,
+            verbosity,
+        } => health::weak_spots(
+            catalog,
+            prefix.as_deref(),
+            limit,
+            cursor.as_deref(),
+            verbosity,
+        ),
         DaemonQuery::DocFor { symbol } => docs::doc_for(catalog, &symbol),
         DaemonQuery::DocForModule { path } => docs::doc_for_module(catalog, &path),
         DaemonQuery::DocForProject { prefix } => docs::doc_for_project(catalog, prefix.as_deref()),
         DaemonQuery::ProjectStatus => meta::project_status(catalog),
-        DaemonQuery::RefactorSuggestions { prefix } => {
-            refactor::refactor_suggestions(catalog, prefix.as_deref())
-        }
+        DaemonQuery::RefactorSuggestions {
+            prefix,
+            limit,
+            cursor,
+            verbosity,
+        } => refactor::refactor_suggestions(
+            catalog,
+            prefix.as_deref(),
+            limit,
+            cursor.as_deref(),
+            verbosity,
+        ),
         DaemonQuery::Hotspots {
             prefix,
             grain,

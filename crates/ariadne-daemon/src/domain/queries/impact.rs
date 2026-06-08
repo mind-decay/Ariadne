@@ -1,13 +1,15 @@
 //! Impact queries: `blast_radius`, `file_summary`, `plan_assist`, `diff_blast`.
 
+use std::cmp::Ordering;
 use std::collections::BTreeMap;
 use std::path::Path;
 
 use ariadne_core::{
     AffectedTestsReport, BlastRadiusReport, ComponentRow, DaemonResponse, DependencyRow,
     DiffBlastReport, DiffSeed, EdgeKind, EdgeKindFilter, FileId, FileSummaryReport, LineHunk,
-    PlanAssistReport, PlanFileRow, ReadSnapshot, StorageError, SymbolId,
+    PlanAssistReport, PlanFileRow, ReadSnapshot, StorageError, SymbolId, SymbolSummary, Verbosity,
 };
+use ariadne_graph::economy::{self, Budget, Verbosity as EconVerbosity};
 use ariadne_graph::{EdgeKindSet, FileSpanSource, spans_from};
 
 use crate::domain::catalog::WarmCatalog;
@@ -46,12 +48,22 @@ fn filter_to_set(filter: &[EdgeKindFilter]) -> EdgeKindSet {
 }
 
 /// Reverse-reachability blast radius of `symbol` at `depth`, filtered to
-/// `kinds` (all kinds when empty / missing).
+/// `kinds` (all kinds when empty / missing), with `must_touch` / `may_touch`
+/// each capped to one page sharing a single multi-list cursor and projected at
+/// `verbosity` — the warm twin of the cold `tools::blast_radius` handler, so
+/// their JSON is byte-identical (parity). A malformed / stale cursor surfaces
+/// as a typed `DaemonResponse::Error`.
+// Mirrors the `DaemonQuery::BlastRadius` variant fields 1:1 (the dispatcher
+// destructures and forwards them); bundling would just add indirection.
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn blast_radius(
     cat: &WarmCatalog,
     symbol: &str,
     depth: Option<u8>,
     kinds: Option<&[EdgeKindFilter]>,
+    limit: Option<u32>,
+    cursor: Option<&str>,
+    verbosity: Verbosity,
 ) -> DaemonResponse {
     let Some(id) = cat.find_symbol(symbol) else {
         return DaemonResponse::Error(format!("symbol {symbol} not found"));
@@ -61,20 +73,99 @@ pub(crate) fn blast_radius(
     let Some(radius) = cat.graph.blast_radius(id, depth, set) else {
         return DaemonResponse::Error(format!("symbol {symbol} absent from graph"));
     };
+    let must: Vec<SymbolSummary> = radius
+        .must_touch
+        .into_iter()
+        .map(|s| summarize(cat, s))
+        .collect();
+    let may: Vec<SymbolSummary> = radius
+        .may_touch
+        .into_iter()
+        .map(|s| summarize(cat, s))
+        .collect();
+    let depth_used = radius.depth_used;
+    let symbol_sum = summarize(cat, id);
+
+    let revision = u32::try_from(cat.revision).unwrap_or(u32::MAX);
+    let decoded = match cursor
+        .map(|c| economy::Cursor::decode(c, revision))
+        .transpose()
+    {
+        Ok(c) => c,
+        Err(err) => return DaemonResponse::Error(err.to_string()),
+    };
+    let econ = to_economy(verbosity);
+    let budget = Budget {
+        limit: limit.map_or(economy::DEFAULT_PAGE, |l| l as usize),
+        cursor: decoded,
+        verbosity: econ,
+    };
+    let total_must = must.len();
+    let total_may = may.len();
+    let must_page = economy::paginate_sublist(must, cmp_blast_sym, &budget, 0);
+    let may_page = economy::paginate_sublist(may, cmp_blast_sym, &budget, 1);
+    let next_cursor = economy::multi_cursor(
+        &[
+            (must_page.next_offset, must_page.remainder),
+            (may_page.next_offset, may_page.remainder),
+        ],
+        revision,
+    );
+    let mut truncated = Vec::new();
+    if must_page.remainder {
+        truncated.push((must_page.rows.len(), total_must, "must_touch"));
+    }
+    if may_page.remainder {
+        truncated.push((may_page.rows.len(), total_may, "may_touch"));
+    }
+    let note = next_cursor
+        .as_ref()
+        .map(|_| economy::multi_truncation_note(&truncated));
     DaemonResponse::BlastRadius(BlastRadiusReport {
-        symbol: summarize(cat, id),
-        must_touch: radius
-            .must_touch
+        symbol: project_blast_sym(symbol_sum, econ),
+        must_touch: must_page
+            .rows
             .into_iter()
-            .map(|s| summarize(cat, s))
+            .map(|s| project_blast_sym(s, econ))
             .collect(),
-        may_touch: radius
-            .may_touch
+        may_touch: may_page
+            .rows
             .into_iter()
-            .map(|s| summarize(cat, s))
+            .map(|s| project_blast_sym(s, econ))
             .collect(),
-        depth_used: radius.depth_used,
+        depth_used,
+        next_cursor,
+        note,
     })
+}
+
+/// Map the protocol verbosity onto the economy use case's verbosity.
+fn to_economy(v: Verbosity) -> EconVerbosity {
+    match v {
+        Verbosity::Concise => EconVerbosity::Concise,
+        Verbosity::Detailed => EconVerbosity::Detailed,
+    }
+}
+
+/// Stable order for a blast-radius dependent page (identical to the cold
+/// handler, D4): by file, then byte offset, then name. Read before any concise
+/// projection nulls `byte_start`.
+fn cmp_blast_sym(a: &SymbolSummary, b: &SymbolSummary) -> Ordering {
+    a.file
+        .cmp(&b.file)
+        .then(a.byte_start.cmp(&b.byte_start))
+        .then(a.name.cmp(&b.name))
+}
+
+/// Drop a dependent row's cryptic id/offset fields in concise verbosity (D3),
+/// matching the cold handler.
+fn project_blast_sym(mut sym: SymbolSummary, verbosity: EconVerbosity) -> SymbolSummary {
+    if matches!(verbosity, EconVerbosity::Concise) {
+        sym.id = None;
+        sym.byte_start = None;
+        sym.byte_end = None;
+    }
+    sym
 }
 
 /// Canonical name of an edge destination, or `<unknown>` when absent.

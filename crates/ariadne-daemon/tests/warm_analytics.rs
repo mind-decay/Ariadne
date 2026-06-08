@@ -135,7 +135,18 @@ fn weak_spots_matches_cold() {
     let reference = cold(&root);
 
     let handle = spawn(&root);
-    let response = query(&root, revision, DaemonQuery::WeakSpots { prefix: None });
+    let response = query(
+        &root,
+        revision,
+        DaemonQuery::WeakSpots {
+            prefix: None,
+            limit: None,
+            cursor: None,
+            // `detailed` so the dead-symbol rows keep the cryptic fields the cold
+            // `summ` oracle carries (tier-03).
+            verbosity: Verbosity::Detailed,
+        },
+    );
     shutdown(&root, handle);
 
     let DaemonResponse::WeakSpots(report) = response else {
@@ -328,7 +339,12 @@ fn refactor_suggestions_matches_cold() {
     let response = query(
         &root,
         revision,
-        DaemonQuery::RefactorSuggestions { prefix: None },
+        DaemonQuery::RefactorSuggestions {
+            prefix: None,
+            limit: None,
+            cursor: None,
+            verbosity: Verbosity::Concise,
+        },
     );
     shutdown(&root, handle);
 

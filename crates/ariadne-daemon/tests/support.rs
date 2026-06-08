@@ -376,10 +376,32 @@ pub fn cold_refactor(root: &Path, prefix: Option<&str>) -> RefactorReport {
         })
         .collect();
 
+    // tier-03 sorts each list by its stable key before the page cap; mirror the
+    // handler comparators here. The tiny fixture is under the default page, so
+    // `next_cursor`/`note` are `None`.
+    let mut god_modules: Vec<GodModuleRow> = god_modules;
+    god_modules.sort_by(|a: &GodModuleRow, b: &GodModuleRow| {
+        b.efferent.cmp(&a.efferent).then(a.module.cmp(&b.module))
+    });
+    let mut cycle_breaks: Vec<CycleBreakRow> = cycle_breaks;
+    cycle_breaks.sort_by(|a: &CycleBreakRow, b: &CycleBreakRow| {
+        b.score
+            .total_cmp(&a.score)
+            .then_with(|| (&a.from, &a.to).cmp(&(&b.from, &b.to)))
+    });
+    let mut misplaced_symbols: Vec<MisplacedRow> = misplaced_symbols;
+    misplaced_symbols.sort_by(|a: &MisplacedRow, b: &MisplacedRow| {
+        b.ratio
+            .total_cmp(&a.ratio)
+            .then_with(|| a.symbol.cmp(&b.symbol))
+    });
+
     RefactorReport {
         god_modules,
         cycle_breaks,
         misplaced_symbols,
+        next_cursor: None,
+        note: None,
     }
 }
 

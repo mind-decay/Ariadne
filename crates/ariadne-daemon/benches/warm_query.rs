@@ -100,6 +100,9 @@ fn blast_request(symbol: String) -> DaemonRequest {
             symbol,
             depth: Some(3),
             kinds: None,
+            limit: None,
+            cursor: None,
+            verbosity: ariadne_core::Verbosity::Concise,
         },
     }
 }

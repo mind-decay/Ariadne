@@ -150,12 +150,7 @@ pub fn paginate<T>(
 ) -> Page<T> {
     rows.sort_by(compare);
     let total = rows.len();
-    let start = budget
-        .cursor
-        .as_ref()
-        .and_then(|c| c.offsets.get(sublist_index).copied())
-        .map_or(0, |o| usize::try_from(o).unwrap_or(usize::MAX))
-        .min(total);
+    let start = start_offset(budget.cursor.as_ref(), sublist_index, total);
     let end = start.saturating_add(budget.limit).min(total);
     let page: Vec<T> = rows.into_iter().skip(start).take(end - start).collect();
     let next_cursor = (budget.limit > 0 && end < total).then(|| {
@@ -173,6 +168,89 @@ pub fn paginate<T>(
         rows: page,
         next_cursor,
     }
+}
+
+/// One sublist's slice within a multi-list page (tier-03 D2). A tool that
+/// returns several lists at once paginates each independently against its own
+/// `offsets[sublist_index]`, then assembles ONE cursor across all of them via
+/// [`multi_cursor`]. Unlike [`paginate`], this carries no cursor of its own —
+/// the cursor is multi-list state the caller owns.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SubListPage<T> {
+    /// The rows in this sublist's page, in the caller's stable sort order.
+    pub rows: Vec<T>,
+    /// Where this sublist's next page begins — the consumed window end. Set
+    /// even when the sublist is exhausted (`next_offset == total`) so the
+    /// combined cursor advances every sublist uniformly and an exhausted
+    /// sublist re-pages to empty, never past its end.
+    pub next_offset: u64,
+    /// `true` when rows remain beyond this sublist's window.
+    pub remainder: bool,
+}
+
+/// Sort + window one sublist of a multi-list result against its own
+/// `offsets[sublist_index]`, returning the slice plus this sublist's next
+/// offset and whether more remains (tier-03 D2). A multi-list tool calls this
+/// once per sublist sharing one [`Budget`], then assembles the single
+/// `next_cursor` over the results via [`multi_cursor`]. A `limit` of `0` yields
+/// an empty page with `remainder == false` — the same liveness guard as
+/// [`paginate`]: a zero-width page is terminal, never a cursor that re-pages
+/// the same empty window forever.
+pub fn paginate_sublist<T>(
+    mut rows: Vec<T>,
+    compare: impl FnMut(&T, &T) -> Ordering,
+    budget: &Budget,
+    sublist_index: usize,
+) -> SubListPage<T> {
+    rows.sort_by(compare);
+    let total = rows.len();
+    let start = start_offset(budget.cursor.as_ref(), sublist_index, total);
+    let end = start.saturating_add(budget.limit).min(total);
+    let page: Vec<T> = rows.into_iter().skip(start).take(end - start).collect();
+    SubListPage {
+        rows: page,
+        next_offset: end as u64,
+        remainder: budget.limit > 0 && end < total,
+    }
+}
+
+/// Assemble the single `next_cursor` for a multi-list page from each sublist's
+/// `(next_offset, remainder)` outcome, in list order (tier-03 D2). Emits `Some`
+/// iff at least one sublist still has a remainder; the cursor's `offsets` carry
+/// every sublist's next offset (so an exhausted sublist re-pages to empty) and
+/// are revision-stamped, so the cursor is rejected once the index changes. When
+/// no sublist has a remainder the page is terminal and this returns `None`.
+#[must_use]
+pub fn multi_cursor(pages: &[(u64, bool)], revision: u32) -> Option<String> {
+    pages.iter().any(|&(_, remainder)| remainder).then(|| {
+        let offsets = pages.iter().map(|&(off, _)| off).collect();
+        Cursor { revision, offsets }.encode()
+    })
+}
+
+/// The human truncation steer for a *multi-list* page (tier-03 D5): names which
+/// sublists were capped and by how much, so the agent knows where the remainder
+/// is. `truncated` carries `(shown, total, noun)` for each truncated sublist
+/// only, in list order. Single-sourced here so every serving path emits
+/// byte-identical wording — the cold and warm twins cannot drift.
+#[must_use]
+pub fn multi_truncation_note(truncated: &[(usize, usize, &str)]) -> String {
+    let lists = truncated
+        .iter()
+        .map(|&(shown, total, noun)| format!("{shown} of {total} {noun}"))
+        .collect::<Vec<_>>()
+        .join(", ");
+    format!("Showing {lists} — call again with next_cursor for the next page.")
+}
+
+/// The window start for `sublist_index`: the cursor's per-sublist offset (or 0
+/// on the first page), clamped to `total` so an offset past the end yields an
+/// empty window rather than a panic.
+fn start_offset(cursor: Option<&Cursor>, sublist_index: usize, total: usize) -> usize {
+    cursor
+        .and_then(|c| c.offsets.get(sublist_index).copied())
+        .map_or(0, |o| usize::try_from(o).unwrap_or(usize::MAX))
+        .min(total)
 }
 
 /// The human truncation steer a handler carries in a page's `note` when more
@@ -337,6 +415,109 @@ mod tests {
         assert_eq!(
             truncation_note(50, 244, "references"),
             "Showing 50 of 244 references — call again with next_cursor for the next page."
+        );
+    }
+
+    #[test]
+    fn multi_list_one_cursor_pages_every_sublist_completely() {
+        // Two sublists of different lengths share ONE cursor. limit:2 over
+        // list A (4 items) and list B (1 item): page-1 caps A at 2 (remainder)
+        // and exhausts B; the single cursor advances both, and re-feeding it
+        // returns A's remaining 2 + B's nothing. Union per sublist == sorted
+        // input, no gap/dup — completeness across sublists (tier-03 D2).
+        let a = vec![4_u32, 1, 3, 2];
+        let b = vec![9_u32];
+        let revision = 7;
+        let cmp = |x: &u32, y: &u32| x.cmp(y);
+
+        let mut budget = Budget {
+            limit: 2,
+            cursor: None,
+            verbosity: Verbosity::Concise,
+        };
+        let mut seen_a: Vec<u32> = Vec::new();
+        let mut seen_b: Vec<u32> = Vec::new();
+        let mut pages = 0;
+        loop {
+            let pa = paginate_sublist(a.clone(), cmp, &budget, 0);
+            let pb = paginate_sublist(b.clone(), cmp, &budget, 1);
+            pages += 1;
+            seen_a.extend(pa.rows.iter().copied());
+            seen_b.extend(pb.rows.iter().copied());
+            match multi_cursor(
+                &[
+                    (pa.next_offset, pa.remainder),
+                    (pb.next_offset, pb.remainder),
+                ],
+                revision,
+            ) {
+                Some(cursor) => {
+                    budget.cursor = Some(Cursor::decode(&cursor, revision).expect("decodes"));
+                }
+                None => break,
+            }
+        }
+        assert_eq!(pages, 2, "A (4 / 2) drives two pages; B exhausts on page 1");
+        assert_eq!(
+            seen_a,
+            vec![1, 2, 3, 4],
+            "list A union == sorted, no gap/dup"
+        );
+        assert_eq!(
+            seen_b,
+            vec![9],
+            "list B fully delivered once, never re-paged"
+        );
+    }
+
+    #[test]
+    fn multi_cursor_is_none_when_no_sublist_has_a_remainder() {
+        // Every sublist exhausted → terminal page, no cursor (so the caller
+        // stops). An exhausted sublist still reports its `next_offset` (its
+        // length) but `remainder == false`.
+        assert!(
+            multi_cursor(&[(4, false), (1, false)], 3).is_none(),
+            "no remainder anywhere → no cursor"
+        );
+        // Any single remainder mints the cursor, carrying BOTH offsets.
+        let encoded =
+            multi_cursor(&[(2, true), (1, false)], 3).expect("a remainder mints a cursor");
+        let decoded = Cursor::decode(&encoded, 3).expect("decodes");
+        assert_eq!(
+            decoded.offsets,
+            vec![2, 1],
+            "cursor carries every sublist's next offset, exhausted ones included"
+        );
+    }
+
+    #[test]
+    fn paginate_sublist_zero_limit_is_terminal() {
+        let page = paginate_sublist(
+            vec![1_u32, 2, 3],
+            Ord::cmp,
+            &Budget {
+                limit: 0,
+                cursor: None,
+                verbosity: Verbosity::Concise,
+            },
+            0,
+        );
+        assert!(page.rows.is_empty(), "limit:0 → empty page");
+        assert!(
+            !page.remainder,
+            "limit:0 → no remainder (re-feeding would make no progress)"
+        );
+    }
+
+    #[test]
+    fn multi_truncation_note_names_truncated_lists() {
+        assert_eq!(
+            multi_truncation_note(&[(50, 407, "must_touch"), (50, 890, "may_touch")]),
+            "Showing 50 of 407 must_touch, 50 of 890 may_touch — call again with next_cursor for the next page."
+        );
+        assert_eq!(
+            multi_truncation_note(&[(16, 42, "dead_symbols")]),
+            "Showing 16 of 42 dead_symbols — call again with next_cursor for the next page."
         );
     }
 

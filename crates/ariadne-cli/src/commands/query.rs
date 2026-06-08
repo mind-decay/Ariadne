@@ -17,10 +17,11 @@ use ariadne_core::{
 use ariadne_mcp::Catalog;
 use ariadne_mcp::tools;
 use ariadne_mcp::types::{
-    BlastRadiusInput, CoChangeInput, CoChangeOutput, ComplexityOutput, CouplingInput,
-    CouplingOutput, EdgeKindFilter, FileQuery, FindReferencesInput, FindReferencesOutput, Grain,
-    GrainScopeInput, HotspotOutput, ListSymbolsInput, PlanAssistInput, ScopeInput, SymbolQuery,
-    Verbosity,
+    BlastRadiusInput, BlastRadiusOutput, CoChangeInput, CoChangeOutput, ComplexityOutput,
+    CouplingInput, CouplingOutput, EdgeKindFilter, FileQuery, FindReferencesInput,
+    FindReferencesOutput, Grain, GrainScopeInput, HotspotOutput, ListSymbolsInput, PlanAssistInput,
+    RefactorInput, RefactorOutput, ScopeInput, SymbolQuery, Verbosity, WeakSpotsInput,
+    WeakSpotsOutput,
 };
 use ariadne_storage::RedbStorage;
 use serde::Serialize;
@@ -107,6 +108,10 @@ fn try_daemon(root: &Path, tool: &str, args_json: &str) -> Result<Option<String>
 ///
 /// # Errors
 /// Propagates a JSON argument-parse failure.
+// One arm per tool: a pure name→variant mapping match. The multi-list arms
+// (tier-03) thread several economy fields each, which carries the body over the
+// line lint, but splitting a mapping table only fragments it.
+#[allow(clippy::too_many_lines)]
 fn build_query(tool: &str, args: &str) -> Result<Option<DaemonQuery>> {
     let query = match tool {
         "list_symbols" => {
@@ -135,6 +140,9 @@ fn build_query(tool: &str, args: &str) -> Result<Option<DaemonQuery>> {
                 symbol: i.symbol,
                 depth: i.depth,
                 kinds: to_core_kinds(i.kinds.as_deref()),
+                limit: i.limit,
+                cursor: i.cursor,
+                verbosity: to_core_verbosity(i.verbosity),
             }
         }
         "file_summary" => DaemonQuery::FileSummary {
@@ -156,9 +164,15 @@ fn build_query(tool: &str, args: &str) -> Result<Option<DaemonQuery>> {
                 verbosity: to_core_verbosity(i.verbosity),
             }
         }
-        "weak_spots" => DaemonQuery::WeakSpots {
-            prefix: parse::<ScopeInput>(args)?.prefix,
-        },
+        "weak_spots" => {
+            let i = parse::<WeakSpotsInput>(args)?;
+            DaemonQuery::WeakSpots {
+                prefix: i.prefix,
+                limit: i.limit,
+                cursor: i.cursor,
+                verbosity: to_core_verbosity(i.verbosity),
+            }
+        }
         "doc_for" => DaemonQuery::DocFor {
             symbol: parse::<SymbolQuery>(args)?.symbol,
         },
@@ -169,9 +183,15 @@ fn build_query(tool: &str, args: &str) -> Result<Option<DaemonQuery>> {
         "doc_for_project" => DaemonQuery::DocForProject {
             prefix: parse::<ScopeInput>(args)?.prefix,
         },
-        "refactor_suggestions" => DaemonQuery::RefactorSuggestions {
-            prefix: parse::<ScopeInput>(args)?.prefix,
-        },
+        "refactor_suggestions" => {
+            let i = parse::<RefactorInput>(args)?;
+            DaemonQuery::RefactorSuggestions {
+                prefix: i.prefix,
+                limit: i.limit,
+                cursor: i.cursor,
+                verbosity: to_core_verbosity(i.verbosity),
+            }
+        }
         "hotspots" => {
             let i = parse::<GrainScopeInput>(args)?;
             DaemonQuery::Hotspots {
@@ -223,19 +243,22 @@ fn project(resp: DaemonResponse) -> Result<String> {
         DaemonResponse::Symbols(rows) => json(&rows),
         DaemonResponse::Definition(sym) => json(&sym),
         DaemonResponse::References(report) => json(&FindReferencesOutput::from(report)),
-        DaemonResponse::BlastRadius(report) => json(&report),
+        // The Block-1 multi-list tools (tier-03) `From`-project like the
+        // single-list ones: the embedded `SymbolSummary` concise omission +
+        // `next_cursor`/`note` shape match the cold path byte-for-byte (parity).
+        DaemonResponse::BlastRadius(report) => json(&BlastRadiusOutput::from(report)),
         DaemonResponse::FileSummary(report) => json(&report),
         DaemonResponse::PlanAssist(report) => json(&report),
-        // The four Block-1 tier-02 tools `From`-project the postcard-framed core
-        // report into the MCP wire output so the JSON-level concise omission +
+        // The Block-1 tier-02 single-list tools `From`-project the postcard-framed
+        // core report into the MCP wire output so the JSON-level concise omission +
         // `next_cursor`/`note` shape match the cold path byte-for-byte (parity),
         // exactly as the `References` arm does (tier-01).
         DaemonResponse::Coupling(report) => json(&CouplingOutput::from(report)),
-        DaemonResponse::WeakSpots(report) => json(&report),
+        DaemonResponse::WeakSpots(report) => json(&WeakSpotsOutput::from(report)),
         DaemonResponse::DocFor(report) => json(&report),
         DaemonResponse::Doc(report) => json(&report),
         DaemonResponse::ProjectStatus(report) => json(&report),
-        DaemonResponse::Refactor(report) => json(&report),
+        DaemonResponse::Refactor(report) => json(&RefactorOutput::from(report)),
         DaemonResponse::Hotspots(report) => json(&HotspotOutput::from(report)),
         DaemonResponse::Complexity(report) => json(&ComplexityOutput::from(report)),
         DaemonResponse::CoChange(report) => json(&CoChangeOutput::from(report)),
@@ -323,7 +346,10 @@ fn dispatch(cat: &Catalog, storage: &RedbStorage, tool: &str, args: &str) -> Res
             cat,
             &parse::<CouplingInput>(args)?,
         )?),
-        "weak_spots" => json(&tools::weak_spots::handle(cat, &parse::<ScopeInput>(args)?)),
+        "weak_spots" => json(&tools::weak_spots::handle(
+            cat,
+            &parse::<WeakSpotsInput>(args)?,
+        )?),
         "doc_for" => json(&tools::doc_for::handle(cat, &parse::<SymbolQuery>(args)?)?),
         "project_status" => json(&tools::project_status::handle(cat)),
         "doc_for_module" => json(&tools::doc_module::handle(
@@ -339,7 +365,7 @@ fn dispatch(cat: &Catalog, storage: &RedbStorage, tool: &str, args: &str) -> Res
         "refactor_suggestions" => json(&tools::refactor::handle(
             cat,
             storage,
-            &parse::<ScopeInput>(args)?,
+            &parse::<RefactorInput>(args)?,
         )?),
         "hotspots" => json(&tools::hotspots::handle(
             cat,

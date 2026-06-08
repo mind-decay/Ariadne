@@ -335,7 +335,9 @@ pub struct SymbolQuery {
     pub symbol: String,
 }
 
-/// Input to `blast_radius`.
+/// Input to `blast_radius`. The `limit`/`cursor`/`verbosity` economy controls
+/// (Block 1, tier-03) cap `must_touch` / `may_touch` independently behind one
+/// shared multi-list cursor.
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
 pub struct BlastRadiusInput {
     /// Target symbol canonical name.
@@ -346,9 +348,22 @@ pub struct BlastRadiusInput {
     /// Edge-kind filter set. Empty / missing = all kinds.
     #[serde(default)]
     pub kinds: Option<Vec<EdgeKindFilter>>,
+    /// Maximum rows per sublist; defaults to the economy page size (50).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<u32>,
+    /// Opaque multi-list pagination cursor from a prior page; absent = first
+    /// page.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
+    /// Field verbosity; defaults to concise (drops the embedded symbols'
+    /// cryptic id/offset fields).
+    #[serde(default)]
+    pub verbosity: Verbosity,
 }
 
-/// Output of `blast_radius`.
+/// Output of `blast_radius` — the resolved target plus one page of must / may
+/// dependents, with a shared multi-list cursor and a human steer (Block 1,
+/// tier-03 D5).
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct BlastRadiusOutput {
     /// The resolved target symbol, echoed back so callers can confirm
@@ -356,12 +371,34 @@ pub struct BlastRadiusOutput {
     /// `may_touch` then reads as "resolved, no dependents" rather than
     /// "symbol not found".
     pub symbol: SymbolSummary,
-    /// First-hop callers (immediate dominators of the queried symbol).
+    /// First-hop callers (immediate dominators of the queried symbol), one page
+    /// in stable `(file, byte_start, name)` order.
     pub must_touch: Vec<SymbolSummary>,
-    /// Transitive callers beyond the first hop.
+    /// Transitive callers beyond the first hop, one page in stable
+    /// `(file, byte_start, name)` order.
     pub may_touch: Vec<SymbolSummary>,
     /// Deepest hop level any returned row sits at.
     pub depth_used: u8,
+    /// Opaque multi-list cursor for the next page; absent when both lists are
+    /// exhausted.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub next_cursor: Option<String>,
+    /// Human steer naming which lists were truncated; absent when neither was.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub note: Option<String>,
+}
+
+impl From<ariadne_core::BlastRadiusReport> for BlastRadiusOutput {
+    fn from(r: ariadne_core::BlastRadiusReport) -> Self {
+        Self {
+            symbol: SymbolSummary::from(r.symbol),
+            must_touch: r.must_touch.into_iter().map(SymbolSummary::from).collect(),
+            may_touch: r.may_touch.into_iter().map(SymbolSummary::from).collect(),
+            depth_used: r.depth_used,
+            next_cursor: r.next_cursor,
+            note: r.note,
+        }
+    }
 }
 
 /// Path-keyed input shared by `file_summary` and `doc_for_module`
@@ -442,8 +479,8 @@ pub struct PlanFileRow {
     pub certainty: f32,
 }
 
-/// Path-prefix scope shared by `coupling_report`, `weak_spots`,
-/// `doc_for_project`, and `refactor_suggestions`. Empty = all files.
+/// Path-prefix scope for `doc_for_project` (the sole `ScopeInput` consumer
+/// after tiers 02–03 moved the other tools to dedicated inputs). Empty = all files.
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema, Default)]
 pub struct ScopeInput {
     /// Optional path-prefix filter (project-root-relative).
@@ -526,14 +563,41 @@ pub struct CouplingRow {
     pub distance: f32,
 }
 
-/// Output of `weak_spots`.
+/// Input to `weak_spots` — a dedicated type (not the shared [`ScopeInput`]) so
+/// adding `limit`/`cursor`/`verbosity` here leaves the other `ScopeInput`
+/// consumer (`doc_for_project`) untouched (Block 1, tier-03, mirroring
+/// [`CouplingInput`]).
+#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema, Default)]
+pub struct WeakSpotsInput {
+    /// Optional path-prefix filter (project-root-relative). Empty = all files.
+    #[serde(default)]
+    pub prefix: Option<String>,
+    /// Maximum rows per sublist; defaults to the economy page size (50).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<u32>,
+    /// Opaque multi-list pagination cursor from a prior page; absent = first
+    /// page.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
+    /// Field verbosity; defaults to concise (drops the dead-symbol rows' cryptic
+    /// id/offset fields; cycle / god-module rows carry none, so concise ==
+    /// detailed for them).
+    #[serde(default)]
+    pub verbosity: Verbosity,
+}
+
+/// Output of `weak_spots` — one page of cycles ∪ god modules ∪ dead code, with
+/// a shared multi-list cursor and a human steer (Block 1, tier-03 D5).
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct WeakSpotsOutput {
-    /// Strongly-connected components (size ≥ 2).
+    /// Strongly-connected components (size ≥ 2), one page in stable
+    /// (first member, then size) order.
     pub cycles: Vec<CycleRow>,
-    /// God modules — `efferent > god_threshold`.
+    /// God modules — `efferent > god_threshold`, one page in stable
+    /// (efferent desc, module asc) order.
     pub god_modules: Vec<CouplingRow>,
-    /// Dead symbols (`fan_in` = 0, no exports).
+    /// Dead symbols (`fan_in` = 0, no exports), one page in stable
+    /// `(file, byte_start, name)` order.
     ///
     /// Computed on the syntactic graph, so the list carries known false
     /// positives: `#[test]` functions, `build.rs::main`, and
@@ -543,6 +607,35 @@ pub struct WeakSpotsOutput {
     /// and drops the false positives; until then, treat this list as a
     /// triage hint, not a definitive dead-code verdict.
     pub dead_symbols: Vec<SymbolSummary>,
+    /// Opaque multi-list cursor for the next page; absent when every list is
+    /// exhausted.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub next_cursor: Option<String>,
+    /// Human steer naming which lists were truncated; absent when none were.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub note: Option<String>,
+}
+
+impl From<ariadne_core::CycleRow> for CycleRow {
+    fn from(r: ariadne_core::CycleRow) -> Self {
+        Self { members: r.members }
+    }
+}
+
+impl From<ariadne_core::WeakSpotsReport> for WeakSpotsOutput {
+    fn from(r: ariadne_core::WeakSpotsReport) -> Self {
+        Self {
+            cycles: r.cycles.into_iter().map(CycleRow::from).collect(),
+            god_modules: r.god_modules.into_iter().map(CouplingRow::from).collect(),
+            dead_symbols: r
+                .dead_symbols
+                .into_iter()
+                .map(SymbolSummary::from)
+                .collect(),
+            next_cursor: r.next_cursor,
+            note: r.note,
+        }
+    }
 }
 
 /// One cycle row of `weak_spots`.
@@ -656,16 +749,113 @@ pub struct MisplacedRow {
     pub ratio: f32,
 }
 
-/// Output of `refactor_suggestions`. Every entry is a *hint* for review,
-/// never an authoritative command (tier-09 step 12).
+/// Input to `refactor_suggestions` — a dedicated type (not the shared
+/// [`ScopeInput`]) so adding `limit`/`cursor`/`verbosity` here leaves the other
+/// `ScopeInput` consumer (`doc_for_project`) untouched (Block 1, tier-03,
+/// mirroring [`CouplingInput`]).
+#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema, Default)]
+pub struct RefactorInput {
+    /// Optional path-prefix filter (project-root-relative). Empty = all files.
+    #[serde(default)]
+    pub prefix: Option<String>,
+    /// Maximum rows per sublist; defaults to the economy page size (50).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<u32>,
+    /// Opaque multi-list pagination cursor from a prior page; absent = first
+    /// page.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
+    /// Field verbosity; defaults to concise (a no-op — every refactor row is
+    /// name/metric only, so concise == detailed).
+    #[serde(default)]
+    pub verbosity: Verbosity,
+}
+
+/// Output of `refactor_suggestions` — one page of god modules ∪ cycle breaks ∪
+/// misplaced symbols, with a shared multi-list cursor and a human steer (Block
+/// 1, tier-03 D5). Every entry is a *hint* for review, never an authoritative
+/// command (tier-09 step 12).
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct RefactorOutput {
-    /// God-module split candidates.
+    /// God-module split candidates, one page in stable (efferent desc, module
+    /// asc) order.
     pub god_modules: Vec<GodModuleRow>,
-    /// Cycle-break edge candidates.
+    /// Cycle-break edge candidates, one page in stable (score desc, then
+    /// `(from, to)`) order.
     pub cycle_breaks: Vec<CycleBreakRow>,
-    /// Symbols whose callers live mostly in another module.
+    /// Symbols whose callers live mostly in another module, one page in stable
+    /// (ratio desc, then symbol) order.
     pub misplaced_symbols: Vec<MisplacedRow>,
+    /// Opaque multi-list cursor for the next page; absent when every list is
+    /// exhausted.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub next_cursor: Option<String>,
+    /// Human steer naming which lists were truncated; absent when none were.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub note: Option<String>,
+}
+
+impl From<ariadne_core::OutboundRow> for OutboundRow {
+    fn from(r: ariadne_core::OutboundRow) -> Self {
+        Self {
+            symbol: r.symbol,
+            edges: r.edges,
+        }
+    }
+}
+
+impl From<ariadne_core::GodModuleRow> for GodModuleRow {
+    fn from(r: ariadne_core::GodModuleRow) -> Self {
+        Self {
+            module: r.module,
+            efferent: r.efferent,
+            cohesion: r.cohesion,
+            top_outbound: r.top_outbound.into_iter().map(OutboundRow::from).collect(),
+            suggestion: r.suggestion,
+        }
+    }
+}
+
+impl From<ariadne_core::CycleBreakRow> for CycleBreakRow {
+    fn from(r: ariadne_core::CycleBreakRow) -> Self {
+        Self {
+            from: r.from,
+            to: r.to,
+            score: r.score,
+            rationale: r.rationale,
+        }
+    }
+}
+
+impl From<ariadne_core::MisplacedRow> for MisplacedRow {
+    fn from(r: ariadne_core::MisplacedRow) -> Self {
+        Self {
+            symbol: r.symbol,
+            current_module: r.current_module,
+            target_module: r.target_module,
+            ratio: r.ratio,
+        }
+    }
+}
+
+impl From<ariadne_core::RefactorReport> for RefactorOutput {
+    fn from(r: ariadne_core::RefactorReport) -> Self {
+        Self {
+            god_modules: r.god_modules.into_iter().map(GodModuleRow::from).collect(),
+            cycle_breaks: r
+                .cycle_breaks
+                .into_iter()
+                .map(CycleBreakRow::from)
+                .collect(),
+            misplaced_symbols: r
+                .misplaced_symbols
+                .into_iter()
+                .map(MisplacedRow::from)
+                .collect(),
+            next_cursor: r.next_cursor,
+            note: r.note,
+        }
+    }
 }
 
 /// Grain a `hotspots` / `complexity` query ranks at (tier-15b D2). File grain

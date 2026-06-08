@@ -7,7 +7,8 @@ exit_criteria:
   - "A round-trip over the multi-list cursor returns the remaining items of each non-exhausted sublist and the per-list unions equal the un-capped lists (completeness across sublists)."
   - "Each sublist truncates by its documented stable key (below); concise drops embedded `SymbolSummary` id/offsets (blast_radius, weak_spots dead) and equals detailed for name/metric-only lists (refactor, cycles, god_modules)."
   - "Cold == warm == CLI `query` JSON for all three tools; ADR-0030 records multi-list cursor semantics; clippy `-D warnings`, fmt, `cargo test --test architecture`, dogfood green."
-status: pending
+status: completed
+completed: 2026-06-08
 ---
 
 <context>

@@ -32,19 +32,35 @@ fn blast_radius_matches_cold_golden() {
         .graph
         .blast_radius(target, 3, EdgeKindSet::ALL)
         .expect("target present");
+    // tier-03 sorts each dependent list by `(file, byte_start, name)` before the
+    // page cap; the oracle mirrors that. The query pins `detailed` so the cryptic
+    // fields stay populated (the cold reference is detailed); the tiny fixture is
+    // under the default page, so `next_cursor`/`note` are `None`.
+    let cmp = |a: &ariadne_core::SymbolSummary, b: &ariadne_core::SymbolSummary| {
+        a.file
+            .cmp(&b.file)
+            .then(a.byte_start.cmp(&b.byte_start))
+            .then(a.name.cmp(&b.name))
+    };
+    let mut must_touch: Vec<_> = radius
+        .must_touch
+        .iter()
+        .map(|s| reference.summary[s].clone())
+        .collect();
+    must_touch.sort_by(cmp);
+    let mut may_touch: Vec<_> = radius
+        .may_touch
+        .iter()
+        .map(|s| reference.summary[s].clone())
+        .collect();
+    may_touch.sort_by(cmp);
     let expect = BlastRadiusReport {
         symbol: reference.summary[&target].clone(),
-        must_touch: radius
-            .must_touch
-            .iter()
-            .map(|s| reference.summary[s].clone())
-            .collect(),
-        may_touch: radius
-            .may_touch
-            .iter()
-            .map(|s| reference.summary[s].clone())
-            .collect(),
+        must_touch,
+        may_touch,
         depth_used: radius.depth_used,
+        next_cursor: None,
+        note: None,
     };
 
     let handle = spawn(&root);
@@ -55,6 +71,9 @@ fn blast_radius_matches_cold_golden() {
             symbol: "crate::util::helper".to_owned(),
             depth: None,
             kinds: None,
+            limit: None,
+            cursor: None,
+            verbosity: Verbosity::Detailed,
         },
     );
     shutdown(&root, handle);
