@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 120" width="520" height="120" role="img" aria-labelledby="title desc">
+  <title id="title">Ariadne</title>
+  <desc id="desc">Ariadne wordmark — a labyrinth thread beside the name.</desc>
+  <defs>
+    <linearGradient id="thread" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6366f1"/>
+      <stop offset="1" stop-color="#a855f7"/>
+    </linearGradient>
+  </defs>
+  <!-- Ariadne's thread: a square-spiral labyrinth unwinding from the centre -->
+  <path d="M60 60 L60 48 L72 48 L72 72 L48 72 L48 36 L84 36 L84 84 L36 84 L36 24 L96 24 L96 96 L24 96 L24 18"
+        fill="none" stroke="url(#thread)" stroke-width="4"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="60" cy="60" r="3.5" fill="url(#thread)"/>
+  <text x="132" y="80"
+        style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:62px;font-weight:600;letter-spacing:1px;"
+        fill="url(#thread)">Ariadne</text>
+</svg>

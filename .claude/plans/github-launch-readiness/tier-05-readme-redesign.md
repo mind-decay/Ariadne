@@ -5,9 +5,10 @@ deps: [tier-01, tier-02, tier-04]
 exit_criteria:
   - assets/ariadne-wordmark.svg committed and referenced at the top of README
   - README has a shields badge row and a GitHub-anchored table of contents
-  - README install section covers Homebrew, shell, PowerShell, archives (+ cargo note)
+  - README install section covers Homebrew, shell, prebuilt archives (+ cargo note); PowerShell/Windows omitted to match the shipped dist config (see <deviations>)
   - README has distinct "License" and "Commercial licensing" sections
-status: pending
+status: completed
+completed: 2026-06-09
 ---
 
 <context>
@@ -67,8 +68,9 @@ SECURITY) [src: plan.md D7].
 - Render README locally (e.g. `grip` or GitHub preview): logo shows, every badge
   image loads (HTTP 200), TOC links jump to their sections.
 - `grep -E '## (Install|License|Commercial licensing)' README.md` matches all three.
-- Install block contains `brew install`, a `curl ... | sh` line, an `irm ... | iex`
-  line, and a Releases link.
+- Install block contains `brew install`, a `curl ... | sh` line, and a Releases
+  link. (No `irm ... | iex` line — PowerShell is not a shipped installer; see
+  <deviations>.)
 - No stale `MIT OR Apache` text remains (`grep -i 'mit or apache' README.md` empty).
 </verification>
 
@@ -76,4 +78,18 @@ SECURITY) [src: plan.md D7].
 `git checkout -- README.md` and `rm assets/ariadne-wordmark.svg` (remove `assets/`
 if now empty). Docs-only change; no build impact.
 </rollback>
+
+<deviations>
+- PowerShell / Windows install path dropped (user-approved 2026-06-09). This tier
+  was authored assuming a Windows release + PowerShell installer, but the
+  completed tier-02/tier-03 deliberately removed both from `dist-workspace.toml`
+  ("Ariadne is not Windows-ready yet"). `dist plan` emits only `shell` + `homebrew`
+  installers for macOS/Linux, so an `irm | iex` line would advertise a 404 URL —
+  forbidden by step 6 ("do not guess filenames"). The install matrix instead
+  covers Homebrew, shell (`curl|sh`), prebuilt archives (macOS/Linux), a
+  crates.io `cargo install` note (tier-06), and a from-source fallback. The stale
+  "Windows" prebuilt-binary claim in the old README was corrected to match.
+- Homebrew formula name is `ariadne-cli` (from `dist plan`: `ariadne-cli.rb`), per
+  plan.md verification line 161 — not the `ariadne` of this tier's step 6 draft.
+</deviations>
 </content>
