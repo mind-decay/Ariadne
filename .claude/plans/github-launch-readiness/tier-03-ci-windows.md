@@ -10,7 +10,8 @@ exit_criteria:
   - ci.yml clippy matrix includes windows-latest; nextest matrix does not
   - clippy (windows-latest) passes on a PR; unix nextest/clippy stay green
   - release no longer builds x86_64-pc-windows-msvc (dist-workspace.toml)
-status: blocked
+status: completed
+completed: 2026-06-09
 ---
 
 <context>
