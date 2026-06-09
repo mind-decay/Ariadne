@@ -6,10 +6,7 @@ expression: golden
   "may_touch": [],
   "must_touch": [
     {
-      "byte_end": 61,
-      "byte_start": 32,
       "file": "src/lib.rs",
-      "id": 2,
       "kind": "function",
       "name": "crate::caller"
     }
@@ -18,21 +15,17 @@ expression: golden
     {
       "depth_used": 1,
       "may_touch": [],
+      "may_touch_total": 0,
       "must_touch": [
         {
-          "byte_end": 61,
-          "byte_start": 32,
           "file": "src/lib.rs",
-          "id": 2,
           "kind": "function",
           "name": "crate::caller"
         }
       ],
+      "must_touch_total": 1,
       "symbol": {
-        "byte_end": 30,
-        "byte_start": 0,
         "file": "src/lib.rs",
-        "id": 1,
         "kind": "function",
         "name": "crate::callee"
       }

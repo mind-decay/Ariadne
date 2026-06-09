@@ -99,11 +99,33 @@ expression: golden
             "type": "string"
           }
         ]
+      },
+      "Verbosity": {
+        "description": "Field verbosity for a growable tool's rows (Block 1, tier-01 D3). Concise\n(the default) omits the cryptic id/offset fields the LLM reasons about\nworse; `detailed` is a lossless superset. Mirrors\n`ariadne_graph::economy::Verbosity` / `ariadne_core::Verbosity`; the server\nmaps between them (as it does for [`Grain`]).",
+        "oneOf": [
+          {
+            "const": "concise",
+            "description": "Omit cryptic id/offset fields (the default).",
+            "type": "string"
+          },
+          {
+            "const": "detailed",
+            "description": "Emit every field — the lossless superset.",
+            "type": "string"
+          }
+        ]
       }
     },
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "description": "Input to `affected_tests` — mirrors `diff_blast_radius` (the same changeset\n`spec` + reverse-reach `depth`/`kinds`), since A1 reuses the diff→seed→\nreverse-reach machinery (block-a plan.md D1).",
+    "description": "Input to `affected_tests` — mirrors `diff_blast_radius` (the same changeset\n`spec` + reverse-reach `depth`/`kinds`), since A1 reuses the diff→seed→\nreverse-reach machinery (block-a plan.md D1). The `limit`/`cursor`/\n`verbosity` economy controls (Block 1, tier-04) cap `tests` / `seeds` behind\none diff-aware multi-list cursor.",
     "properties": {
+      "cursor": {
+        "description": "Opaque diff-aware multi-list cursor from a prior page; absent = first\npage. Rejected once the index revision or the changed-paths fingerprint\nchanges under it.",
+        "type": [
+          "string",
+          "null"
+        ]
+      },
       "depth": {
         "default": null,
         "description": "Reverse-BFS hop limit per changed seed. Defaults to 3.",
@@ -126,10 +148,24 @@ expression: golden
           "null"
         ]
       },
+      "limit": {
+        "description": "Maximum rows per top-level sublist (tests / seeds); defaults to the\neconomy page size (50).",
+        "format": "uint32",
+        "minimum": 0,
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
       "spec": {
         "$ref": "#/$defs/DiffSpecInput",
         "default": "working_tree",
         "description": "Which changeset to scope. Defaults to the uncommitted working tree."
+      },
+      "verbosity": {
+        "$ref": "#/$defs/Verbosity",
+        "default": "concise",
+        "description": "Field verbosity; defaults to concise (drops the rows' cryptic id/offset\nfields)."
       }
     },
     "title": "AffectedTestsInput",
@@ -582,11 +618,33 @@ expression: golden
             "type": "string"
           }
         ]
+      },
+      "Verbosity": {
+        "description": "Field verbosity for a growable tool's rows (Block 1, tier-01 D3). Concise\n(the default) omits the cryptic id/offset fields the LLM reasons about\nworse; `detailed` is a lossless superset. Mirrors\n`ariadne_graph::economy::Verbosity` / `ariadne_core::Verbosity`; the server\nmaps between them (as it does for [`Grain`]).",
+        "oneOf": [
+          {
+            "const": "concise",
+            "description": "Omit cryptic id/offset fields (the default).",
+            "type": "string"
+          },
+          {
+            "const": "detailed",
+            "description": "Emit every field — the lossless superset.",
+            "type": "string"
+          }
+        ]
       }
     },
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "description": "Input to `diff_blast_radius`.",
+    "description": "Input to `diff_blast_radius`. The `limit`/`cursor`/`verbosity` economy\ncontrols (Block 1, tier-04) cap the three top-level lists behind one\ndiff-aware multi-list cursor and bound each seed's inner must/may at `limit`.",
     "properties": {
+      "cursor": {
+        "description": "Opaque diff-aware multi-list cursor from a prior page; absent = first\npage. Rejected once the index revision or the changed-paths fingerprint\nchanges under it.",
+        "type": [
+          "string",
+          "null"
+        ]
+      },
       "depth": {
         "default": null,
         "description": "Reverse-BFS hop limit per changed seed. Defaults to 3.",
@@ -609,10 +667,24 @@ expression: golden
           "null"
         ]
       },
+      "limit": {
+        "description": "Maximum rows per top-level sublist and the fixed per-seed inner cap;\ndefaults to the economy page size (50).",
+        "format": "uint32",
+        "minimum": 0,
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
       "spec": {
         "$ref": "#/$defs/DiffSpecInput",
         "default": "working_tree",
         "description": "Which changeset to scope. Defaults to the uncommitted working tree."
+      },
+      "verbosity": {
+        "$ref": "#/$defs/Verbosity",
+        "default": "concise",
+        "description": "Field verbosity; defaults to concise (drops the embedded symbols' cryptic\nid/offset fields)."
       }
     },
     "title": "DiffBlastInput",

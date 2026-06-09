@@ -26,7 +26,7 @@ const GOD_THRESHOLD: f32 = 8.0;
 /// Aggregate the three refactor detectors, scoped by `prefix`, each list capped
 /// to one page sharing a single multi-list cursor — the warm twin of the cold
 /// `tools::refactor` handler, so their JSON is byte-identical (parity). A
-/// malformed / stale cursor surfaces as a typed `DaemonResponse::Error`.
+/// malformed / stale cursor surfaces as a typed `DaemonResponse::InvalidInput`.
 pub(crate) fn refactor_suggestions(
     cat: &WarmCatalog,
     prefix: Option<&str>,
@@ -92,7 +92,7 @@ pub(crate) fn refactor_suggestions(
         .transpose()
     {
         Ok(c) => c,
-        Err(err) => return DaemonResponse::Error(err.to_string()),
+        Err(err) => return DaemonResponse::InvalidInput(err.to_string()),
     };
     let budget = Budget {
         limit: limit.map_or(economy::DEFAULT_PAGE, |l| l as usize),

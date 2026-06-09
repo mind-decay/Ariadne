@@ -177,12 +177,21 @@ pub struct ComplexityRow {
 pub struct DiffSeed {
     /// The changed symbol the radius was seeded from.
     pub symbol: SymbolSummary,
-    /// First-hop dependents of the seed.
+    /// First-hop dependents of the seed, bounded by the fixed per-seed cap
+    /// (= `limit`); see `must_touch_total` for the full count (Block 1, tier-04).
     pub must_touch: Vec<SymbolSummary>,
-    /// Transitive dependents beyond the first hop.
+    /// Transitive dependents beyond the first hop, bounded by the same cap; see
+    /// `may_touch_total` for the full count.
     pub may_touch: Vec<SymbolSummary>,
     /// Largest hop depth in this seed's returned set.
     pub depth_used: u8,
+    /// Full first-hop dependent count before the per-seed inner cap — `>
+    /// must_touch.len()` means rows were capped, never silently dropped
+    /// (tier-04). Equals `must_touch.len()` when nothing was capped.
+    pub must_touch_total: u32,
+    /// Full transitive dependent count before the per-seed inner cap, paired
+    /// with `must_touch_total`.
+    pub may_touch_total: u32,
 }
 
 /// One logical-coupling edge between two files (tier-15b). Mirrors

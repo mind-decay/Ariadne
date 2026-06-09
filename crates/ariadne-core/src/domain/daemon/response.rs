@@ -240,31 +240,58 @@ pub struct CoChangeReport {
 }
 
 /// `diff_blast_radius` report — per-seed radii plus the deduped must / may
-/// union and the changed paths that resolved to no symbol (tier-15c). Mirrors
-/// `ariadne_graph::DiffBlastReport` projected to wire rows.
+/// union and the changed paths that resolved to no symbol (tier-15c). The three
+/// top-level lists (`seeds`, `must_touch`, `may_touch`) each cap to one page
+/// sharing a single diff-aware multi-list cursor + steer (Block 1, tier-04);
+/// per-seed inner must/may are bounded by the fixed cap with a reported count,
+/// never a nested cursor. When every list fits one page, `next_cursor` and
+/// `note` are both `None`. No `skip_serializing_if`: postcard-framed daemon-IPC
+/// type (see [`ReferencesReport`]); the JSON-level omission lives on the MCP
+/// wire type. Mirrors `ariadne_graph::DiffBlastReport` projected to wire rows.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DiffBlastReport {
-    /// Per-seed radius for each changed symbol, sorted by `SymbolId`.
+    /// Per-seed radius for each changed symbol, one page in stable
+    /// `(file, byte_start, name)` seed order.
     pub seeds: Vec<DiffSeed>,
-    /// Union of every seed's first-hop dependents.
+    /// Union of every seed's first-hop dependents, one page in stable
+    /// `(file, byte_start, name)` order.
     pub must_touch: Vec<SymbolSummary>,
-    /// Union of every seed's transitive dependents, minus `must_touch`.
+    /// Union of every seed's transitive dependents, minus `must_touch`, one page
+    /// in stable `(file, byte_start, name)` order.
     pub may_touch: Vec<SymbolSummary>,
     /// Changed paths that resolved to no symbol seed, sorted.
     pub unresolved: Vec<String>,
+    /// Opaque diff-aware multi-list cursor for the next page; `None` when every
+    /// top-level list is exhausted.
+    pub next_cursor: Option<String>,
+    /// Human steer naming which top-level lists were truncated; `None` when none
+    /// were.
+    pub note: Option<String>,
 }
 
 /// `affected_tests` report — the tests a change reaches, the changed-symbol
-/// seeds, and the changed paths that resolved to no symbol (Block A, A1).
-/// Mirrors `ariadne_graph::AffectedTestsReport` projected to wire rows.
+/// seeds, and the changed paths that resolved to no symbol (Block A, A1). The
+/// two top-level lists (`tests`, `seeds`) each cap to one page sharing a single
+/// diff-aware multi-list cursor + steer (Block 1, tier-04). When both fit one
+/// page, `next_cursor` and `note` are both `None`. No `skip_serializing_if`:
+/// postcard-framed daemon-IPC type (see [`ReferencesReport`]); the JSON-level
+/// omission lives on the MCP wire type. Mirrors
+/// `ariadne_graph::AffectedTestsReport` projected to wire rows.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AffectedTestsReport {
-    /// Affected test symbols, sorted by `SymbolId`.
+    /// Affected test symbols, one page in stable `(file, byte_start, name)`
+    /// order.
     pub tests: Vec<SymbolSummary>,
-    /// Changed-symbol seeds, sorted by `SymbolId`.
+    /// Changed-symbol seeds, one page in stable `(file, byte_start, name)`
+    /// order.
     pub seeds: Vec<SymbolSummary>,
     /// Changed paths that resolved to no symbol seed, sorted.
     pub unresolved: Vec<String>,
+    /// Opaque diff-aware multi-list cursor for the next page; `None` when both
+    /// lists are exhausted.
+    pub next_cursor: Option<String>,
+    /// Human steer naming which lists were truncated; `None` when none were.
+    pub note: Option<String>,
 }
 
 /// The daemon's reply to a [`super::DaemonRequest`]. Matched exhaustively
@@ -310,4 +337,11 @@ pub enum DaemonResponse {
     /// A query-level failure (symbol / file / module not found, …). Mirrors
     /// the v1 MCP `NotFound` outcome without leaking an adapter error type.
     Error(String),
+    /// A caller-input fault: a malformed / stale pagination cursor that cannot
+    /// be honored. Kept distinct from [`Self::Error`] so the MCP adapter maps it
+    /// to JSON-RPC `invalid_params` (−32602) rather than `internal_error`
+    /// (−32603) — byte-identical to the cold path's `McpError::InvalidInput`, so
+    /// a client tells a bad cursor from a server fault identically on either
+    /// route (cold==warm error-code parity).
+    InvalidInput(String),
 }

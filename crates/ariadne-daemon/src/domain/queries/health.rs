@@ -57,7 +57,7 @@ fn to_row(m: &CouplingMetrics) -> CouplingRow {
 /// Per-file Martin coupling metrics filtered by `prefix`, capped to one page in
 /// stable (Ca desc, module asc) order — the warm twin of the cold
 /// `tools::coupling_report` handler, so their JSON is byte-identical (parity).
-/// A malformed / stale cursor surfaces as a typed `DaemonResponse::Error`.
+/// A malformed / stale cursor surfaces as a typed `DaemonResponse::InvalidInput`.
 pub(crate) fn coupling_report(
     cat: &WarmCatalog,
     prefix: Option<&str>,
@@ -74,7 +74,7 @@ pub(crate) fn coupling_report(
         .transpose()
     {
         Ok(c) => c,
-        Err(err) => return DaemonResponse::Error(err.to_string()),
+        Err(err) => return DaemonResponse::InvalidInput(err.to_string()),
     };
     let budget = Budget {
         limit: limit.map_or(economy::DEFAULT_PAGE, |l| l as usize),
@@ -129,7 +129,7 @@ fn is_library_target(path: &str) -> bool {
 /// supersede the ad-hoc `MAX_DEAD` cap, so the dead-code remainder is reachable.
 /// The dead-code pass excludes the per-language root set so `main`, exported
 /// API, and test functions do not surface (tier-05 RD4). A malformed / stale
-/// cursor surfaces as a typed `DaemonResponse::Error`.
+/// cursor surfaces as a typed `DaemonResponse::InvalidInput`.
 // A linear handler: build the three lists, decode the cursor, paginate each, and
 // assemble the report. The per-sublist sort/cap/note carries it over the line
 // lint; the cold twin (`tools::weak_spots`) splits a `page` helper out, but the
@@ -204,7 +204,7 @@ pub(crate) fn weak_spots(
         .transpose()
     {
         Ok(c) => c,
-        Err(err) => return DaemonResponse::Error(err.to_string()),
+        Err(err) => return DaemonResponse::InvalidInput(err.to_string()),
     };
     let econ = to_economy(verbosity);
     let budget = Budget {

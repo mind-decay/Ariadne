@@ -88,6 +88,20 @@ pub enum CursorError {
         /// The (older) revision encoded in the cursor.
         found: u32,
     },
+    /// A diff-aware cursor was minted against a different changeset (its
+    /// changed-paths fingerprint no longer matches): the working-tree diff has
+    /// changed under it, so its offsets index a different result set. Re-run the
+    /// query without the cursor (tier-04 D2).
+    #[error(
+        "stale pagination cursor (changeset changed since it was minted); \
+         re-run the query without the cursor"
+    )]
+    StaleDiff {
+        /// The current changed-paths fingerprint the decode expected.
+        expected: u64,
+        /// The fingerprint encoded in the cursor (a different changeset).
+        found: u64,
+    },
 }
 
 impl Cursor {
@@ -225,6 +239,139 @@ pub fn multi_cursor(pages: &[(u64, bool)], revision: u32) -> Option<String> {
     pages.iter().any(|&(_, remainder)| remainder).then(|| {
         let offsets = pages.iter().map(|&(off, _)| off).collect();
         Cursor { revision, offsets }.encode()
+    })
+}
+
+/// A diff-aware multi-list cursor (tier-04 D2): the multi-list [`Cursor`] shape
+/// plus a `fingerprint` of the changeset's changed paths. The two diff-aware
+/// tools (`affected_tests`, `diff_blast_radius`) derive their result set from
+/// the working-tree diff, not the index revision alone — so a cursor minted for
+/// one changeset must NOT page a different one. The fingerprint is stamped at
+/// mint and re-checked at decode; a mismatch is [`CursorError::StaleDiff`],
+/// exactly as a `revision` mismatch is [`CursorError::StaleRevision`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DiffCursor {
+    /// Catalog revision the offsets are valid against (re-index guard).
+    pub revision: u32,
+    /// Changed-paths fingerprint the offsets are valid against (re-diff guard).
+    pub fingerprint: u64,
+    /// Per-sublist start offset into each top-level list's stable sort.
+    pub offsets: Vec<u64>,
+}
+
+impl DiffCursor {
+    /// Encode to an opaque lowercase-hex string. Layout: `revision` (u32 LE) ‖
+    /// `fingerprint` (u64 LE) ‖ `len` (u32 LE) ‖ `offsets` (len × u64 LE). The
+    /// extra fingerprint word makes the layout distinct from a plain [`Cursor`],
+    /// so the two never cross-decode.
+    #[must_use]
+    pub fn encode(&self) -> String {
+        let mut bytes = Vec::with_capacity(16 + self.offsets.len() * 8);
+        bytes.extend_from_slice(&self.revision.to_le_bytes());
+        bytes.extend_from_slice(&self.fingerprint.to_le_bytes());
+        let len = u32::try_from(self.offsets.len()).unwrap_or(u32::MAX);
+        bytes.extend_from_slice(&len.to_le_bytes());
+        for off in &self.offsets {
+            bytes.extend_from_slice(&off.to_le_bytes());
+        }
+        to_hex(&bytes)
+    }
+
+    /// Decode an opaque diff cursor, validating it against both
+    /// `expected_revision` (re-index guard) and `expected_fingerprint`
+    /// (re-diff guard).
+    ///
+    /// # Errors
+    /// [`CursorError::Malformed`] when the string is not a well-formed diff
+    /// cursor; [`CursorError::StaleRevision`] when the index changed under it;
+    /// [`CursorError::StaleDiff`] when the changeset changed under it.
+    pub fn decode(
+        s: &str,
+        expected_revision: u32,
+        expected_fingerprint: u64,
+    ) -> Result<Self, CursorError> {
+        let bytes = from_hex(s).ok_or(CursorError::Malformed)?;
+        if bytes.len() < 16 {
+            return Err(CursorError::Malformed);
+        }
+        let revision = le_u32(&bytes, 0);
+        let fingerprint = le_u64(&bytes, 4);
+        let len = le_u32(&bytes, 12) as usize;
+        if bytes.len() != 16 + len * 8 {
+            return Err(CursorError::Malformed);
+        }
+        if revision != expected_revision {
+            return Err(CursorError::StaleRevision {
+                expected: expected_revision,
+                found: revision,
+            });
+        }
+        if fingerprint != expected_fingerprint {
+            return Err(CursorError::StaleDiff {
+                expected: expected_fingerprint,
+                found: fingerprint,
+            });
+        }
+        let offsets = (0..len).map(|i| le_u64(&bytes, 16 + i * 8)).collect();
+        Ok(Self {
+            revision,
+            fingerprint,
+            offsets,
+        })
+    }
+
+    /// The plain multi-list [`Cursor`] window state a handler feeds to
+    /// [`paginate_sublist`] (the offsets, stamped with the revision). The
+    /// fingerprint is a decode-time guard only — it does not drive windowing.
+    #[must_use]
+    pub fn window(&self) -> Cursor {
+        Cursor {
+            revision: self.revision,
+            offsets: self.offsets.clone(),
+        }
+    }
+}
+
+/// A cheap, order-independent fingerprint of a changeset's changed paths
+/// (tier-04 D2): the FNV-1a hash of the count plus each path's bytes, folded so
+/// permuting the paths yields the same value (git emits them deterministically,
+/// but order-independence removes a latent footgun). Two different changed-path
+/// sets fingerprint differently with overwhelming probability, so a cursor
+/// minted for one diff is rejected when re-fed against another.
+#[must_use]
+pub fn diff_fingerprint(changed_paths: &[String]) -> u64 {
+    const OFFSET: u64 = 0xcbf2_9ce4_8422_2325;
+    const PRIME: u64 = 0x0000_0100_0000_01b3;
+    // Per-path FNV-1a, XOR-folded across paths so the result is order-free.
+    let mut acc = OFFSET ^ (changed_paths.len() as u64).wrapping_mul(PRIME);
+    for path in changed_paths {
+        let mut h = OFFSET;
+        for &b in path.as_bytes() {
+            h ^= u64::from(b);
+            h = h.wrapping_mul(PRIME);
+        }
+        // Terminate each path with a length word so "ab"+"c" ≠ "a"+"bc".
+        h ^= path.len() as u64;
+        h = h.wrapping_mul(PRIME);
+        acc ^= h;
+    }
+    acc
+}
+
+/// Assemble the single diff-aware `next_cursor` for a multi-list page from each
+/// sublist's `(next_offset, remainder)` outcome (tier-04 D2). Like
+/// [`multi_cursor`] but stamps the changed-paths `fingerprint` alongside the
+/// `revision`; emits `Some` iff at least one sublist still has a remainder.
+#[must_use]
+pub fn diff_multi_cursor(pages: &[(u64, bool)], revision: u32, fingerprint: u64) -> Option<String> {
+    pages.iter().any(|&(_, remainder)| remainder).then(|| {
+        let offsets = pages.iter().map(|&(off, _)| off).collect();
+        DiffCursor {
+            revision,
+            fingerprint,
+            offsets,
+        }
+        .encode()
     })
 }
 
@@ -518,6 +665,105 @@ mod tests {
         assert_eq!(
             multi_truncation_note(&[(16, 42, "dead_symbols")]),
             "Showing 16 of 42 dead_symbols — call again with next_cursor for the next page."
+        );
+    }
+
+    #[test]
+    fn diff_cursor_round_trips_revision_fingerprint_and_offsets() {
+        let c = DiffCursor {
+            revision: 537,
+            fingerprint: 0xdead_beef_0bad_f00d,
+            offsets: vec![3, 0, 18_446_744_073_709_551_615],
+        };
+        let decoded =
+            DiffCursor::decode(&c.encode(), 537, 0xdead_beef_0bad_f00d).expect("round-trip decode");
+        assert_eq!(decoded, c);
+        // `window()` drops the fingerprint, keeping the revision-stamped offsets
+        // the pager consumes.
+        assert_eq!(
+            c.window(),
+            Cursor {
+                revision: 537,
+                offsets: vec![3, 0, 18_446_744_073_709_551_615],
+            }
+        );
+    }
+
+    #[test]
+    fn diff_decode_rejects_wrong_revision() {
+        let minted = DiffCursor {
+            revision: 41,
+            fingerprint: 7,
+            offsets: vec![50],
+        }
+        .encode();
+        let err = DiffCursor::decode(&minted, 42, 7).expect_err("revision mismatch must reject");
+        assert_eq!(
+            err,
+            CursorError::StaleRevision {
+                expected: 42,
+                found: 41
+            }
+        );
+    }
+
+    #[test]
+    fn diff_decode_rejects_stale_changeset_fingerprint() {
+        // Same revision, different changeset: the offsets index a different
+        // result set, so the cursor must be rejected, not silently mis-paged.
+        let minted = DiffCursor {
+            revision: 9,
+            fingerprint: 100,
+            offsets: vec![1, 2],
+        }
+        .encode();
+        let err =
+            DiffCursor::decode(&minted, 9, 200).expect_err("fingerprint mismatch must reject");
+        assert_eq!(
+            err,
+            CursorError::StaleDiff {
+                expected: 200,
+                found: 100,
+            }
+        );
+    }
+
+    #[test]
+    fn diff_fingerprint_is_set_sensitive_and_order_free() {
+        let a = vec!["src/lib.rs".to_owned()];
+        let b = vec!["src/lib.rs".to_owned(), "src/other.rs".to_owned()];
+        let b_rev = vec!["src/other.rs".to_owned(), "src/lib.rs".to_owned()];
+        assert_eq!(diff_fingerprint(&a), diff_fingerprint(&a), "deterministic");
+        assert_ne!(
+            diff_fingerprint(&a),
+            diff_fingerprint(&b),
+            "a different changed-path set fingerprints differently",
+        );
+        assert_eq!(
+            diff_fingerprint(&b),
+            diff_fingerprint(&b_rev),
+            "fingerprint is independent of path order",
+        );
+    }
+
+    #[test]
+    fn diff_multi_cursor_stamps_fingerprint_and_is_none_when_exhausted() {
+        assert!(
+            diff_multi_cursor(&[(4, false), (1, false)], 3, 42).is_none(),
+            "no remainder anywhere → no cursor",
+        );
+        let encoded = diff_multi_cursor(&[(2, true), (1, false), (0, false)], 3, 42)
+            .expect("a remainder mints a cursor");
+        // Decodes only against the matching (revision, fingerprint) pair.
+        assert!(
+            DiffCursor::decode(&encoded, 3, 99).is_err(),
+            "wrong fingerprint rejected"
+        );
+        let decoded = DiffCursor::decode(&encoded, 3, 42).expect("matching pair decodes");
+        assert_eq!(
+            decoded.offsets,
+            vec![2, 1, 0],
+            "carries every sublist offset"
         );
     }
 

@@ -263,6 +263,17 @@ pub enum DaemonQuery {
         depth: Option<u8>,
         /// Edge-kind filter; empty / missing = all kinds.
         kinds: Option<Vec<EdgeKindFilter>>,
+        /// Maximum rows per top-level sublist (seeds / must / may) and the fixed
+        /// per-seed inner must/may cap; the handler defaults to the economy page
+        /// size (50) when absent (Block 1, tier-04).
+        limit: Option<u32>,
+        /// Opaque diff-aware multi-list cursor from a prior page; `None` = first
+        /// page. Stamped with the index revision AND the changed-paths
+        /// fingerprint, so a changed working-tree diff rejects it (tier-04 D2).
+        cursor: Option<String>,
+        /// Field verbosity; defaults to concise (drops the embedded symbols'
+        /// cryptic id/offset fields).
+        verbosity: Verbosity,
     },
     /// Static test-impact reachability of a changeset (Block A, A1). Same
     /// client/daemon split as [`DaemonQuery::DiffBlast`]: the querying process
@@ -279,5 +290,15 @@ pub enum DaemonQuery {
         depth: Option<u8>,
         /// Edge-kind filter; empty / missing = all kinds.
         kinds: Option<Vec<EdgeKindFilter>>,
+        /// Maximum rows per top-level sublist (tests / seeds); the handler
+        /// defaults to the economy page size (50) when absent (Block 1, tier-04).
+        limit: Option<u32>,
+        /// Opaque diff-aware multi-list cursor from a prior page; `None` = first
+        /// page. Stamped with the index revision AND the changed-paths
+        /// fingerprint, so a changed working-tree diff rejects it (tier-04 D2).
+        cursor: Option<String>,
+        /// Field verbosity; defaults to concise (drops the rows' cryptic
+        /// id/offset fields).
+        verbosity: Verbosity,
     },
 }

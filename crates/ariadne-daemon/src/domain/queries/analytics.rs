@@ -42,7 +42,7 @@ fn to_economy(v: Verbosity) -> EconVerbosity {
 /// page in stable (score desc, then file / symbol-id asc) order and projected
 /// at `verbosity` — the warm twin of the cold `tools::hotspots` handler, so
 /// their JSON is byte-identical (parity). A malformed / stale cursor surfaces
-/// as a typed `DaemonResponse::Error`.
+/// as a typed `DaemonResponse::InvalidInput`.
 // Mirrors the `DaemonQuery::Hotspots` variant fields 1:1 (the dispatcher
 // destructures and forwards them); bundling would just add indirection.
 #[allow(clippy::too_many_arguments)]
@@ -81,7 +81,7 @@ pub(crate) fn hotspots(
         .transpose()
     {
         Ok(c) => c,
-        Err(err) => return DaemonResponse::Error(err.to_string()),
+        Err(err) => return DaemonResponse::InvalidInput(err.to_string()),
     };
     let budget = Budget {
         limit: limit.map_or(economy::DEFAULT_PAGE, |l| l as usize),
@@ -173,7 +173,7 @@ fn project_hotspots(
 /// descending, ties broken by key ascending, capped to one page and projected
 /// at `verbosity` — the warm twin of the cold `tools::complexity` handler, so
 /// their JSON is byte-identical (parity). A malformed / stale cursor surfaces as
-/// a typed `DaemonResponse::Error`.
+/// a typed `DaemonResponse::InvalidInput`.
 // Mirrors the `DaemonQuery::Complexity` variant fields 1:1 (see `hotspots`).
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn complexity(
@@ -222,7 +222,7 @@ pub(crate) fn complexity(
         .transpose()
     {
         Ok(c) => c,
-        Err(err) => return DaemonResponse::Error(err.to_string()),
+        Err(err) => return DaemonResponse::InvalidInput(err.to_string()),
     };
     let budget = Budget {
         limit: limit.map_or(economy::DEFAULT_PAGE, |l| l as usize),
@@ -283,7 +283,7 @@ fn project_complexity_row(mut row: ComplexityRow, verbosity: EconVerbosity) -> C
 /// stable (degree desc, then `(a, b)` asc) order — the warm twin of the cold
 /// `tools::co_change` handler, so their JSON is byte-identical (parity). Edges
 /// carry no cryptic fields, so `verbosity` is a no-op. A malformed / stale
-/// cursor surfaces as a typed `DaemonResponse::Error`.
+/// cursor surfaces as a typed `DaemonResponse::InvalidInput`.
 // Mirrors the `DaemonQuery::CoChange` variant fields 1:1 (see `hotspots`).
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn co_change(
@@ -315,7 +315,7 @@ pub(crate) fn co_change(
         .transpose()
     {
         Ok(c) => c,
-        Err(err) => return DaemonResponse::Error(err.to_string()),
+        Err(err) => return DaemonResponse::InvalidInput(err.to_string()),
     };
     let budget = Budget {
         limit: limit.map_or(economy::DEFAULT_PAGE, |l| l as usize),

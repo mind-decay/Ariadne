@@ -52,7 +52,7 @@ fn filter_to_set(filter: &[EdgeKindFilter]) -> EdgeKindSet {
 /// each capped to one page sharing a single multi-list cursor and projected at
 /// `verbosity` — the warm twin of the cold `tools::blast_radius` handler, so
 /// their JSON is byte-identical (parity). A malformed / stale cursor surfaces
-/// as a typed `DaemonResponse::Error`.
+/// as a typed `DaemonResponse::InvalidInput`.
 // Mirrors the `DaemonQuery::BlastRadius` variant fields 1:1 (the dispatcher
 // destructures and forwards them); bundling would just add indirection.
 #[allow(clippy::too_many_arguments)]
@@ -92,7 +92,7 @@ pub(crate) fn blast_radius(
         .transpose()
     {
         Ok(c) => c,
-        Err(err) => return DaemonResponse::Error(err.to_string()),
+        Err(err) => return DaemonResponse::InvalidInput(err.to_string()),
     };
     let econ = to_economy(verbosity);
     let budget = Budget {
@@ -290,12 +290,18 @@ pub(crate) fn plan_assist(
 /// file stale against its index degrades to `unresolved`, never a wrong seed),
 /// then runs the graph `diff_blast` use case and projects each `SymbolId` via
 /// the shared `summarize`.
+// Mirrors the `DaemonQuery::DiffBlast` variant fields 1:1; bundling the tier-04
+// economy controls would only add indirection, like the cold twin.
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn diff_blast(
     cat: &WarmCatalog,
     hunks: &[LineHunk],
     changed_paths: &[String],
     depth: Option<u8>,
     kinds: Option<&[EdgeKindFilter]>,
+    limit: Option<u32>,
+    cursor: Option<&str>,
+    verbosity: Verbosity,
 ) -> DaemonResponse {
     let depth = depth.unwrap_or(DEFAULT_DEPTH).max(1);
     let set = filter_to_set(kinds.unwrap_or(&[]));
@@ -308,33 +314,150 @@ pub(crate) fn diff_blast(
         .graph
         .diff_blast(&spans, hunks, changed_paths, depth, set);
 
-    DaemonResponse::DiffBlast(DiffBlastReport {
-        seeds: report
-            .seeds
-            .into_iter()
-            .map(|s| DiffSeed {
+    let revision = u32::try_from(cat.revision).unwrap_or(u32::MAX);
+    let fingerprint = economy::diff_fingerprint(changed_paths);
+    let decoded = match cursor
+        .map(|c| economy::DiffCursor::decode(c, revision, fingerprint))
+        .transpose()
+    {
+        Ok(c) => c,
+        Err(err) => return DaemonResponse::InvalidInput(err.to_string()),
+    };
+    let econ = to_economy(verbosity);
+    let budget = Budget {
+        limit: limit.map_or(economy::DEFAULT_PAGE, |l| l as usize),
+        cursor: decoded.map(|c| c.window()),
+        verbosity: econ,
+    };
+
+    // Build each seed row, inner must/may capped at `limit` with a reported
+    // count; the seed symbol stays detailed until after the seeds page sort.
+    let seeds: Vec<DiffSeed> = report
+        .seeds
+        .into_iter()
+        .map(|s| {
+            let (must_touch, must_touch_total) =
+                inner_page(s.must_touch.into_iter().map(|x| summarize(cat, x)), &budget);
+            let (may_touch, may_touch_total) =
+                inner_page(s.may_touch.into_iter().map(|x| summarize(cat, x)), &budget);
+            DiffSeed {
                 symbol: summarize(cat, s.symbol),
-                must_touch: s
-                    .must_touch
-                    .into_iter()
-                    .map(|x| summarize(cat, x))
-                    .collect(),
-                may_touch: s.may_touch.into_iter().map(|x| summarize(cat, x)).collect(),
+                must_touch,
+                may_touch,
                 depth_used: s.depth_used,
+                must_touch_total,
+                may_touch_total,
+            }
+        })
+        .collect();
+    let must: Vec<SymbolSummary> = report
+        .must_touch
+        .into_iter()
+        .map(|x| summarize(cat, x))
+        .collect();
+    let may: Vec<SymbolSummary> = report
+        .may_touch
+        .into_iter()
+        .map(|x| summarize(cat, x))
+        .collect();
+
+    diff_blast_page(
+        seeds,
+        must,
+        may,
+        report.unresolved,
+        &budget,
+        revision,
+        fingerprint,
+    )
+}
+
+/// Sort, cap, project, and steer the three top-level lists behind one diff-aware
+/// multi-list cursor — the warm twin of the cold `tools::diff_blast::page`, so
+/// the JSON is byte-identical (parity).
+// Each parameter is a distinct piece of the already-built report; bundling them
+// would only add indirection.
+#[allow(clippy::too_many_arguments)]
+fn diff_blast_page(
+    seeds: Vec<DiffSeed>,
+    must: Vec<SymbolSummary>,
+    may: Vec<SymbolSummary>,
+    unresolved: Vec<String>,
+    budget: &Budget,
+    revision: u32,
+    fingerprint: u64,
+) -> DaemonResponse {
+    let total_seeds = seeds.len();
+    let total_must = must.len();
+    let total_may = may.len();
+    let seeds_page =
+        economy::paginate_sublist(seeds, |a, b| cmp_blast_sym(&a.symbol, &b.symbol), budget, 0);
+    let must_page = economy::paginate_sublist(must, cmp_blast_sym, budget, 1);
+    let may_page = economy::paginate_sublist(may, cmp_blast_sym, budget, 2);
+    let next_cursor = economy::diff_multi_cursor(
+        &[
+            (seeds_page.next_offset, seeds_page.remainder),
+            (must_page.next_offset, must_page.remainder),
+            (may_page.next_offset, may_page.remainder),
+        ],
+        revision,
+        fingerprint,
+    );
+    let mut truncated = Vec::new();
+    if seeds_page.remainder {
+        truncated.push((seeds_page.rows.len(), total_seeds, "seeds"));
+    }
+    if must_page.remainder {
+        truncated.push((must_page.rows.len(), total_must, "must_touch"));
+    }
+    if may_page.remainder {
+        truncated.push((may_page.rows.len(), total_may, "may_touch"));
+    }
+    let note = next_cursor
+        .as_ref()
+        .map(|_| economy::multi_truncation_note(&truncated));
+    DaemonResponse::DiffBlast(DiffBlastReport {
+        seeds: seeds_page
+            .rows
+            .into_iter()
+            .map(|mut s| {
+                s.symbol = project_blast_sym(s.symbol, budget.verbosity);
+                s
             })
             .collect(),
-        must_touch: report
-            .must_touch
+        must_touch: must_page
+            .rows
             .into_iter()
-            .map(|x| summarize(cat, x))
+            .map(|s| project_blast_sym(s, budget.verbosity))
             .collect(),
-        may_touch: report
-            .may_touch
+        may_touch: may_page
+            .rows
             .into_iter()
-            .map(|x| summarize(cat, x))
+            .map(|s| project_blast_sym(s, budget.verbosity))
             .collect(),
-        unresolved: report.unresolved,
+        unresolved,
+        next_cursor,
+        note,
     })
+}
+
+/// Sort + bound one seed's inner list by the fixed cap (= `budget.limit`),
+/// returning the capped+projected page and the full count before capping
+/// (reported, never silently dropped — and never a nested cursor, tier-04). The
+/// warm twin of the cold `tools::diff_blast::inner_page`.
+fn inner_page(
+    rows: impl Iterator<Item = SymbolSummary>,
+    budget: &Budget,
+) -> (Vec<SymbolSummary>, u32) {
+    let mut rows: Vec<SymbolSummary> = rows.collect();
+    let total = u32::try_from(rows.len()).unwrap_or(u32::MAX);
+    rows.sort_by(cmp_blast_sym);
+    rows.truncate(budget.limit);
+    let page = rows
+        .into_iter()
+        .map(|s| project_blast_sym(s, budget.verbosity))
+        .collect();
+    (page, total)
 }
 
 /// Static test-impact reachability of a changeset (Block A, A1). Same warm
@@ -343,12 +466,18 @@ pub(crate) fn diff_blast(
 /// spans from the warm symbols + the changed files' bytes, then intersects the
 /// reverse-reachable closure with the precomputed `test_roots` projection and
 /// projects each `SymbolId` via the shared `summarize`.
+// Mirrors the `DaemonQuery::AffectedTests` variant fields 1:1; bundling the
+// tier-04 economy controls would only add indirection, like the cold twin.
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn affected_tests(
     cat: &WarmCatalog,
     hunks: &[LineHunk],
     changed_paths: &[String],
     depth: Option<u8>,
     kinds: Option<&[EdgeKindFilter]>,
+    limit: Option<u32>,
+    cursor: Option<&str>,
+    verbosity: Verbosity,
 ) -> DaemonResponse {
     let depth = depth.unwrap_or(DEFAULT_DEPTH).max(1);
     let set = filter_to_set(kinds.unwrap_or(&[]));
@@ -361,18 +490,68 @@ pub(crate) fn affected_tests(
         cat.graph
             .affected_tests(&spans, hunks, changed_paths, &cat.test_roots, depth, set);
 
+    let tests: Vec<SymbolSummary> = report
+        .tests
+        .into_iter()
+        .map(|s| summarize(cat, s))
+        .collect();
+    let seeds: Vec<SymbolSummary> = report
+        .seeds
+        .into_iter()
+        .map(|s| summarize(cat, s))
+        .collect();
+
+    let revision = u32::try_from(cat.revision).unwrap_or(u32::MAX);
+    let fingerprint = economy::diff_fingerprint(changed_paths);
+    let decoded = match cursor
+        .map(|c| economy::DiffCursor::decode(c, revision, fingerprint))
+        .transpose()
+    {
+        Ok(c) => c,
+        Err(err) => return DaemonResponse::InvalidInput(err.to_string()),
+    };
+    let econ = to_economy(verbosity);
+    let budget = Budget {
+        limit: limit.map_or(economy::DEFAULT_PAGE, |l| l as usize),
+        cursor: decoded.map(|c| c.window()),
+        verbosity: econ,
+    };
+    let total_tests = tests.len();
+    let total_seeds = seeds.len();
+    let tests_page = economy::paginate_sublist(tests, cmp_blast_sym, &budget, 0);
+    let seeds_page = economy::paginate_sublist(seeds, cmp_blast_sym, &budget, 1);
+    let next_cursor = economy::diff_multi_cursor(
+        &[
+            (tests_page.next_offset, tests_page.remainder),
+            (seeds_page.next_offset, seeds_page.remainder),
+        ],
+        revision,
+        fingerprint,
+    );
+    let mut truncated = Vec::new();
+    if tests_page.remainder {
+        truncated.push((tests_page.rows.len(), total_tests, "tests"));
+    }
+    if seeds_page.remainder {
+        truncated.push((seeds_page.rows.len(), total_seeds, "seeds"));
+    }
+    let note = next_cursor
+        .as_ref()
+        .map(|_| economy::multi_truncation_note(&truncated));
     DaemonResponse::AffectedTests(AffectedTestsReport {
-        tests: report
-            .tests
+        tests: tests_page
+            .rows
             .into_iter()
-            .map(|s| summarize(cat, s))
+            .map(|s| project_blast_sym(s, econ))
             .collect(),
-        seeds: report
-            .seeds
+        seeds: seeds_page
+            .rows
             .into_iter()
-            .map(|s| summarize(cat, s))
+            .map(|s| project_blast_sym(s, econ))
             .collect(),
         unresolved: report.unresolved,
+        next_cursor,
+        note,
     })
 }
 

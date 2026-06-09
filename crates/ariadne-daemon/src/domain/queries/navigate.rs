@@ -94,7 +94,7 @@ pub(crate) fn find_references(
         .transpose()
     {
         Ok(c) => c,
-        Err(err) => return DaemonResponse::Error(err.to_string()),
+        Err(err) => return DaemonResponse::InvalidInput(err.to_string()),
     };
     DaemonResponse::References(references_page(rows, decoded, limit, verbosity, revision))
 }

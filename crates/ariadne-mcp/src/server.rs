@@ -654,6 +654,9 @@ of this commit\", \"what does this PR touch\".",
             changed_paths: changed_paths.clone(),
             depth: input.depth,
             kinds: to_core_kinds(input.kinds.as_deref()),
+            limit: input.limit,
+            cursor: input.cursor.clone(),
+            verbosity: to_core_verbosity(input.verbosity),
         };
         if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
             return project_daemon(resp);
@@ -668,6 +671,9 @@ of this commit\", \"what does this PR touch\".",
             &changed_paths,
             input.depth,
             input.kinds.as_deref(),
+            input.limit,
+            input.cursor.as_deref(),
+            input.verbosity,
         )
         .map_err(McpError::into_rmcp)?;
         wire(&out)
@@ -698,6 +704,9 @@ review; triggers: \"which tests does this change affect\", \"what tests cover my
             changed_paths: changed_paths.clone(),
             depth: input.depth,
             kinds: to_core_kinds(input.kinds.as_deref()),
+            limit: input.limit,
+            cursor: input.cursor.clone(),
+            verbosity: to_core_verbosity(input.verbosity),
         };
         if let Some(resp) = self.daemon.try_query_async(self.revision(), query).await {
             return project_daemon(resp);
@@ -712,6 +721,9 @@ review; triggers: \"which tests does this change affect\", \"what tests cover my
             &changed_paths,
             input.depth,
             input.kinds.as_deref(),
+            input.limit,
+            input.cursor.as_deref(),
+            input.verbosity,
         )
         .map_err(McpError::into_rmcp)?;
         wire(&out)
@@ -792,7 +804,10 @@ assumptions may be stale.",
 /// Each report payload mirrors the matching MCP output type field-for-field
 /// (tier-07), so serializing it yields the byte-identical JSON the cold path
 /// produces. A query-level [`DaemonResponse::Error`] becomes the same wire
-/// error the cold path raises for a missing symbol / path.
+/// error the cold path raises for a missing symbol / path (`internal_error`);
+/// a [`DaemonResponse::InvalidInput`] (malformed / stale cursor) becomes
+/// `invalid_params`, matching the cold path's `McpError::InvalidInput` so the
+/// JSON-RPC error code is identical on both routes (F1).
 fn project_daemon(resp: DaemonResponse) -> Result<CallToolResult, ErrorData> {
     match resp {
         DaemonResponse::Symbols(rows) => wire(&rows),
@@ -820,9 +835,19 @@ fn project_daemon(resp: DaemonResponse) -> Result<CallToolResult, ErrorData> {
         DaemonResponse::Hotspots(report) => wire(&crate::types::HotspotOutput::from(report)),
         DaemonResponse::Complexity(report) => wire(&crate::types::ComplexityOutput::from(report)),
         DaemonResponse::CoChange(report) => wire(&crate::types::CoChangeOutput::from(report)),
-        DaemonResponse::DiffBlast(report) => wire(&report),
-        DaemonResponse::AffectedTests(report) => wire(&report),
+        // tier-04: `From`-project the postcard-framed core report into the MCP
+        // wire output so the embedded `SymbolSummary` concise omission +
+        // `next_cursor`/`note` + per-seed counts take effect on the wire type —
+        // byte-identical to the cold path (parity), like the other arms.
+        DaemonResponse::DiffBlast(report) => wire(&crate::types::DiffBlastOutput::from(report)),
+        DaemonResponse::AffectedTests(report) => {
+            wire(&crate::types::AffectedTestsOutput::from(report))
+        }
         DaemonResponse::Error(msg) => Err(ErrorData::internal_error(msg, None)),
+        // A caller-input fault (malformed / stale cursor) maps to
+        // `invalid_params`, byte-identical to the cold path's
+        // `McpError::InvalidInput` — cold==warm error-code parity (F1).
+        DaemonResponse::InvalidInput(msg) => Err(ErrorData::invalid_params(msg, None)),
         DaemonResponse::Pong => Err(ErrorData::internal_error(
             "daemon answered Pong to a tool query",
             None,
@@ -1445,10 +1470,14 @@ mod tests {
                 must_touch: vec![c_sym(2, "m")],
                 may_touch: vec![c_sym(3, "y")],
                 depth_used: 2,
+                must_touch_total: 5,
+                may_touch_total: 1,
             }],
             must_touch: vec![c_sym(2, "m")],
             may_touch: vec![c_sym(3, "y")],
             unresolved: vec!["src/new.rs".into()],
+            next_cursor: Some("deadbeef".into()),
+            note: Some("Showing 1 of 9 seeds".into()),
         };
         let t = crate::types::DiffBlastOutput {
             seeds: vec![crate::types::DiffSeedRow {
@@ -1456,10 +1485,14 @@ mod tests {
                 must_touch: vec![t_sym(2, "m")],
                 may_touch: vec![t_sym(3, "y")],
                 depth_used: 2,
+                must_touch_total: 5,
+                may_touch_total: 1,
             }],
             must_touch: vec![t_sym(2, "m")],
             may_touch: vec![t_sym(3, "y")],
             unresolved: vec!["src/new.rs".into()],
+            next_cursor: Some("deadbeef".into()),
+            note: Some("Showing 1 of 9 seeds".into()),
         };
         assert_parity("diff_blast_radius", DaemonResponse::DiffBlast(c), &t);
     }
@@ -1472,11 +1505,15 @@ mod tests {
             tests: vec![c_sym(2, "checks")],
             seeds: vec![c_sym(1, "subject")],
             unresolved: vec!["src/new.rs".into()],
+            next_cursor: Some("deadbeef".into()),
+            note: Some("Showing 1 of 4 tests".into()),
         };
         let t = crate::types::AffectedTestsOutput {
             tests: vec![t_sym(2, "checks")],
             seeds: vec![t_sym(1, "subject")],
             unresolved: vec!["src/new.rs".into()],
+            next_cursor: Some("deadbeef".into()),
+            note: Some("Showing 1 of 4 tests".into()),
         };
         assert_parity("affected_tests", DaemonResponse::AffectedTests(c), &t);
     }
@@ -1504,6 +1541,22 @@ mod tests {
             "cold message: {}",
             cold.message
         );
+    }
+
+    #[test]
+    fn invalid_input_arm_shares_the_cold_invalid_params_contract() {
+        // A stale / malformed pagination cursor is a caller-input fault on BOTH
+        // paths. The cold path raises `McpError::InvalidInput` → JSON-RPC
+        // `invalid_params`; the warm path's `DaemonResponse::InvalidInput` must
+        // map to the SAME code so a client distinguishes a bad cursor from a
+        // server fault identically on either route (audit tier-04 F1). The
+        // `CursorError` message is already shared, so only the envelope code is
+        // under test here.
+        let msg = ariadne_graph::CursorError::Malformed.to_string();
+        let daemon = project_daemon(DaemonResponse::InvalidInput(msg.clone())).unwrap_err();
+        let cold = crate::errors::McpError::InvalidInput(msg).into_rmcp();
+        assert_eq!(daemon.code, cold.code, "same JSON-RPC error code");
+        assert_eq!(daemon.code, rmcp::model::ErrorCode::INVALID_PARAMS);
     }
 
     #[test]

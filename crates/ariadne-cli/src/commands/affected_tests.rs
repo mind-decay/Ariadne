@@ -11,10 +11,15 @@
 use std::path::Path;
 
 use anyhow::{Context, Result, bail};
-use ariadne_core::{DaemonQuery, DaemonResponse, DiffSpec, EdgeKindFilter as CoreEdgeKind};
+use ariadne_core::{
+    DaemonQuery, DaemonResponse, DiffSpec, EdgeKindFilter as CoreEdgeKind,
+    Verbosity as CoreVerbosity,
+};
 use ariadne_mcp::Catalog;
 use ariadne_mcp::tools;
-use ariadne_mcp::types::{AffectedTestsInput, DiffSpecInput, EdgeKindFilter};
+use ariadne_mcp::types::{
+    AffectedTestsInput, AffectedTestsOutput, DiffSpecInput, EdgeKindFilter, Verbosity,
+};
 use ariadne_storage::RedbStorage;
 
 use crate::adapters::daemon_client::DaemonClient;
@@ -27,7 +32,18 @@ use crate::domain::index_path;
 /// Fails when the git diff, the daemon, or the cold path errors, or — on the
 /// cold path — the index is missing.
 pub fn run(root: &Path, spec: &str) -> Result<()> {
-    println!("{}", route(root, &parse_spec(spec), None, None)?);
+    println!(
+        "{}",
+        route(
+            root,
+            &parse_spec(spec),
+            None,
+            None,
+            None,
+            None,
+            Verbosity::default(),
+        )?
+    );
     Ok(())
 }
 
@@ -45,18 +61,28 @@ pub fn run_query(root: &Path, args_json: &str) -> Result<String> {
         &to_core_spec(&input.spec),
         input.depth,
         input.kinds.as_deref(),
+        input.limit,
+        input.cursor.as_deref(),
+        input.verbosity,
     )
 }
 
 /// Compute the changeset diff, then route the `affected_tests` query to the warm
 /// daemon (cold in-process fallback), returning the pretty JSON result. The
-/// daemon and cold report payloads mirror each other field-for-field, so the
-/// JSON is identical on both paths.
+/// daemon and cold report payloads `From`-project to the identical MCP wire
+/// output (`AffectedTestsOutput`), so the JSON — including the tier-04 economy
+/// cap / cursor / concise projection — is byte-identical on both paths.
+// Each parameter is a distinct facet of the query; the tier-04 economy controls
+// thread through to both serving paths, like the generic `query` route.
+#[allow(clippy::too_many_arguments)]
 fn route(
     root: &Path,
     spec: &DiffSpec,
     depth: Option<u8>,
     kinds: Option<&[EdgeKindFilter]>,
+    limit: Option<u32>,
+    cursor: Option<&str>,
+    verbosity: Verbosity,
 ) -> Result<String> {
     let (hunks, changed_paths) = ariadne_git::diff(root, spec).context("compute git diff")?;
 
@@ -65,6 +91,9 @@ fn route(
         changed_paths: changed_paths.clone(),
         depth,
         kinds: to_core_kinds(kinds),
+        limit,
+        cursor: cursor.map(ToOwned::to_owned),
+        verbosity: to_core_verbosity(verbosity),
     };
     if let Some(resp) = DaemonClient::new(root).try_query(query) {
         return project(resp);
@@ -89,19 +118,37 @@ fn route(
         &changed_paths,
         depth,
         kinds,
+        limit,
+        cursor,
+        verbosity,
     )
     .context("run affected_tests over the cold catalog")?;
     serde_json::to_string_pretty(&out).context("serialize affected_tests output")
 }
 
-/// Project a daemon response into the pretty JSON the cold path produces.
+/// Project a daemon response into the pretty JSON the cold path produces. The
+/// daemon report `From`-projects to the MCP wire output so the concise omission +
+/// cursor/steer match the cold path byte-for-byte (parity).
 fn project(resp: DaemonResponse) -> Result<String> {
     match resp {
         DaemonResponse::AffectedTests(report) => {
-            serde_json::to_string_pretty(&report).context("serialize affected_tests report")
+            serde_json::to_string_pretty(&AffectedTestsOutput::from(report))
+                .context("serialize affected_tests report")
         }
-        DaemonResponse::Error(msg) => bail!("{msg}"),
+        // `Error` is a query-level fault, `InvalidInput` a malformed / stale
+        // cursor; the CLI has no JSON-RPC envelope (unlike the MCP path, which
+        // maps them to distinct codes), so both just surface the message.
+        DaemonResponse::Error(msg) | DaemonResponse::InvalidInput(msg) => bail!("{msg}"),
         other => bail!("daemon returned an unexpected response: {other:?}"),
+    }
+}
+
+/// Map the MCP-facing verbosity onto the daemon protocol's verbosity (mirrors
+/// `crate::commands::query::to_core_verbosity`).
+fn to_core_verbosity(verbosity: Verbosity) -> CoreVerbosity {
+    match verbosity {
+        Verbosity::Concise => CoreVerbosity::Concise,
+        Verbosity::Detailed => CoreVerbosity::Detailed,
     }
 }
 

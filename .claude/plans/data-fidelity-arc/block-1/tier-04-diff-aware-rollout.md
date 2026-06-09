@@ -7,7 +7,8 @@ exit_criteria:
   - "`diff_blast_radius` per-seed inner `must_touch`/`may_touch` are bounded by a documented fixed cap (= `limit`) with a per-seed count note — bounded and reported, never silently dropped, and never a combinatorial nested cursor."
   - "The diff-aware cursor is stamped with the index revision AND a changed-paths fingerprint; a changed working-tree diff between pages yields a graceful invalid-cursor error, not wrong rows."
   - "`affected_tests` parity holds across MCP-cold, MCP-warm, and its dedicated CLI command; `diff_blast_radius` parity holds across MCP-cold and MCP-warm (it has no CLI `query` twin); ADR-0031 records the diff-aware decisions; clippy `-D warnings`, fmt, architecture, dogfood green."
-status: pending
+status: completed
+completed: 2026-06-08
 ---
 
 <context>
@@ -81,3 +82,11 @@ Revert both handlers + warm handlers, the protocol/DTO additions, the economy di
 addition, the server wiring, and the `commands/affected_tests.rs` params, plus ADR-0031. Tiers 01–03
 stay intact.
 </rollback>
+
+<followups>
+Audit INFO finding F1 (warm-path stale/malformed cursor mapped to JSON-RPC `internal_error` −32603
+instead of the cold path's `invalid_params` −32602) addressed arc-wide in a dedicated post-audit
+change per the audit's `<next_steps>`: a new typed `DaemonResponse::InvalidInput` arm mapped to
+`invalid_params`, all ten cursored warm handlers switched to it, recorded in ADR-0032. Tier scope and
+`status: completed` unchanged. [src: audit/tier-04-report.md F1; docs/adr/0032-warm-path-invalid-cursor-parity.md]
+</followups>

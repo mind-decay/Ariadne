@@ -81,6 +81,40 @@ fn blast_radius_matches_cold_golden() {
     assert_eq!(response, DaemonResponse::BlastRadius(expect));
 }
 
+/// A malformed pagination cursor on a cursored warm query is a caller-input
+/// fault, so the handler returns the typed `DaemonResponse::InvalidInput` (which
+/// the MCP adapter maps to JSON-RPC `invalid_params`), never the generic
+/// `DaemonResponse::Error` (`internal_error`) and never a panic — the warm half
+/// of cold==warm error-code parity (audit tier-04 F1). The symbol resolves, so
+/// the handler reaches the cursor decode; `"zz"` is not well-formed hex, so the
+/// decode rejects it.
+#[test]
+fn malformed_cursor_is_typed_invalid_input() {
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let root = tmp.path().to_path_buf();
+    let revision = seed(&root);
+
+    let handle = spawn(&root);
+    let response = query(
+        &root,
+        revision,
+        DaemonQuery::BlastRadius {
+            symbol: "crate::util::helper".to_owned(),
+            depth: None,
+            kinds: None,
+            limit: Some(1),
+            cursor: Some("zz".to_owned()),
+            verbosity: Verbosity::Detailed,
+        },
+    );
+    shutdown(&root, handle);
+
+    assert!(
+        matches!(response, DaemonResponse::InvalidInput(ref m) if m.contains("cursor")),
+        "a malformed cursor must surface as a typed InvalidInput naming the cursor, got: {response:?}",
+    );
+}
+
 /// `list_symbols` + `find_definition` + `find_references` parity.
 #[test]
 fn navigation_queries_match_cold() {
@@ -337,6 +371,11 @@ fn diff_blast_resolves_changed_seed_over_warm_socket() {
             changed_paths: vec!["src/lib.rs".to_owned()],
             depth: None,
             kinds: None,
+            limit: None,
+            cursor: None,
+            // Detailed so the warm rows match `reference.summ` (cryptic fields
+            // populated); the cap/cursor/concise behaviour has its own MCP tests.
+            verbosity: Verbosity::Detailed,
         },
     );
     shutdown(&root, handle);
@@ -351,10 +390,14 @@ fn diff_blast_resolves_changed_seed_over_warm_socket() {
                 must_touch: vec![dependent.clone()],
                 may_touch: vec![],
                 depth_used: 1,
+                must_touch_total: 1,
+                may_touch_total: 0,
             }],
             must_touch: vec![dependent],
             may_touch: vec![],
             unresolved: vec![],
+            next_cursor: None,
+            note: None,
         }),
     );
 }

@@ -1091,7 +1091,9 @@ pub enum DiffSpecInput {
     },
 }
 
-/// Input to `diff_blast_radius`.
+/// Input to `diff_blast_radius`. The `limit`/`cursor`/`verbosity` economy
+/// controls (Block 1, tier-04) cap the three top-level lists behind one
+/// diff-aware multi-list cursor and bound each seed's inner must/may at `limit`.
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema, Default)]
 pub struct DiffBlastInput {
     /// Which changeset to scope. Defaults to the uncommitted working tree.
@@ -1103,6 +1105,19 @@ pub struct DiffBlastInput {
     /// Edge-kind filter set. Empty / missing = all kinds.
     #[serde(default)]
     pub kinds: Option<Vec<EdgeKindFilter>>,
+    /// Maximum rows per top-level sublist and the fixed per-seed inner cap;
+    /// defaults to the economy page size (50).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<u32>,
+    /// Opaque diff-aware multi-list cursor from a prior page; absent = first
+    /// page. Rejected once the index revision or the changed-paths fingerprint
+    /// changes under it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
+    /// Field verbosity; defaults to concise (drops the embedded symbols' cryptic
+    /// id/offset fields).
+    #[serde(default)]
+    pub verbosity: Verbosity,
 }
 
 /// One changed symbol's blast radius inside a [`DiffBlastOutput`] (mirrors
@@ -1111,30 +1126,77 @@ pub struct DiffBlastInput {
 pub struct DiffSeedRow {
     /// The changed symbol the radius was seeded from.
     pub symbol: SymbolSummary,
-    /// First-hop dependents of the seed.
+    /// First-hop dependents of the seed, bounded by the fixed per-seed cap
+    /// (= `limit`); `must_touch_total` carries the full count (tier-04).
     pub must_touch: Vec<SymbolSummary>,
-    /// Transitive dependents beyond the first hop.
+    /// Transitive dependents beyond the first hop, bounded by the same cap;
+    /// `may_touch_total` carries the full count.
     pub may_touch: Vec<SymbolSummary>,
     /// Largest hop depth in this seed's returned set.
     pub depth_used: u8,
+    /// Full first-hop dependent count before the per-seed inner cap — `>
+    /// must_touch.len()` means rows were capped, never silently dropped.
+    pub must_touch_total: u32,
+    /// Full transitive dependent count before the per-seed inner cap.
+    pub may_touch_total: u32,
 }
 
-/// Output of `diff_blast_radius` (mirrors `ariadne_core::DiffBlastReport`).
+/// Output of `diff_blast_radius` — one page of per-seed radii plus the deduped
+/// must / may union, with a shared diff-aware multi-list cursor and a human
+/// steer (Block 1, tier-04). Mirrors `ariadne_core::DiffBlastReport`.
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct DiffBlastOutput {
-    /// Per-seed radius for each changed symbol, sorted by symbol id.
+    /// Per-seed radius for each changed symbol, one page in stable
+    /// `(file, byte_start, name)` seed order.
     pub seeds: Vec<DiffSeedRow>,
-    /// Union of every seed's first-hop dependents.
+    /// Union of every seed's first-hop dependents, one page in stable order.
     pub must_touch: Vec<SymbolSummary>,
-    /// Union of every seed's transitive dependents, minus `must_touch`.
+    /// Union of every seed's transitive dependents, minus `must_touch`, one page
+    /// in stable order.
     pub may_touch: Vec<SymbolSummary>,
     /// Changed paths that resolved to no symbol seed, sorted.
     pub unresolved: Vec<String>,
+    /// Opaque diff-aware multi-list cursor for the next page; absent when every
+    /// top-level list is exhausted.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub next_cursor: Option<String>,
+    /// Human steer naming which top-level lists were truncated; absent when none
+    /// were.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub note: Option<String>,
+}
+
+impl From<ariadne_core::DiffSeed> for DiffSeedRow {
+    fn from(s: ariadne_core::DiffSeed) -> Self {
+        Self {
+            symbol: SymbolSummary::from(s.symbol),
+            must_touch: s.must_touch.into_iter().map(SymbolSummary::from).collect(),
+            may_touch: s.may_touch.into_iter().map(SymbolSummary::from).collect(),
+            depth_used: s.depth_used,
+            must_touch_total: s.must_touch_total,
+            may_touch_total: s.may_touch_total,
+        }
+    }
+}
+
+impl From<ariadne_core::DiffBlastReport> for DiffBlastOutput {
+    fn from(r: ariadne_core::DiffBlastReport) -> Self {
+        Self {
+            seeds: r.seeds.into_iter().map(DiffSeedRow::from).collect(),
+            must_touch: r.must_touch.into_iter().map(SymbolSummary::from).collect(),
+            may_touch: r.may_touch.into_iter().map(SymbolSummary::from).collect(),
+            unresolved: r.unresolved,
+            next_cursor: r.next_cursor,
+            note: r.note,
+        }
+    }
 }
 
 /// Input to `affected_tests` — mirrors `diff_blast_radius` (the same changeset
 /// `spec` + reverse-reach `depth`/`kinds`), since A1 reuses the diff→seed→
-/// reverse-reach machinery (block-a plan.md D1).
+/// reverse-reach machinery (block-a plan.md D1). The `limit`/`cursor`/
+/// `verbosity` economy controls (Block 1, tier-04) cap `tests` / `seeds` behind
+/// one diff-aware multi-list cursor.
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema, Default)]
 pub struct AffectedTestsInput {
     /// Which changeset to scope. Defaults to the uncommitted working tree.
@@ -1146,17 +1208,52 @@ pub struct AffectedTestsInput {
     /// Edge-kind filter set. Empty / missing = all kinds.
     #[serde(default)]
     pub kinds: Option<Vec<EdgeKindFilter>>,
+    /// Maximum rows per top-level sublist (tests / seeds); defaults to the
+    /// economy page size (50).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<u32>,
+    /// Opaque diff-aware multi-list cursor from a prior page; absent = first
+    /// page. Rejected once the index revision or the changed-paths fingerprint
+    /// changes under it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
+    /// Field verbosity; defaults to concise (drops the rows' cryptic id/offset
+    /// fields).
+    #[serde(default)]
+    pub verbosity: Verbosity,
 }
 
-/// Output of `affected_tests` (mirrors `ariadne_core::AffectedTestsReport`).
+/// Output of `affected_tests` — one page of `tests` / `seeds` with a shared
+/// diff-aware multi-list cursor and a human steer (Block 1, tier-04). Mirrors
+/// `ariadne_core::AffectedTestsReport`.
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct AffectedTestsOutput {
-    /// Affected test symbols, sorted by symbol id.
+    /// Affected test symbols, one page in stable `(file, byte_start, name)`
+    /// order.
     pub tests: Vec<SymbolSummary>,
-    /// Changed-symbol seeds, sorted by symbol id.
+    /// Changed-symbol seeds, one page in stable `(file, byte_start, name)` order.
     pub seeds: Vec<SymbolSummary>,
     /// Changed paths that resolved to no symbol seed, sorted.
     pub unresolved: Vec<String>,
+    /// Opaque diff-aware multi-list cursor for the next page; absent when both
+    /// lists are exhausted.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub next_cursor: Option<String>,
+    /// Human steer naming which lists were truncated; absent when none were.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub note: Option<String>,
+}
+
+impl From<ariadne_core::AffectedTestsReport> for AffectedTestsOutput {
+    fn from(r: ariadne_core::AffectedTestsReport) -> Self {
+        Self {
+            tests: r.tests.into_iter().map(SymbolSummary::from).collect(),
+            seeds: r.seeds.into_iter().map(SymbolSummary::from).collect(),
+            unresolved: r.unresolved,
+            next_cursor: r.next_cursor,
+            note: r.note,
+        }
+    }
 }
 
 /// Input to `api_surface_diff` (block A, A2): the two revspecs whose

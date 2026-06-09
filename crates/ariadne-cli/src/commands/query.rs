@@ -271,7 +271,10 @@ fn project(resp: DaemonResponse) -> Result<String> {
         // projects the response itself; this generic path never sees it, but the
         // arm keeps the projection exhaustive against the shared protocol enum.
         DaemonResponse::AffectedTests(report) => json(&report),
-        DaemonResponse::Error(msg) => bail!("{msg}"),
+        // `Error` is a query-level fault, `InvalidInput` a malformed / stale
+        // cursor; the CLI has no JSON-RPC envelope (unlike the MCP path, which
+        // maps them to distinct codes), so both just surface the message.
+        DaemonResponse::Error(msg) | DaemonResponse::InvalidInput(msg) => bail!("{msg}"),
         DaemonResponse::Pong => bail!("daemon answered Pong to a tool query"),
     }
 }
