@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and discussion
+    url: https://github.com/mind-decay/ariadne/discussions
+    about: Ask usage questions and discuss ideas here instead of opening an issue.
+  - name: Commercial licensing
+    url: https://github.com/mind-decay/ariadne/blob/main/LICENSE-COMMERCIAL.md
+    about: Ariadne is free for noncommercial use; commercial use requires a paid license.

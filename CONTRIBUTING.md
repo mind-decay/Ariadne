@@ -33,6 +33,20 @@ cog install-hook commit-msg
 
 `lefthook install` activates the `pre-commit` (fmt + clippy on staged Rust files) and `commit-msg` (cog verify) hooks. Bypass via `LEFTHOOK=0 git commit …` only when explicitly justified.
 
+## Build, test, lint
+
+Run the full check suite before opening a PR; CI gates on the same commands:
+
+```sh
+cargo build --workspace
+cargo nextest run --workspace          # CI uses --profile ci
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+cargo fmt --all --check                # apply with: cargo fmt --all
+cargo deny check
+```
+
+A change is not done until the build is green, the relevant tests pass, and the feature has been exercised end-to-end against an explicit expectation. Never silence a failure with `--no-verify`, a weakened assertion, or a deleted test.
+
 ## Commit format
 
 Conventional Commits v1.0.0 — see [ADR-0003](docs/adr/0003-commit-convention.md).
@@ -108,6 +122,19 @@ Tier execution order is fixed in the plan's frontmatter `tiers:` field. A tier s
 ## Audit gate
 
 The hook at `.claude/hooks/audit-gate.sh` blocks `git commit` and `git push` when the most-recent `audit-state.json` reads `FAIL`, or when HEAD has advanced past the audited commit. Re-run `/spec-audit <tier>` on the current HEAD to re-arm the gate.
+
+## Contributor license terms
+
+Ariadne is dual-licensed: the public license is [PolyForm Noncommercial 1.0.0](LICENSE.md), and commercial use is offered separately under [`LICENSE-COMMERCIAL.md`](LICENSE-COMMERCIAL.md).
+
+By submitting a contribution (pull request, patch, or otherwise) you agree that:
+
+- Your contribution is licensed to the project under the same PolyForm Noncommercial 1.0.0 terms as the rest of the code; and
+- You grant the maintainer (`mind-decay`) the additional, irrevocable right to license your contribution commercially as part of the dual-license model — so the project can offer paid commercial grants that include your work.
+
+You retain copyright to your contribution; this is a license grant, not an assignment.
+
+Whether a signed Contributor License Agreement (CLA) is required before a PR can be merged is an open owner decision: `<OWNER-DECISION-PLACEHOLDER>`. Until it is resolved, the grant above (stated in your PR) is the operative agreement.
 
 ## Reporting
 
