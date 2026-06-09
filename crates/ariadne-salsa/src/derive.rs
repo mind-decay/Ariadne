@@ -433,7 +433,7 @@ pub(crate) struct ScipFileFacts {
 /// `facts_by_file` is expected pre-sorted by `file_id` and each file's
 /// occurrences by `byte_range` (and relationships sorted), so the `(file,
 /// range)` order — and thus the edge set — is deterministic
-/// [src: scip-driven-edges `<constraints>`].
+/// \[src: scip-driven-edges `<constraints>`\].
 pub(crate) fn resolve_scip_edges(facts_by_file: &[ScipFileFacts]) -> Vec<(EdgeKey, EdgeRecord)> {
     // Pass 1: Definition occurrences build the global symbol-key map plus each
     // key's def file and byte range (the evidence span for relationship edges,

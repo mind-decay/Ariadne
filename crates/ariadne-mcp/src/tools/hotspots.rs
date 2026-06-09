@@ -97,7 +97,7 @@ fn to_economy(v: WireVerbosity) -> Verbosity {
 
 /// Stable order for a hotspot page: strongest first (score desc), then file
 /// path / symbol id ascending — a meaningful, deterministic top-N (D4). Score
-/// is an `f32`; `total_cmp` gives a total order (no NaN in [0,1]).
+/// is an `f32`; `total_cmp` gives a total order (no NaN in `[0,1]`).
 fn cmp_row(a: &HotspotRow, b: &HotspotRow) -> Ordering {
     b.score
         .total_cmp(&a.score)

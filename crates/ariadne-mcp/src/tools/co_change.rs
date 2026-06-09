@@ -79,7 +79,7 @@ fn to_economy(v: WireVerbosity) -> Verbosity {
 
 /// Stable order for a co-change page: strongest coupling first (degree desc),
 /// then the `(a, b)` path pair ascending — a meaningful, deterministic top-N
-/// (D4). Degree is an `f32`; `total_cmp` gives a total order (no NaN in [0,1]).
+/// (D4). Degree is an `f32`; `total_cmp` gives a total order (no NaN in `[0,1]`).
 fn cmp_edge(x: &CoChangeEdge, y: &CoChangeEdge) -> Ordering {
     y.degree
         .total_cmp(&x.degree)

@@ -6,9 +6,9 @@
 //! iterate `cat.symbols`, keep `meta.file == file_id`, sort by `byte_start`),
 //! reads the live bytes via `std::fs`, and hands them to the pure
 //! [`ariadne_graph::assemble`] use case shared with the `read_outline` MCP tool
-//! — so the two surfaces render the identical skeleton (parity) [src:
+//! — so the two surfaces render the identical skeleton (parity) \[src:
 //! .claude/plans/context-efficient-read/tier-03-outline-cli.md `<steps>`;
-//! plan.md D3/D7]. A file with no indexed symbols never dumps its source: it
+//! plan.md D3/D7\]. A file with no indexed symbols never dumps its source: it
 //! prints a line-count note advising a native `Read` (D2).
 
 use std::path::Path;

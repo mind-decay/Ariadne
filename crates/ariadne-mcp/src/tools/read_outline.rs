@@ -23,8 +23,8 @@ use crate::types::{OutlineEntry, ReadOutlineInput, SourceOutline};
 
 /// Safety cap on rendered top-level symbols, keeping the tool output under the
 /// MCP 25k-token ceiling even for very large files; the assembler notes the cap
-/// in the skeleton tail rather than truncating silently (R4) [src:
-/// context-efficient-read plan.md `<constraints>` MCP limits; risks R4].
+/// in the skeleton tail rather than truncating silently (R4) \[src:
+/// context-efficient-read plan.md `<constraints>` MCP limits; risks R4\].
 const MAX_OUTLINE_SYMBOLS: usize = 800;
 
 /// Build the [`SourceOutline`] for the file at `input.path`.

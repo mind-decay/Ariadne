@@ -3,9 +3,9 @@
 //! Productises the project's own `tests/architecture.rs` as config-driven
 //! fitness functions: a declarative layer assignment + forbidden dependency
 //! directions + cycle/coupling thresholds, checked against the live graph
-//! [src: `ArchUnit` `layeredArchitecture`
+//! \[src: `ArchUnit` `layeredArchitecture`
 //! <https://www.baeldung.com/java-archunit-intro>;
-//! .claude/plans/intelligence-platform/block-a/plan.md D5].
+//! .claude/plans/intelligence-platform/block-a/plan.md D5\].
 //!
 //! The engine is pure: it reuses the existing
 //! [`cycle_report`](GraphIndex::cycle_report) and
