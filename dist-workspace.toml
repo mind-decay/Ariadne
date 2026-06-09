@@ -7,13 +7,17 @@ members = ["cargo:."]
 cargo-dist-version = "0.31.0"
 # CI backends to support
 ci = "github"
-# The installers to generate for each app
-installers = ["shell", "powershell", "homebrew"]
+# The installers to generate for each app (powershell dropped with the windows
+# target — Ariadne is not Windows-ready yet; see tier-03 finding).
+installers = ["shell", "homebrew"]
 # Publish the Homebrew formula to this tap repo
 tap = "mind-decay/homebrew-tap"
 # Enable the publish job that pushes the formula to the tap
 publish-jobs = ["homebrew"]
-# Target platforms to build apps for (Rust target-triple syntax)
-targets = ["aarch64-apple-darwin", "aarch64-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc"]
+# Target platforms to build apps for (Rust target-triple syntax). No
+# x86_64-pc-windows-msvc: the daemon IPC (unix sockets) and path handling are
+# not yet ported to Windows (tier-03 CI finding), so a windows binary would ship
+# broken. Re-add once Windows support lands.
+targets = ["aarch64-apple-darwin", "aarch64-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu"]
 # Where to host releases
 hosting = "github"

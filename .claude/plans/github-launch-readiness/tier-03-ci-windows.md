@@ -3,9 +3,13 @@ tier_id: tier-03
 title: Test the Windows release target in CI (clippy + nextest on windows-latest)
 deps: []
 exit_criteria:
-  - ci.yml clippy and test matrices include windows-latest
-  - clippy (windows-latest) and nextest (windows-latest) jobs pass on a PR
-  - any genuinely unix-only test is cfg-gated with a one-line justification
+  # Revised by owner decision (see <blockers>): adding windows-latest revealed
+  # Ariadne is not Windows-ready (daemon IPC unix-socket-only; non-portable
+  # paths — 102 nextest failures). Windows is build/clippy-guarded only, not
+  # shipped, until a dedicated port lands.
+  - ci.yml clippy matrix includes windows-latest; nextest matrix does not
+  - clippy (windows-latest) passes on a PR; unix nextest/clippy stay green
+  - release no longer builds x86_64-pc-windows-msvc (dist-workspace.toml)
 status: blocked
 ---
 
@@ -60,30 +64,38 @@ Windows matrix entries restores the prior 2-OS CI with no other impact.
 </rollback>
 
 <blockers>
-Owner added the `origin` remote mid-build; the matrix was exercised by a real
-push CI run (commit `acbca87`). `windows-latest` is in both matrices (ci.yml:39,
-55). Stays `blocked` until a re-run shows green Windows jobs.
+Owner added `origin` mid-build; real push CI runs exercised the matrix. The key
+outcome: adding `windows-latest` proved **Ariadne is not Windows-ready**, so the
+owner chose to guard Windows compilation only (clippy) and **not ship a Windows
+release** until a dedicated port lands. Stays `blocked` until the next run shows
+green clippy (windows) + green unix nextest/clippy + Windows-free release.
 
-Tier-03 finding (the genuine Windows break this tier exists to catch):
-- `clippy (windows-latest)` + `nextest (windows-latest)` failed with
-  `error[E0599]: no method named enable_io ... tokio::runtime::Builder`
-  (ariadne-cli serve.rs:29, watch.rs:56). `enable_io()` needs the I/O driver,
-  which on unix the `signal` feature pulls in but on Windows it does not
-  [src: docs.rs/tokio Builder::enable_io — "feature `net`, or Unix + `signal`…"].
-  Fix: added the `net` feature to ariadne-cli's tokio dep — not a cfg-gate;
-  the code is meant to run on Windows. `cargo check -p ariadne-cli` green on
-  unix; Windows confirmation pends the re-run.
+Windows breaks surfaced + handled:
+- COMPILE (clippy + nextest): `E0599 enable_io` (tokio I/O driver; on unix the
+  `signal` feature pulls it in, Windows does not) → added tokio `net` to
+  ariadne-cli [src: docs.rs/tokio Builder::enable_io]. Then `clippy (windows)`:
+  `unnecessary_wraps` on the `#[cfg(not(unix))]` `set_executable` stub →
+  `#[allow]` with a signature-parity justification.
+- RUNTIME (nextest windows): 102 failures in 3 buckets — daemon IPC is
+  unix-domain-socket-only (`not a named pipe path`; ~30 daemon/warm/mcp/e2e
+  tests), and cold-index/parser goldens diverge on `\` paths (index_parity ×12,
+  parser facts ×16). These are real product gaps, not unix-only tests to gate.
+  Owner decision: drop `windows-latest` from the nextest matrix; remove
+  `x86_64-pc-windows-msvc` + the `powershell` installer from dist-workspace.toml
+  (release.yml regenerated via `dist generate`, `--check` clean). A Windows port
+  (named-pipe IPC, path/line-ending normalization) is its own future plan.
 
-Authorized prerequisite: `.config/nextest.toml` `[profile.ci]` (the profile was
-undefined repo-wide; `error: profile 'ci' not found`).
+Authorized prerequisite: `.config/nextest.toml` `[profile.ci]` (was undefined;
+`error: profile 'ci' not found`).
 
-Unrelated pre-existing failures the first-ever CI run exposed (no remote before,
-so CI never ran), fixed with owner approval — outside this tier's scope:
+Pre-existing failures the first-ever CI run exposed (CI never ran without a
+remote), fixed with owner approval — outside this tier's original scope:
 - `docs`: rustdoc broken-intra-doc-links from the `[src: … <…> …]` citation
   pattern (mcp co_change/hotspots/read_outline, graph/fitness, salsa/derive,
   cli/outline) — escaped the brackets; `cargo doc --workspace -D warnings` green.
-- `commits`: dead action `oknozor/setup-cocogitto@v1` (404) → `cocogitto/
-  cocogitto-action@v4`; push uses full-history `cog check` (no release tags yet).
+- `commits`: dead action `oknozor/setup-cocogitto@v1` (404). cocogitto-action
+  installs cog 6.x, which can't parse this repo's v7 `cog.toml`, so install the
+  cog 7.0.0 release binary directly + raw `cog check` (full history; no tags yet).
 - `nextest (unix)`: wall-clock SLO `read_outline_p95_under_100ms` exceeds 100ms
   on shared CI runners → `#[ignore]` (matching slo.rs), assertion intact.
   `cargo nextest run --workspace --profile ci` green on macOS (576 passed).

@@ -52,7 +52,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        # No windows-latest: the daemon (unix-socket IPC) and indexing path
+        # handling are not yet Windows-ready, so the suite fails there by design.
+        # clippy still runs on windows to guard compilation. See tier-03 finding.
+        os: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
