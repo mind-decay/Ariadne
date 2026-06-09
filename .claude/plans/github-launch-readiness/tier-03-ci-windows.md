@@ -35,28 +35,35 @@ tag [src: plan.md D5, R3]. Independent of all other tiers.
    `[ubuntu-latest, macos-latest, windows-latest]` [src: ci.yml:38-39]. The
    `dtolnay/rust-toolchain@stable` + `Swatinem/rust-cache` + clippy steps are
    already cross-platform.
-2. In the `test` job, change `matrix.os` to
-   `[ubuntu-latest, macos-latest, windows-latest]` [src: ci.yml:54-55].
-   `taiki-e/install-action@nextest` provides nextest on Windows.
+2. Leave the `test` job `matrix.os` unix-only
+   (`[ubuntu-latest, macos-latest]`) [src: ci.yml:54-58]. The mid-build run
+   proved Ariadne is not Windows-ready (see `<blockers>`): adding
+   `windows-latest` produced 102 nextest failures from real product gaps
+   (unix-socket-only daemon IPC; non-portable paths), not unix-only tests to
+   gate. A `# No windows-latest` comment on the matrix records why; clippy still
+   guards Windows compilation.
 3. Leave `fmt`, `deny`, `audit`, `docs`, `bench-build`, `msrv`,
    `arch-invariants`, `commits`, `pr-title` unchanged — they are platform-agnostic
    or unix-only by design (e.g. msrv build) and need no Windows runner.
-4. Run the workspace on Windows (CI PR run, or local `cargo nextest run
-   --workspace` on a Windows host if available). Root-cause every failure. If a
-   test asserts unix-only behavior (file modes, `/`-only paths), gate it with
-   `#[cfg(unix)]` and a comment naming why; never silence with skips, `--no-fail-fast`
-   masking, or weakened asserts [src: CLAUDE.md `<rules>` "Validate by execution"].
+4. Run the workspace on Windows via CI PR run; root-cause every failure. The
+   real run showed the 102 failures were genuine product gaps (daemon IPC,
+   path/line-ending handling), not unix-only tests with a portable equivalent —
+   so the owner dropped `windows-latest` from nextest and from the release
+   target rather than cfg-gate (a Windows port is its own future plan). No test
+   was silenced with skips, `--no-fail-fast` masking, or weakened asserts
+   [src: CLAUDE.md `<rules>` "Validate by execution"; `<blockers>`].
 </steps>
 
 <verification>
-- `grep -n windows-latest .github/workflows/ci.yml` shows it in both `clippy` and
-  `test` matrices.
-- A pushed PR shows green `clippy (windows-latest)` and `nextest (windows-latest)`
-  checks.
-- `cargo nextest run --workspace --profile ci` is green on Windows (or the PR
-  check stands in for a local Windows host).
-- Any added `#[cfg(unix)]` carries a justifying comment; no test was deleted or
-  its assertions weakened (diff review).
+- `grep -n windows-latest .github/workflows/ci.yml` shows it in the `clippy`
+  matrix only; the `test` matrix stays `[ubuntu-latest, macos-latest]`.
+- A pushed PR shows a green `clippy (windows-latest)` check; unix
+  `nextest`/`clippy` stay green. No `nextest (windows-latest)` check exists.
+- `cargo nextest run --workspace --profile ci` is green on the unix hosts.
+- `dist-workspace.toml` `targets` carries no `x86_64-pc-windows-msvc` triple
+  (only a comment records its removal); the release no longer builds a Windows
+  target (`dist generate --check` clean).
+- No test was deleted or its assertions weakened (diff review).
 </verification>
 
 <rollback>
