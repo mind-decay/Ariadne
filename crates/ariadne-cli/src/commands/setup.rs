@@ -419,7 +419,10 @@ fn set_executable(path: &Path) -> Result<()> {
 }
 
 /// Mark `path` executable — no-op on non-Unix targets (no POSIX mode bits).
+// Signature parity with the fallible Unix variant: callers use `?` uniformly,
+// so the infallible stub must still return `Result`.
 #[cfg(not(unix))]
+#[allow(clippy::unnecessary_wraps)]
 fn set_executable(_path: &Path) -> Result<()> {
     Ok(())
 }
