@@ -422,6 +422,7 @@ fn read_outline_unindexed_path_is_a_typed_error_not_a_panic() {
 }
 
 #[test]
+#[ignore = "wall-clock p95 SLO; flaky on shared CI runners — run via --run-ignored"]
 fn read_outline_p95_under_100ms_on_repo_scale_file() {
     let (cat, g) = large_fixture();
 
