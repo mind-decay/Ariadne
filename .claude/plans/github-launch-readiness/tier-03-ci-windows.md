@@ -60,26 +60,32 @@ Windows matrix entries restores the prior 2-OS CI with no other impact.
 </rollback>
 
 <blockers>
-Blocked on exit criterion #2 (green `clippy (windows-latest)` + `nextest
-(windows-latest)` on a PR): the repo has no git remote and the build host is
-macOS, so a real Windows CI run cannot be triggered this session. Owner
-accepted local-only verification; this tier stays `blocked` until a real
-Windows PR run is green. Edits + local evidence:
-- `windows-latest` added to the `clippy` (ci.yml:39) and `test` (ci.yml:55)
-  matrices — `grep -n windows-latest` shows both; YAML parses.
-- `cargo clippy --workspace --all-targets --all-features -- -D warnings` green
-  on macOS; `cargo nextest run --workspace --profile ci` green on macOS
-  (577 passed, 21 skipped, 0 failed) — cross-platform evidence for unix.
-- No cfg-gates added: no Windows failure was observed (Windows could not run),
-  and the existing unix-only tests are already `#[cfg(unix)]`-gated
-  (`advisory.rs:10`, `setup.rs:258`, `adoption_wiring.rs:215`).
+Owner added the `origin` remote mid-build; the matrix was exercised by a real
+push CI run (commit `acbca87`). `windows-latest` is in both matrices (ci.yml:39,
+55). Stays `blocked` until a re-run shows green Windows jobs.
 
-Authorized prerequisite (out of this tier's original `<files>`, approved by the
-owner mid-build): added `.config/nextest.toml` defining `[profile.ci]`. The
-`ci` profile that `cargo nextest run --profile ci` requires was undefined
-repo-wide (`error: profile 'ci' not found`), so the `test` job — the thing this
-tier extends to Windows — would have failed on every OS. The profile sets
-`fail-fast = false` + `failure-output = "immediate-final"` only; no `retries`
-(masking flakiness violates CLAUDE.md "failures are root-caused").
+Tier-03 finding (the genuine Windows break this tier exists to catch):
+- `clippy (windows-latest)` + `nextest (windows-latest)` failed with
+  `error[E0599]: no method named enable_io ... tokio::runtime::Builder`
+  (ariadne-cli serve.rs:29, watch.rs:56). `enable_io()` needs the I/O driver,
+  which on unix the `signal` feature pulls in but on Windows it does not
+  [src: docs.rs/tokio Builder::enable_io — "feature `net`, or Unix + `signal`…"].
+  Fix: added the `net` feature to ariadne-cli's tokio dep — not a cfg-gate;
+  the code is meant to run on Windows. `cargo check -p ariadne-cli` green on
+  unix; Windows confirmation pends the re-run.
+
+Authorized prerequisite: `.config/nextest.toml` `[profile.ci]` (the profile was
+undefined repo-wide; `error: profile 'ci' not found`).
+
+Unrelated pre-existing failures the first-ever CI run exposed (no remote before,
+so CI never ran), fixed with owner approval — outside this tier's scope:
+- `docs`: rustdoc broken-intra-doc-links from the `[src: … <…> …]` citation
+  pattern (mcp co_change/hotspots/read_outline, graph/fitness, salsa/derive,
+  cli/outline) — escaped the brackets; `cargo doc --workspace -D warnings` green.
+- `commits`: dead action `oknozor/setup-cocogitto@v1` (404) → `cocogitto/
+  cocogitto-action@v4`; push uses full-history `cog check` (no release tags yet).
+- `nextest (unix)`: wall-clock SLO `read_outline_p95_under_100ms` exceeds 100ms
+  on shared CI runners → `#[ignore]` (matching slo.rs), assertion intact.
+  `cargo nextest run --workspace --profile ci` green on macOS (576 passed).
 </blockers>
 </content>
