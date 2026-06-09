@@ -793,7 +793,9 @@ files. Scope impact with blast_radius, \
 plan_assist, and diff_blast_radius. Assess architecture health with coupling_report, \
 weak_spots, and refactor_suggestions. Triage risk from Git history with hotspots, \
 complexity, and co_change. Read generated docs with doc_for, doc_for_module, and \
-doc_for_project. Verify index freshness with project_status before trusting results. \
+doc_for_project. Growable results are paged: each returns a concise default page \
+— pass verbosity:detailed for every field, and follow the opaque next_cursor for \
+the next page. Verify index freshness with project_status before trusting results. \
 Call these even when the answer seems known — the graph reflects the current code, and \
 assumptions may be stale.",
             )

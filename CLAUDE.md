@@ -132,4 +132,9 @@ where text search needs many and misses cross-file edges.
   symbol, file, or the whole project ("document the `X` module").
 - Freshness — `project_status`. Use to confirm the index is current ("is the
   index up to date?").
+- Economy — the growable tools (`find_references`, `blast_radius`,
+  `coupling_report`, `weak_spots`, `co_change`, `hotspots`, `complexity`,
+  `refactor_suggestions`, `diff_blast_radius`, `affected_tests`) return a concise
+  default page; pass `verbosity: detailed` for every field and follow the opaque
+  `next_cursor` to page the rest.
 <!-- END ARIADNE -->

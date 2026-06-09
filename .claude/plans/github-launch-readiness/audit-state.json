@@ -1,0 +1,8 @@
+{
+  "slug": "github-launch-readiness",
+  "audited_commit": "4f5855d6a031db99250a8a91381b1b61f9b6a007",
+  "tier_id": "tier-02",
+  "verdict": "PASS",
+  "audited_at": "2026-06-09T13:01:41Z",
+  "report": "audit/tier-02-report.md"
+}

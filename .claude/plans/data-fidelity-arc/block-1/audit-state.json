@@ -1,8 +1,8 @@
 {
   "slug": "data-fidelity-arc/block-1",
-  "audited_commit": "904a9962e9cbcc60ba35be4f301018bc29f812bc",
-  "tier_id": "tier-04",
+  "audited_commit": "4f5855d6a031db99250a8a91381b1b61f9b6a007",
+  "tier_id": "tier-05",
   "verdict": "PASS",
-  "audited_at": "2026-06-09T12:13:19+03:00",
-  "report": "audit/tier-04-report.md"
+  "audited_at": "2026-06-09T14:31:46+03:00",
+  "report": "audit/tier-05-report.md"
 }

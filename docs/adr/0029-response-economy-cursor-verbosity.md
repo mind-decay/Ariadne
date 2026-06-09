@@ -82,6 +82,23 @@ id/offset fields; detailed is a lossless superset.
   path that bypasses it, is off-limits without superseding this ADR.
 </consequences>
 
+<validation>
+Addendum (tier-05): the shipped default cap (page size 50) is measured, not
+assumed. The deterministic `economy_token_delta` harness drives each of the ten
+growable cold tools on the ariadne_v2 self-index (revision 1461) at the default
+budget (concise, page 50) versus an un-capped baseline (detailed, unbounded),
+proxying tokens as `bytes / 4`. Every default page is within the 25k-token MCP
+cap — the largest is `refactor_suggestions` at ~10.5k tokens — so the default
+page size is validated against BR6, never weakened. Median reduction across the
+ten tools is 88.7%; the worst pre-block offenders collapse at the default
+budget: `co_change` (low thresholds) 585k → ~2.0k, `hotspots` (symbol) 203k →
+~2.0k, `complexity` (symbol) 201k → ~1.7k, and `blast_radius` 20.5k → ~1.9k
+tokens. A tool that ever exceeds the cap is fixed by lowering its default
+`limit`, not by raising the cap [src:
+.claude/plans/data-fidelity-arc/block-1/economy-token-delta.md;
+crates/ariadne-mcp/tests/economy_token_delta.rs].
+</validation>
+
 <sources>
 - `[src: .claude/plans/data-fidelity-arc/block-1/plan.md D1,D2,D3,D4,D5]`
 - `[src: https://modelcontextprotocol.io/specification/2025-06-18/server/utilities/pagination]`

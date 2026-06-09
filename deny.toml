@@ -32,6 +32,14 @@ allow = [
 ]
 unused-allowed-license = "warn"
 
+# The workspace's own crates are licensed PolyForm-Noncommercial-1.0.0 (a
+# source-available, non-OSI license; see ADR-0033). They are all `publish =
+# false`, so exempt them from the dependency license allow-list rather than
+# adding PolyForm there — the allow-list is for third-party deps only.
+# [src: https://embarkstudios.github.io/cargo-deny/checks/licenses/cfg.html]
+[licenses.private]
+ignore = true
+
 [advisories]
 db-urls = ["https://github.com/rustsec/advisory-db"]
 yanked = "deny"

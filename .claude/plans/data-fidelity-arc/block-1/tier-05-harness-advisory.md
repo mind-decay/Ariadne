@@ -7,7 +7,8 @@ exit_criteria:
   - "The harness asserts every tool's default output is ≤25k tokens on the ariadne_v2 self-index (BR6); a failure means lower that tool's default `limit`, not weaken the assertion."
   - "The MCP server `with_instructions` names the `verbosity` (concise default) + `cursor` affordances and stays ≤2KB; the regenerated handshake snapshot is accepted."
   - "CLAUDE.md's Ariadne tool-list notes the `verbosity`/`cursor` affordances (listing only, no prose rewrite); clippy `-D warnings`, fmt, `cargo test --test architecture` green."
-status: pending
+status: completed
+completed: 2026-06-09
 ---
 
 <context>
@@ -60,7 +61,7 @@ context: `plan.md`.
 </steps>
 
 <verification>
-- `cargo nextest run -p ariadne-e2e -E 'test(economy_token_delta)' --run-ignored all` — the harness
+- `cargo nextest run -p ariadne-mcp -E 'test(economy_token_delta)' --run-ignored all` — the harness
   runs and the ≤25k assertion passes for all 10 tools; record the median reduction (reported).
 - `cargo nextest run -p ariadne-mcp -E 'test(handshake)'` — instructions ≤2KB; snapshot accepted.
 - `cargo test --test architecture`; clippy `-D warnings`; `cargo fmt --all --check`.
@@ -74,3 +75,18 @@ context: `plan.md`.
 Revert the harness + report artifact, the `with_instructions` clause + snapshot, the CLAUDE.md note,
 and the ADR-0029 addendum. Config/doc/test only — tiers 01–04 (the capability) stay intact.
 </rollback>
+
+<deviations>
+The token-delta harness was homed at `crates/ariadne-mcp/tests/economy_token_delta.rs` (not
+`crates/ariadne-e2e/tests/`) and its verification runs `-p ariadne-mcp`, because the architecture
+invariant (`tests/architecture.rs` rule 4) bars the driving `ariadne-mcp` crate from being a
+dependency of any crate except the composition root — so `ariadne-e2e` cannot link it to call
+`tools::*::handle`. The cited `outline_token_delta` precedent sidestepped this only because outline is
+one pure `ariadne_graph::assemble` call; the ten economy tools each need the `ariadne-mcp` `Catalog` +
+wire DTOs. Homing the harness in `ariadne-mcp`'s own test crate drives the REAL cold handlers (the
+tier's "drive the cold `tools::*::handle`" intent) while keeping `cargo test --test architecture`
+green. User-approved 2026-06-09. The report artifact path is unchanged. The cold handlers are driven
+directly (`serde_json::to_string` of the output mirrors the server's `wire` projection); the live
+in-session MCP server is a stale pre-economy binary, so the new caps were validated through the
+harness, not that server.
+</deviations>

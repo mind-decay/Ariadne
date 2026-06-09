@@ -157,4 +157,6 @@ structural snapshot. Architectural decisions are recorded under
 
 ## License
 
-MIT OR Apache-2.0.
+Noncommercial use is free under the [PolyForm Noncommercial License
+1.0.0](LICENSE.md). Any commercial use requires a separate commercial license —
+see [`LICENSE-COMMERCIAL.md`](LICENSE-COMMERCIAL.md).

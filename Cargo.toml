@@ -18,9 +18,10 @@ resolver = "2"
 version = "1.0.0"
 edition = "2024"
 rust-version = "1.85"
-license = "MIT OR Apache-2.0"
+license = "PolyForm-Noncommercial-1.0.0"
 authors = ["Ariadne contributors"]
 repository = "https://github.com/mind-decay/ariadne"
+homepage = "https://github.com/mind-decay/ariadne"
 publish = false
 
 [workspace.dependencies]

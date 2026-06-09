@@ -74,4 +74,14 @@ A pin bump of `@volar/typescript`, `@vue/language-core`, or `svelte2tsx` is a
 follow-up change that must re-generate the `sample-vue` / `sample-svelte`
 fixtures, since the position-mapping internals are version-coupled.
 
+## License
+
+This package is licensed **`MIT OR Apache-2.0`**, intentionally different from the
+Cargo workspace, which is **PolyForm Noncommercial 1.0.0** (repo-root `LICENSE.md`;
+recorded in `docs/adr/0033-licensing-model.md`). The split is deliberate, not an
+oversight: this tool lives outside the workspace, is a self-contained Node CLI
+vendored and built separately (see **Placement**), and is reusable on its own — so
+it stays permissively licensed. The noncommercial terms govern the `ariadne`
+binary and the rest of the repository.
+
 [`@volar/typescript`]: https://www.npmjs.com/package/@volar/typescript

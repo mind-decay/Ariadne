@@ -1,0 +1,13 @@
+# cargo-nextest configuration.
+# The `ci` profile is what CI invokes (`cargo nextest run --workspace --profile ci`,
+# per CLAUDE.md <commands>). Custom profiles inherit every unset key from
+# `[profile.default]`, so only the CI-specific overrides are listed here.
+# [src: https://nexte.st/docs/configuration/ ; https://nexte.st/docs/configuration/reference/]
+
+[profile.ci]
+# Run the whole suite even after a failure so one CI run reports every failing
+# test, not just the first.
+fail-fast = false
+# Print each failure as it happens and re-print all failures in a final summary,
+# so a failing job is scannable without hunting through the log.
+failure-output = "immediate-final"
